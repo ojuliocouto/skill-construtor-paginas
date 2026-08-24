@@ -251,7 +251,7 @@ proprio contexto (lista de tools + system-reminders de skills). Confirmar presen
 
 | Dependencia | Como detectar | Papel | Fallback (caminho legitimo, nunca bloqueia o inicio) |
 |-------------|---------------|-------|---------|
-| **Playwright** | `node scripts/screenshot-prova.js` (sem args) | prova de entrega, extrator de identidade, gate de video | **necessario na pratica** (prova obrigatoria nos 4 caminhos): `npm install -g playwright && npx playwright install chromium` |
+| **Playwright** | `node scripts/screenshot-prova.js --check` | prova de entrega, extrator de identidade, gate de video | **necessario na pratica** (prova obrigatoria nos 4 caminhos): `npm install -g playwright && npx playwright install chromium` |
 | **ffmpeg / ffprobe** | `ffprobe -version` | gate de video (so em pagina com video) | pular o gate de video |
 | **Stitch (MCP)** | tools `mcp__stitch__*` | wireframe (Step 2) | auto-instalar (protocolo item 1); ultimo caso: layout direto no codigo |
 | **21st.dev Magic (MCP)** | tools `mcp__magic__*` | componentes (Step 3) | recomendado (protocolo item 3); fallback: componentes a mao (shadcn/Tailwind) |

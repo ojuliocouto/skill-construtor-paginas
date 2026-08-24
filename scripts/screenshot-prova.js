@@ -56,8 +56,16 @@ async function main() {
   const clickIdx = args.indexOf('--click');
   const clickSel = clickIdx > -1 ? args[clickIdx + 1] : null;
 
-  if (!url || !outdir) {
+  // --check: verifica SO se o Playwright esta utilizavel e sai. Existe porque a
+  // deteccao ingenua (node -e "require('playwright')") da FALSO NEGATIVO com o
+  // pacote instalado global, ja que o node nao procura pacote global por padrao.
+  // Esta checagem passa pela MESMA resolucao que a prova de entrega usa, entao o
+  // que ela responde e exatamente o que vai valer na hora de entregar.
+  const soChecar = args.includes('--check');
+
+  if (!soChecar && (!url || !outdir)) {
     console.error('uso: node screenshot-prova.js <url> <outdir> [--click "<seletor>"]');
+    console.error('     node screenshot-prova.js --check   (verifica so o Playwright)');
     process.exit(1);
   }
 
@@ -76,6 +84,11 @@ async function main() {
       console.error('FALHA: playwright nao encontrado. Rodar: npm install -g playwright && npx playwright install chromium');
       process.exit(1);
     }
+  }
+
+  if (soChecar) {
+    console.log('OK: Playwright encontrado e utilizavel por este script.');
+    process.exit(0);
   }
 
   fs.mkdirSync(outdir, { recursive: true });
