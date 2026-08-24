@@ -1,0 +1,11 @@
+.DS_Store
+
+# Conteudo de projeto/sessao e LOCAL (dados de cliente) - nao versionar.
+# Apenas os templates EXAMPLE.md vao pro repo.
+references/projects/*
+!references/projects/EXAMPLE.md
+references/sessions/*
+!references/sessions/EXAMPLE.md
+
+# Blueprint de projeto especifico (local apenas)
+references/desafio-ia-patterns.md
