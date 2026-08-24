@@ -87,7 +87,30 @@ async function main() {
   }
 
   if (soChecar) {
-    console.log('OK: Playwright encontrado e utilizavel por este script.');
+    // Nao basta achar o PACOTE: a meia-instalacao mais comum e ter o playwright
+    // instalado e ter esquecido o "npx playwright install chromium". Nesse estado
+    // o require passa e a prova de entrega quebra depois, que e o pior momento.
+    let exe = null;
+    try {
+      exe = chromium.executablePath();
+    } catch (e) {
+      // versoes antigas podem nao expor executablePath: cai no teste forte abaixo
+    }
+    if (exe && !fs.existsSync(exe)) {
+      console.error('FALHA: o pacote playwright esta instalado, mas o navegador nao foi baixado.');
+      console.error('Rode: npx playwright install chromium');
+      process.exit(1);
+    }
+    if (!exe) {
+      try {
+        const b = await chromium.launch({ headless: true });
+        await b.close();
+      } catch (e) {
+        console.error(explicarFalha(e));
+        process.exit(1);
+      }
+    }
+    console.log('OK: Playwright e o navegador estao instalados e utilizaveis.');
     process.exit(0);
   }
 
