@@ -133,7 +133,14 @@ tudo e derrubando a conversao que existia.
    # screenshot do estado atual: usar o script canonico, que roda Playwright
    node <dir-da-skill>/scripts/screenshot-prova.js "<URL>" ./baseline
 
-   # Lighthouse: nao esta global, roda por npx (v12.8.2 confirmada)
+   # Lighthouse: roda por npx (v12.8.2 confirmada). PRECISA de Chrome/Chromium instalado.
+   # Sem Chrome, ele falha com "No Chrome installations found." e vira PENDENCIA
+   # DECLARADA: anote na entrega e SIGA. Lighthouse NAO bloqueia o gate (ver Step 4.2).
+   # SEM Chrome instalado, use o Chromium que o Playwright ja baixou. Testado e funcionando
+   # em Mac sem Chrome (scores 100/100/89/90); a flag --no-sandbox e o que faz funcionar:
+   #   export NODE_PATH="$HOME/.npm-global/lib/node_modules"
+   #   export CHROME_PATH="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+   #   npx lighthouse "<URL>" --quiet --chrome-flags="--headless=new --no-sandbox" --output=json
    npx lighthouse "<URL>" --quiet --chrome-flags="--headless=new" --output=json \
      --output-path=baseline_lh.json
    ```
@@ -244,7 +251,7 @@ proprio contexto (lista de tools + system-reminders de skills). Confirmar presen
 
 | Dependencia | Como detectar | Papel | Fallback (caminho legitimo, nunca bloqueia o inicio) |
 |-------------|---------------|-------|---------|
-| **Playwright** | `node -e "require('playwright')"` | prova de entrega, extrator de identidade, gate de video | **necessario na pratica** (prova obrigatoria nos 4 caminhos): `npm install -g playwright && npx playwright install chromium` |
+| **Playwright** | `node scripts/screenshot-prova.js` (sem args) | prova de entrega, extrator de identidade, gate de video | **necessario na pratica** (prova obrigatoria nos 4 caminhos): `npm install -g playwright && npx playwright install chromium` |
 | **ffmpeg / ffprobe** | `ffprobe -version` | gate de video (so em pagina com video) | pular o gate de video |
 | **Stitch (MCP)** | tools `mcp__stitch__*` | wireframe (Step 2) | auto-instalar (protocolo item 1); ultimo caso: layout direto no codigo |
 | **21st.dev Magic (MCP)** | tools `mcp__magic__*` | componentes (Step 3) | recomendado (protocolo item 3); fallback: componentes a mao (shadcn/Tailwind) |
@@ -252,7 +259,7 @@ proprio contexto (lista de tools + system-reminders de skills). Confirmar presen
 | **redesign-existing-projects (skill)** | skill listada | audit-first em clone/redesign (Step 2) | recomendado (protocolo item 4); fallback: auditoria manual das 5 dimensoes |
 | **high-end-visual-design (skill)** | skill listada | acabamento premium (Step 4) | recomendado (protocolo item 4); fallback: segue sem |
 | **impeccable (CLI)** | `npx impeccable --version` | refino UI (Step 4) | opcional, roda via npx quando precisar |
-| **PEXELS_API_KEY (env)** | `echo $PEXELS_API_KEY` | assets-search.py videos/fotos | recomendado (protocolo item 3); fallback: gerar imagem com IA ou pedir asset ao usuario |
+| **PEXELS_API_KEY (env)** | `echo $PEXELS_API_KEY` | assets-search.py videos/fotos | recomendado (protocolo item 3); **fallback que NAO precisa de chave: `--type photo` cai sozinho na Openverse e devolve FOTO REAL** (credito ao autor obrigatorio, ver `references/assets-sem-chave.md`) |
 | **frontend-design (skill)** | skill listada | direcao estetica ANTES do codigo (Step 2) | recomendado (protocolo item 4); fallback: seguir so com design-taste-frontend |
 | **animate (skill)** | skill listada | movimento e microinteracao (Step 4, DEPOIS da UI pronta) | recomendado (protocolo item 4); fallback: animar a mao com Framer Motion, sem sistema |
 | **canvas-design (skill)** | skill listada | peca grafica ESTATICA que acompanha a pagina (PNG/PDF) | opcional: so entra se o pedido incluir arte estatica |
@@ -437,6 +444,7 @@ Carregar da pasta `references/` APENAS quando o caso pedir:
 |---------|-----------------|
 | `references/mcp-workflow.md` | Workflow detalhado 21st.dev Magic + Google Stitch (prompts, exemplos, regras de uso) |
 | `references/github-assets-search.md` | Busca de templates no GitHub e assets visuais (comandos completos, presets, setup Pexels) |
+| `references/assets-sem-chave.md` | Assets SEM nenhuma API key: Openverse (foto real com licenca CC), undraw, picsum, e como creditar o autor corretamente |
 | `references/workflow-otimizacao.md` | Otimizar/upgrade de pagina existente (auditoria por severidade, upgrades por camada) |
 | `references/workflow-pdf.md` | Clonar pagina a partir de PDF (mapeamento visual, paleta, implementacao fiel) |
 | `references/design-system.md` | Principios de design, escala tipografica, cores semanticas, gradientes, UX Nielsen |
@@ -538,7 +546,7 @@ O que a rota expressa NAO dispensa: copy antes de codigo, identidade real quando
 
 **PROIBIDO BUILDAR SEM DIRECAO VISUAL.** Ir direto do PDF pro codigo produz paginas "funcionais mas feias". Antes de escrever a primeira linha de codigo, DEVE existir: paleta definida (10-15 vars), font pairing escolhido, layout de CADA secao desenhado, lista de assets necessarios.
 
-**PROIBIDO ENTREGAR SEM ASSETS VISUAIS.** Paginas com SVGs genericos e fundos solidos nao impressionam. DEVE ter: textura/profundidade nos fundos, foto/mockup/video real, animacoes de scroll, efeitos de hover, pelo menos 1 elemento "wow" por scroll. **Catalogo de "wow" PERMITIDO** (nao dispara os tells de IA): foto real tratada, mockup de produto, video de fundo bem integrado, number ticker, marquee de logos/depoimentos, parallax sutil, noise/pattern discreto, transicao de secao trabalhada, micro-interacao no CTA. **PROIBIDO usar como "wow":** blob de glow desfocado, aurora atras de conteudo, glow colorido em botao, glassmorphism generalizado, floating orbs, gradient-clip em titulo, shimmer decorativo: estes sao tells visuais de IA (V1-V15 de `references/anti-vibe-coding.md`) e REPROVAM na wave do Step 4. Se o usuario nao forneceu foto e nao ha API de stock/geracao disponivel: usar monograma/ilustracao funcional, REGISTRAR como pendencia na entrega e pedir o asset real; isso nao bloqueia a entrega, bloqueia RODAR TRAFEGO.
+**PROIBIDO ENTREGAR SEM ASSETS VISUAIS.** Paginas com SVGs genericos e fundos solidos nao impressionam. DEVE ter: textura/profundidade nos fundos, foto/mockup/video real, animacoes de scroll, efeitos de hover, pelo menos 1 elemento "wow" por scroll. **Catalogo de "wow" PERMITIDO** (nao dispara os tells de IA): foto real tratada, mockup de produto, video de fundo bem integrado, number ticker, marquee de logos/depoimentos, parallax sutil, noise/pattern discreto, transicao de secao trabalhada, micro-interacao no CTA. **PROIBIDO usar como "wow":** blob de glow desfocado, aurora atras de conteudo, glow colorido em botao, glassmorphism generalizado, floating orbs, gradient-clip em titulo, shimmer decorativo: estes sao tells visuais de IA (V1-V15 de `references/anti-vibe-coding.md`) e REPROVAM na wave do Step 4. Se o usuario nao forneceu foto e nao ha API de stock/geracao disponivel: usar monograma/ilustracao funcional, REGISTRAR como pendencia na entrega e pedir o asset real; isso nao bloqueia a entrega, bloqueia RODAR TRAFEGO. **Antes de cair nisso, use a rota sem chave:** `python3 scripts/assets-search.py "<tema em ingles>" --type photo` devolve foto real da Openverse sem nenhuma API key (credito obrigatorio). Retangulo vazio no hero nao e mais aceitavel.
 
 ### ANTI-PATTERNS: O QUE DEU ERRADO E NUNCA PODE REPETIR
 
@@ -591,7 +599,7 @@ STEP 3 (BUILDAR) ─────────────────────
   [ ] NAO → PARA. Volte e complete o que falta. Pagina incompleta = pagina feia.
 
 STEP 4 (VERIFICAR & SHIPAR) ────────────────────────────────
-  GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% + Lighthouse 90+ + deploy funcionando + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile do live LIDOS + interacao principal testada)?
+  GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada)+ + deploy funcionando + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile do live LIDOS + interacao principal testada)?
   [ ] SIM → avanca pro Step 5 (monitoramento)
   [ ] NAO → PARA. Corrige antes de entregar. Sem excecoes. Verificacao quebrada = entrega bloqueada, nunca "entrego sem prova".
 ```
@@ -1279,7 +1287,7 @@ Executar auditoria estrategica completa usando `references/strategist-audit.md`:
 - [ ] Imagens carregando (nenhum placeholder vazio)
 
 **Performance:**
-- [ ] Lighthouse 90+ (todos os scores). **Entrega SEM deploy (pasta local/arquivo unico):** Lighthouse, QA pos-deploy, OG image e GTM viram PENDENCIAS declaradas no bloco de entrega (nao bloqueiam o gate; bloqueiam rodar trafego)
+- [ ] Lighthouse 90+ (todos os scores). **NAO bloqueia:** exige Chrome/Chromium instalado; sem navegador compativel vira PENDENCIA DECLARADA na entrega. **Entrega SEM deploy (pasta local/arquivo unico):** Lighthouse, QA pos-deploy, OG image e GTM viram PENDENCIAS declaradas no bloco de entrega (nao bloqueiam o gate; bloqueiam rodar trafego)
 - [ ] LCP < 2.5s
 - [ ] TODAS imagens em WebP
 - [ ] Tailwind compilado (nao CDN)
@@ -1373,7 +1381,7 @@ interacao principal nunca foi clicada (uma roleta publicada com o popup morto). 
 5. A mensagem final de entrega deve citar os arquivos de screenshot lidos e o resultado
    do teste de interacao, junto com o veredito da wave (4.0).
 
-**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass + Lighthouse 90+ + deploy funcionando e verificado + ZERO placeholders na pagina live + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada no live)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar. <<<**
+**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + deploy funcionando e verificado + ZERO placeholders na pagina live + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada no live)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar. <<<**
 
 ---
 

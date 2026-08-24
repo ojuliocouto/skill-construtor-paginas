@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Assets Search — Videos, Fotos, Lottie, Ilustracoes para paginas web.
+Assets Search: Videos, Fotos, Lottie, Ilustracoes para paginas web.
 
 Busca assets visuais gratuitos para usar em backgrounds, heroes, secoes.
 
@@ -12,9 +12,16 @@ Uso:
   python3 assets-search.py --type lottie "loading"      # lottie (links)
   python3 assets-search.py --type illustrations         # undraw/storyset
   python3 assets-search.py --type icons                 # lordicon/animated
+  python3 assets-search.py --type openverse "team"      # FOTOS REAIS SEM CHAVE (licenca CC)
+  python3 assets-search.py --type sem-chave             # todas as rotas sem chave
   python3 assets-search.py --presets                    # listar presets
 
-Setup (uma vez so):
+Sem PEXELS_API_KEY o script NAO fica sem imagem: "--type photo" cai
+automaticamente na Openverse, que devolve fotos reais com licenca Creative
+Commons e sem chave nenhuma. A contrapartida e creditar o autor.
+Detalhes e modelo de credito: references/assets-sem-chave.md
+
+Setup opcional (so pra usar o Pexels, que dispensa credito):
   export PEXELS_API_KEY="sua-chave-aqui"
   # Chave gratis em: https://www.pexels.com/api/
 """
@@ -32,6 +39,28 @@ import urllib.error
 
 PEXELS_VIDEO_URL = "https://api.pexels.com/videos/search"
 PEXELS_PHOTO_URL = "https://api.pexels.com/v1/search"
+
+# Openverse: fotos reais com licenca Creative Commons, SEM chave de API.
+OPENVERSE_IMAGE_URL = "https://api.openverse.org/v1/images/"
+# Placeholder real (JPEG de verdade) pra mockup, tambem sem chave.
+PICSUM_URL = "https://picsum.photos"
+USER_AGENT = "construtor-paginas-assets-search/1.0"
+
+# Openverse usa "aspect_ratio", o resto do script usa "orientation".
+ASPECTO_POR_ORIENTACAO = {
+    "landscape": "wide",
+    "portrait": "tall",
+    "square": "square",
+}
+
+# Rotulos de licenca legiveis. O que nao estiver aqui vira "CC <CODIGO> <versao>".
+ROTULOS_DE_LICENCA = {
+    "cc0": "CC0 1.0 (dominio publico)",
+    "pdm": "Public Domain Mark 1.0 (dominio publico)",
+}
+
+# Licencas que dispensam credito. Todas as outras EXIGEM atribuicao.
+LICENCAS_SEM_CREDITO_OBRIGATORIO = {"cc0", "pdm"}
 
 
 PRESET_QUERIES = {
@@ -245,13 +274,368 @@ def format_photos(items: list, query: str) -> str:
     return "\n".join(lines)
 
 
+# ─── OPENVERSE: FOTOS REAIS SEM NENHUMA CHAVE ────────────────────────────────
+#
+# A Openverse (mantida pela WordPress Foundation) indexa fotos com licenca
+# Creative Commons e responde sem API key. E a rota padrao quando o aluno ainda
+# nao configurou PEXELS_API_KEY: a pagina sai com FOTO REAL, nao com retangulo
+# vazio. O preco e a atribuicao: em licenca CC BY / BY-SA o credito ao autor
+# nao e opcional, e parte da licenca.
+
+
+def _rotulo_de_licenca(codigo: str, versao: str) -> str:
+    codigo = (codigo or "").strip().lower()
+    versao = str(versao or "").strip()
+    if not codigo:
+        return "licenca desconhecida"
+    if codigo in ROTULOS_DE_LICENCA:
+        return ROTULOS_DE_LICENCA[codigo]
+    partes = ["CC", codigo.upper()]
+    if versao:
+        partes.append(versao)
+    return " ".join(partes)
+
+
+def _url_da_licenca(bruto: dict) -> str:
+    url = (bruto.get("license_url") or "").strip()
+    if url:
+        return url
+    codigo = (bruto.get("license") or "").strip().lower()
+    versao = str(bruto.get("license_version") or "").strip()
+    if codigo == "cc0":
+        return "https://creativecommons.org/publicdomain/zero/1.0/"
+    if codigo == "pdm":
+        return "https://creativecommons.org/publicdomain/mark/1.0/"
+    if codigo and versao:
+        return "https://creativecommons.org/licenses/%s/%s/" % (codigo, versao)
+    return ""
+
+
+def _monta_credito(item: dict) -> str:
+    """Credito no padrao TASL (titulo, autor, fonte, licenca)."""
+    pedacos = ['"%s"' % item["titulo"]]
+    if item["autor_url"]:
+        pedacos.append("por %s (%s)" % (item["autor"], item["autor_url"]))
+    else:
+        pedacos.append("por %s" % item["autor"])
+    if item["pagina_origem"]:
+        pedacos.append("via %s" % item["pagina_origem"])
+    if item["licenca_url"]:
+        pedacos.append("licenca %s (%s)" % (item["licenca"], item["licenca_url"]))
+    else:
+        pedacos.append("licenca %s" % item["licenca"])
+    return ", ".join(pedacos)
+
+
+def _normaliza_item_openverse(bruto: dict) -> dict:
+    codigo = (bruto.get("license") or "").strip().lower()
+    item = {
+        "id": bruto.get("id", ""),
+        "titulo": (bruto.get("title") or "Sem titulo").strip(),
+        "url": (bruto.get("url") or "").strip(),
+        "thumbnail": (bruto.get("thumbnail") or "").strip(),
+        "autor": (bruto.get("creator") or "autor desconhecido").strip(),
+        "autor_url": (bruto.get("creator_url") or "").strip(),
+        "licenca": _rotulo_de_licenca(codigo, bruto.get("license_version")),
+        "licenca_url": _url_da_licenca(bruto),
+        "largura": bruto.get("width") or 0,
+        "altura": bruto.get("height") or 0,
+        "pagina_origem": (bruto.get("foreign_landing_url") or "").strip(),
+        "exige_credito": codigo not in LICENCAS_SEM_CREDITO_OBRIGATORIO,
+    }
+    item["credito"] = _monta_credito(item)
+    return item
+
+
+def _imagem_esta_viva(url: str, timeout: int = 8) -> bool:
+    """Confere se a URL ainda entrega imagem de verdade.
+
+    A Openverse indexa acervos de terceiros (Flickr, StockSnap). Foto apagada
+    na origem continua no indice e devolve 410. Link morto na pagina e o mesmo
+    defeito que nao ter imagem nenhuma, entao esse resultado e descartado.
+    """
+    cabecalhos = {"User-Agent": USER_AGENT, "Accept": "image/*"}
+
+    def confere(req):
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            tipo = (resp.headers.get("Content-Type") or "").lower()
+            status = getattr(resp, "status", 200) or 200
+            return status < 400 and tipo.startswith("image/")
+
+    try:
+        return confere(urllib.request.Request(url, headers=cabecalhos, method="HEAD"))
+    except urllib.error.HTTPError as e:
+        # HEAD barrado no servidor nao quer dizer imagem morta: tenta um GET curto.
+        if e.code not in (403, 405, 501):
+            return False
+    except Exception:
+        return False
+
+    try:
+        parciais = dict(cabecalhos)
+        parciais["Range"] = "bytes=0-0"
+        return confere(urllib.request.Request(url, headers=parciais))
+    except Exception:
+        return False
+
+
+def search_openverse(query: str, limit: int = 6, orientation: str = "landscape",
+                     validar: bool = True) -> list:
+    """Busca fotos com licenca Creative Commons na Openverse. NAO precisa de chave.
+
+    Devolve uma lista de dicts com url da imagem, autor, licenca e link da
+    licenca. Em qualquer erro devolve lista vazia e explica o motivo no stderr,
+    sem estourar traceback na cara de quem esta construindo a pagina.
+
+    Com validar=True (padrao) cada URL e conferida antes de entrar na lista, pra
+    nenhum link morto virar imagem quebrada na pagina.
+    """
+    try:
+        pedido = int(limit)
+    except (TypeError, ValueError):
+        pedido = 6
+    pedido = max(1, min(pedido, 20))
+    # Pede folga pra compensar os links mortos que serao descartados.
+    quantidade = min(20, pedido * 3) if validar else pedido
+
+    params = {
+        "q": query,
+        "page_size": quantidade,
+        "license_type": "commercial",  # so o que pode ir pra pagina de cliente
+        "mature": "false",
+    }
+    aspecto = ASPECTO_POR_ORIENTACAO.get(orientation)
+    if aspecto:
+        params["aspect_ratio"] = aspecto
+
+    url = OPENVERSE_IMAGE_URL + "?" + urllib.parse.urlencode(params)
+    cabecalhos = {"User-Agent": USER_AGENT, "Accept": "application/json"}
+
+    try:
+        req = urllib.request.Request(url, headers=cabecalhos)
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            dados = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        print(
+            "ERRO Openverse: HTTP %s (%s). A busca sem chave nao respondeu agora, "
+            "tente de novo em alguns segundos." % (e.code, e.reason),
+            file=sys.stderr,
+        )
+        return []
+    except urllib.error.URLError as e:
+        print(
+            "ERRO Openverse: sem conexao com api.openverse.org (%s). "
+            "Verifique a internet ou o proxy." % (e.reason,),
+            file=sys.stderr,
+        )
+        return []
+    except ValueError as e:
+        print("ERRO Openverse: resposta nao veio em JSON valido (%s)." % e, file=sys.stderr)
+        return []
+    except Exception as e:  # rede e API de terceiro: nunca derrubar o script
+        print("ERRO Openverse inesperado: %s" % e, file=sys.stderr)
+        return []
+
+    if not isinstance(dados, dict):
+        print("ERRO Openverse: resposta em formato inesperado.", file=sys.stderr)
+        return []
+
+    brutos = dados.get("results") or []
+    if not isinstance(brutos, list):
+        print("ERRO Openverse: campo 'results' em formato inesperado.", file=sys.stderr)
+        return []
+
+    itens = [
+        _normaliza_item_openverse(b)
+        for b in brutos
+        if isinstance(b, dict) and (b.get("url") or "").strip()
+    ]
+
+    if not validar:
+        return itens[:pedido]
+
+    vivos, mortos = [], 0
+    for item in itens:
+        if len(vivos) >= pedido:
+            break
+        if _imagem_esta_viva(item["url"]):
+            vivos.append(item)
+        else:
+            mortos += 1
+
+    if mortos:
+        print(
+            "AVISO Openverse: %d resultado(s) com link morto na origem foram "
+            "descartados." % mortos,
+            file=sys.stderr,
+        )
+    return vivos
+
+
+def format_openverse(items: list, query: str, veio_de_fallback: bool = False) -> str:
+    barra = "=" * 70
+    linhas = []
+
+    if not items:
+        linhas.append(barra)
+        linhas.append('  Nenhuma foto encontrada na Openverse para: "%s"' % query)
+        linhas.append(barra)
+        linhas.append("  Tente termos em ingles e mais concretos, ex: \"team meeting office\".")
+        linhas.append("  Outras rotas sem chave: python3 assets-search.py --type sem-chave")
+        linhas.append(barra)
+        return "\n".join(linhas)
+
+    linhas.append(barra)
+    linhas.append('  %d fotos REAIS encontradas na Openverse para: "%s"' % (len(items), query))
+    linhas.append("  Fonte sem chave de API. Licenca Creative Commons de uso comercial.")
+    if veio_de_fallback:
+        linhas.append("  (fallback automatico: sem foto vinda do Pexels, a busca veio daqui)")
+    linhas.append(barra)
+    linhas.append("")
+
+    for i, item in enumerate(items, 1):
+        dimensao = "%sx%s" % (item["largura"], item["altura"]) if item["largura"] else "dimensao nao informada"
+        linhas.append("  %d. %s" % (i, item["titulo"]))
+        linhas.append("     %s | Por: %s | Licenca: %s" % (dimensao, item["autor"], item["licenca"]))
+        linhas.append("     Imagem:  %s" % item["url"])
+        if item["thumbnail"]:
+            linhas.append("     Thumb:   %s" % item["thumbnail"])
+        if item["pagina_origem"]:
+            linhas.append("     Origem:  %s" % item["pagina_origem"])
+        if item["licenca_url"]:
+            linhas.append("     Licenca: %s" % item["licenca_url"])
+        linhas.append("")
+        linhas.append("     CREDITO %s:" % ("OBRIGATORIO" if item["exige_credito"] else "recomendado"))
+        linhas.append("     %s" % item["credito"])
+        if "-ND" in item["licenca"].upper():
+            linhas.append("     ATENCAO ND: nao pode recortar, filtrar nem sobrepor texto nessa foto.")
+        linhas.append("")
+        linhas.append("     USO RAPIDO (ja com o credito junto da imagem):")
+        linhas.append('     <figure class="relative">')
+        linhas.append(
+            '       <img src="%s" alt="%s" loading="lazy" class="w-full h-full object-cover" />'
+            % (item["url"], item["titulo"])
+        )
+        linhas.append('       <figcaption class="text-xs opacity-60 mt-1">')
+        if item["licenca_url"]:
+            linhas.append(
+                '         Foto de <a href="%s">%s</a>, <a href="%s">%s</a>'
+                % (item["autor_url"] or item["pagina_origem"], item["autor"], item["licenca_url"], item["licenca"])
+            )
+        else:
+            linhas.append("         Foto de %s, %s" % (item["autor"], item["licenca"]))
+        linhas.append("       </figcaption>")
+        linhas.append("     </figure>")
+        linhas.append("")
+
+    linhas.append(barra)
+    linhas.append("  ATRIBUICAO: em licenca CC BY, CC BY-SA e CC BY-ND o credito e OBRIGATORIO.")
+    linhas.append("  Nao e cortesia, e condicao da licenca. Sem credito o uso e irregular.")
+    linhas.append("  Onde por: legenda da foto, ou uma secao 'Creditos' no rodape da pagina.")
+    linhas.append("  Modelo pronto e o que NAO fazer: references/assets-sem-chave.md")
+    linhas.append("")
+    linhas.append("  Baixe e otimize antes de publicar (hotlink de terceiro cai):")
+    linhas.append("    # o -A e obrigatorio: alguns CDNs devolvem 403 pro curl pelado")
+    linhas.append("    curl -L -A \"Mozilla/5.0\" -o public/img/hero.jpg \"<url da imagem>\"")
+    linhas.append("    file public/img/hero.jpg   # confirme que veio imagem, nao HTML de erro")
+    linhas.append("    Converta pra WebP | Hero < 200KB | Secoes < 100KB")
+    linhas.append(barra)
+    return "\n".join(linhas)
+
+
+def print_aviso_fallback_openverse(motivo: str) -> None:
+    print(
+        "\n".join(
+            [
+                "",
+                "  AVISO: caindo na Openverse (%s)." % motivo,
+                "  A Openverse devolve FOTO REAL sem nenhuma chave de API.",
+                "  Contrapartida: a licenca Creative Commons exige creditar o autor.",
+                "  O credito de cada foto ja vem pronto na saida abaixo.",
+                "  Detalhes: references/assets-sem-chave.md",
+                "",
+            ]
+        ),
+        file=sys.stderr,
+    )
+
+
+def buscar_fotos_com_fallback(query: str, limit: int = 6, orientation: str = "landscape") -> dict:
+    """Busca fotos e NUNCA volta vazia por falta de chave.
+
+    Com PEXELS_API_KEY: usa o Pexels (sem obrigacao de credito).
+    Sem chave, ou com chave que nao achou nada: cai na Openverse.
+
+    Devolve {"fonte": "pexels" | "openverse", "itens": [...]}.
+    """
+    tem_chave = bool(os.environ.get("PEXELS_API_KEY", "").strip())
+
+    if tem_chave:
+        itens = search_photos(query, limit=limit, orientation=orientation)
+        if itens:
+            return {"fonte": "pexels", "itens": itens}
+        print_aviso_fallback_openverse(
+            "o Pexels nao devolveu foto: chave invalida ou busca sem resultado"
+        )
+    else:
+        print_aviso_fallback_openverse("PEXELS_API_KEY nao esta configurada")
+
+    return {
+        "fonte": "openverse",
+        "itens": search_openverse(query, limit=limit, orientation=orientation),
+    }
+
+
+# ─── ROTAS SEM NENHUMA CHAVE ─────────────────────────────────────────────────
+
+def show_sem_chave_resources() -> str:
+    barra = "=" * 70
+    linhas = []
+    linhas.append(barra)
+    linhas.append("  ASSETS SEM NENHUMA API KEY")
+    linhas.append("  Nenhuma pagina precisa sair com retangulo cinza vazio.")
+    linhas.append(barra)
+    linhas.append("")
+
+    linhas.append("  1. OPENVERSE: fotos reais, licenca Creative Commons (a melhor rota)")
+    linhas.append("     python3 assets-search.py \"team meeting office\" --type openverse -n 6")
+    linhas.append("     python3 assets-search.py \"sua busca\" --type photo   # cai aqui sozinho")
+    linhas.append("     Credito ao autor OBRIGATORIO (CC BY / BY-SA). Sai pronto na busca.")
+    linhas.append("")
+
+    linhas.append("  2. PICSUM: JPEG real, sem tema, otimo pra mockup e placeholder")
+    linhas.append("     %s/1600/900          # aleatorio" % PICSUM_URL)
+    linhas.append("     %s/seed/hero/1600/900 # estavel (mesma foto sempre)" % PICSUM_URL)
+    linhas.append("     %s/1600/900?grayscale&blur=2" % PICSUM_URL)
+    linhas.append("     Nao use como foto de verdade do cliente: e foto generica.")
+    linhas.append("")
+
+    linhas.append("  3. UNDRAW: ilustracoes SVG tematicas, cor customizavel")
+    linhas.append("     https://undraw.co/illustrations")
+    linhas.append("     python3 assets-search.py --type illustrations \"team work\"")
+    linhas.append("     Sem obrigacao de credito. Boas pra secao de features e vazio de dados.")
+    linhas.append("")
+
+    linhas.append("  4. GRADIENTE E PATTERN SVG (background, nunca sozinho como 'imagem')")
+    linhas.append("     python3 assets-search.py --type backgrounds")
+    linhas.append("")
+
+    linhas.append(barra)
+    linhas.append("  REGRA: pagina so com texto, gradiente e SVG generico REPROVA na")
+    linhas.append("  auditoria visual da skill. Coloque foto real ou mockup de produto.")
+    linhas.append("  Nunca use imagem de licenca desconhecida em pagina de cliente.")
+    linhas.append("  Guia completo: references/assets-sem-chave.md")
+    linhas.append(barra)
+    return "\n".join(linhas)
+
+
 # ─── LOTTIE ANIMATIONS ────────────────────────────────────────────────────────
 
 def show_lottie_resources(query: str = "") -> str:
     encoded = urllib.parse.quote(query) if query else ""
     lines = []
     lines.append(f"{'='*70}")
-    lines.append("  LOTTIE ANIMATIONS — Fontes Gratuitas")
+    lines.append("  LOTTIE ANIMATIONS: Fontes Gratuitas")
     lines.append(f"{'='*70}\n")
 
     if query:
@@ -264,7 +648,7 @@ def show_lottie_resources(query: str = "") -> str:
     lines.append("  npm install @lottiefiles/react-lottie-player")
     lines.append("  # ou: npm install lottie-react\n")
 
-    lines.append("  USO — react-lottie-player:")
+    lines.append("  USO: react-lottie-player:")
     lines.append("""  'use client'
   import { Player } from '@lottiefiles/react-lottie-player'
 
@@ -279,7 +663,7 @@ def show_lottie_resources(query: str = "") -> str:
   <Player autoplay loop src="/animations/loading.json" style={{ width: 200 }} />""")
 
     lines.append("")
-    lines.append("  USO — lottie-react (alternativa mais leve):")
+    lines.append("  USO: lottie-react (alternativa mais leve):")
     lines.append("""  'use client'
   import Lottie from 'lottie-react'
   import animationData from '@/public/animations/my-animation.json'
@@ -315,7 +699,7 @@ def show_illustration_resources(query: str = "") -> str:
     encoded = urllib.parse.quote(query) if query else "team"
     lines = []
     lines.append(f"{'='*70}")
-    lines.append("  ILUSTRACOES SVG — Fontes Gratuitas")
+    lines.append("  ILUSTRACOES SVG: Fontes Gratuitas")
     lines.append(f"{'='*70}\n")
 
     lines.append("  UNDRAW (open source, customizavel por cor):")
@@ -368,7 +752,7 @@ def show_illustration_resources(query: str = "") -> str:
 def show_icon_resources() -> str:
     lines = []
     lines.append(f"{'='*70}")
-    lines.append("  ICONES ANIMADOS — Fontes e Integracao")
+    lines.append("  ICONES ANIMADOS: Fontes e Integracao")
     lines.append(f"{'='*70}\n")
 
     lines.append("  LORDICON (icones animados Lottie, gratuitos):")
@@ -414,7 +798,7 @@ def show_icon_resources() -> str:
 def show_background_resources() -> str:
     lines = []
     lines.append(f"{'='*70}")
-    lines.append("  BACKGROUNDS — Patterns, SVG, Gradientes")
+    lines.append("  BACKGROUNDS: Patterns, SVG, Gradientes")
     lines.append(f"{'='*70}\n")
 
     lines.append("  GERADORES ONLINE:")
@@ -466,26 +850,30 @@ def show_background_resources() -> str:
 
 # ─── NO API KEY ───────────────────────────────────────────────────────────────
 
-def print_no_api_key():
-    print("""
-╔══════════════════════════════════════════════════════════════════════╗
-║  PEXELS_API_KEY nao encontrada                                       ║
-║                                                                      ║
-║  1. Crie uma conta gratis em: https://www.pexels.com/api/           ║
-║  2. Copie sua API key gratuita                                        ║
-║  3. Configure no terminal:                                            ║
-║                                                                      ║
-║     export PEXELS_API_KEY="sua-chave-aqui"                          ║
-║                                                                      ║
-║  Para persistir (adicione ao ~/.zshrc ou ~/.bashrc):                 ║
-║     echo 'export PEXELS_API_KEY="sua-chave"' >> ~/.zshrc            ║
-║                                                                      ║
-║  A API Pexels e completamente GRATUITA e permite:                    ║
-║  - 200 req/hora | 20.000 req/mes                                     ║
-║  - Videos e fotos em alta qualidade                                  ║
-║  - Uso comercial sem atribuicao obrigatoria                          ║
-╚══════════════════════════════════════════════════════════════════════╝
-""", file=sys.stderr)
+def print_no_api_key(com_saida_alternativa: bool = True):
+    linhas = [
+        "",
+        "  PEXELS_API_KEY nao encontrada.",
+        "",
+        "  O Pexels e opcional. Ele so evita a obrigacao de creditar o autor.",
+        "  Chave gratuita (200 req/hora): https://www.pexels.com/api/",
+        "  Depois de pegar a chave:",
+        "",
+        '      export PEXELS_API_KEY="sua-chave-aqui"',
+        "",
+    ]
+    if com_saida_alternativa:
+        linhas += [
+            "  SEM CHAVE VOCE AINDA TEM FOTO REAL:",
+            '      python3 assets-search.py "sua busca" --type openverse',
+            "      python3 assets-search.py --type sem-chave",
+            "",
+            "  A Openverse devolve fotos reais com licenca Creative Commons.",
+            "  Nesse caso creditar o autor NAO e opcional.",
+            "  Modelo de credito pronto: references/assets-sem-chave.md",
+            "",
+        ]
+    print("\n".join(linhas), file=sys.stderr)
 
 
 # ─── MAIN ─────────────────────────────────────────────────────────────────────
@@ -496,8 +884,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Tipos disponiveis:
-  video        Busca videos no Pexels (padrao) — requer PEXELS_API_KEY
-  photo        Busca fotos no Pexels — requer PEXELS_API_KEY
+  video        Busca videos no Pexels (padrao): requer PEXELS_API_KEY
+  photo        Busca fotos: usa Pexels se houver chave, senao CAI NA OPENVERSE
+  openverse    Fotos reais com licenca Creative Commons, SEM chave (alias: cc)
+  sem-chave    Lista todas as rotas que funcionam sem nenhuma API key
   lottie       Lista fontes e como usar animacoes Lottie
   illustrations Lista fontes e como usar ilustracoes SVG
   icons        Lista fontes e como usar icones animados
@@ -508,6 +898,8 @@ Exemplos:
   python3 assets-search.py tech-dark
   python3 assets-search.py "minimal white" --type video --orientation landscape
   python3 assets-search.py "office team" --type photo -n 5
+  python3 assets-search.py "team meeting office" --type openverse -n 5
+  python3 assets-search.py --type sem-chave
   python3 assets-search.py "loading" --type lottie
   python3 assets-search.py --type illustrations "team work"
   python3 assets-search.py --type backgrounds
@@ -516,7 +908,8 @@ Exemplos:
     )
     parser.add_argument("query", nargs="?", default="", help="Termo de busca ou preset")
     parser.add_argument("--type", "-t",
-        choices=["video", "photo", "lottie", "illustrations", "icons", "backgrounds"],
+        choices=["video", "photo", "openverse", "cc", "sem-chave",
+                 "lottie", "illustrations", "icons", "backgrounds"],
         default="video",
         help="Tipo de asset (default: video)"
     )
@@ -538,6 +931,9 @@ Exemplos:
         return
 
     # Tipos que nao precisam de query ou API key
+    if args.type == "sem-chave":
+        print(show_sem_chave_resources())
+        return
     if args.type == "backgrounds":
         print(show_background_resources())
         return
@@ -561,9 +957,17 @@ Exemplos:
     if args.type == "video":
         items = search_videos(query, limit=args.limit, orientation=args.orientation)
         print(format_videos(items, query))
+    elif args.type in ("openverse", "cc"):
+        items = search_openverse(query, limit=args.limit, orientation=args.orientation)
+        print(format_openverse(items, query))
     elif args.type == "photo":
-        items = search_photos(query, limit=args.limit, orientation=args.orientation)
-        print(format_photos(items, query))
+        resultado = buscar_fotos_com_fallback(
+            query, limit=args.limit, orientation=args.orientation
+        )
+        if resultado["fonte"] == "openverse":
+            print(format_openverse(resultado["itens"], query, veio_de_fallback=True))
+        else:
+            print(format_photos(resultado["itens"], query))
 
 
 if __name__ == "__main__":

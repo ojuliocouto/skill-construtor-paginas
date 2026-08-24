@@ -1,14 +1,53 @@
 #!/usr/bin/env node
 // Prova de entrega da skill construtor-paginas.
 // Captura screenshots desktop + mobile do deploy real e, opcionalmente,
-// testa a interacao principal (clique) registrando o estado pos-clique.
+// testa a interação principal (clique) registrando o estado antes e depois.
 // Uso:
 //   export NODE_PATH="$HOME/.npm-global/lib/node_modules"
 //   node screenshot-prova.js <url> <outdir> [--click "<seletor css>"]
 // Sai com exit 1 e mensagem clara em QUALQUER falha: sem screenshot nao ha entrega.
+// Nada de stack trace do node na cara de quem roda: TODA chamada de navegador
+// mora dentro do try, e o erro sai traduzido em uma linha acionável.
 
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+
+const md5 = (arquivo) =>
+  crypto.createHash('md5').update(fs.readFileSync(arquivo)).digest('hex');
+
+// Traduz erro de navegador em instrução acionável. O caso mais comum de longe:
+// a pessoa rodou `npm install -g playwright` e esqueceu o download do chromium,
+// e o erro cru dava a impressão de que a skill inteira tinha quebrado.
+function explicarFalha(e) {
+  const msg = String((e && e.message) || e);
+  if (msg.includes("Executable doesn't exist")) {
+    return 'FALHA: o navegador do Playwright nao foi baixado. Rode: npx playwright install chromium';
+  }
+  return `FALHA na prova de entrega: ${msg.split('\n')[0]}`;
+}
+
+function bloquear(e) {
+  console.error(explicarFalha(e));
+  console.error('ENTREGA BLOQUEADA: conserte a verificacao antes de declarar pronto.');
+  process.exit(1);
+}
+
+// Estado observável da página, pra o clique ter prova além do pixel.
+async function lerEstado(page, el) {
+  const pagina = await page.evaluate(() => ({
+    scrollY: Math.round(window.scrollY),
+    url: location.href,
+  }));
+  let texto;
+  try {
+    texto = ((await el.innerText({ timeout: 2000 })) || '')
+      .replace(/\s+/g, ' ').trim().slice(0, 60);
+  } catch {
+    texto = '(elemento saiu da pagina)';
+  }
+  return { ...pagina, texto };
+}
 
 async function main() {
   const args = process.argv.slice(2);
@@ -40,16 +79,29 @@ async function main() {
   }
 
   fs.mkdirSync(outdir, { recursive: true });
-  const browser = await chromium.launch({ headless: true });
   const shots = [];
+  const cliquesInertes = [];
+  let browser;
 
   try {
+    // O launch mora DENTRO do try: com o chromium não baixado ele rejeita, e
+    // fora daqui isso virava "triggerUncaughtException" com caminho interno.
+    browser = await chromium.launch({ headless: true });
+
+    // Mobile de verdade é isMobile + hasTouch + DPR 2, não janela estreita:
+    // sem isso o ponteiro, o toque e a densidade continuam de desktop, e quem
+    // roda acha que validou celular quando não validou.
     const viewports = [
-      { name: 'desktop', width: 1440, height: 900 },
-      { name: 'mobile', width: 390, height: 844 },
+      { name: 'desktop', width: 1440, height: 900, movel: false, dpr: 1 },
+      { name: 'mobile', width: 390, height: 844, movel: true, dpr: 2 },
     ];
     for (const vp of viewports) {
-      const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
+      const page = await browser.newPage({
+        viewport: { width: vp.width, height: vp.height },
+        isMobile: vp.movel,
+        hasTouch: vp.movel,
+        deviceScaleFactor: vp.dpr,
+      });
       await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 }).catch(async () => {
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
         await page.waitForTimeout(4000);
@@ -62,19 +114,40 @@ async function main() {
       if (clickSel) {
         const el = page.locator(clickSel).first();
         await el.waitFor({ state: 'visible', timeout: 10000 });
+
+        // O print de ANTES sai com a mesma configuração do de depois (mesma
+        // janela, fullPage false). Comparar fullPage com viewport dava
+        // diferença garantida e não provava nada sobre o clique.
+        const fAntes = path.join(outdir, `prova-${vp.name}-pre-clique.png`);
+        await page.screenshot({ path: fAntes, fullPage: false });
+        const antes = await lerEstado(page, el);
+
         await el.click();
         await page.waitForTimeout(2500);
-        const fClick = path.join(outdir, `prova-${vp.name}-pos-clique.png`);
-        await page.screenshot({ path: fClick, fullPage: false });
-        shots.push(fClick);
+
+        const fDepois = path.join(outdir, `prova-${vp.name}-pos-clique.png`);
+        await page.screenshot({ path: fDepois, fullPage: false });
+        const depois = await lerEstado(page, el);
+        shots.push(fAntes, fDepois);
+
+        const iguais = md5(fAntes) === md5(fDepois);
+        console.log(`clique "${clickSel}" em ${vp.name}:`);
+        console.log(`  scrollY          ${antes.scrollY} -> ${depois.scrollY}`);
+        console.log(
+          `  URL              ${antes.url === depois.url ? `igual (${depois.url})` : `${antes.url} -> ${depois.url}`}`
+        );
+        console.log(`  texto do alvo    "${antes.texto}" -> "${depois.texto}"`);
+        console.log(`  pixels do print  ${iguais ? 'IDENTICOS' : 'mudaram'}`);
+        if (iguais) {
+          console.log('ATENCAO: o print pos-clique e identico ao anterior. O clique pode nao ter surtido efeito visivel.');
+          cliquesInertes.push(vp.name);
+        }
       }
       await page.close();
     }
   } catch (e) {
-    console.error(`FALHA na prova de entrega: ${e.message}`);
-    console.error('ENTREGA BLOQUEADA: conserte a verificacao antes de declarar pronto.');
-    await browser.close();
-    process.exit(1);
+    if (browser) await browser.close().catch(() => {});
+    bloquear(e);
   }
 
   await browser.close();
@@ -87,7 +160,15 @@ async function main() {
     }
     console.log(`${f} (${kb}KB)`);
   }
-  console.log('OK: agora LEIA os PNGs com a tool Read antes de declarar pronto.');
+
+  if (cliquesInertes.length) {
+    console.log(
+      `PRINTS CAPTURADOS COM RESSALVA: o clique nao mudou nada visivel em ${cliquesInertes.join(' e ')}. ` +
+      'Confira o seletor e a interacao antes de declarar pronto.'
+    );
+  } else {
+    console.log('OK: agora LEIA os PNGs com a tool Read antes de declarar pronto.');
+  }
 }
 
-main();
+main().catch(bloquear);

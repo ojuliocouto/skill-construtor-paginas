@@ -5,7 +5,7 @@ quando o usuário quer (1) criar página nova, (2) clonar página, ou
 (3) criar versão nova de uma página existente.
 
 Injeta só um lembrete curto e forte (a skill carrega de fato quando o
-Skill tool é chamado) — não despeja a SKILL.md inteira.
+Skill tool é chamado): não despeja a SKILL.md inteira.
 """
 import json
 import re
@@ -15,7 +15,7 @@ PAGE = r"(p[áa]gina|landing\s*page|\bsite\b|website|\bhome\b|hero\s*section|das
 CREATE = r"(criar|cria\b|crie|fazer|\bfaz\b|fa[çc]a|montar|monte|construir|desenvolver|quero|preciso de|gera\b|gerar)"
 CLONE = r"(clonar|clona\b|clone|copiar|copia\b|copie|replicar|replica\b|reproduzir|reproduz)"
 VERSION = r"(refazer|refa[çc]|recriar|recria\b|redesign|reformular|reformula|nova\s+vers[ãa]o|outra\s+vers[ãa]o|vers[ãa]o\s+nova|\bv2\b|\bv3\b|upgrade|repaginar)"
-# "clona essa", "copiar esse", "refazer essa" — implica a página atual mesmo sem o substantivo
+# "clona essa", "copiar esse", "refazer essa" implica a página atual mesmo sem o substantivo
 DEMONSTRATIVE = r"(ess[ae]|est[ae]|esse|este|aquel)"
 
 

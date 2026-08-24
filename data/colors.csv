@@ -1,97 +1,97 @@
 No,Product Type,Keywords,Primary (Hex),Secondary (Hex),CTA (Hex),Background (Hex),Text (Hex),Border (Hex),Notes
-1,SaaS (General),"saas, general",#2563EB,#3B82F6,#F97316,#F8FAFC,#1E293B,#E2E8F0,Trust blue + accent contrast
-2,Micro SaaS,"micro, saas",#2563EB,#3B82F6,#F97316,#F8FAFC,#1E293B,#E2E8F0,Vibrant primary + white space
-3,E-commerce,commerce,#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Brand primary + success green
-4,E-commerce Luxury,"commerce, luxury",#1C1917,#44403C,#CA8A04,#FAFAF9,#0C0A09,#D6D3D1,Premium colors + minimal accent
-5,Service Landing Page,"service, landing, page",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Brand primary + trust colors
-6,B2B Service,"b2b, service",#0F172A,#334155,#0369A1,#F8FAFC,#020617,#E2E8F0,Professional blue + neutral grey
-7,Financial Dashboard,"financial, dashboard",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Dark bg + red/green alerts + trust blue
-8,Analytics Dashboard,"analytics, dashboard",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Cool→Hot gradients + neutral grey
-9,Healthcare App,"healthcare, app",#0891B2,#22D3EE,#059669,#ECFEFF,#164E63,#A5F3FC,Calm blue + health green + trust
-10,Educational App,"educational, app",#4F46E5,#818CF8,#F97316,#EEF2FF,#1E1B4B,#C7D2FE,Playful colors + clear hierarchy
-11,Creative Agency,"creative, agency",#EC4899,#F472B6,#06B6D4,#FDF2F8,#831843,#FBCFE8,Bold primaries + artistic freedom
-12,Portfolio/Personal,"portfolio, personal",#18181B,#3F3F46,#2563EB,#FAFAFA,#09090B,#E4E4E7,Brand primary + artistic interpretation
-13,Gaming,gaming,#7C3AED,#A78BFA,#F43F5E,#0F0F23,#E2E8F0,#4C1D95,Vibrant + neon + immersive colors
-14,Government/Public Service,"government, public, service",#0F172A,#334155,#0369A1,#F8FAFC,#020617,#E2E8F0,Professional blue + high contrast
-15,Fintech/Crypto,"fintech, crypto",#F59E0B,#FBBF24,#8B5CF6,#0F172A,#F8FAFC,#334155,Dark tech colors + trust + vibrant accents
-16,Social Media App,"social, media, app",#2563EB,#60A5FA,#F43F5E,#F8FAFC,#1E293B,#DBEAFE,Vibrant + engagement colors
-17,Productivity Tool,"productivity, tool",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Clear hierarchy + functional colors
-18,Design System/Component Library,"design, system, component, library",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Clear hierarchy + code-like structure
-19,AI/Chatbot Platform,"chatbot, platform",#7C3AED,#A78BFA,#06B6D4,#FAF5FF,#1E1B4B,#DDD6FE,Neutral + AI Purple (#6366F1)
-20,NFT/Web3 Platform,"nft, web3, platform",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Dark + Neon + Gold (#FFD700)
-21,Creator Economy Platform,"creator, economy, platform",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Vibrant + Brand colors
-22,Sustainability/ESG Platform,"sustainability, esg, platform",#7C3AED,#A78BFA,#06B6D4,#FAF5FF,#1E1B4B,#DDD6FE,Green (#228B22) + Earth tones
-23,Remote Work/Collaboration Tool,"remote, work, collaboration, tool",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Calm Blue + Neutral grey
-24,Mental Health App,"mental, health, app",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Calm Pastels + Trust colors
-25,Pet Tech App,"pet, tech, app",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Playful + Warm colors
-26,Smart Home/IoT Dashboard,"smart, home, iot, dashboard",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Dark + Status indicator colors
-27,EV/Charging Ecosystem,"charging, ecosystem",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Electric Blue (#009CD1) + Green
-28,Subscription Box Service,"subscription, box, service",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Brand + Excitement colors
-29,Podcast Platform,"podcast, platform",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Dark + Audio waveform accents
-30,Dating App,"dating, app",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Warm + Romantic (Pink/Red gradients)
-31,Micro-Credentials/Badges Platform,"micro, credentials, badges, platform",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Trust Blue + Gold (#FFD700)
-32,Knowledge Base/Documentation,"knowledge, base, documentation",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Clean hierarchy + minimal color
-33,Hyperlocal Services,"hyperlocal, services",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Location markers + Trust colors
-34,Beauty/Spa/Wellness Service,"beauty, spa, wellness, service",#10B981,#34D399,#8B5CF6,#ECFDF5,#064E3B,#A7F3D0,Soft pastels (Pink #FFB6C1 Sage #90EE90) + Cream + Gold accents
-35,Luxury/Premium Brand,"luxury, premium, brand",#1C1917,#44403C,#CA8A04,#FAFAF9,#0C0A09,#D6D3D1,Black + Gold (#FFD700) + White + Minimal accent
-36,Restaurant/Food Service,"restaurant, food, service",#DC2626,#F87171,#CA8A04,#FEF2F2,#450A0A,#FECACA,Warm colors (Orange Red Brown) + appetizing imagery
-37,Fitness/Gym App,"fitness, gym, app",#DC2626,#F87171,#16A34A,#FEF2F2,#1F2937,#FECACA,Energetic (Orange #FF6B35 Electric Blue) + Dark bg
-38,Real Estate/Property,"real, estate, property",#0F766E,#14B8A6,#0369A1,#F0FDFA,#134E4A,#99F6E4,Trust Blue (#0077B6) + Gold accents + White
-39,Travel/Tourism Agency,"travel, tourism, agency",#EC4899,#F472B6,#06B6D4,#FDF2F8,#831843,#FBCFE8,Vibrant destination colors + Sky Blue + Warm accents
-40,Hotel/Hospitality,"hotel, hospitality",#1E3A8A,#3B82F6,#CA8A04,#F8FAFC,#1E40AF,#BFDBFE,Warm neutrals + Gold (#D4AF37) + Brand accent
-41,Wedding/Event Planning,"wedding, event, planning",#7C3AED,#A78BFA,#F97316,#FAF5FF,#4C1D95,#DDD6FE,Soft Pink (#FFD6E0) + Gold + Cream + Sage
-42,Legal Services,"legal, services",#1E3A8A,#1E40AF,#B45309,#F8FAFC,#0F172A,#CBD5E1,Navy Blue (#1E3A5F) + Gold + White
-43,Insurance Platform,"insurance, platform",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Trust Blue (#0066CC) + Green (security) + Neutral
-44,Banking/Traditional Finance,"banking, traditional, finance",#0F766E,#14B8A6,#0369A1,#F0FDFA,#134E4A,#99F6E4,Navy (#0A1628) + Trust Blue + Gold accents
-45,Online Course/E-learning,"online, course, learning",#0D9488,#2DD4BF,#EA580C,#F0FDFA,#134E4A,#5EEAD4,Vibrant learning colors + Progress green
-46,Non-profit/Charity,"non, profit, charity",#0891B2,#22D3EE,#F97316,#ECFEFF,#164E63,#A5F3FC,Cause-related colors + Trust + Warm
-47,Music Streaming,"music, streaming",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Dark (#121212) + Vibrant accents + Album art colors
-48,Video Streaming/OTT,"video, streaming, ott",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Dark bg + Content poster colors + Brand accent
-49,Job Board/Recruitment,"job, board, recruitment",#0F172A,#334155,#0369A1,#F8FAFC,#020617,#E2E8F0,Professional Blue + Success Green + Neutral
-50,Marketplace (P2P),"marketplace, p2p",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Trust colors + Category colors + Success green
-51,Logistics/Delivery,"logistics, delivery",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Blue (#2563EB) + Orange (tracking) + Green (delivered)
-52,Agriculture/Farm Tech,"agriculture, farm, tech",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Earth Green (#4A7C23) + Brown + Sky Blue
-53,Construction/Architecture,"construction, architecture",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Grey (#4A4A4A) + Orange (safety) + Blueprint Blue
-54,Automotive/Car Dealership,"automotive, car, dealership",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Brand colors + Metallic accents + Dark/Light
-55,Photography Studio,"photography, studio",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Black + White + Minimal accent
-56,Coworking Space,"coworking, space",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Energetic colors + Wood tones + Brand accent
-57,Cleaning Service,"cleaning, service",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Fresh Blue (#00B4D8) + Clean White + Green
-58,Home Services (Plumber/Electrician),"home, services, plumber, electrician",#0F172A,#334155,#0369A1,#F8FAFC,#020617,#E2E8F0,Trust Blue + Safety Orange + Professional grey
-59,Childcare/Daycare,"childcare, daycare",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Playful pastels + Safe colors + Warm accents
-60,Senior Care/Elderly,"senior, care, elderly",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Calm Blue + Warm neutrals + Large text
-61,Medical Clinic,"medical, clinic",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Medical Blue (#0077B6) + Trust White + Calm Green
-62,Pharmacy/Drug Store,"pharmacy, drug, store",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Pharmacy Green + Trust Blue + Clean White
-63,Dental Practice,"dental, practice",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Fresh Blue + White + Smile Yellow accent
-64,Veterinary Clinic,"veterinary, clinic",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Caring Blue + Pet-friendly colors + Warm accents
-65,Florist/Plant Shop,"florist, plant, shop",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Natural Green + Floral pinks/purples + Earth tones
-66,Bakery/Cafe,"bakery, cafe",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Warm Brown + Cream + Appetizing accents
-67,Coffee Shop,"coffee, shop",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Coffee Brown (#6F4E37) + Cream + Warm accents
-68,Brewery/Winery,"brewery, winery",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Deep amber/burgundy + Gold + Craft aesthetic
-69,Airline,airline,#7C3AED,#A78BFA,#06B6D4,#FAF5FF,#1E1B4B,#DDD6FE,Sky Blue + Brand colors + Trust accents
-70,News/Media Platform,"news, media, platform",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Brand colors + High contrast + Category colors
-71,Magazine/Blog,"magazine, blog",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Editorial colors + Brand primary + Clean white
-72,Freelancer Platform,"freelancer, platform",#0F172A,#334155,#0369A1,#F8FAFC,#020617,#E2E8F0,Professional Blue + Success Green + Neutral
-73,Consulting Firm,"consulting, firm",#0F172A,#334155,#0369A1,#F8FAFC,#020617,#E2E8F0,Navy + Gold + Professional grey
-74,Marketing Agency,"marketing, agency",#EC4899,#F472B6,#06B6D4,#FDF2F8,#831843,#FBCFE8,Bold brand colors + Creative freedom
-75,Event Management,"event, management",#7C3AED,#A78BFA,#F97316,#FAF5FF,#4C1D95,#DDD6FE,Event theme colors + Excitement accents
-76,Conference/Webinar Platform,"conference, webinar, platform",#0F172A,#334155,#0369A1,#F8FAFC,#020617,#E2E8F0,Professional Blue + Video accent + Brand
-77,Membership/Community,"membership, community",#7C3AED,#A78BFA,#F97316,#FAF5FF,#4C1D95,#DDD6FE,Community brand colors + Engagement accents
-78,Newsletter Platform,"newsletter, platform",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Brand primary + Clean white + CTA accent
-79,Digital Products/Downloads,"digital, products, downloads",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Product category colors + Brand + Success green
-80,Church/Religious Organization,"church, religious, organization",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Warm Gold + Deep Purple/Blue + White
-81,Sports Team/Club,"sports, team, club",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Team colors + Energetic accents
-82,Museum/Gallery,"museum, gallery",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Art-appropriate neutrals + Exhibition accents
-83,Theater/Cinema,"theater, cinema",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Dark + Spotlight accents + Gold
-84,Language Learning App,"language, learning, app",#0D9488,#2DD4BF,#EA580C,#F0FDFA,#134E4A,#5EEAD4,Playful colors + Progress indicators + Country flags
-85,Coding Bootcamp,"coding, bootcamp",#3B82F6,#60A5FA,#F97316,#F8FAFC,#1E293B,#E2E8F0,Code editor colors + Brand + Success green
-86,Cybersecurity Platform,"cybersecurity, security, cyber, hacker",#00FF41,#0D0D0D,#00FF41,#000000,#E0E0E0,#1F1F1F,Matrix Green + Deep Black + Terminal feel
-87,Developer Tool / IDE,"developer, tool, ide, code, dev",#3B82F6,#1E293B,#2563EB,#0F172A,#F1F5F9,#334155,Dark syntax theme colors + Blue focus
-88,Biotech / Life Sciences,"biotech, science, biology, medical",#0EA5E9,#0284C7,#10B981,#F8FAFC,#0F172A,#E2E8F0,Sterile White + DNA Blue + Life Green
-89,Space Tech / Aerospace,"space, aerospace, tech, futuristic",#FFFFFF,#94A3B8,#3B82F6,#0B0B10,#F8FAFC,#1E293B,Deep Space Black + Star White + Metallic
-90,Architecture / Interior,"architecture, interior, design, luxury",#171717,#404040,#D4AF37,#FFFFFF,#171717,#E5E5E5,Monochrome + Gold Accent + High Imagery
-91,Quantum Computing,"quantum, qubit, tech",#00FFFF,#7B61FF,#FF00FF,#050510,#E0E0FF,#333344,Interference patterns + Neon + Deep Dark
-92,Biohacking / Longevity,"bio, health, science",#FF4D4D,#4D94FF,#00E676,#F5F5F7,#1C1C1E,#E5E5EA,Biological red/blue + Clinical white
-93,Autonomous Systems,"drone, robot, fleet",#00FF41,#008F11,#FF3333,#0D1117,#E6EDF3,#30363D,Terminal Green + Tactical Dark
-94,Generative AI Art,"art, gen-ai, creative",#111111,#333333,#FFFFFF,#FAFAFA,#000000,#E5E5E5,Canvas Neutral + High Contrast
-95,Spatial / Vision OS,"spatial, glass, vision",#FFFFFF,#E5E5E5,#007AFF,#888888,#000000,#FFFFFF,Glass opacity 20% + System Blue
-96,Climate Tech,"climate, green, energy",#2E8B57,#87CEEB,#FFD700,#F0FFF4,#1A3320,#C6E6C6,Nature Green + Solar Yellow + Air Blue
+1,SaaS (General),"saas, general",#2563EB,#3B82F6,#1D4ED8,#F8FAFC,#0F172A,#E2E8F0,Trust blue system on cool grey surfaces with a deeper blue CTA. CTA label: light text (6.7:1)
+2,Micro SaaS,"micro, saas",#4F46E5,#818CF8,#4338CA,#FFFFFF,#1E1B4B,#E0E7FF,Indigo primary with generous white space and one saturated CTA. CTA label: light text (7.9:1)
+3,E-commerce,commerce,#2563EB,#60A5FA,#047857,#FFFFFF,#0F172A,#E2E8F0,Blue brand with a green add to cart CTA on white. CTA label: light text (5.5:1)
+4,E-commerce Luxury,"commerce, luxury",#1C1917,#57534E,#A16207,#FAFAF9,#0C0A09,#E7E5E4,Espresso black with champagne gold accent and white space. CTA label: light text (4.9:1)
+5,Service Landing Page,"service, landing, page",#0EA5E9,#38BDF8,#0369A1,#F8FAFC,#0F172A,#E2E8F0,Sky blue trust with a deep blue CTA on a light canvas. CTA label: light text (5.9:1)
+6,B2B Service,"b2b, service",#0F172A,#334155,#0369A1,#F8FAFC,#020617,#E2E8F0,Corporate navy with grey surfaces and a professional blue CTA. CTA label: light text (5.9:1)
+7,Financial Dashboard,"financial, dashboard",#2563EB,#DC2626,#15803D,#0B1220,#E2E8F0,#1E293B,Dark trading surface with red loss and green gain alerts over a blue base. CTA label: light text (5.0:1)
+8,Analytics Dashboard,"analytics, dashboard",#0EA5E9,#F97316,#027AB8,#0F172A,#E2E8F0,#1E293B,Cool to hot scale from blue to orange on dark grey chrome. CTA label: light text (4.7:1)
+9,Healthcare App,"healthcare, app",#0891B2,#22D3EE,#047857,#ECFEFF,#164E63,#A5F3FC,Calm cyan base with a health green CTA on an airy clinical canvas. CTA label: light text (5.5:1)
+10,Educational App,"educational, app",#4F46E5,#818CF8,#F59E0B,#EEF2FF,#1E1B4B,#C7D2FE,Indigo learning base with a warm amber CTA and clear hierarchy. CTA label: Text token (7.4:1)
+11,Creative Agency,"creative, agency",#EC4899,#F472B6,#BE185D,#FDF2F8,#500724,#FBCFE8,Bold pink primaries with a deep magenta CTA on a blush canvas. CTA label: light text (6.0:1)
+12,Portfolio/Personal,"portfolio, personal",#18181B,#3F3F46,#2563EB,#FAFAFA,#09090B,#E4E4E7,Monochrome zinc canvas with a single blue accent. CTA label: light text (5.2:1)
+13,Gaming,gaming,#7C3AED,#A78BFA,#E11D48,#0F0F23,#E2E8F0,#4C1D95,Immersive dark violet stage with a neon rose CTA. CTA label: light text (4.7:1)
+14,Government/Public Service,"government, public, service",#1E3A8A,#1E40AF,#075985,#FFFFFF,#0F172A,#CBD5E1,Institutional navy with maximum text contrast and a restrained blue CTA. CTA label: light text (7.6:1)
+15,Fintech/Crypto,"fintech, crypto",#F59E0B,#FBBF24,#6D28D9,#0F172A,#F8FAFC,#334155,Dark tech surface with amber value accents and a violet action. CTA label: light text (7.1:1)
+16,Social Media App,"social, media, app",#2563EB,#60A5FA,#E11D48,#FFFFFF,#0F172A,#DBEAFE,Vibrant blue feed with a strong rose engagement CTA. CTA label: light text (4.7:1)
+17,Productivity Tool,"productivity, tool",#1D4ED8,#93C5FD,#1E40AF,#FFFFFF,#111827,#E5E7EB,Functional blue with clear hierarchy on white. CTA label: light text (8.7:1)
+18,Design System/Component Library,"design, system, component, library",#3B82F6,#64748B,#0F172A,#FFFFFF,#0F172A,#E2E8F0,Token driven neutrals with a blue primary and an ink CTA. CTA label: light text (17.9:1)
+19,AI/Chatbot Platform,"chatbot, platform",#6366F1,#A5B4FC,#4F46E5,#F5F3FF,#1E1B4B,#DDD6FE,Neutral canvas with AI indigo #6366F1 and a deeper indigo CTA. CTA label: light text (6.3:1)
+20,NFT/Web3 Platform,"nft, web3, platform",#FFD700,#A78BFA,#7C3AED,#0B0B14,#F8FAFC,#312E81,Deep dark stage with a neon violet CTA and gold #FFD700 highlights. CTA label: light text (5.7:1)
+21,Creator Economy Platform,"creator, economy, platform",#DB2777,#FB7185,#7C3AED,#FDF4FF,#3B0764,#F5D0FE,Creator brand pinks with a violet action on a bright canvas. CTA label: light text (5.7:1)
+22,Sustainability/ESG Platform,"sustainability, esg, platform",#228B22,#86EFAC,#166534,#F7FEE7,#14532D,#BBF7D0,Forest green #228B22 with earth tones and a deep green CTA. CTA label: light text (7.1:1)
+23,Remote Work/Collaboration Tool,"remote, work, collaboration, tool",#0284C7,#7DD3FC,#0C4A6E,#F8FAFC,#0F172A,#E2E8F0,Calm blue with neutral grey surfaces and a deep CTA. CTA label: light text (9.5:1)
+24,Mental Health App,"mental, health, app",#38BDF8,#BAE6FD,#0369A1,#F0F9FF,#0C4A6E,#E0F2FE,Soft pastel blues tuned for low arousal with a steady CTA. CTA label: light text (5.9:1)
+25,Pet Tech App,"pet, tech, app",#F97316,#FDBA74,#C2410C,#FFF7ED,#431407,#FED7AA,Playful warm orange with a deep terracotta CTA. CTA label: light text (5.2:1)
+26,Smart Home/IoT Dashboard,"smart, home, iot, dashboard",#22D3EE,#A78BFA,#0E7490,#0B1120,#E2E8F0,#1E293B,Dark control room with cyan status accents and a teal CTA. CTA label: light text (5.4:1)
+27,EV/Charging Ecosystem,"charging, ecosystem",#009CD1,#67E8F9,#15803D,#ECFEFF,#083344,#A5F3FC,Electric blue #009CD1 with a charge green CTA. CTA label: light text (5.0:1)
+28,Subscription Box Service,"subscription, box, service",#DB2777,#FDA4AF,#9D174D,#FFF1F2,#4C0519,#FECDD3,Unboxing excitement in warm pink with a deep berry CTA. CTA label: light text (7.9:1)
+29,Podcast Platform,"podcast, platform",#A855F7,#F0ABFC,#7E22CE,#0C0A12,#EDE9FE,#3B0764,Dark listening room with purple waveform accents. CTA label: light text (7.0:1)
+30,Dating App,"dating, app",#F43F5E,#FB7185,#BE123C,#FFF1F2,#4C0519,#FECDD3,Warm romantic gradient from red to pink with a deep rose CTA. CTA label: light text (6.3:1)
+31,Micro-Credentials/Badges Platform,"micro, credentials, badges, platform",#1D4ED8,#FFD700,#1E40AF,#F8FAFC,#0F172A,#FDE68A,Trust blue with gold #FFD700 badge accents. CTA label: light text (8.7:1)
+32,Knowledge Base/Documentation,"knowledge, base, documentation",#334155,#64748B,#0F766E,#FFFFFF,#0F172A,#E2E8F0,Minimal grey documentation shell with a single teal action. CTA label: light text (5.5:1)
+33,Hyperlocal Services,"hyperlocal, services",#0E7490,#F59E0B,#B45309,#F8FAFC,#0F172A,#E2E8F0,Map teal with amber location markers and a warm CTA. CTA label: light text (5.0:1)
+34,Beauty/Spa/Wellness Service,"beauty, spa, wellness, service",#FFB6C1,#90EE90,#A16207,#FFF8F0,#4A2B34,#F3D9DE,Blush #FFB6C1 and sage #90EE90 pastels on cream with a gold CTA. CTA label: light text (4.9:1)
+35,Luxury/Premium Brand,"luxury, premium, brand",#0C0A09,#FFD700,#7C5C0A,#FFFFFF,#0C0A09,#E7E5E4,Black and white with gold #FFD700 and one restrained CTA. CTA label: light text (6.2:1)
+36,Restaurant/Food Service,"restaurant, food, service",#B91C1C,#F97316,#9A3412,#FFF7ED,#431407,#FED7AA,Appetising warm red and orange with a brown CTA. CTA label: light text (7.3:1)
+37,Fitness/Gym App,"fitness, gym, app",#FF6B35,#0EA5E9,#C2410C,#0B0F14,#F8FAFC,#1F2937,Energetic orange #FF6B35 with electric blue on a dark gym floor. CTA label: light text (5.2:1)
+38,Real Estate/Property,"real, estate, property",#0077B6,#C9A227,#005B8C,#FFFFFF,#0F172A,#CBD5E1,Trust blue #0077B6 with a gold accent on white. CTA label: light text (7.3:1)
+39,Travel/Tourism Agency,"travel, tourism, agency",#0EA5E9,#FB923C,#C2410C,#F0F9FF,#0C4A6E,#BAE6FD,Sky blue destinations with a warm orange CTA. CTA label: light text (5.2:1)
+40,Hotel/Hospitality,"hotel, hospitality",#2C2A26,#D4AF37,#7A5F12,#FAF7F0,#1F1B16,#E7DFD0,Warm neutrals with gold #D4AF37 and a deep gold CTA. CTA label: light text (6.0:1)
+41,Wedding/Event Planning,"wedding, event, planning",#FFD6E0,#90A98F,#8C6A14,#FFFBF0,#4A3B32,#F0DCE2,Soft pink #FFD6E0 and sage green on a cream canvas with a gold CTA. CTA label: light text (5.0:1)
+42,Legal Services,"legal, services",#1E3A5F,#C9A227,#7F6012,#FFFFFF,#0F172A,#CBD5E1,Navy #1E3A5F with a gold accent on white. CTA label: light text (5.9:1)
+43,Insurance Platform,"insurance, platform",#0066CC,#7DD3FC,#15803D,#F8FAFC,#0F172A,#E2E8F0,Trust blue #0066CC with a green security CTA. CTA label: light text (5.0:1)
+44,Banking/Traditional Finance,"banking, traditional, finance",#0A1628,#C9A227,#1D4ED8,#FFFFFF,#0A1628,#D6DEE8,Navy #0A1628 base with a gold accent and a trust blue CTA. CTA label: light text (6.7:1)
+45,Online Course/E-learning,"online, course, learning",#7C3AED,#C4B5FD,#047857,#FAF5FF,#2E1065,#DDD6FE,Violet learning path with a green progress CTA. CTA label: light text (5.5:1)
+46,Non-profit/Charity,"non, profit, charity",#0891B2,#FDBA74,#B45309,#ECFEFF,#164E63,#A5F3FC,Cause driven cyan with warm amber accents and a deep CTA. CTA label: light text (5.0:1)
+47,Music Streaming,"music, streaming",#EC4899,#8B5CF6,#BE185D,#121212,#F5F5F5,#262626,Dark #121212 stage with vibrant pink and violet accents. CTA label: light text (6.0:1)
+48,Video Streaming/OTT,"video, streaming, ott",#DC2626,#F87171,#B91C1C,#0A0A0A,#FAFAFA,#262626,Dark theatre background with a red brand CTA. CTA label: light text (6.5:1)
+49,Job Board/Recruitment,"job, board, recruitment",#1D4ED8,#93C5FD,#15803D,#F8FAFC,#0F172A,#E2E8F0,Professional blue with a green success CTA. CTA label: light text (5.0:1)
+50,Marketplace (P2P),"marketplace, p2p",#0F766E,#FBBF24,#166534,#FFFFFF,#0F172A,#E5E7EB,Teal trust base with amber category accents and a green transaction CTA. CTA label: light text (7.1:1)
+51,Logistics/Delivery,"logistics, delivery",#2563EB,#F97316,#15803D,#FFFFFF,#0F172A,#E2E8F0,Blue #2563EB base with orange in transit and a green delivered CTA. CTA label: light text (5.0:1)
+52,Agriculture/Farm Tech,"agriculture, farm, tech",#4A7C23,#7DD3FC,#3B6019,#F7FEE7,#33261A,#D9F99D,Earth green #4A7C23 with brown soil text and sky blue accents. CTA label: light text (7.3:1)
+53,Construction/Architecture,"construction, architecture",#4A4A4A,#1D4ED8,#C2410C,#F5F5F4,#1C1917,#D6D3D1,Concrete grey #4A4A4A with blueprint blue and a safety orange CTA. CTA label: light text (5.2:1)
+54,Automotive/Car Dealership,"automotive, car, dealership",#0F172A,#A8B0B8,#B91C1C,#FFFFFF,#0F172A,#E2E8F0,Metallic silver over deep ink with a red performance CTA. CTA label: light text (6.5:1)
+55,Photography Studio,"photography, studio",#0A0A0A,#737373,#262626,#FFFFFF,#0A0A0A,#E5E5E5,Black and white gallery with a minimal ink accent. CTA label: light text (15.1:1)
+56,Coworking Space,"coworking, space",#EA580C,#A16207,#9A3412,#FFFBF5,#3B2417,#F0E2D2,Energetic orange with warm wood brown tones. CTA label: light text (7.3:1)
+57,Cleaning Service,"cleaning, service",#00B4D8,#48CAE4,#0E7490,#FFFFFF,#023047,#CAF0F8,Fresh blue #00B4D8 on clean white with a deep teal CTA. CTA label: light text (5.4:1)
+58,Home Services (Plumber/Electrician),"home, services, plumber, electrician",#1D4ED8,#64748B,#C2410C,#F8FAFC,#0F172A,#E2E8F0,Trust blue and professional grey with a safety orange CTA. CTA label: light text (5.2:1)
+59,Childcare/Daycare,"childcare, daycare",#F59E0B,#34D399,#B45309,#FFFBEB,#422006,#FDE68A,Playful pastels in amber and green with a warm CTA. CTA label: light text (5.0:1)
+60,Senior Care/Elderly,"senior, care, elderly",#1E40AF,#93C5FD,#1E3A8A,#FFFDF7,#1F2937,#E5E0D5,Calm blue with warm neutral surfaces and extra large text. CTA label: light text (10.4:1)
+61,Medical Clinic,"medical, clinic",#0077B6,#90E0EF,#047857,#FFFFFF,#023047,#CAF0F8,Medical blue #0077B6 and clean white with a calm green CTA. CTA label: light text (5.5:1)
+62,Pharmacy/Drug Store,"pharmacy, drug, store",#15803D,#0EA5E9,#166534,#FFFFFF,#0F172A,#DCFCE7,Pharmacy green with trust blue support on white. CTA label: light text (7.1:1)
+63,Dental Practice,"dental, practice",#0EA5E9,#FDE047,#0369A1,#FFFFFF,#0F172A,#E0F2FE,Fresh blue and white with a yellow smile accent. CTA label: light text (5.9:1)
+64,Veterinary Clinic,"veterinary, clinic",#2563EB,#FBBF24,#1E40AF,#F8FAFC,#0F172A,#DBEAFE,Caring blue with warm amber pet accents. CTA label: light text (8.7:1)
+65,Florist/Plant Shop,"florist, plant, shop",#15803D,#EC4899,#7E22CE,#F7FEE7,#14532D,#BBF7D0,Natural green with floral pink and purple accents. CTA label: light text (7.0:1)
+66,Bakery/Cafe,"bakery, cafe",#92400E,#F59E0B,#7C2D12,#FFFBF0,#431407,#FDE68A,Warm brown and cream with amber baked accents. CTA label: light text (9.4:1)
+67,Coffee Shop,"coffee, shop",#6F4E37,#D4A373,#4A3324,#FFF8F0,#2A1D14,#E7D3BF,Coffee brown #6F4E37 with cream and warm crema accents. CTA label: light text (11.7:1)
+68,Brewery/Winery,"brewery, winery",#7F1D1D,#D4AF37,#B45309,#1C1917,#FAFAF9,#44403C,Deep burgundy and amber with gold #D4AF37 on a dark craft base. CTA label: light text (5.0:1)
+69,Airline,airline,#0284C7,#BAE6FD,#075985,#FFFFFF,#0C4A6E,#E0F2FE,Sky blue cabin palette with a deep blue CTA on white. CTA label: light text (7.6:1)
+70,News/Media Platform,"news, media, platform",#0A0A0A,#DC2626,#B91C1C,#FFFFFF,#171717,#E5E5E5,High contrast editorial black on white with a red masthead accent. CTA label: light text (6.5:1)
+71,Magazine/Blog,"magazine, blog",#1C1917,#A16207,#78350F,#FFFFFF,#292524,#E7E5E4,Editorial palette on a clean white page with a warm brown accent. CTA label: light text (9.1:1)
+72,Freelancer Platform,"freelancer, platform",#1E40AF,#A5B4FC,#15803D,#FFFFFF,#0F172A,#E2E8F0,Professional blue with a green success CTA on white. CTA label: light text (5.0:1)
+73,Consulting Firm,"consulting, firm",#1E3A8A,#C9A227,#1E40AF,#F8FAFC,#0F172A,#CBD5E1,Navy authority with a gold accent and grey supporting surfaces. CTA label: light text (8.7:1)
+74,Marketing Agency,"marketing, agency",#DB2777,#F59E0B,#6D28D9,#FFFFFF,#18181B,#E4E4E7,Bold pink and amber with a violet CTA. CTA label: light text (7.1:1)
+75,Event Management,"event, management",#7C3AED,#F472B6,#5B21B6,#FAF5FF,#2E1065,#DDD6FE,Event violet with pink excitement accents. CTA label: light text (9.0:1)
+76,Conference/Webinar Platform,"conference, webinar, platform",#0F172A,#38BDF8,#0369A1,#FFFFFF,#0F172A,#E2E8F0,Professional dark chrome with a bright blue live accent. CTA label: light text (5.9:1)
+77,Membership/Community,"membership, community",#4F46E5,#F472B6,#4338CA,#FFFFFF,#1E1B4B,#E0E7FF,Community indigo with pink engagement accents on white. CTA label: light text (7.9:1)
+78,Newsletter Platform,"newsletter, platform",#1D4ED8,#60A5FA,#C2410C,#FFFFFF,#111827,#E5E7EB,Clean white reading surface with a blue brand and an orange CTA. CTA label: light text (5.2:1)
+79,Digital Products/Downloads,"digital, products, downloads",#7C3AED,#38BDF8,#047857,#FFFFFF,#18181B,#E4E4E7,Violet catalogue with a green download CTA. CTA label: light text (5.5:1)
+80,Church/Religious Organization,"church, religious, organization",#5B21B6,#C9A227,#4C1D95,#FFFFFF,#1E1B4B,#E9D5FF,Deep purple with warm gold accents on white. CTA label: light text (11.0:1)
+81,Sports Team/Club,"sports, team, club",#B91C1C,#0F172A,#991B1B,#FFFFFF,#0F172A,#E5E7EB,Club red and ink with an energetic red CTA. CTA label: light text (8.3:1)
+82,Museum/Gallery,"museum, gallery",#292524,#A8A29E,#7C2D12,#FAFAF9,#1C1917,#E7E5E4,Gallery neutrals in warm grey with a single terracotta accent. CTA label: light text (9.4:1)
+83,Theater/Cinema,"theater, cinema",#D4AF37,#A16207,#6B5310,#0C0A09,#FAFAF9,#292524,Dark auditorium with gold #D4AF37 spotlight accents. CTA label: light text (7.3:1)
+84,Language Learning App,"language, learning, app",#0D9488,#F59E0B,#0F766E,#F0FDFA,#134E4A,#99F6E4,Playful teal with amber progress accents. CTA label: light text (5.5:1)
+85,Coding Bootcamp,"coding, bootcamp",#22D3EE,#A78BFA,#15803D,#0B1120,#E2E8F0,#1E293B,Editor dark theme with cyan and violet syntax accents and a green CTA. CTA label: light text (5.0:1)
+86,Cybersecurity Platform,"cybersecurity, security, cyber, hacker",#00FF41,#0D0D0D,#067A2E,#000000,#E0E0E0,#1F1F1F,Matrix green on deep black with a terminal green CTA. CTA label: light text (5.5:1)
+87,Developer Tool / IDE,"developer, tool, ide, code, dev",#3B82F6,#1E293B,#2563EB,#0F172A,#F1F5F9,#334155,Dark syntax theme with a blue focus CTA. CTA label: light text (5.2:1)
+88,Biotech / Life Sciences,"biotech, science, biology, medical",#0EA5E9,#0284C7,#047857,#FFFFFF,#0F172A,#E2E8F0,Sterile white with DNA blue and a life green CTA. CTA label: light text (5.5:1)
+89,Space Tech / Aerospace,"space, aerospace, tech, futuristic",#FFFFFF,#94A3B8,#1D4ED8,#0B0B10,#F8FAFC,#1E293B,Deep space black with star white and a metallic blue CTA. CTA label: light text (6.7:1)
+90,Architecture / Interior,"architecture, interior, design, luxury",#171717,#404040,#D4AF37,#FFFFFF,#171717,#E5E5E5,Monochrome architecture with a gold #D4AF37 accent on white. CTA label: Text token (8.5:1)
+91,Quantum Computing,"quantum, qubit, tech",#00FFFF,#7C5CFF,#B800B8,#050510,#E0E0FF,#333344,Interference cyan and violet neon on deep dark with a magenta CTA. CTA label: light text (5.6:1)
+92,Biohacking / Longevity,"bio, health, science",#FF4D4D,#4D94FF,#C81E1E,#FFFFFF,#1C1C1E,#E5E5EA,Biological red and blue on clinical white. CTA label: light text (5.7:1)
+93,Autonomous Systems,"drone, robot, fleet",#00FF41,#008F11,#B91C1C,#0D1117,#E6EDF3,#30363D,Tactical dark with terminal green telemetry and a red abort CTA. CTA label: light text (6.5:1)
+94,Generative AI Art,"art, gen-ai, creative",#000000,#737373,#111111,#FAFAFA,#0A0A0A,#E5E5E5,Neutral canvas with a high contrast black CTA. CTA label: light text (18.9:1)
+95,Spatial / Vision OS,"spatial, glass, vision",#FFFFFF,#E5E5EA,#007AFF,#F2F2F7,#000000,#D1D1D6,Glass layers over a light system canvas with system blue #007AFF. CTA label: Text token (5.2:1)
+96,Climate Tech,"climate, green, energy",#2E8B57,#87CEEB,#FFD700,#F0FFF4,#1A3320,#C6E6C6,Nature green #2E8B57 with sky blue #87CEEB and solar gold #FFD700. CTA label: Text token (9.7:1)

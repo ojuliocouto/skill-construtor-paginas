@@ -25,6 +25,26 @@ import { join } from "node:path";
 // createRequire segue a resolucao CommonJS: projeto, NODE_PATH ou root global do
 // npm. Nunca cravar caminho absoluto aqui: so funcionaria numa maquina.
 const require = createRequire(import.meta.url);
+
+/* MENSAGEM NO LUGAR DE STACK TRACE. Qualquer falha inesperada (navegador não
+   baixado, caminho de frames inválido, browser que caiu no meio) sai em UMA
+   linha acionável. Sem isso a saída era "node:internal/..." com caminho de
+   arquivo do node, e parecia que a skill inteira tinha quebrado. */
+function explicarFalha(e) {
+  const msg = String((e && e.message) || e);
+  if (msg.includes("Executable doesn't exist")) {
+    return "FALHA: o navegador do Playwright nao foi baixado. Rode: npx playwright install chromium";
+  }
+  return `FALHA no gate de video: ${msg.split("\n")[0]}`;
+}
+function bloquear(e) {
+  console.error(explicarFalha(e));
+  console.error("GATE BLOQUEADO: conserte a verificacao antes de declarar pronto.");
+  process.exit(1);
+}
+process.on("uncaughtException", bloquear);
+process.on("unhandledRejection", bloquear);
+
 function carregarPlaywright() {
   try {
     return require("playwright");
@@ -33,7 +53,7 @@ function carregarPlaywright() {
       return require(join(execSync("npm root -g", { encoding: "utf8" }).trim(), "playwright"));
     } catch {
       console.error(
-        "playwright nao encontrado. Instale com:\n" +
+        "FALHA: playwright nao encontrado. Instale com:\n" +
           "  npm install -g playwright && npx playwright install chromium"
       );
       process.exit(1);
@@ -74,6 +94,7 @@ let browser;
 try {
   browser = await chromium.connectOverCDP(CDP);
 } catch (e) {
+  if (String(e?.message || e).includes("Executable doesn't exist")) bloquear(e);
   console.error(
     `\nERRO: nao foi possivel conectar ao Edge via CDP em ${CDP}.\n` +
       "O Edge headless com CDP precisa estar no ar ANTES de rodar este gate. Suba com o comando do bloco PRE no topo deste arquivo:\n" +

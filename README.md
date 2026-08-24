@@ -97,6 +97,7 @@ On activation the skill runs a **prerequisite check** and tells you what to inst
 | **Python 3.9+** | design bank search, asset search, hooks | **required** |
 | **Playwright** (`npm install -g playwright && npx playwright install chromium`) | delivery proof, identity extraction on clone, video gate. **The skill requires a screenshot of the result on every path**, so without this you cannot close a delivery | **required in practice** |
 | **git** | cloning this repo, versioning your page | **required** |
+| **Chrome or Chromium** | only for the Lighthouse score. If you have none, the skill uses the Chromium that Playwright already downloaded (`export CHROME_PATH="$(node -e "console.log(require('playwright').chromium.executablePath())")"`, then add `--no-sandbox`). If that also fails, Lighthouse becomes a declared pending item and **does not block delivery** | optional |
 
 ### Optional, raises quality
 
@@ -110,7 +111,7 @@ On activation the skill runs a **prerequisite check** and tells you what to inst
 | **high-end-visual-design** | skill | premium finish | optional |
 | **animate** | skill | motion and micro-interaction (Step 4) | animate by hand with Framer Motion |
 | **impeccable** | CLI (`npx`) | UI refinement | optional |
-| **PEXELS_API_KEY** | env | stock video/photo search | generate with AI or ask the user |
+| **PEXELS_API_KEY** | env | stock video/photo search | **not needed for photos:** `--type photo` falls back to Openverse and returns real CC-licensed photos with no key (crediting the author is mandatory) |
 | **ffmpeg** | CLI | video gate for pages that embed video | skip the video gate |
 
 Install commands surfaced by the skill:
