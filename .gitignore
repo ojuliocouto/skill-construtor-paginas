@@ -9,3 +9,6 @@ references/sessions/*
 
 # Blueprint de projeto especifico (local apenas)
 references/desafio-ia-patterns.md
+
+# Frames do gate de video: saida de execucao, nunca versionar.
+_gate-frames/

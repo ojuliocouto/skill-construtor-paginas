@@ -10,15 +10,18 @@
  *   node gate-video.mjs --url http://127.0.0.1:8765/ --publico ./public
  *
  * PRÉ
- *   Edge headless com CDP:
- *     "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge" \
- *       --remote-debugging-port=9333 --user-data-dir="$HOME/.edge-gate" \
- *       --headless=new --no-first-run --no-startup-window &
+ *   Playwright com chromium baixado (o mesmo da prova de entrega):
+ *     npm install -g playwright && npx playwright install chromium
  *   ffmpeg e ffprobe no PATH.
+ *
+ *   O gate SOBE O NAVEGADOR SOZINHO. Não precisa de Edge, nem de CDP no ar.
+ *   Quem já tiver um navegador com porta de depuração aberta pode reaproveitar:
+ *     node gate-video.mjs --url ... --publico ... --cdp http://localhost:9333
+ *   (opcional; sem a flag, nada de CDP é usado)
  */
 import { createRequire } from "node:module";
 import { execFileSync, execSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 // playwright e CommonJS e o NODE_PATH nao vale pra `import` (so pra `require`).
@@ -68,7 +71,11 @@ const arg = (n, d) => {
 };
 const URL_ALVO = arg("url", "http://127.0.0.1:8765/");
 const PUBLICO = arg("publico", "./public");
-const CDP = arg("cdp", "http://localhost:9333");
+// CDP é OPCIONAL e opt-in. Antes o gate só sabia falar com um Edge headless numa
+// porta fixa, que ninguém tinha no ar: o gate reprovava a si mesmo antes de olhar
+// uma linha da página. Agora ele sobe o chromium do Playwright, que já é
+// dependência obrigatória da skill.
+const CDP = process.argv.includes("--cdp") ? arg("cdp", "http://localhost:9333") : null;
 const FRAMES = arg("frames", "./_gate-frames");
 
 const TELAS = [
@@ -88,22 +95,21 @@ const ffprobe = (f) => {
 let falhas = 0;
 const reprova = (msg) => { falhas++; console.log(`   REPROVA  ${msg}`); };
 const ok = (msg) => console.log(`   ok       ${msg}`);
-const aviso = (msg) => console.log(`   AVISO    ${msg}`);
 
 let browser;
-try {
-  browser = await chromium.connectOverCDP(CDP);
-} catch (e) {
-  if (String(e?.message || e).includes("Executable doesn't exist")) bloquear(e);
-  console.error(
-    `\nERRO: nao foi possivel conectar ao Edge via CDP em ${CDP}.\n` +
-      "O Edge headless com CDP precisa estar no ar ANTES de rodar este gate. Suba com o comando do bloco PRE no topo deste arquivo:\n" +
-      '  "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge" \\\n' +
-      '    --remote-debugging-port=9333 --user-data-dir="$HOME/.edge-gate" \\\n' +
-      "    --headless=new --no-first-run --no-startup-window &\n" +
-      `Detalhe: ${e.message}`
-  );
-  process.exit(1);
+if (CDP) {
+  try {
+    browser = await chromium.connectOverCDP(CDP);
+  } catch (e) {
+    console.error(
+      `\nERRO: voce passou --cdp ${CDP} e nao ha navegador escutando nesse endereco.\n` +
+        "Tire a flag --cdp para o gate subir o chromium do Playwright sozinho, ou suba o navegador com a porta de depuracao aberta.\n" +
+        `Detalhe: ${e.message}`
+    );
+    process.exit(1);
+  }
+} else {
+  browser = await chromium.launch({ headless: true });
 }
 console.log("=".repeat(72));
 console.log(`GATE DE VIDEO  ${URL_ALVO}`);
@@ -137,11 +143,19 @@ for (const t of TELAS) {
   await page.waitForTimeout(2500);
 
   porTela[t.nome] = await page.evaluate(() => {
+    // FONTES: o <video> quase nunca traz `src` direto. O padrao recomendado pela
+    // propria skill e WebM + MP4, que so existe com filhos <source>. Enquanto esta
+    // funcao lia so o atributo `src`, o gate media ZERO arquivo na pagina que a
+    // skill manda construir, e passava em silencio.
     const fontes = (v) => {
       const s = new Set();
       if (v.getAttribute("src")) s.add(v.getAttribute("src"));
       if (v.dataset.src) s.add(v.dataset.src);
       (v.dataset.fila || "").split(",").filter(Boolean).forEach((x) => s.add(x.trim()));
+      for (const src of v.querySelectorAll("source")) {
+        if (src.getAttribute("src")) s.add(src.getAttribute("src"));
+        if (src.dataset.src) s.add(src.dataset.src);
+      }
       return [...s];
     };
     return [...document.querySelectorAll("video")].map((v) => {
@@ -186,8 +200,19 @@ for (const v of porTela.desktop) {
     if (m) { trilhas.get(chave).add(m.razao); medidos1++; }
   }
 }
-if (medidos1 === 0) {
-  aviso("0 arquivos medidos, nada verificado (arquivo nao encontrado ou ffprobe ausente)");
+/* GATE QUE NAO CONSEGUE MEDIR TEM QUE REPROVAR. Antes isto era um aviso, e uma
+   pagina com 14 clipes saia "PASSA (0 checagens falhando)" so porque nenhum
+   arquivo tinha sido resolvido em disco. Aviso nao bloqueia nada. */
+const totalVideos = porTela.desktop.length;
+const totalFontes = porTela.desktop.reduce((n, v) => n + v.fontes.length, 0);
+if (medidos1 === 0 && totalVideos > 0) {
+  reprova(
+    `a pagina tem ${totalVideos} <video> (${totalFontes} fonte(s) declarada(s)) e NENHUM arquivo foi medido. ` +
+      `Confira se --publico "${PUBLICO}" e mesmo a pasta que serve esses arquivos e se o ffprobe esta no PATH. ` +
+      "Gate que nao consegue medir nao aprova."
+  );
+} else if (medidos1 === 0) {
+  ok("a pagina nao tem <video>: nada a verificar neste gate");
 } else {
   for (const [nome, razoes] of trilhas) {
     if (!razoes.size) continue;
@@ -248,8 +273,10 @@ for (const t of TELAS) {
     }
   }
 }
-if (medidos2 === 0) {
-  aviso("0 arquivos medidos, nada verificado (arquivo nao encontrado ou ffprobe ausente)");
+if (medidos2 === 0 && totalVideos > 0) {
+  reprova("0 arquivos medidos e a pagina TEM video: escala e corte ficaram sem verificacao (ver a checagem [1])");
+} else if (medidos2 === 0) {
+  ok("a pagina nao tem <video>: nada a medir");
 } else if (!falhas) {
   ok(`nenhum arquivo desproporcional a caixa (${medidos2} arquivo(s) medido(s))`);
 }
@@ -272,6 +299,10 @@ for (const v of porTela.desktop) {
    A checagem que mais pega coisa. Um clipe da /v3 tinha o texto do terminal
    saindo do quadro NO PROPRIO ARQUIVO, e isso só apareceu extraindo o frame. */
 console.log("\n[5] CONTEUDO DO QUADRO");
+/* LIMPAR A PASTA ANTES. Contar `readdirSync(FRAMES).length` sem limpar fazia o
+   gate mandar OLHAR quadros de OUTRA pagina, sobrados da corrida anterior: ele
+   anunciava "0 clipe(s), 2 frames" e os 2 frames eram de outro projeto. */
+if (existsSync(FRAMES)) rmSync(FRAMES, { recursive: true, force: true });
 mkdirSync(FRAMES, { recursive: true });
 const vistos = new Set();
 for (const v of porTela.desktop) for (const f of v.fontes) {
@@ -287,9 +318,14 @@ for (const v of porTela.desktop) for (const f of v.fontes) {
   }
 }
 const n = readdirSync(FRAMES).length;
-console.log(`   ${vistos.size} clipe(s), ${n} frames em ${FRAMES}`);
-console.log("   ESTA CHECAGEM NAO E AUTOMATICA: abra os frames e OLHE.");
-console.log("   procure: texto cortado na borda, nome de cliente, credencial, ID interno, valor.");
+if (vistos.size === 0) {
+  console.log(`   NENHUM frame extraido: nenhum arquivo de video foi encontrado em ${PUBLICO}.`);
+  if (totalVideos > 0) reprova("checagem [5] sem frame nenhum pra olhar (arquivos nao resolvidos em disco)");
+} else {
+  console.log(`   ${vistos.size} clipe(s), ${n} frames NOVOS em ${FRAMES}`);
+  console.log("   ESTA CHECAGEM NAO E AUTOMATICA: abra os frames e OLHE.");
+  console.log("   procure: texto cortado na borda, nome de cliente, credencial, ID interno, valor.");
+}
 
 /* 6. LCP: video acima da dobra exige preload no poster */
 console.log("\n[6] LCP");

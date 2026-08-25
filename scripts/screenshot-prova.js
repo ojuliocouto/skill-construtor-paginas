@@ -2,9 +2,11 @@
 // Prova de entrega da skill construtor-paginas.
 // Captura screenshots desktop + mobile do deploy real e, opcionalmente,
 // testa a interação principal (clique) registrando o estado antes e depois.
+// Confere tambem a IDENTIDADE DA PAGINA (gate 4.2b: title, description, favicon PNG
+// quadrado, og:title, og:description, og:image) e sai com exit 1 se faltar item.
 // Uso:
 //   export NODE_PATH="$HOME/.npm-global/lib/node_modules"
-//   node screenshot-prova.js <url> <outdir> [--click "<seletor css>"]
+//   node screenshot-prova.js <url> <outdir> [--click "<seletor css>"] [--sem-identidade]
 // Sai com exit 1 e mensagem clara em QUALQUER falha: sem screenshot nao ha entrega.
 // Nada de stack trace do node na cara de quem roda: TODA chamada de navegador
 // mora dentro do try, e o erro sai traduzido em uma linha acionável.
@@ -33,6 +35,96 @@ function bloquear(e) {
   process.exit(1);
 }
 
+// IDENTIDADE DA PÁGINA (gate 4.2b). Existe porque o item já estava escrito em
+// checklist, com aviso de que "saiu zerado na 1a versão", e MESMO ASSIM uma página
+// foi entregue sem favicon e sem nenhuma og tag: o <head> não aparece no print, e
+// ler o PNG com os próprios olhos nunca ia pegar isso. Checklist não bloqueia,
+// script bloqueia.
+//
+// Bloqueia: title, meta description, favicon PNG quadrado, og:title, og:description
+//           e a TAG og:image (6 linhas de HTML, não dependem de domínio).
+// Avisa (pendência declarada, não bloqueia): og:image com URL relativa ou que ainda
+//           não responde, caso normal antes de existir domínio.
+const TITULOS_VAZIOS = ['', 'document', 'untitled', 'index', 'vite + react', 'react app', 'home'];
+
+async function conferirIdentidade(page) {
+  const d = await page.evaluate(() => {
+    const c = (sel) => document.querySelector(sel)?.getAttribute('content')?.trim() || '';
+    const og = (p) => c(`meta[property="${p}"]`) || c(`meta[name="${p}"]`);
+    const icones = [...document.querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]')]
+      .map((l) => ({ rel: l.getAttribute('rel') || '', href: l.href || '', type: (l.getAttribute('type') || '').toLowerCase() }));
+    return {
+      title: (document.title || '').trim(),
+      description: c('meta[name="description"]'),
+      ogTitle: og('og:title'),
+      ogDescription: og('og:description'),
+      ogImage: og('og:image'),
+      icones,
+    };
+  });
+
+  const falhas = [];
+  const linhas = [];
+  const reprova = (m) => { falhas.push(m); linhas.push(`  REPROVA  ${m}`); };
+  const ok = (m) => linhas.push(`  ok       ${m}`);
+  const aviso = (m) => linhas.push(`  AVISO    ${m}`);
+
+  if (TITULOS_VAZIOS.includes(d.title.toLowerCase())) reprova(`<title> ausente ou generico: "${d.title}"`);
+  else ok(`title: "${d.title}"`);
+
+  if (!d.description) reprova('<meta name="description"> ausente');
+  else ok(`description: "${d.description.slice(0, 70)}${d.description.length > 70 ? '...' : ''}"`);
+
+  // Favicon: PNG (muitos navegadores não leem SVG) e QUADRADO. Redimensionar
+  // preservando proporção a partir de uma foto 3:2 devolve 32x21 e o navegador
+  // distorce: recorte quadrado primeiro, depois redimensione.
+  const png = d.icones
+    .filter((i) => i.type.includes('png') || /\.png(\?|$)/i.test(i.href))
+    .filter((i, n, arr) => arr.findIndex((x) => x.href === i.href) === n); // mesmo arquivo em icon + apple-touch-icon: conferir uma vez
+  if (!d.icones.length) reprova('nenhum <link rel="icon"> na pagina');
+  else if (!png.length) reprova(`favicon existe mas nao em PNG (${d.icones.map((i) => i.href.split('/').pop()).join(', ')})`);
+  else {
+    for (const ic of png) {
+      const dim = await page.evaluate(
+        (href) =>
+          new Promise((res) => {
+            const img = new Image();
+            img.onload = () => res({ w: img.naturalWidth, h: img.naturalHeight });
+            img.onerror = () => res(null);
+            img.src = href;
+          }),
+        ic.href
+      );
+      const nome = ic.href.split('/').pop();
+      if (!dim) reprova(`favicon nao carrega (404?): ${ic.href}`);
+      else if (dim.w !== dim.h) reprova(`favicon NAO e quadrado: ${nome} tem ${dim.w}x${dim.h}. Recorte quadrado ANTES de redimensionar`);
+      else ok(`favicon ${nome} ${dim.w}x${dim.h} (quadrado)`);
+    }
+  }
+
+  if (!d.ogTitle) reprova('og:title ausente');
+  else ok(`og:title: "${d.ogTitle.slice(0, 60)}"`);
+  if (!d.ogDescription) reprova('og:description ausente');
+  else ok('og:description presente');
+
+  if (!d.ogImage) {
+    reprova('og:image ausente (a TAG e obrigatoria sempre; so a URL absoluta pode ficar pendente)');
+  } else if (!/^https?:\/\//i.test(d.ogImage)) {
+    aviso(`og:image com URL relativa ("${d.ogImage}"): declarar como pendencia ate existir dominio`);
+  } else {
+    let status = 0;
+    try {
+      status = (await page.request.get(d.ogImage, { timeout: 15000 })).status();
+    } catch { status = 0; }
+    if (status === 200) ok(`og:image responde 200: ${d.ogImage}`);
+    else aviso(`og:image ainda nao responde 200 (status ${status || 'sem resposta'}): ${d.ogImage}`);
+  }
+
+  console.log('IDENTIDADE DA PAGINA (gate 4.2b):');
+  for (const l of linhas) console.log(l);
+  return falhas;
+}
+
 // Estado observável da página, pra o clique ter prova além do pixel.
 async function lerEstado(page, el) {
   const pagina = await page.evaluate(() => ({
@@ -55,6 +147,10 @@ async function main() {
   const outdir = args[1];
   const clickIdx = args.indexOf('--click');
   const clickSel = clickIdx > -1 ? args[clickIdx + 1] : null;
+  // --sem-identidade existe SO pro baseline do caminho MELHORAR (pagina de
+  // terceiro, que ainda nao e sua). Na prova de entrega, usar esta flag e pular
+  // o gate 4.2b.
+  const semIdentidade = args.includes('--sem-identidade');
 
   // --check: verifica SO se o Playwright esta utilizavel e sai. Existe porque a
   // deteccao ingenua (node -e "require('playwright')") da FALSO NEGATIVO com o
@@ -64,7 +160,7 @@ async function main() {
   const soChecar = args.includes('--check');
 
   if (!soChecar && (!url || !outdir)) {
-    console.error('uso: node screenshot-prova.js <url> <outdir> [--click "<seletor>"]');
+    console.error('uso: node screenshot-prova.js <url> <outdir> [--click "<seletor>"] [--sem-identidade]');
     console.error('     node screenshot-prova.js --check   (verifica so o Playwright)');
     process.exit(1);
   }
@@ -117,6 +213,7 @@ async function main() {
   fs.mkdirSync(outdir, { recursive: true });
   const shots = [];
   const cliquesInertes = [];
+  let falhasIdentidade = [];
   let browser;
 
   try {
@@ -143,6 +240,11 @@ async function main() {
         await page.waitForTimeout(4000);
       });
       await page.waitForTimeout(1500);
+
+      if (vp.name === 'desktop' && !semIdentidade) {
+        falhasIdentidade = await conferirIdentidade(page);
+      }
+
       const file = path.join(outdir, `prova-${vp.name}.png`);
       await page.screenshot({ path: file, fullPage: true });
       shots.push(file);
@@ -195,6 +297,18 @@ async function main() {
       process.exit(1);
     }
     console.log(`${f} (${kb}KB)`);
+  }
+
+  if (falhasIdentidade.length) {
+    console.error(
+      `\nREPROVA na IDENTIDADE DA PAGINA (${falhasIdentidade.length} item(ns)):\n  - ` +
+        falhasIdentidade.join('\n  - ')
+    );
+    console.error(
+      'ENTREGA BLOQUEADA: identidade da pagina e GATE (4.2b), nao checklist. ' +
+        'Corrija o <head> e rode de novo. Os prints ficaram salvos em ' + outdir + '.'
+    );
+    process.exit(1);
   }
 
   if (cliquesInertes.length) {
