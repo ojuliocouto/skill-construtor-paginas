@@ -513,6 +513,22 @@ GATE X:
 ---
 ```
 
+**PERGUNTA QUE VEM ANTES DE TUDO: pra quem e, e o que essa pessoa sente hoje?**
+
+Se o pedido nao disser o publico e a dor, PERGUNTE antes de qualquer outra coisa, e faca uma
+pergunta so, direta. Nao comece a inventariar asset nem a pensar em cor antes disso.
+
+Diferenca medida em pagina real (demo de pilates, 25/08/2026):
+- "cria uma pagina pro meu estudio de pilates" produz pagina generica de academia
+- "cria uma pagina pro meu estudio de pilates, publico mulher de 35 a 55 com dor nas costas
+  que nunca pisou num estudio, objetivo agendar aula experimental gratuita" produziu a headline
+  "Pilates para quem sente dor nas costas e nunca pisou num estudio", as tres objecoes reais da
+  secao "isso parece com voce", e o FAQ que ataca "tenho mais de 50 anos, ainda da tempo?"
+
+O Gate 1 ja exige minerar a voz do cliente, mas isso acontece DEPOIS, no meio do Step 1. Sem
+publico e dor definidos na largada, a copy inteira nasce apontando pra ninguem, e o retrabalho
+custa a pagina toda, nao um paragrafo. Uma pergunta no comeco vale mais que uma auditoria no fim.
+
 **PROIBIDO** executar Step 1 na mesma resposta que Step 0.
 **PROIBIDO** executar Step 2 na mesma resposta que Step 1.
 **PROIBIDO** executar Step 3 na mesma resposta que Step 2.
