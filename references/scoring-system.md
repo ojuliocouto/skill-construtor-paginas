@@ -89,6 +89,22 @@ Toda pagina entregue DEVE ser pontuada neste scorecard antes do deploy. Nota min
 | 4-5 | Numeros sem contexto ou 1-2 depoimentos genericos. |
 | 0-3 | Sem prova social real. Ou so logos sem contexto. |
 
+**N/A: negocio que ainda NAO tem cliente.** Quando o briefing (Step 0.0) registrou a flag
+`sem prova social`, esta dimensao sai da conta em vez de reprovar a pagina: recalcular a media
+**sem** a dimensao 6 e declarar `Prova Social: N/A (sem cliente ainda)` no bloco de entrega.
+
+A troca nao e de graca. Pra usar o N/A a pagina TEM que trazer substitutos reais e
+verificaveis, e a wave confere um a um:
+- credencial, formacao ou registro profissional de quem atende
+- fotos do espaco, do equipamento ou do processo (reais, do negocio)
+- garantia clara e escrita
+- condicao de inauguracao/primeira turma, quando existir de verdade
+- CNPJ e endereco no footer
+
+Faltando os substitutos, a dimensao VOLTA a valer e pontua normalmente (provavelmente 0-3).
+**Inventar depoimento, numero de alunos ou resultado continua PROIBIDO:** e exatamente por
+isso que a excecao existe.
+
 **Ver:** `references/social-proof-hierarchy.md` para hierarquia e placement.
 
 ---

@@ -113,6 +113,7 @@ On activation the skill runs a **prerequisite check** and tells you what to inst
 | **impeccable** | CLI (`npx`) | UI refinement | optional |
 | **PEXELS_API_KEY** | env | stock video/photo search | **not needed for photos:** `--type photo` falls back to Openverse and returns real CC-licensed photos with no key (crediting the author is mandatory) |
 | **ffmpeg** | CLI | video gate for pages that embed video | skip the video gate |
+| **Higgsfield** | CLI (`npm i -g @higgsfield/cli`) | motion and b-roll on text-only blocks (**Step 3.2b, an expected step, not a garnish**). Needs a **paid** account for commercial use | real client footage, a screen recording, open-license b-roll, or CSS/Framer Motion, with the gap declared in the delivery block |
 
 Install commands surfaced by the skill:
 
@@ -167,11 +168,11 @@ Copy first, design second, code third. Each step has a gate and a forced stop be
 
 | Step | Name | What happens | Tools / skills |
 |------|------|--------------|----------------|
-| 0 | Understand & inventory | classify page, map sections, audit copy, inventory assets (incl. **lead destination**: form endpoint / checkout URL) | `Read` (PDF), Google Docs/Sheets (requires external local scripts, not bundled), `github-search.py` |
+| 0 | Understand & inventory | **0.0 briefing interview first** (round 1: niche, location, audience, offer, price, action; round 2 only if the person already has clients), then classify page, map sections, audit copy, inventory assets (incl. **lead destination**: form endpoint / checkout URL) | `Read` (PDF), Google Docs/Sheets (requires external local scripts, not bundled), `github-search.py` |
 | 1 | Copy & message | VoC mining, before/after, message hierarchy, **copy lock** | `copy-pagina-vendas` (optional) |
 | 2 | Direct | palette, font pairing, per-section layout, **wireframe** | **Stitch**, `redesign-existing-projects` (clone/v2) |
-| 3 | Build | section by section, real assets, motion | **21st.dev Magic**, `assets-search.py`, nanobanana, Veo |
-| 4 | Verify & ship | adversarial audit wave + quality gate + deploy | `design-taste-frontend`, `impeccable`, Workflow |
+| 3 | Build | section by section, real assets, and a **per-block motion decision (3.2b)** | **21st.dev Magic**, `assets-search.py`, nanobanana, Veo, Higgsfield |
+| 4 | Verify & ship | audit wave → QA → **page identity gate (4.2b)** → **taste pass with a mandate to FIX (4.2c)** → deploy → post-deploy QA → delivery proof (4.5) | `design-taste-frontend`, `screenshot-prova.js`, `impeccable`, Workflow |
 | 5 | Measure & iterate | post-launch metrics, iterate against benchmark | analytics |
 
 > For **e-commerce / retail homes** (not high-ticket sales pages), Steps 0/1 collapse: skip copy lock / offer / checkout / per-section video. Focus on real brand identity, product cards with ratings, category & gender nav, brand grid, first-purchase coupon, trust strip.
@@ -186,6 +187,10 @@ Copy first, design second, code third. Each step has a gate and a forced stop be
 4. **Anti-vibe-coding** (`references/anti-vibe-coding.md`): 5 substance signals **+ 15 visual AI tells**. Footer-legal / broken-checkout failures **block delivery**.
 5. **Taste Skill**: run `design-taste-frontend` on the finished page; clones/redesigns use `redesign-existing-projects` (audit-first) at Step 2; premium finish via `high-end-visual-design`.
 6. **impeccable** (CLI): `npx impeccable detect <url>` / `critique` / `polish`.
+7. **Page identity (Step 4.2b), a gate and not a checklist item:** `<title>`, `<meta name="description">`, a **square PNG favicon** + `apple-touch-icon`, `og:title`, `og:description`, `og:image`. Enforced by `scripts/screenshot-prova.js`, which exits 1 when any of them is missing. With no domain yet, only the **absolute URL** of `og:image` becomes a declared pending item; the tags themselves always block.
+8. **Taste pass (Step 4.2c), the last act before deploy:** load `design-taste-frontend` again, this time with a mandate to **FIX composition**, not to score it. Proof: the list of composition items changed plus the AI-tell count before and after, which has to end at 0.
+
+**Mandatory delivery block.** Every delivery message on the CREATE, CLONE and IMPROVE paths carries four fixed lines: wave verdict (`deploy_liberado` + scores + criticals), page identity (the script output), taste pass (tells before → after), and delivery proof (screenshot files read + click result), plus the declared pending items. A block missing one of them means a gate was skipped. The EDIT path carries a smaller block: regression checklist + proof of the changed spot.
 
 ### The 15 visual AI tells (the "AI look" checklist)
 
@@ -209,7 +214,7 @@ The audit is **never** done by the same context that built the page (builders do
 | `cro-auditor` | CTAs, form, offer, message match, Hook/Story/Offer | weak CTA, broken form/checkout, no message match |
 | `a11y-auditor` | focus, labels, alt, ARIA, 4.5:1 contrast, no emoji | critical WCAG failure, emoji on page |
 
-**Gate:** any critical → `deploy_liberado: false`, returns the fix list, builder fixes and re-runs only the failed lenses. No criticals but any score < 8.0 → ship with polish notes. If the `Workflow` tool is unavailable, it falls back to manual scoring (Step 4.0b) and logs that the wave was skipped.
+**Gate (one rule, identical in `SKILL.md` and `references/audit-agents.md`):** zero criticals + every lens >= 7 + average >= 8.0 releases the deploy. Any critical → `deploy_liberado: false`, returns the fix list, builder fixes and re-runs only the failed lenses. Any lens < 7 blocks even with no critical. Average < 8.0 → apply the polish notes and re-score; it does not ship. If the `Workflow` tool is unavailable, it falls back to manual scoring (Step 4.0b) and logs that the wave was skipped.
 
 ---
 
@@ -272,7 +277,12 @@ construtor-paginas/
 ├── scripts/
 │   ├── search.py                 # query the design DB (styles, colors, fonts)
 │   ├── github-search.py          # find templates/components on GitHub
-│   └── assets-search.py          # videos (Pexels), photos, Lottie, illustrations, icons
+│   ├── assets-search.py          # videos (Pexels), photos, Lottie, illustrations, icons
+│   ├── screenshot-prova.js       # delivery proof + page identity gate (exits 1 on failure)
+│   ├── gate-video.mjs            # 7 executable video checks (launches its own Chromium)
+│   ├── extrai-identidade.mjs     # real palette/logo/CSS vars extraction (CLONE path)
+│   ├── higgsfield.py             # Higgsfield API client (batch, --dry-run, seed manifest)
+│   └── servidor-gzip.py          # serve the local build WITH compression (measuring without gzip flips results)
 ├── data/                         # CSVs: 50 styles, 21 palettes, 50 font pairings, UX guidelines
 └── references/                   # specialized guides (auditing, effects, page types, ...)
     ├── audit-agents.md           # adversarial wave protocol + schema

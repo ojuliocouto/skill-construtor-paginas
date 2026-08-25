@@ -129,10 +129,11 @@ Recebe os 7 verdicts. Produz:
 }
 ```
 
-Regra do gate:
+Regra do gate (LITERALMENTE a mesma do SKILL.md, Step 4, e do README):
 - `criticos.length > 0` => `deploy_liberado: false`. PARA. Devolve a lista pro construtor.
-- Sem criticos mas algum `score < 8.0` => libera com avisos de polimento.
-- Tudo limpo e scores >= 8.0 => libera deploy.
+- Qualquer lente com `score < 7` => `deploy_liberado: false`, mesmo sem nenhum critico.
+- Media dos scores < 8.0 => `deploy_liberado: false`: aplicar os polimentos apontados e re-scorar.
+- Libera deploy APENAS com: zero criticos + todas as lentes >= 7 + media >= 8.0.
 
 ---
 

@@ -14,19 +14,33 @@ Skill unificada para construir paginas web profissionais, bonitas e de alta conv
 O essencial pra rodar, em poucas linhas. O detalhe de cada item esta nas secoes abaixo; conteudo pesado de implementacao fica em `references/` e so deve ser carregado quando o caso pedir (ver Indice).
 
 1. **4 caminhos:** CRIAR do zero / CLONAR (URL ou PDF) / MELHORAR (pagina que ja existe e vai continuar existindo) / EDITAR (mudanca pontual). **Rotear ANTES de tudo** (ver "OS 4 CAMINHOS"): cada um tem fluxo e gates proprios. Rodar 6 steps numa troca de headline e tao errado quanto editar no improviso uma pagina nova.
-2. **Step 0:** checar pre-requisitos (MCPs/skills). Faltou algo? Instalar AUTOMATICAMENTE o que nao pede chave (Stitch); 21st.dev/Pexels/Taste Skills sao OBRIGATORIOS: parar, pedir chave/confirmacao e instalar antes do Step 1 (fallback SO com dispensa explicita do usuario ou modo nao-interativo). Depois carregar contexto do projeto.
+2. **Step 0 comeca pela ENTREVISTA DE BRIEFING (0.0):** as seis perguntas da rodada 1 pra todo mundo, rodada 2 so pra quem ja tem cliente. Sem as seis respondidas, nao avanca. Depois: checar pre-requisitos (MCPs/skills), instalar AUTOMATICAMENTE o que nao pede chave (Stitch), instalar Playwright (o unico necessario na pratica), **oferecer uma vez** 21st.dev/Pexels/Taste Skills e, sem chave, seguir pelo fallback com a degradacao DECLARADA na entrega. Nenhuma dependencia bloqueia o inicio. Por fim, carregar contexto do projeto.
 3. **Ordem sagrada:** COPY (Step 1) → DESIGN (Step 2) → CODIGO (Step 3). Nunca pixel antes de copy travada.
 4. **Step 1:** se o usuario ja trouxe copy, validar e travar (COPY LOCK); senao gerar (copy-pagina-vendas opcional).
 5. **Step 2:** consultar o banco de design (`search.py`, keywords em INGLES) pra estilo/paleta/fonte antes de inventar; wireframe no Stitch (ou fallback).
 6. **Step 3:** buildar com componentes do 21st.dev (ou a mao), **assets reais** (foto/mockup/video, nunca so SVG+gradiente), zero dado inventado.
 7. **Step 4 e O PORTAO:** rodar a wave de auditoria adversarial (7 lentes + sintese). Deploy acontece DENTRO do Step 4, DEPOIS da wave.
-8. **ENFORCEMENT (caminhos CRIAR, CLONAR e MELHORAR):** a mensagem de entrega DEVE conter o veredito da wave (`deploy_liberado` + scores). Sem o bloco = voce pulou o gate = falhou. **No caminho EDITAR a wave NAO roda:** ali o bloco obrigatorio da entrega e o checklist de regressao + a prova do ponto alterado.
+8. **ENFORCEMENT (caminhos CRIAR, CLONAR e MELHORAR):** a mensagem de entrega DEVE conter o BLOCO OBRIGATORIO DA ENTREGA, com as quatro linhas fixas (veredito da wave, identidade da pagina, passe de gosto, prova de entrega) mais as pendencias. Texto unico e completo na secao "ENFORCEMENT DO GATE" do Step 4, item 2. Sem o bloco = voce pulou o gate = falhou. **No caminho EDITAR a wave NAO roda:** ali o bloco e o checklist de regressao + a prova do ponto alterado.
 9. **MCPs/skills sao obrigatorios QUANDO conectados;** se ausentes, usar o fallback documentado, nunca travar.
 10. **Bloqueia entrega:** 3+ tells de IA, pagina sem asset real, footer-legal/checkout quebrado, dado inventado, nota < 7 em qualquer dimensao.
 11. **Regras absolutas do output:** zero travessao (grep U+2014 = 0), zero emoji, acentuacao PT-BR correta, consistencia de contato.
 11b. **NUNCA INVENTAR ID VISUAL.** Se o usuario indicou/forneceu a identidade (pasta de assets, logo, paleta, fontes, link, PDF, slides), USAR O ASSET REAL. Recriar logo em texto/SVG aproximado, chutar cor ou fonte = PROIBIDO. So criar do zero quando NAO ha ID indicada. Logo legivel demais a 40px? Aumenta o tamanho ou pede uma versao, nunca substitui por uma invencao.
 12. **Pos-sessao:** registrar contexto em `references/sessions/` e `references/projects/` (locais). Proibido entregar e nao registrar.
 13. **Atalhos:** capture simples/pagina trivial → ROTA EXPRESSA (steps colapsados, wave de 3 lentes). Sessao nao-interativa ou "faz direto" → sem paradas, gates inline (ver excecao no protocolo de execucao).
+
+---
+
+## MAPA DESTE ARQUIVO (onde cada coisa mora)
+
+| Bloco | Secoes |
+|---|---|
+| **Roteamento** | RUNBOOK, QUANDO ACIONAR, OS 4 CAMINHOS (CRIAR / CLONAR / MELHORAR / EDITAR), PORTA UNICA |
+| **Preparacao** | PROTOCOLO DE ATIVACAO (pre-requisitos + instalacao), GATE DE QUALIDADE auxiliar, PROTOCOLO POS-SESSAO, Indice de `references/` |
+| **O fluxo** | Processo de 6 Steps, parada forcada, rota expressa, regras inegociaveis, anti-patterns, gates, tech stack, **Step 0** (0.0 briefing, 0.1 a 0.7), **Step 1** copy, **Step 2** direcao, **Step 3** build (3.2 video, **3.2b movimento/Higgsfield**, 3.6 auto-revisao), **Step 4** (4.0 wave, 4.0b/4.1 scoring, 4.2 QA, **4.2b identidade**, **4.2c passe de gosto**, 4.3 deploy, 4.4 QA pos, 4.5 prova, GATE 4), **Step 5** medir |
+| **Apendice** | Regras de deploy, anti-patterns de codigo, blueprints, projetos e sessoes locais, links e galerias |
+
+**Nada que seja etapa de execucao mora depois do Step 5.** Se voce esta escrevendo uma exigencia
+nova, ela entra dentro do step que a executa, nunca no fim do arquivo.
 
 ---
 
@@ -118,7 +132,7 @@ minerar VoC, nao escrever copy nova, nao rodar COPY LOCK.** Inventar aqui e defe
 5. **GATE DE FIDELIDADE** (substitui o Gate 1 e 2): print do original e do clone lado
    a lado, conferindo cor a cor, fonte, hierarquia, ordem das secoes e mobile. Divergiu
    sem ter sido declarado no delta? Volta.
-6. Step 4 normal (wave, deploy, prova) e pos-sessao.
+6. Step 4 normal (wave, identidade 4.2b, passe de gosto 4.2c, deploy, QA pos, prova 4.5) e pos-sessao.
 
 ### CAMINHO 3: MELHORAR (a pagina continua sendo a mesma, so melhor)
 
@@ -170,10 +184,14 @@ tudo e derrubando a conversao que existia.
 4. **Preservar o que funciona.** Nao mexer no que ja converte sem motivo declarado.
    Identidade so muda com pedido explicito.
 5. **Aplicar em lotes revisaveis**, do maior impacto pro menor.
-6. **GATE DE MELHORIA**: antes e depois lado a lado, com a nota de cada dimensao nos
-   dois estados. **Se alguma dimensao piorou, nao entrega.** Mais Lighthouse igual ou
-   melhor que o baseline.
-7. Deploy e pos-sessao normais.
+6. **GATE DE MELHORIA (nao-regressao, ADICIONAL ao GATE 4, nunca no lugar dele)**: antes e
+   depois lado a lado, com a nota de cada dimensao nos dois estados. **Se alguma dimensao
+   piorou, nao entrega.** Lighthouse entra so como comparacao CONDICIONAL: **se houve baseline
+   de Lighthouse**, o novo tem que ser igual ou melhor; **sem navegador nao ha baseline**, entao
+   vira pendencia declarada e NAO bloqueia (igual ao item 1 e ao 4.2). O que bloqueia aqui e a
+   nao-regressao por dimensao, que nao depende de navegador.
+7. **Step 4 normal** (wave, identidade 4.2b, passe de gosto 4.2c, deploy, QA pos, prova 4.5) e
+   pos-sessao. O gate de melhoria empilha SOBRE o GATE 4; ele nao substitui nenhum item dele.
 
 ### CAMINHO 4: EDITAR (mudanca pontual, cirurgica)
 
@@ -253,6 +271,8 @@ proprio contexto (lista de tools + system-reminders de skills). Confirmar presen
 |-------------|---------------|-------|---------|
 | **Playwright** | `node <dir-da-skill>/scripts/screenshot-prova.js --check` | prova de entrega, extrator de identidade, gate de video | **necessario na pratica** (prova obrigatoria nos 4 caminhos): `npm install -g playwright && npx playwright install chromium` |
 | **ffmpeg / ffprobe** | `ffprobe -version` | gate de video (so em pagina com video) | pular o gate de video |
+| **Higgsfield (CLI)** | `higgsfield account status` (imprime e-mail, plano e creditos) | movimento e b-roll nos blocos (Step 3.2b), **passo esperado, nao enfeite** | conta PAGA para uso comercial. Sem ela: material real do cliente, gravacao de tela, b-roll de acervo aberto ou animacao CSS/Framer Motion, com a pendencia declarada na entrega. Setup completo (inclusive o `higgsfield workspace set <id>`, que trava todo mundo) em `references/higgsfield.md` |
+| **HF_API_KEY_ID + HF_API_KEY_SECRET (env)** | `echo $HF_API_KEY_ID` | rota por API do `scripts/higgsfield.py` (lote, `--dry-run`) | usar a CLI (rota assistida) ou seguir sem movimento gerado |
 | **Stitch (MCP)** | tools `mcp__stitch__*` | wireframe (Step 2) | auto-instalar (protocolo item 1); ultimo caso: layout direto no codigo |
 | **21st.dev Magic (MCP)** | tools `mcp__magic__*` | componentes (Step 3) | recomendado (protocolo item 3); fallback: componentes a mao (shadcn/Tailwind) |
 | **design-taste-frontend (skill)** | skill listada | gate anti-slop (Step 4) | recomendado (protocolo item 4); fallback: scoring manual 4.0b |
@@ -366,7 +386,7 @@ ls ./references/sessions/
 5. **Rodar anti-vibe-coding checklist** (`references/anti-vibe-coding.md`): 5 sinais de substancia + **15 tells VISUAIS de IA** (secao "Tells VISUAIS de IA"). FALHA em footer legal ou checkout funcional **bloqueia a entrega**.
 6. **Rodar a Taste Skill SE instalada** (anti-slop, tasteskill.dev): acionar a skill `design-taste-frontend` sobre a pagina pronta como enforcement anti-slop. Em CLONE/redesign, usar `redesign-existing-projects` (audit-first) ANTES, no Step 2. Pra acabamento premium, `high-end-visual-design`. Se nenhuma estiver instalada: o scoring manual do item 2 (taste-gate) cobre.
 7. **Refinamento profundo** (opcional): `npx impeccable detect <url>` (auditoria), `npx impeccable polish/critique` (refino).
-8. **Gate de VIDEO**: `node scripts/gate-video.mjs --url <url> --publico ./public` (so se a pagina tiver video). Sete checagens, todas nascidas de defeito medido numa pagina de lancamento em producao:
+8. **Gate de VIDEO**: `node scripts/gate-video.mjs --url <url> --publico ./public` (so se a pagina tiver video). Sobe sozinho o Chromium do Playwright: **nao precisa de Edge nem de CDP no ar** (quem ja tiver um navegador com CDP pode reaproveitar com `--cdp http://localhost:9333`). Exige `ffmpeg`/`ffprobe` no PATH. Sete checagens, todas nascidas de defeito medido numa pagina de lancamento em producao:
    proporcao unica por trilha, escala do arquivo contra a caixa, corte do `cover`, poster com hash proprio respondendo 200, **extrair 6 frames e OLHAR** (texto cortado, nome de cliente, credencial), `preload` no poster se o video estiver acima da dobra, e `prefers-reduced-motion` deixando so o poster.
    FALHA em poster 404 ou em conteudo indevido no quadro **bloqueia a entrega**.
 
@@ -436,7 +456,22 @@ Cada sessao concluida sem registro e conhecimento perdido. O protocolo leva meno
 
 ## Indice: o que fica aqui vs o que carregar sob demanda
 
-Neste arquivo: runbook, protocolo de ativacao, gates, regras inegociaveis, Steps 0-5, wave de auditoria, regras de deploy, anti-patterns.
+Neste arquivo (ver MAPA DESTE ARQUIVO, no topo): runbook, os 4 caminhos, porta unica das skills de design, protocolo de ativacao com pre-requisitos, gate de qualidade auxiliar, protocolo pos-sessao, regras inegociaveis, anti-patterns, os 5 gates, Steps 0 a 5 (com briefing 0.0, movimento 3.2b, identidade 4.2b e passe de gosto 4.2c), wave de auditoria, regras de deploy, blueprints, links e galerias.
+
+**Este e o UNICO catalogo de `references/` do arquivo.** Se voce procurou uma lista de referencias no fim, ela nao existe mais: estava duplicada e foi apagada.
+
+**Scripts da skill (ficam em `scripts/`, nao em `references/`):**
+
+| Script | Para que |
+|---|---|
+| `scripts/screenshot-prova.js` | prova de entrega (desktop + mobile + clique) e **checagem de identidade da pagina** (4.2b). `--check` confere o Playwright, `--sem-identidade` so pra baseline de pagina de terceiro |
+| `scripts/gate-video.mjs` | as 7 checagens de video executaveis (razao por trilha, escala, corte, poster, frames, LCP, reduced-motion). Sobe o Chromium do Playwright sozinho |
+| `scripts/extrai-identidade.mjs` | extrai paleta real, vars CSS, h1/CTA e imagens de uma URL (caminho CLONAR) |
+| `scripts/search.py` + `data/` | banco de design: 50 estilos, 21 paletas, 50 font pairings, guidelines UX (keywords em INGLES) |
+| `scripts/assets-search.py` | fotos e videos (Pexels com chave, Openverse sem chave) |
+| `scripts/higgsfield.py` | cliente da API Higgsfield: `--dry-run` monta a requisicao sem gastar credito, `--lote` gera a pagina inteira de uma vez (credito nao faz rollover), grava manifesto com seed e poster com hash proprio |
+| `scripts/github-search.py` | referencias de template no GitHub (Step 0.5) |
+| `scripts/servidor-gzip.py` | servir o build local COM compressao (medir sem gzip inverte o resultado) |
 
 Carregar da pasta `references/` APENAS quando o caso pedir:
 
@@ -471,7 +506,7 @@ Carregar da pasta `references/` APENAS quando o caso pedir:
 - `references/typography-scale.md`, `section-transitions.md`, `animation-audit.md`, `desktop-layout-rules.md`, `mobile-checklist-detailed.md`
 - `references/visual-assets.md`, `visual-excellence.md`, `visual-references.md`, `efeitos-avancados.md`, `animacoes-avancadas.md`, `magicui-components.md`
 - `references/nanobanana-mockup-carousel.md`, `veo-video-workflow.md`, `ai-video-generation.md`, `pdf-to-page.md`, `post-launch.md`
-- `references/higgsfield.md`: rota Higgsfield pra video ilustrativo em pagina (alternativa ao Replicate) + as 5 regras de video em pagina
+- `references/higgsfield.md`: SETUP da CLI (conta, login, skills, `workspace set`), rota Higgsfield pra movimento e b-roll (Step 3.2b), as 5 regras de video em pagina e as licoes de composicao medidas (conta do veu, contraste de texto sobre video, cartao opaco escondendo o clipe)
 - `references/ui-reference.md`, `official-ui-reference.md`, `reference.md`, `learn.md`, `chart.md`: shadcn/Tailwind (stack React/Next)
 
 
@@ -513,58 +548,9 @@ GATE X:
 ---
 ```
 
-**EXTRAIA o basico primeiro. Pergunta simples, que qualquer um responde.**
-
-O pedido real chega assim: *"cria uma pagina pra mim de uma academia"*. So isso. NAO responda
-com "qual o seu publico-alvo e qual a dor dele?": isso e vocabulario de marqueteiro, e quem tem
-academia responde "todo mundo que quer emagrecer", que nao serve pra nada. E NAO pergunte sobre
-cliente antigo logo de cara: muita gente ainda nao abriu o negocio e trava na primeira pergunta.
-
-**RODADA 1, o basico. Mande as perguntas juntas, numa lista curta, pra pessoa responder de uma
-vez.** Sao todas de fato, sem interpretacao:
-
-1. **Qual e o nicho, exatamente?** (academia, so musculacao, crossfit, pilates, funcional)
-2. **Onde voce atende?** (cidade e bairro, ou online)
-3. **Atende quem?** (mulheres, homens, os dois; e a faixa de idade, se souber)
-4. **O que voce vende?** (plano mensal, aula avulsa, pacote fechado, avaliacao)
-5. **Quanto custa, mais ou menos?**
-6. **O que voce quer que a pessoa faca nessa pagina?** (agendar aula, chamar no WhatsApp,
-   comprar direto, deixar o contato)
-
-Com essas seis ja da pra escrever copy que aponta pra alguem. Nicho + cidade + genero + faixa
-etaria ja e um publico; oferta + preco + acao ja e uma pagina.
-
-**RODADA 2, so SE a pessoa ja atende gente.** Pergunte: *"voce ja tem cliente hoje?"*. Se sim,
-estas quatro rendem muito, porque devolvem material que nao da pra inventar:
-
-- **"Me conta o ultimo cliente que fechou: quem era e o que trouxe ele ate voce?"** (a persona
-  real, quase sempre mais especifica que a imaginada)
-- **"O que ele te falou quando chegou? Se lembrar da frase, melhor."** (voz do cliente verbatim,
-  vira headline. Anote com as palavras DELA, sem traduzir pro seu vocabulario)
-- **"Quem procura voce e voce percebe que nao e pra voce?"** (o anti-publico afia a mira mais
-  rapido que descrever o publico certo; vira a secao "para quem NAO e")
-- **"O que essa pessoa ja tinha tentado antes, e por que nao deu certo?"** (devolve a objecao
-  real e o diferencial, sem voce inventar nenhum dos dois)
-
-Se a pessoa ainda NAO tem cliente, pule a rodada 2 sem drama e siga com as seis primeiras. Nunca
-transforme a entrevista em interrogatorio: e melhor uma pagina boa com seis respostas do que
-nenhuma pagina porque a pessoa cansou de responder.
-
-**Se travar ou responder generico, NAO repita a pergunta.** Ofereca um palpite pra ela reagir:
-*"Pelo que costuma acontecer em academia de bairro, e gente de 30 a 50 que ja tentou treinar
-sozinha e desistiu, e o que trava e nao saber comecar sem se machucar. E por ai, ou o seu caso
-e outro?"*. Gente e muito melhor em CORRIGIR do que em CRIAR do zero, e um palpite errado rende
-mais que uma pergunta aberta.
-
-**Regra de parada:** so avance com as seis da rodada 1 respondidas. Sem publico e oferta
-definidos na largada, a pagina inteira nasce apontando pra ninguem, e o retrabalho custa a
-pagina toda, nao um paragrafo.
-
-Diferenca medida em pagina real (demo de pilates, 25/08/2026): o pedido trazia nicho, publico,
-faixa etaria e objetivo, e o resultado foi a headline "Pilates para quem sente dor nas costas e
-nunca pisou num estudio", as tres objecoes reais na secao "isso parece com voce", e o FAQ que
-ataca "tenho mais de 50 anos, ainda da tempo?". Nada disso sai de um briefing que diz so
-"academia".
+> A ENTREVISTA DE BRIEFING (rodada 1 para todos, rodada 2 so para quem ja tem cliente) nao mora
+> aqui: ela e a primeira coisa do Step 0, na subsecao **0.0 BRIEFING**. Esta secao trata so de
+> quando parar entre steps.
 
 **PROIBIDO** executar Step 1 na mesma resposta que Step 0.
 **PROIBIDO** executar Step 2 na mesma resposta que Step 1.
@@ -583,7 +569,7 @@ Para capture page simples (< 3 telas, formulario + headline) ou pagina explicita
 2. **Step 3 normal** (as regras inegociaveis continuam valendo).
 3. **Step 4 com wave reduzida a 3 lentes:** `design-critic`, `cro-auditor`, `mobile-auditor` + sweeps de QA (contato, travessao, emoji, dado inventado). O bloco de veredito na entrega continua OBRIGATORIO.
 
-O que a rota expressa NAO dispensa: copy antes de codigo, identidade real quando indicada, assets criticos confirmados (incluindo o destino do lead), bloco de enforcement na entrega.
+O que a rota expressa NAO dispensa: **as seis respostas da rodada 1 do briefing (0.0: nicho, local, publico, oferta, preco, acao)**, copy antes de codigo, identidade real quando indicada, assets criticos confirmados (incluindo o destino do lead), identidade da pagina (4.2b), passe de gosto (4.2c) e o BLOCO OBRIGATORIO DA ENTREGA completo. O que ela colapsa e a APRESENTACAO dos steps, nunca a entrevista nem os gates.
 
 ### REGRAS INEGOCIAVEIS: LER ANTES DE QUALQUER PAGINA
 
@@ -601,7 +587,10 @@ O que a rota expressa NAO dispensa: copy antes de codigo, identidade real quando
 
 **PROIBIDO ENTREGAR SEM ASSETS VISUAIS.** Paginas com SVGs genericos e fundos solidos nao impressionam. DEVE ter: textura/profundidade nos fundos, foto/mockup/video real, animacoes de scroll, efeitos de hover, pelo menos 1 elemento "wow" por scroll. **Catalogo de "wow" PERMITIDO** (nao dispara os tells de IA): foto real tratada, mockup de produto, video de fundo bem integrado, number ticker, marquee de logos/depoimentos, parallax sutil, noise/pattern discreto, transicao de secao trabalhada, micro-interacao no CTA. **PROIBIDO usar como "wow":** blob de glow desfocado, aurora atras de conteudo, glow colorido em botao, glassmorphism generalizado, floating orbs, gradient-clip em titulo, shimmer decorativo: estes sao tells visuais de IA (V1-V15 de `references/anti-vibe-coding.md`) e REPROVAM na wave do Step 4. Se o usuario nao forneceu foto e nao ha API de stock/geracao disponivel: usar monograma/ilustracao funcional, REGISTRAR como pendencia na entrega e pedir o asset real; isso nao bloqueia a entrega, bloqueia RODAR TRAFEGO. **Antes de cair nisso, use a rota sem chave:** `python3 scripts/assets-search.py "<tema em ingles>" --type photo` devolve foto real da Openverse sem nenhuma API key (credito obrigatorio). Retangulo vazio no hero nao e mais aceitavel.
 
-### ANTI-PATTERNS: O QUE DEU ERRADO E NUNCA PODE REPETIR
+### ANTI-PATTERNS DE PROCESSO E DE IA: O QUE DEU ERRADO E NUNCA PODE REPETIR
+
+> Esta lista e a de PROCESSO e cara de IA. A lista de CODIGO e CSS esta na secao
+> "Anti-Patterns de codigo (NUNCA FACA)", perto do fim do arquivo. Sao duas, e as duas valem.
 
 | Anti-Pattern | O que acontece | Solucao |
 |-------------|---------------|---------|
@@ -609,9 +598,9 @@ O que a rota expressa NAO dispensa: copy antes de codigo, identidade real quando
 | Design sem copy travada | Copy muda → design muda → codigo muda → 3x o trabalho | Copy Lock obrigatorio: copy frozen antes de avancar |
 | Pular Step 2 (DIRECIONAR) | Pagina sem identidade visual, cores aleatorias, sem ritmo | SEMPRE definir tokens + layout por secao ANTES de codar |
 | HTML/CSS puro em pagina high-ticket | Sem animacoes, sem componentes, parece template gratis | SEMPRE React + Vite + Framer Motion + shadcn/ui |
-| SVGs basicos como "design" | Pagina parece prototipo, nao produto final | Usar icones Lucide detalhados + gradientes + efeitos |
+| SVGs basicos como "design" | Pagina parece prototipo, nao produto final | Hugeicons como primario em landing (Lucide so pra UI/dashboard). PROIBIDO o par "caixinha arredondada com fundo tingido + glifo abstrato": e o tell numero 1 do passe de gosto (4.2c) |
 | Fundos solidos sem textura | Visual flat e sem profundidade | Adicionar noise, gradientes sutis, patterns, overlays |
-| Zero animacoes de scroll | Pagina estatica e sem vida | Framer Motion scroll reveal em TODAS as secoes |
+| Zero animacoes de scroll | Pagina estatica e sem vida | Scroll reveal nas secoes-CHAVE: 2 a 4 por pagina, no maximo 1 por secao. Em TODO elemento e vibe-coding e reprova na wave |
 | Nao criar assets visuais | Secoes vazias, sem impacto | Buscar/gerar fotos, videos, mockups, ilustracoes DURANTE o build |
 | Formato carta no desktop | Parece documento Word, nao pagina de venda | NUNCA coluna unica centralizada em high-ticket (ver desktop-layout-rules.md) |
 | Clonar e inventar identidade nova | Cliente quer a marca dele; paleta/logo inventados = retrabalho garantido | Ao CLONAR site real: manter identidade original. Extrair cores exatas via `getComputedStyle` no navegador, baixar o LOGO REAL do site (nunca recriar). Só reinventar se pedido explicito |
@@ -624,15 +613,18 @@ O que a rota expressa NAO dispensa: copy antes de codigo, identidade real quando
 ### GATES OBRIGATORIOS ENTRE STEPS
 
 **Estes gates sao do caminho CRIAR.** Os outros caminhos tem gate proprio, descrito em
-"OS 4 CAMINHOS": CLONAR fecha no **gate de fidelidade** (original e clone lado a lado),
-MELHORAR fecha no **gate de melhoria** (antes e depois com nota por dimensao, e nenhuma
-dimensao pode ter piorado), EDITAR fecha no **checklist de regressao + prova do ponto
-alterado**. Exigir COPY LOCK num clone ou wave de 7 lentes numa troca de headline nao e
+"OS 4 CAMINHOS": CLONAR troca os gates 1 e 2 pelo **gate de fidelidade** (original e clone lado
+a lado) e fecha no GATE 4 normal; MELHORAR fecha no GATE 4 **mais** o **gate de melhoria**
+(antes e depois com nota por dimensao, e nenhuma dimensao pode ter piorado), que e um gate
+ADICIONAL de nao-regressao, nao um substituto; EDITAR fecha no **checklist de regressao + prova
+do ponto alterado**, e so ele dispensa a wave. Exigir COPY LOCK num clone ou wave de 7 lentes numa troca de headline nao e
 rigor, e processo errado: o gate tem que caber no que foi pedido.
 
 ```
 STEP 0 (ENTENDER & INVENTARIAR) ────────────────────────────
-  GATE 0: Classificacao + mapa de secoes + flags de copy + inventario de assets documentados?
+  GATE 0: As SEIS respostas da rodada 1 (0.0) registradas, cada uma marcada como resposta do
+          usuario ou SUPOSICAO + classificacao + mapa de secoes + flags de copy + inventario
+          de assets documentados?
   [ ] SIM → avanca pro Step 1
   [ ] NAO → PARA. Completa o Step 0 primeiro.
 
@@ -647,12 +639,20 @@ STEP 2 (DIRECIONAR) ────────────────────
   [ ] NAO → PARA. Nao escreva uma linha de codigo sem direcao visual.
 
 STEP 3 (BUILDAR) ───────────────────────────────────────────
-  GATE 3: Todas secoes construidas com assets reais + animacoes + layout desktop rico?
+  GATE 3: Todas secoes construidas com assets reais + animacoes + layout desktop rico +
+          decisao de MOVIMENTO declarada (quais blocos ganharam movimento e por que os
+          outros nao ganharam, ver 3.2b)?
   [ ] SIM → avanca pro Step 4
   [ ] NAO → PARA. Volte e complete o que falta. Pagina incompleta = pagina feia.
 
 STEP 4 (VERIFICAR & SHIPAR) ────────────────────────────────
-  GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + IDENTIDADE DA PAGINA COMPLETA (title, meta description, favicon PNG, og:title, og:description, og:image) + PASSE DE GOSTO rodado (Step 4.9, com contagem de tells antes/depois)+ + deploy funcionando + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile do live LIDOS + interacao principal testada)?
+  GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0,
+          sem notas <7) + QA checklist 100% (Lighthouse 90+ quando houver navegador; sem ele,
+          pendencia declarada) + consistencia de contato conferida digito por digito + diff de
+          claims feito + IDENTIDADE DA PAGINA (4.2b, conferida pelo script) + PASSE DE GOSTO
+          rodado (4.2c) + deploy funcionando (ou, na entrega SEM deploy, servidor local com o
+          deploy declarado como pendencia) + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile
+          LIDOS + interacao principal testada)?
   [ ] SIM → avanca pro Step 5 (monitoramento)
   [ ] NAO → PARA. Corrige antes de entregar. Sem excecoes. Verificacao quebrada = entrega bloqueada, nunca "entrego sem prova".
 ```
@@ -675,10 +675,110 @@ STEP 4 (VERIFICAR & SHIPAR) ─────────────────�
 
 Recebe o material do usuario e extrai tudo que precisa ANTES de tocar em copy, design ou codigo.
 
+### 0.0 BRIEFING: entrevista de 2 rodadas (a PRIMEIRA coisa do Step 0)
+
+**Desvio:** se o usuario ja chegou com doc, PDF, briefing fechado ou copy pronta, NAO abra a
+entrevista inteira. Va para o 0.1, leia o material e use a entrevista so para o que ficou em
+branco (tipicamente preco, destino do lead e acao esperada).
+
+**EXTRAIA o basico primeiro. Pergunta simples, que qualquer um responde.**
+
+O pedido real chega assim: *"cria uma pagina pra mim de uma academia"*. So isso. NAO responda
+com "qual o seu publico-alvo e qual a dor dele?": isso e vocabulario de marqueteiro, e quem tem
+academia responde "todo mundo que quer emagrecer", que nao serve pra nada. E NAO pergunte sobre
+cliente antigo logo de cara: muita gente ainda nao abriu o negocio e trava na primeira pergunta.
+
+**RODADA 1, o basico. Mande as perguntas juntas, numa lista curta, pra pessoa responder de uma
+vez.** Sao todas de fato, sem interpretacao. **Troque os exemplos entre parenteses pelos do
+nicho do pedido**: exemplo de academia numa consultoria juridica soa automatico e desanima.
+
+1. **Qual e o nicho, exatamente?** (academia, so musculacao, crossfit, pilates, funcional)
+2. **Onde voce atende?** (cidade e bairro, ou online)
+3. **Atende quem?**
+   - cliente final PESSOA: mulheres, homens, os dois; e a faixa de idade, se souber
+   - cliente final EMPRESA (B2B): porte, segmento e quem decide a compra (cargo). Genero e
+     idade sao o eixo errado aqui e devolvem resposta inutil
+4. **O que voce vende?** (plano mensal, aula avulsa, pacote fechado, avaliacao)
+5. **Quanto custa, mais ou menos?**
+6. **O que voce quer que a pessoa faca nessa pagina?** (agendar aula, chamar no WhatsApp,
+   comprar direto, deixar o contato)
+
+Com essas seis ja da pra escrever copy que aponta pra alguem. Nicho + cidade + genero + faixa
+etaria ja e um publico; oferta + preco + acao ja e uma pagina.
+
+**CRITERIO DE ACEITE (resposta presente nao e resposta util).** Antes de dar a rodada 1 por
+respondida, conferir:
+- **nicho** so vale com o que + pra quem + resolvendo o que ("consultoria" nao vale;
+  "consultoria de folha de pagamento pra industria de pequeno porte" vale)
+- **publico** so vale com pelo menos um atributo alem de "empresas" ou "todo mundo"
+- **oferta** so vale com formato e recorrencia (mensal, avulso, pacote, projeto fechado)
+- **acao** so vale com o destino nomeado (qual WhatsApp, qual formulario, qual checkout)
+
+Reprovou em alguma? Nao mande a pergunta aberta de novo: devolva **2 ou 3 opcoes concretas** pra
+pessoa escolher ("e mais pra A, B ou C?").
+
+**RODADA 2, so SE a pessoa ja atende gente.** Pergunte: *"voce ja tem cliente hoje?"*. Se sim,
+estas quatro rendem muito, porque devolvem material que nao da pra inventar:
+
+- **"Me conta o ultimo cliente que fechou: quem era e o que trouxe ele ate voce?"** (a persona
+  real, quase sempre mais especifica que a imaginada)
+- **"O que ele te falou quando chegou? Se lembrar da frase, melhor."** (voz do cliente verbatim,
+  vira headline. Anote com as palavras DELA, sem traduzir pro seu vocabulario)
+- **"Quem procura voce e voce percebe que nao e pra voce?"** (o anti-publico afia a mira mais
+  rapido que descrever o publico certo; vira a secao "para quem NAO e")
+- **"O que essa pessoa ja tinha tentado antes, e por que nao deu certo?"** (devolve a objecao
+  real e o diferencial, sem voce inventar nenhum dos dois)
+
+Se a pessoa ainda NAO tem cliente, pule a rodada 2 sem drama e siga com as seis primeiras.
+**Registre a flag `sem prova social` no output do Step 0**: ela viaja com o projeto e muda o
+gate do Step 4 (ver 4.0b, dimensao Prova Social). Nunca transforme a entrevista em
+interrogatorio: e melhor uma pagina boa com seis respostas do que nenhuma pagina porque a
+pessoa cansou de responder.
+
+**Se travar ou responder generico, NAO repita a pergunta.** Ofereca um palpite pra ela reagir:
+*"Pelo que costuma acontecer em academia de bairro, e gente de 30 a 50 que ja tentou treinar
+sozinha e desistiu, e o que trava e nao saber comecar sem se machucar. E por ai, ou o seu caso
+e outro?"*. Gente e muito melhor em CORRIGIR do que em CRIAR do zero, e um palpite errado rende
+mais que uma pergunta aberta.
+
+**ONDE O PALPITE E PROIBIDO.** Palpite serve pra nicho, publico, dor, objecao e anti-publico:
+campos de interpretacao, que a pessoa corrige em dois segundos. **NUNCA palpite preco, garantia,
+numero de alunos, resultado, prazo, data ou depoimento.** Esses sao fato, e palpite aceito por
+silencio vira dado inventado na pagina (proibido pelo QA 4.2, item "ZERO dado inventado"). Sem
+confirmacao: deixar em branco, registrar como pendencia do usuario e NAO deixar aparecer na
+pagina ate ser confirmado.
+
+**Resposta pela metade** (respondeu 4 das 6, ignorou 2): nao reenvie a lista inteira nem repita
+tudo. Devolva **so as que faltam**, numa unica mensagem curta, ja com palpite pra pessoa apenas
+confirmar ou corrigir.
+
+**Regra de parada:** so avance com as seis da rodada 1 respondidas e aprovadas no criterio de
+aceite. Sem publico e oferta definidos na largada, a pagina inteira nasce apontando pra ninguem,
+e o retrabalho custa a pagina toda, nao um paragrafo.
+
+**Modo nao-interativo** (subagente, automacao, ou o usuario pediu "faz direto"): nao existe
+ninguem pra responder, entao NAO trave. Preencha com palpite derivado do pedido as CINCO de
+interpretacao (nicho, local, publico, oferta, acao), marque cada uma como `SUPOSICAO` no output
+do Step 0 e liste na entrega as que precisam de confirmacao. **A pergunta 5 (preco) e fato e NAO
+se palpita:** fica registrada como PENDENTE, a pagina sai sem numero de preco e o CTA leva pra
+conversa. A excecao dispensa a PARADA, nunca o registro: seguir em silencio com suposicao e que
+e proibido.
+
+Diferenca medida em pagina real (demo de pilates, 25/08/2026): o pedido trazia nicho, publico,
+faixa etaria e objetivo, e o resultado foi a headline "Pilates para quem sente dor nas costas e
+nunca pisou num estudio", as tres objecoes reais na secao "isso parece com voce", e o FAQ que
+ataca "tenho mais de 50 anos, ainda da tempo?". Nada disso sai de um briefing que diz so
+"academia".
+
 ### 0.1 Ler o Material
 - Se PDF: `Read file_path="/caminho/do/arquivo.pdf"` (todas as paginas)
-- Se Google Doc: `bash ~/.claude/scripts/google-api.sh doc <DOC_ID>`
-- Se Google Sheet: `bash ~/.claude/scripts/google-api.sh sheet <SHEET_ID> "Aba"`
+- Se Google Doc / Sheet: **requisito externo, NAO vem neste repo.** Os scripts
+  `~/.claude/scripts/google-api.sh` e `google-oauth-capture.py` precisam estar instalados e
+  autenticados na maquina (ver `references/google-workspace.md`). Existindo:
+  `bash ~/.claude/scripts/google-api.sh doc <DOC_ID>` e
+  `bash ~/.claude/scripts/google-api.sh sheet <SHEET_ID> "Aba"`.
+  **Nao existindo (caso da maioria das maquinas): pedir ao usuario o texto colado ou o PDF
+  exportado.** Nunca ficar tentando rodar um script que nao esta instalado.
 - Se texto direto: ler a mensagem do usuario
 
 ### 0.2 Classificar a Pagina
@@ -761,6 +861,10 @@ Se o usuario NAO tem fotos e nao ha API de stock/geracao: monograma/ilustracao f
 
 ### Output do Step 0
 Blueprint documentado com:
+- **As seis respostas da rodada 1 (0.0)**, escritas na resposta, cada uma marcada como
+  `resposta do usuario` ou `SUPOSICAO` (modo nao-interativo)
+- **Flags do briefing:** `sem prova social` (quando a pessoa ainda nao tem cliente) e a lista
+  de campos de fato que ficaram em branco (preco, garantia, numeros, datas)
 - Classificacao (tipo + preco + tom + temperatura)
 - Mapa de secoes
 - Flags de copy (o que precisa melhorar)
@@ -768,7 +872,7 @@ Blueprint documentado com:
 - Contexto de funil
 - Inventario de assets (o que existe vs o que precisa criar)
 
-**>>> GATE 0: Blueprint + inventario de assets documentados por escrito? Assets criticos existem ou ha plano para obtelos? Se NAO, PARA AQUI. <<<**
+**>>> GATE 0: As seis respostas da rodada 1 (0.0) registradas (resposta do usuario ou SUPOSICAO declarada) + blueprint + inventario de assets documentados por escrito? Assets criticos existem ou ha plano para obtelos? Se NAO, PARA AQUI. <<<**
 
 **PARADA OBRIGATORIA:** Apresentar o blueprint completo ao usuario e perguntar: "Step 0 concluido. Posso avancar para o Step 1 (COPY & MENSAGEM)?", NAO AVANCAR SEM RESPOSTA.
 
@@ -1115,30 +1219,66 @@ Video de fundo e um diferencial FORTE, mas subordinado a constraint global de LC
 | Capture simples / thank-you | NAO usar (velocidade maxima; textura/pattern no lugar) |
 | E-commerce home | NAO usar (identidade real + fotos de produto) |
 
-Regras quando usar: se compromete LCP < 2.5s, SAI (constraint global vence). Requer PEXELS_API_KEY ou Veo disponivel; sem nenhum dos dois, fallback: gradiente + noise/pattern + foto tratada, e registrar na entrega que o video ficou pendente.
+Regras quando usar: se compromete LCP < 2.5s, SAI (constraint global vence). Fontes, nesta ordem: material real do cliente, Pexels (`PEXELS_API_KEY`), Veo, Higgsfield (ver 3.2b). Sem nenhuma, fallback: gradiente + noise/pattern + foto tratada, e registrar na entrega que o video ficou pendente.
 
 - **Buscar primeiro:** `assets-search.py "descricao-da-secao" --type video`: buscar videos stock que combinem com o tema
-- **Se nao encontrar stock adequado:** gerar com Veo 2 → ver `references/veo-video-workflow.md`
+- **Se nao encontrar stock adequado:** gerar com Veo 2 → ver `references/veo-video-workflow.md`, ou Higgsfield → `references/higgsfield.md`
 - **Implementar** o video como background absoluto da secao com overlay:
   - Secoes escuras: video `object-cover` + overlay escuro (gradiente/`bg-black/60`)
-  - Secoes claras: video `object-cover` com baixa opacidade + grid/pattern por cima
+  - Secoes claras: video `object-cover` + veu claro proprio (nunca baixar a opacidade do video)
+- **O VEU EXISTE PRA O TEXTO FICAR LEGIVEL, NAO PRA ESCONDER O VIDEO.** Calcule antes de aceitar:
+  `visivel = opacidade_video x (1 - alpha_veu)`. **Abaixo de 15% de visibilidade o video e enfeite
+  invisivel: ou aumenta, ou tira e economiza o credito.** Faixa medida que funcionou em pagina
+  real (25/08/2026): video a 100% e veu entre 72% e 48% (mais forte atras do titulo, mais fraco
+  embaixo). Texto sobre video exige MEDIR contraste (minimo 4.5:1) contra as partes ESCURAS do
+  clipe: se nao bate, a saida e composicao (texto numa coluna, video numa janela ao lado), nao
+  aumentar o veu. Licoes completas em `references/higgsfield.md`.
 - **Otimizar:** `ffmpeg -i input.mp4 -c:v libx264 -crf 28 -vf scale=1280:-2 -an output.mp4`
 - **Mobile:** esconder videos no mobile (performance) com `hidden md:block` + `preload="none"`
 
 **Criar demais assets INLINE** (nao como step separado):
 - **Imagens de app/produto:** gerar com Nanobanana (Gemini) → WebP → mockup iPhone15Pro ou Safari (ver `references/nanobanana-mockup-carousel.md`)
 - Imagens gerais: buscar com `assets-search.py` ou gerar descricao para IA
-- **Icones:** Hugeicons como primario (46k+ icones, 10 estilos) para landing pages. Lucide para UI/dashboards simples. NUNCA genericos/simples
+- **Icones:** Hugeicons como primario (46k+ icones, 10 estilos) para landing pages. Lucide para UI/dashboards simples. NUNCA genericos/simples, e NUNCA "quadradinho arredondado com fundo tingido + glifo abstrato" (o tell numero 1 do passe de gosto 4.2c)
 - Videos stock: `assets-search.py "descricao" --type video`
 
 **Efeitos avancados, consultar SEMPRE antes de entregar:**
-- Ver `references/efeitos-avancados.md` para: 3D Card Tilt, Text Scramble, Magnetic Cursor, Gradient Border animado, Noise Texture, SVG Blob Morphing, Confetti, CSS Scroll-Timeline, Aurora Background, Floating Orbs, etc.
+- Ver `references/efeitos-avancados.md` para: 3D Card Tilt, Text Scramble, Magnetic Cursor, Gradient Border animado, Noise Texture, SVG Blob Morphing, Confetti, CSS Scroll-Timeline, Parallax Multicamada, Counter Animado, etc.
+- **BANIDOS do catalogo (reprovam na wave, sao tells V1-V15):** Aurora Background, Floating Orbs, SVG Blob de glow, Glassmorphism generalizado, glow colorido em botao, gradient-clip em titulo. Estao no arquivo de referencia, mas NAO podem ser usados como "wow" nesta skill.
 - Regra: minimo 2 efeitos por pagina (1 de fundo + 1 de interacao). Maximo 2 por secao.
-- CTA principal DEVE ter pelo menos: efeito de hover elaborado + confetti OU magnetic
+- CTA principal DEVE ter micro-interacao: mudanca de tom no hover + elevacao sutil. Confetti ou magnetic so QUANDO o tom da pagina pede (igual ao 3.6), nunca por padrao.
 
 **Mockup Carousel (produto digital/SaaS):**
 - Gerar screenshots com Nanobanana → iPhone15Pro + MockupCarousel → seção side-by-side
 - Ver workflow completo em `references/nanobanana-mockup-carousel.md`
+
+### 3.2b MOVIMENTO NOS BLOCOS: o Higgsfield e passo ESPERADO, nao enfeite
+
+Pagina inteira parada, com bloco de texto e icone, entrega menos do que merece. **Neste step,
+pergunte SEMPRE quais blocos ganham movimento** e trate isso como parte do build, nao como
+sobremesa. Os candidatos tipicos sao os blocos que hoje so tem texto:
+- lista de beneficios ou "o que muda", que costuma ser 3 ou 4 cards de texto com icone
+- passo a passo do processo
+- fundo de secao intermediaria, pra quebrar a monotonia entre dobras
+
+Ordem de preferencia (nao muda): **material real do cliente → gravacao de tela → Higgsfield**.
+Cena generica de IA se reconhece; imagem real do negocio ganha dela sempre que existir.
+
+**Sem conta Higgsfield:** siga, declare a pendencia na entrega ("os blocos X e Y foram
+entregues estaticos: exigem conta Higgsfield") e ofereca as rotas que nao pedem conta paga
+(animacao CSS/Framer Motion no proprio bloco, ou b-roll do acervo aberto). Falta de conta
+degrada o resultado, nao bloqueia a entrega.
+
+**Aluno sem conta nem CLI?** O setup inteiro esta em `references/higgsfield.md`, na secao
+SETUP: criar conta (**plano pago para uso comercial**), `npm i -g @higgsfield/cli`,
+`higgsfield auth login`, `npx skills add higgsfield-ai/skills` e, o passo que trava todo mundo
+e nao aparece em tutorial nenhum, `higgsfield workspace set <id>` (sem workspace selecionado,
+qualquer comando responde "No workspace selected"). Verificacao: `higgsfield account status`
+imprime e-mail, plano e creditos. Conduza a pessoa por eles em vez de so avisar que falta conta.
+
+As 5 regras de video em pagina (proporcao unica decidida antes, gerar no tamanho da caixa x2,
+seed anotado, poster com hash proprio, video do heroi e o LCP) estao em
+`references/higgsfield.md` e valem pra QUALQUER rota de video, inclusive a do Replicate.
 
 ### 3.3 Checklist Brazil (integrado no build)
 
@@ -1183,11 +1323,13 @@ Antes de considerar o build "pronto", revisar CADA secao:
 - [ ] Cards e secoes tem profundidade? (shadows reais, borda 1px, elevacao no hover: sem border glow colorido)
 - [ ] CTA principal tem micro-interacao? (mudanca de tom no hover, elevacao sutil, magnetic ou confetti QUANDO o tom da pagina pede: nunca glow colorido difuso)
 - [ ] Video de background conforme a tabela do 3.2? (obrigatorio so onde a tabela manda; capture NAO leva)
+- [ ] **Movimento decidido bloco a bloco (3.2b)?** Quais ganharam movimento, por qual rota (material do cliente, gravacao de tela, Higgsfield, CSS/Framer Motion) e por que os outros ficaram estaticos. Bloco de texto+icone sem movimento e sem motivo declarado = decisao nao tomada
+- [ ] Video de fundo passa na conta do veu (`visivel = opacidade_video x (1 - alpha_veu)` >= 15%) e o texto por cima mede >= 4.5:1 de contraste?
 - [ ] Produto digital/SaaS tem mockup carousel com Nanobanana? (se pagina de venda de app/ferramenta)
 
 Se QUALQUER item acima for NAO → corrigir AGORA, antes de ir pro Step 4.
 
-**>>> GATE 3: Todas secoes construidas com layout desktop rico + assets reais + animacoes + pelo menos 1 efeito "wow" por scroll? Se NAO, PARA AQUI. Pagina incompleta = pagina feia. Volte e complete o que falta. <<<**
+**>>> GATE 3: Todas secoes construidas com layout desktop rico + assets reais + animacoes + pelo menos 1 efeito "wow" por scroll + DECISAO DE MOVIMENTO declarada (quais blocos ganharam movimento, por qual rota, e por que os outros ficaram estaticos: ver 3.2b)? Se NAO, PARA AQUI. Pagina incompleta = pagina feia. Volte e complete o que falta. <<<**
 
 **PARADA OBRIGATORIA:** Apresentar preview ou descricao detalhada do que foi buildado ao usuario e perguntar: "Step 3 concluido. Posso avancar para o Step 4 (VERIFICAR & SHIPAR)?", NAO AVANCAR SEM RESPOSTA.
 
@@ -1219,9 +1361,22 @@ reais (jun/2026): um site institucional e um clone. Para tornar isso impossivel 
 
 1. **Deploy acontece DENTRO do Step 4, DEPOIS da wave (4.0).** Buildar (Step 3) e depois
    deployar sem rodar a wave = gate pulado = a skill FALHOU. Nao existe "deploy rapido".
-2. **PROVA OBRIGATORIA NA ENTREGA:** a mensagem que apresenta a pagina ao usuario DEVE
-   conter o bloco de veredito da wave (`deploy_liberado`, `scores` por lente, criticos).
-   Se a sua resposta final nao tem esse bloco, voce PULOU o gate. Nao entregue sem ele.
+2. **BLOCO OBRIGATORIO DA ENTREGA (fonte unica, vale pra CRIAR, CLONAR e MELHORAR, inclusive
+   na rota expressa):** a mensagem que apresenta a pagina ao usuario DEVE conter estas QUATRO
+   linhas. Falta uma = gate pulado = nao entregue.
+
+   ```
+   VEREDITO DA WAVE: deploy_liberado <true|false> | scores por lente | criticos: <lista ou nenhum>
+   IDENTIDADE DA PAGINA: title / description / favicon PNG quadrado / og:title / og:description /
+     og:image conferidos (colar o output do screenshot-prova.js)
+   PASSE DE GOSTO (4.2c): tells ANTES -> DEPOIS (o depois tem que ser 0) + itens de composicao alterados
+   PROVA DE ENTREGA (4.5): arquivos de screenshot LIDOS + resultado do clique da interacao principal
+   PENDENCIAS DECLARADAS: <fallbacks que rodaram degradados, deploy/Lighthouse/og:image absoluta
+     quando nao houver dominio, assets que faltam>
+   ```
+
+   **No caminho EDITAR** o bloco e outro, menor: checklist de regressao + prova do ponto alterado
+   + pendencias. A wave nao roda ali.
 3. **Escada de fallback da wave** (usar o degrau mais alto disponivel):
    1. Tool `Workflow` disponivel → wave completa em paralelo (7 lentes, ou 3 na rota expressa).
    2. Sem `Workflow`, mas com `Task`/`Agent` (subagentes) → rodar CADA lente como subagente
@@ -1277,12 +1432,19 @@ Pontuar cada dimensao de 0-10 usando `references/scoring-system.md`:
 | Animacoes (ver `references/animation-audit.md`) | /10 | |
 | Grid & Layout (ver `references/desktop-layout-rules.md`) | /10 | |
 | CTAs (ver `references/cta-placement-map.md`) | /10 | |
-| Prova Social (ver `references/social-proof-hierarchy.md`) | /10 | |
+| Prova Social (ver `references/social-proof-hierarchy.md`) | /10 ou N/A | |
 | Mobile (ver `references/mobile-checklist-detailed.md`) | /10 | |
 | Performance Visual | /10 | |
 | Trust Signals (ver `references/trust-signals-placement.md`) | /10 | |
 
 **Media minima para avancar: 8.0/10. Qualquer nota < 7 = BLOQUEIO.**
+
+**Excecao unica, para quem ainda NAO tem cliente:** se o briefing (0.0) registrou a flag
+`sem prova social`, a dimensao Prova Social entra como **N/A** e sai do calculo da media, desde
+que a pagina traga os substitutos verificaveis (credencial do profissional, fotos reais do
+espaco e do equipamento, garantia, condicao de inauguracao, CNPJ e endereco). Regra completa em
+`references/scoring-system.md`, dimensao 6. Sem os substitutos, a dimensao volta a pontuar
+normalmente. Depoimento inventado continua PROIBIDO em qualquer cenario.
 
 ---
 
@@ -1340,7 +1502,7 @@ Executar auditoria estrategica completa usando `references/strategist-audit.md`:
 - [ ] Imagens carregando (nenhum placeholder vazio)
 
 **Performance:**
-- [ ] Lighthouse 90+ (todos os scores). **NAO bloqueia:** exige Chrome/Chromium instalado; sem navegador compativel vira PENDENCIA DECLARADA na entrega. **Entrega SEM deploy (pasta local/arquivo unico):** Lighthouse, QA pos-deploy, OG image e GTM viram PENDENCIAS declaradas no bloco de entrega (nao bloqueiam o gate; bloqueiam rodar trafego)
+- [ ] Lighthouse 90+ (todos os scores). **NAO bloqueia:** exige Chrome/Chromium instalado; sem navegador compativel vira PENDENCIA DECLARADA na entrega. **Entrega SEM deploy (pasta local/arquivo unico):** Lighthouse, QA pos-deploy, GTM e a **URL absoluta** da `og:image` viram PENDENCIAS declaradas no bloco de entrega (nao bloqueiam o gate; bloqueiam rodar trafego). **As TAGS de identidade (title, description, favicon PNG, og:title, og:description, og:image) continuam bloqueando, com ou sem deploy: ver 4.2b**
 - [ ] LCP < 2.5s
 - [ ] TODAS imagens em WebP
 - [ ] Tailwind compilado (nao CDN)
@@ -1361,15 +1523,7 @@ Executar auditoria estrategica completa usando `references/strategist-audit.md`:
 - [ ] Meta Pixel (se aplicavel)
 - [ ] UTM pass-through funcionando
 
-**SEO + compartilhamento (gerar no build, nao deixar zerado):**
-- [ ] `<title>` unico e descritivo
-- [ ] `<meta name="description">` presente
-- [ ] OG tags (title, description, image) com URLs absolutas
-- [ ] **OG image 1200x630 de verdade** (nao deixar sem). Receita: montar um HTML do card (logo + foto + headline + contato), renderizar via Playwright/Edge e exportar JPG/PNG.
-- [ ] **Favicon em PNG** (varios tamanhos) + `apple-touch-icon`, nao so SVG. Muitos navegadores nao leem favicon SVG. Receita: `rsvg-convert -w 180 -h 180 logo.svg -o apple-touch-icon.png` (e 32/16px).
-- [ ] Validar o card de preview de verdade (compartilhar o link e ver se puxa imagem+titulo).
-
-> Bug real de producao: preview, title e favicon sairam zerados na 1a versao. Gerar isso e parte do build, nao um extra opcional.
+**SEO + compartilhamento:** nao e item de checklist, e GATE. Ver **4.2b IDENTIDADE DA PAGINA**, logo abaixo, com o comando que reprova.
 
 **Acessibilidade:**
 - [ ] Contraste 4.5:1 minimo
@@ -1377,6 +1531,94 @@ Executar auditoria estrategica completa usando `references/strategist-audit.md`:
 - [ ] Focus states visiveis
 - [ ] `prefers-reduced-motion` respeitado
 - [ ] ZERO emojis (usar icones SVG)
+
+### 4.2b IDENTIDADE DA PAGINA: title, description e favicon sao GATE, nao checklist
+
+Toda pagina entregue TEM que sair com, no minimo:
+- `<title>` proprio (nao "Document", nao o nome do template)
+- `<meta name="description">` que descreve a oferta, nao o produto generico
+- **favicon PNG** do projeto (`<link rel="icon" type="image/png" href="favicon.png">`) mais
+  `apple-touch-icon`. Favicon so em SVG nao serve: muitos navegadores nao leem.
+- `og:title`, `og:description` e `og:image`
+
+**O comando que reprova** (o mesmo da prova de entrega 4.5, que ja abre a pagina no Playwright):
+
+```bash
+node <dir-da-skill>/scripts/screenshot-prova.js <url> <outdir>
+# a checagem de identidade roda junto e sai com exit 1 se faltar item obrigatorio.
+# So no BASELINE do caminho MELHORAR (pagina de terceiro, ainda nao sua) use --sem-identidade.
+# Na prova de entrega, NUNCA passe essa flag: seria pular o gate.
+```
+
+**O que bloqueia e o que vira pendencia (regra unica, nao "depende"):**
+- title, meta description, favicon PNG quadrado, `og:title` e `og:description`: **BLOQUEIAM
+  sempre**, inclusive na entrega sem deploy. Sao 6 linhas de HTML e nao dependem de dominio.
+- `og:image`: a TAG e obrigatoria sempre. Ja o ARQUIVO 1200x630 com **URL absoluta** exige
+  dominio: sem deploy, deixar o caminho relativo no HTML, gerar a imagem, e declarar
+  "og:image com URL absoluta pendente ate o dominio existir". Isso e pendencia declarada,
+  nao gate aberto.
+
+**Gotcha do favicon:** favicon TEM que ser quadrado. Redimensionar preservando proporcao
+(`sips -Z`, `object-fit` e afins) a partir de uma foto 3:2 devolve 32x21, nao 32x32, e o
+navegador distorce. Recorte quadrado PRIMEIRO, depois redimensione. Conferir com
+`sips -g pixelWidth -g pixelHeight` antes de declarar pronto: os dois numeros tem que ser iguais
+(o script tambem confere isso sozinho).
+
+**Receita da og:image 1200x630:** montar um HTML do card (logo + foto + headline + contato),
+renderizar via Playwright e exportar JPG/PNG. **Receita do favicon:** recorte quadrado e depois
+`rsvg-convert -w 180 -h 180 logo.svg -o apple-touch-icon.png` (e 32/16px), ou `sips -c` a partir
+da foto.
+
+Por que virou gate e nao ficou no checklist: ja estava escrito no checklist, com aviso de que
+"saiu zerado na 1a versao", e MESMO ASSIM uma pagina foi entregue sem favicon e sem nenhuma og
+tag (demo de pilates, 25/08/2026). Checklist nao bloqueia, gate bloqueia. Item que so vive em
+lista de conferencia e item que vai ser pulado quando o contexto encher.
+
+O custo de errar e desproporcional ao esforco de acertar: a pagina e compartilhada no WhatsApp e
+no Instagram sem imagem nenhuma e com titulo errado, e parece amadora antes de alguem abrir.
+
+---
+
+### 4.2c PASSE DE GOSTO (ultimo ato ANTES do deploy, OBRIGATORIO)
+
+A `design-taste-frontend` ja rodava nesta skill em dois pontos, e mesmo assim saiu pagina com
+cara de IA. O motivo: nos dois pontos ela roda como LENTE DE AUDITORIA, que da nota e aponta.
+**Apontar o defeito nao e remover o defeito.** Uma nota 8,5 com tres tells presentes continua
+sendo uma pagina com tres tells presentes.
+
+Por isso existe este passo, e ele e o ULTIMO antes do deploy: depois da wave (4.0), depois do QA
+(4.2), com a pagina rodando (preview local ou de branch). Carregue a `design-taste-frontend` e
+passe a pagina inteira com mandato de CORRIGIR, nao de pontuar.
+
+**ORDEM FIXA do Step 4, sem interpretacao:** 4.0 wave → 4.2 QA → 4.2b identidade → 4.2c passe de
+gosto → 4.3 deploy → 4.4 QA pos-deploy → 4.5 prova de entrega → GATE 4. O passe roda ANTES do
+deploy justamente pra nao existir "corrigi depois do print": se por qualquer motivo voce mexer na
+composicao DEPOIS do 4.3, e obrigatorio re-deployar e repetir o 4.5 inteiro.
+
+**O que este passe caca, na ordem em que mais entrega resultado:**
+
+1. **Icone generico em caixinha.** Quadradinho arredondado com fundo tingido + glifo abstrato e
+   o tell mais reconhecivel que existe. Piora quando o glifo nao significa nada (um risco pra
+   "fortalece a lombar", um alvo pra "respira"). Saidas melhores, em ordem: recorte real de uma
+   foto que a pagina ja tem, virando miniatura; tirar o icone e deixar a tipografia carregar;
+   marca desenhada com personalidade que represente mesmo a ideia. Trocar por OUTRO glifo
+   generico nao resolve nada.
+2. **Uniformidade excessiva.** Todos os cards do mesmo tamanho, todo canto com o mesmo raio,
+   toda sombra igual, toda secao centralizada, toda secao com a mesma estrutura de titulo e
+   subtitulo. Pagina feita por gente tem ritmo: algo quebra a grade, algo e assimetrico.
+3. **Os 15 tells de `references/anti-vibe-coding.md`**, com os numeros medidos, nao no olho.
+
+**O que NAO se mexe neste passe:** paleta e tipografia (vieram do banco de design e ja foram
+decididas), copy (foi travada no COPY LOCK), e qualquer coisa que ja passou por medicao
+(contraste, opacidade calibrada, enquadramento). O passe e de COMPOSICAO e PERSONALIDADE.
+
+**Prova de que rodou:** a lista dos itens de composicao alterados (o que era e o que virou) mais
+a contagem de tells ANTES e DEPOIS. **O DEPOIS tem que ser 0.** Como o Step 3.6 e a wave ja
+exigem zero tells antes daqui, `0 → 0` e resultado VALIDO e comum: nesse caso a prova e a lista
+de itens de composicao inspecionados (icones, ritmo, assimetria), nunca "rodei e estava tudo
+certo" sem citar o que foi olhado.
+
+---
 
 ### 4.3 Deploy
 
@@ -1415,14 +1657,20 @@ interacao principal nunca foi clicada (uma roleta publicada com o popup morto). 
 **SE A VERIFICACAO QUEBRAR, A ENTREGA ESTA BLOQUEADA. Conserta a verificacao primeiro.
 "Nao consegui tirar screenshot" NUNCA justifica entregar sem prova.**
 
-1. Rodar o script canonico no DEPLOY REAL (nao no localhost, nao no preview local):
+1. Rodar o script canonico no DEPLOY REAL (nao no preview de build, nao no arquivo aberto com
+   `file://`). **Unica excecao: entrega SEM deploy**, e ai a prova roda contra o servidor local
+   com compressao (`python3 scripts/servidor-gzip.py <pasta> <porta>`), com o deploy declarado
+   como pendencia no bloco de entrega:
    ```bash
    node <dir-da-skill>/scripts/screenshot-prova.js <url-live> <outdir>
    # pagina com interacao principal (roleta, quiz, form, popup, calculadora):
    node <dir-da-skill>/scripts/screenshot-prova.js <url-live> <outdir> --click "<seletor do CTA/interacao>"
    ```
-   O script captura desktop (1440px) + mobile (390px) full-page e o estado pos-clique.
-   Ele sai com erro se a pagina nao carregar, o clique falhar ou o PNG vier em branco.
+   O script captura desktop (1440px) + mobile (390px) full-page e o estado pos-clique, e
+   **roda junto a checagem de IDENTIDADE DA PAGINA (4.2b)**: title, description, favicon PNG
+   quadrado, og:title, og:description e og:image.
+   Ele sai com erro (exit 1) se a pagina nao carregar, o clique falhar, o PNG vier em branco
+   ou faltar item de identidade. Colar o output dele no bloco de entrega.
 2. **LER os PNGs com a tool Read** (olhar com os proprios olhos) e conferir contra o
    checklist: ID visual real, sem tells de IA, sem secao quebrada, popup/resultado da
    interacao visivel no pos-clique.
@@ -1434,7 +1682,9 @@ interacao principal nunca foi clicada (uma roleta publicada com o popup morto). 
 5. A mensagem final de entrega deve citar os arquivos de screenshot lidos e o resultado
    do teste de interacao, junto com o veredito da wave (4.0).
 
-**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + IDENTIDADE DA PAGINA COMPLETA (title, meta description, favicon PNG, og:title, og:description, og:image) + PASSE DE GOSTO rodado (Step 4.9, com contagem de tells antes/depois) + deploy funcionando e verificado + ZERO placeholders na pagina live + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada no live)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar. <<<**
+**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + CONSISTENCIA DE CONTATO conferida digito por digito (colar no bloco de entrega os numeros achados no HTML e nos `tel:`/`wa.me`: mais de um numero distinto sem justificativa REPROVA) + DIFF DE CLAIMS feito (lista de afirmacoes x fonte, com o veredito de cada uma) + IDENTIDADE DA PAGINA (4.2b, com o output do `screenshot-prova.js` sem REPROVA) + PASSE DE GOSTO rodado (4.2c, com os itens de composicao alterados e a contagem de tells, que tem que terminar em 0) + deploy funcionando e verificado + ZERO placeholders + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar.**
+
+**ENTREGA SEM DEPLOY (pasta local, arquivo unico, aluno sem conta de hosting) e caminho LEGITIMO, nao gate pulado:** a prova 4.5 roda contra o servidor local (`python3 scripts/servidor-gzip.py <pasta> <porta>`), e deploy, QA pos-deploy, Lighthouse e `og:image` com URL absoluta entram como PENDENCIAS DECLARADAS no bloco de entrega. Tudo o mais do GATE 4 continua valendo igual: wave, identidade, passe de gosto, contato, claims e prova lida com os proprios olhos. **<<<**
 
 ---
 
@@ -1508,7 +1758,10 @@ Documentar o que funcionou na pattern library pessoal:
 ---
 
 
-## Anti-Patterns (NUNCA FACA)
+## Anti-Patterns de codigo (NUNCA FACA)
+
+> Esta lista e a de CODIGO, CSS e performance. A lista de PROCESSO e de cara de IA esta em
+> "ANTI-PATTERNS DE PROCESSO E DE IA", antes dos gates. Sao duas, e as duas valem.
 
 - Mais de 3 tamanhos de fonte por pagina
 - Espacamento aleatorio (usar grid de 8px)
@@ -1560,28 +1813,6 @@ Ao reusar padroes de projetos anteriores, salve blueprints proprios em `referenc
 ---
 
 
-## References
-
-- **[references/page-types.md](references/page-types.md)** - Classificacao de tipos de pagina (sales, capture, challenge, VSL, institutional), regras por faixa de preco, tom visual, temperatura de audiencia, templates de secoes por tipo, decision tree, contexto de funil
-- **[references/desktop-layout-rules.md](references/desktop-layout-rules.md)** - Regras anti "formato carta": 7 regras nao-negociaveis de layout desktop, grid system (1200px), templates de layout por secao (hero, stats, problema, solucao, benefits zigzag, modules, bonus, testimonials, mentor, value stack, garantia, FAQ, CTA final), checklist desktop
-- **[references/post-launch.md](references/post-launch.md)** - Sistema de medicao pos-deploy: Microsoft Clarity setup, benchmarks por tipo de pagina, primeiro check 48h, ciclo de iteracao, diagnostico por metrica, prioridade de teste, pattern library pessoal
-- **[references/animacoes-avancadas.md](references/animacoes-avancadas.md)** - Framer Motion completo: page transitions, scroll reveals, magnetic, spring physics, GSAP
-- **[references/efeitos-avancados.md](references/efeitos-avancados.md)** - ⭐ NOVO: Catálogo de 15 efeitos avançados copy-paste: 3D Card Tilt, Text Scramble, Magnetic Cursor, Animated Gradient Border (@property CSS), Noise Texture, SVG Blob Morphing, Confetti no CTA (canvas-confetti), CSS Scroll-Timeline nativo, Aurora Background, Glassmorphism com Spotlight, Typing Effect, Parallax Multicamada, Hover Reveal, Counter Animado, Floating Orbs. Inclui tabela de combinações recomendadas por tipo de página.
-- **`scripts/higgsfield.py`** - cliente da API. `--dry-run` monta a requisicao sem gastar credito; `--lote lote.json` gera a pagina inteira de uma vez, que e o certo porque **credito nao faz rollover**. Grava manifesto `_higgsfield.json` com seed, prompt e modelo de cada clipe (sem ele, regenerar devolve outro clipe), nomeia por hash de CONTEUDO e extrai poster com hash PROPRIO. Avisa quando o preset de camera escolhido tem climax (serve pra anuncio, nao pra fundo de secao).
-- **`scripts/gate-video.mjs`** - as 7 checagens executaveis. Rodado contra uma pagina de lancamento em producao achou 12 defeitos reais que tinham passado por revisao humana. Distingue "borrado em DPR1" de "banda jogada fora em DPR2", e trata corte com `object-position` afinado como AVISO e nao reprovacao.
-- **[references/higgsfield.md](references/higgsfield.md)** - Higgsfield: ANIMACAO e B-ROLL. Passo ESPERADO do Step 3, nao extra. Requer conta propria (paga); sem conta, degrada e declara.
-- **[references/ai-video-generation.md](references/ai-video-generation.md)** - ⭐ NOVO: AI Video com Replicate WAN 2.1: t2v (texto→video) e i2v (anima fotos reais do projeto), pipeline FFmpeg H.264+WebM+poster, embed HTML/CSS com z-index correto, `preload="none"` vs `auto`, mobile/reduced-motion hide, prompts por nicho (natureza, SaaS, arquitetura), checklist e anti-patterns. Aprovado em produção um site institucional real (2026).
-- **[references/veo-video-workflow.md](references/veo-video-workflow.md)** - ⭐ NOVO: Workflow completo Veo 2/3: script Python de geração (mesma GEMINI_API_KEY do nanobanana), pipeline ffmpeg (MP4 H.264 + WebM VP9 + poster WebP), embed correto na página (preload="none", muted, playsinline), CSS mobile (display:none), prompts prontos por nicho (dark tech, WhatsApp, dashboard, energético), checklist de performance
-- **[references/nanobanana-mockup-carousel.md](references/nanobanana-mockup-carousel.md)** - ⭐ NOVO: Geração de screenshots de app com Nanobanana + Magic UI iPhone15Pro/Safari mockups + Carousel premium Framer Motion (básico, 3D perspectiva, auto-play com barra de progresso). Inclui prompts prontos por tipo de produto (WhatsApp SaaS, analytics, plataforma de curso, fintech), seção completa de product showcase, checklist de qualidade
-- **[references/visual-excellence.md](references/visual-excellence.md)** - Heroes epicos, navbar premium, pricing, FAQ, CTA sections, aurora backgrounds, noise textures
-- **[references/visual-assets.md](references/visual-assets.md)** - Video background, Lottie, ilustracoes SVG, icones animados, patterns/noise: integracao completa
-- **[references/anti-vibe-coding.md](references/anti-vibe-coding.md)** - ⭐ NOVO: Checklist de 5 sinais de "site vibe-coded" (badge decorativo, scroll-reveal em excesso, footer sem páginas legais, checkout que não dispara, casca animada sobre produto quebrado). Veredito binário; FALHA em footer legal/checkout bloqueia entrega. Base: reel @patrickwithprospectflo.
-- **[references/magicui-components.md](references/magicui-components.md)** - API completa dos componentes Magic UI
-- **[references/pdf-to-page.md](references/pdf-to-page.md)** - Guia completo de analise visual de PDFs: mapeamento de cores, tipografia, espacamento e conversao para Tailwind
-- **[references/ui-reference.md](references/ui-reference.md)** - API completa dos componentes shadcn/ui
-- **[scripts/search.py](scripts/search.py)** - Busca no banco de dados de design (estilos, cores, fontes, etc.)
-- **[data/](data/)** - CSVs com 50 estilos, 21 paletas, 50 font pairings, guidelines UX
-
 ## Projetos: Referências de Contexto (local, por projeto)
 
 Arquivos de projeto ficam em `references/projects/` (gerados localmente, fora do Git). Ler antes
@@ -1619,94 +1850,3 @@ entre sessões do mesmo projeto. Estrutura: ver `references/sessions/EXAMPLE.md`
 
 ### Mobile / UX patterns
 - Mobbin: https://mobbin.com: 599.800 screenshots de 1.150+ apps, busca por padrão de UI
-
-
-
-
-## STEP 4.9: PASSE DE GOSTO (ultima etapa antes de entregar, OBRIGATORIA)
-
-A `design-taste-frontend` ja rodava nesta skill em dois pontos, e mesmo assim saiu pagina com
-cara de IA. O motivo: nos dois pontos ela roda como LENTE DE AUDITORIA, que da nota e aponta.
-**Apontar o defeito nao e remover o defeito.** Uma nota 8,5 com tres tells presentes continua
-sendo uma pagina com tres tells presentes.
-
-Por isso existe este passo, e ele e o ULTIMO antes da entrega: depois da wave, depois do deploy,
-com a pagina no ar. Carregue a `design-taste-frontend` e passe a pagina inteira com mandato de
-CORRIGIR, nao de pontuar.
-
-**O que este passe caca, na ordem em que mais entrega resultado:**
-
-1. **Icone generico em caixinha.** Quadradinho arredondado com fundo tingido + glifo abstrato e
-   o tell mais reconhecivel que existe. Piora quando o glifo nao significa nada (um risco pra
-   "fortalece a lombar", um alvo pra "respira"). Saidas melhores, em ordem: recorte real de uma
-   foto que a pagina ja tem, virando miniatura; tirar o icone e deixar a tipografia carregar;
-   marca desenhada com personalidade que represente mesmo a ideia. Trocar por OUTRO glifo
-   generico nao resolve nada.
-2. **Uniformidade excessiva.** Todos os cards do mesmo tamanho, todo canto com o mesmo raio,
-   toda sombra igual, toda secao centralizada, toda secao com a mesma estrutura de titulo e
-   subtitulo. Pagina feita por gente tem ritmo: algo quebra a grade, algo e assimetrico.
-3. **Os 15 tells de `references/anti-vibe-coding.md`**, com os numeros medidos, nao no olho.
-
-**O que NAO se mexe neste passe:** paleta e tipografia (vieram do banco de design e ja foram
-decididas), copy (foi travada no COPY LOCK), e qualquer coisa que ja passou por medicao
-(contraste, opacidade calibrada, enquadramento). O passe e de COMPOSICAO e PERSONALIDADE.
-
-**Prova de que rodou:** contar os tells ANTES e DEPOIS. O numero tem que cair, e o antes e
-depois entra na mensagem de entrega. Passe que nao mudou nada e passe que nao rodou.
-
----
-
-## MOVIMENTO NA PAGINA: o Higgsfield e passo esperado, nao enfeite
-
-Pagina inteira parada, com bloco de texto e icone, entrega menos do que merece. **No Step 3,
-pergunte SEMPRE quais blocos ganham movimento** e trate isso como parte do build, nao como
-sobremesa. Os candidatos tipicos sao os blocos que hoje so tem texto:
-- lista de beneficios ou "o que muda", que costuma ser 3 ou 4 cards de texto com icone
-- passo a passo do processo
-- fundo de secao intermediaria, pra quebrar a monotonia entre dobras
-
-Ordem de preferencia (nao muda): **material real do cliente → gravacao de tela → Higgsfield**.
-Cena generica de IA se reconhece; imagem real do negocio ganha dela sempre que existir.
-
-**Sem conta Higgsfield:** siga, declare a pendencia na entrega ("os blocos X e Y foram
-entregues estaticos: exigem conta Higgsfield") e ofereca as rotas que nao pedem conta paga
-(animacao CSS/Framer Motion no proprio bloco, ou b-roll do acervo aberto). Falta de conta
-degrada o resultado, nao bloqueia a entrega.
-
-**Aluno sem conta nem CLI?** O setup inteiro esta em `references/higgsfield.md`, na secao
-SETUP: criar conta, `npm i -g @higgsfield/cli`, `higgsfield auth login`,
-`npx skills add higgsfield-ai/skills` e, o passo que trava todo mundo e nao aparece em
-tutorial nenhum, `higgsfield workspace set <id>` (sem workspace selecionado, qualquer
-comando responde "No workspace selected"). Conduza a pessoa por eles em vez de so avisar
-que falta conta.
-
-As 5 regras de video em pagina (proporcao unica decidida antes, gerar no tamanho da caixa x2,
-seed anotado, poster com hash proprio, video do heroi e o LCP) estao em
-`references/higgsfield.md` e valem pra QUALQUER rota de video, inclusive a do Replicate.
-
----
-
-## IDENTIDADE DA PAGINA: title, description e favicon sao GATE, nao checklist
-
-Toda pagina entregue TEM que sair com, no minimo:
-- `<title>` proprio (nao "Document", nao o nome do template)
-- `<meta name="description">` que descreve a oferta, nao o produto generico
-- **favicon PNG** do projeto (`<link rel="icon" type="image/png" href="favicon.png">`) mais
-  `apple-touch-icon`. Favicon so em SVG nao serve: muitos navegadores nao leem.
-- `og:title`, `og:description` e `og:image` com URL ABSOLUTA
-
-**Gotcha do favicon:** favicon TEM que ser quadrado. Redimensionar preservando proporcao
-(`sips -Z`, `object-fit` e afins) a partir de uma foto 3:2 devolve 32x21, nao 32x32, e o
-navegador distorce. Recorte quadrado PRIMEIRO, depois redimensione. Conferir com
-`sips -g pixelWidth -g pixelHeight` antes de declarar pronto: os dois numeros tem que ser iguais.
-
-Por que virou gate e nao ficou no checklist: ja estava escrito no checklist, com aviso de que
-"saiu zerado na 1a versao", e MESMO ASSIM uma pagina foi entregue sem favicon e sem nenhuma og
-tag (demo de pilates, 25/08/2026). Checklist nao bloqueia, gate bloqueia. Item que so vive em
-lista de conferencia e item que vai ser pulado quando o contexto encher.
-
-O custo de errar e desproporcional ao esforco de acertar: a pagina e compartilhada no WhatsApp e
-no Instagram sem imagem nenhuma e com titulo errado, e parece amadora antes de alguem abrir.
-Sao 6 linhas de HTML.
-
----

@@ -667,8 +667,12 @@ Modern fintech design. iOS UI. Portrait 1080x1920. No faces, realistic data.
 ## Pipeline Completo: Do zero ao carousel na página
 
 ```bash
-# 1. Gerar screenshots com nanobanana
-python3 ~/.claude/skills/construtor-paginas/scripts/generate-app-mockup.py \
+# 0. ATENCAO: generate-app-mockup.py NAO vem no repo. Crie o arquivo primeiro,
+#    colando o bloco Python da secao "Script de geração de mockup de app" acima.
+#    Sem esse passo, o comando abaixo devolve "No such file or directory".
+
+# 1. Gerar screenshots com nanobanana (rode a partir da pasta do seu projeto)
+python3 scripts/generate-app-mockup.py \
   "WhatsApp automation dashboard, dark mode, purple theme" \
   "screen-whatsapp" "9:16"
 
