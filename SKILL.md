@@ -1642,6 +1642,11 @@ Toda pagina entregue TEM que sair com, no minimo:
   `apple-touch-icon`. Favicon so em SVG nao serve: muitos navegadores nao leem.
 - `og:title`, `og:description` e `og:image` com URL ABSOLUTA
 
+**Gotcha do favicon:** favicon TEM que ser quadrado. Redimensionar preservando proporcao
+(`sips -Z`, `object-fit` e afins) a partir de uma foto 3:2 devolve 32x21, nao 32x32, e o
+navegador distorce. Recorte quadrado PRIMEIRO, depois redimensione. Conferir com
+`sips -g pixelWidth -g pixelHeight` antes de declarar pronto: os dois numeros tem que ser iguais.
+
 Por que virou gate e nao ficou no checklist: ja estava escrito no checklist, com aviso de que
 "saiu zerado na 1a versao", e MESMO ASSIM uma pagina foi entregue sem favicon e sem nenhuma og
 tag (demo de pilates, 25/08/2026). Checklist nao bloqueia, gate bloqueia. Item que so vive em

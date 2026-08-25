@@ -45,6 +45,53 @@ autenticação mais abaixo neste arquivo (`HF_API_KEY_ID` e `HF_API_KEY_SECRET`)
 
 ---
 
+
+## Licoes de composicao com video (medidas em pagina real, 25/08/2026)
+
+### O veu existe pra o texto ficar legivel, NAO pra esconder o video
+
+Primeira versao de uma secao com video de fundo: video a `opacity:.5` e veu comecando em
+cor SOLIDA no topo, indo a 86-92% no resto. Conta do que sobrava visivel: **entre 0% e 7%**.
+O clipe estava la, custou credito, e ninguem via. O dono olhou e perguntou se o video tinha
+sido gerado.
+
+Faixa que funcionou: **video a 100%** e veu entre **72% e 48%** (mais forte atras do titulo,
+mais fraco embaixo). Sempre CALCULE o que sobra antes de aceitar: `visivel = opacidade_video
+x (1 - alpha_veu)`. Abaixo de 15% de visibilidade, o video e enfeite invisivel: ou aumenta,
+ou tira e economiza o credito.
+
+### Cartao branco opaco em cima de video = video escondido
+
+Na mesma secao, 4 cartoes brancos cobriam justamente a area do clipe. Tirar os cartoes
+resolveu o video mas QUEBROU o contraste: texto solto sobre o video media 2,92 a 3,97, abaixo
+do minimo de 4,5, porque as partes escuras do clipe passam por tras da letra.
+
+A saida foi COMPOSICAO, nao opacidade: texto virou coluna a esquerda, video virou janela a
+direita, com veu lateral proprio. Area com movimento visivel subiu de 38,8% para 42,4% e o
+contraste passou em 11 de 11 elementos. Quando texto e video brigam, separe-os no espaco em
+vez de apagar um dos dois.
+
+### Como MEDIR contraste sobre video (nao da pra usar a cor de fundo do CSS)
+
+Sobre video nao existe "cor de fundo": cada quadro tem uma. Metodo que funciona:
+1. esconder o glifo do texto e fotografar o retangulo EXATO onde ele fica
+2. usar o **percentil 5** dos pixels do fundo como pior caso, nao a media
+3. repetir em **3 instantes distintos** do clipe (o quadro mais escuro e o que reprova)
+
+Duas armadilhas que deram resultado falso e custaram tempo:
+- `Math.min` iniciado em 1 devolve 1,00 sempre (o minimo nunca sobe). Inicie em `Infinity`.
+- fazer `seek` sem esperar o evento `seeked` devolve o MESMO quadro tres vezes, e a medicao
+  parece consistente quando na verdade nem rodou.
+
+### Modelo de video sem parametro `seed`
+
+A regra 3 (seed sempre anotado) nao se aplica a todo modelo: o `seedance_2_0` nao aceita
+`seed`. Nesses casos, anote o **ID do job** da geracao, que recupera exatamente o mesmo clipe.
+Confira com `higgsfield model get <job_type>` quais parametros o modelo aceita ANTES de montar
+o comando, em vez de presumir.
+
+---
+
 ## 1. A ordem de preferência não mudou, e ela existe por um motivo
 
 ```
