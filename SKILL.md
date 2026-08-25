@@ -513,21 +513,42 @@ GATE X:
 ---
 ```
 
-**PERGUNTA QUE VEM ANTES DE TUDO: pra quem e, e o que essa pessoa sente hoje?**
+**EXTRAIA o publico e a dor. Nao pergunte por eles.**
 
-Se o pedido nao disser o publico e a dor, PERGUNTE antes de qualquer outra coisa, e faca uma
-pergunta so, direta. Nao comece a inventariar asset nem a pensar em cor antes disso.
+O pedido real quase sempre chega assim: *"cria uma pagina pra mim de uma academia"*. So isso.
+Nao adianta responder "qual o seu publico-alvo e qual a dor dele?": isso e pergunta de
+marqueteiro, e quem tem academia responde "todo mundo que quer emagrecer", que nao serve pra
+nada. A pessoa nao esta escondendo a informacao, ela so nao pensa nesse vocabulario.
 
-Diferenca medida em pagina real (demo de pilates, 25/08/2026):
-- "cria uma pagina pro meu estudio de pilates" produz pagina generica de academia
-- "cria uma pagina pro meu estudio de pilates, publico mulher de 35 a 55 com dor nas costas
-  que nunca pisou num estudio, objetivo agendar aula experimental gratuita" produziu a headline
-  "Pilates para quem sente dor nas costas e nunca pisou num estudio", as tres objecoes reais da
-  secao "isso parece com voce", e o FAQ que ataca "tenho mais de 50 anos, ainda da tempo?"
+**Faca uma entrevista curta, com pergunta que ela consegue responder.** Todas sao sobre FATO
+que ela viveu, nunca sobre categoria abstrata:
 
-O Gate 1 ja exige minerar a voz do cliente, mas isso acontece DEPOIS, no meio do Step 1. Sem
-publico e dor definidos na largada, a copy inteira nasce apontando pra ninguem, e o retrabalho
-custa a pagina toda, nao um paragrafo. Uma pergunta no comeco vale mais que uma auditoria no fim.
+1. **"Me conta o ultimo cliente que voce fechou: quem era e o que trouxe ele ate voce?"**
+   Devolve a persona real, nao a imaginada. Quase sempre e mais especifica do que a pessoa diria
+   se voce perguntasse direto.
+2. **"O que ele te falou quando chegou? Se lembrar da frase, melhor."**
+   Isto e ouro: e a voz do cliente verbatim, que vira headline. Anote a frase LITERAL, com as
+   palavras dela, sem traduzir pro seu vocabulario.
+3. **"Quem procura voce e voce percebe que nao e pra voce?"**
+   Devolve o anti-publico, que afia a mira mais rapido que descrever o publico certo. Vira a
+   secao "para quem NAO e".
+4. **"O que essa pessoa ja tinha tentado antes, e por que nao deu certo?"**
+   Devolve a objecao real e o diferencial de verdade, sem voce ter que inventar nenhum dos dois.
+
+**Se a pessoa travar ou responder generico, NAO insista com a mesma pergunta.** Ofereca um
+palpite pra ela reagir: *"Pelo que costuma acontecer em academia, e gente de 30 a 50 que ja
+tentou treinar sozinha e desistiu, e o que trava e nao saber comecar sem se machucar. E por ai,
+ou o seu caso e outro?"*. Gente e muito melhor em CORRIGIR do que em CRIAR do zero: um palpite
+errado costuma render mais que uma pergunta aberta.
+
+**Regra de parada:** so avance quando tiver (a) uma pessoa concreta, (b) uma frase que ela diria,
+(c) uma coisa que ela ja tentou. Com isso a copy do Step 1 nasce apontando pra alguem. Sem isso,
+a pagina inteira nasce apontando pra ninguem, e o retrabalho custa a pagina toda, nao um paragrafo.
+
+Diferenca medida em pagina real (demo de pilates, 25/08/2026): o pedido trazia publico e dor,
+e o resultado foi a headline "Pilates para quem sente dor nas costas e nunca pisou num estudio",
+as tres objecoes reais na secao "isso parece com voce", e o FAQ que ataca "tenho mais de 50 anos,
+ainda da tempo?". Nenhuma dessas tres coisas sai de um briefing que diz so "academia".
 
 **PROIBIDO** executar Step 1 na mesma resposta que Step 0.
 **PROIBIDO** executar Step 2 na mesma resposta que Step 1.
