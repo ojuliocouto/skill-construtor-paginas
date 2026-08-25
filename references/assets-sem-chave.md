@@ -195,3 +195,24 @@ permitido.
 4. Nenhuma imagem é `NC` em página comercial.
 5. Rodou `file` em cada arquivo e confirmou formato e dimensão úteis.
 6. Hero abaixo de 200KB, demais imagens abaixo de 100KB, de preferência WebP.
+
+## Licenca: o que a busca ja garante e o que continua sendo seu trabalho
+
+A busca da Openverse filtra por **uso comercial E permissao de modificacao**. Isso importa
+porque pagina de cliente SEMPRE corta, redimensiona e sobrepoe texto, o que cria obra derivada.
+So filtrar por "uso comercial" deixava passar licenca **ND (NoDerivatives)**, que proibe
+exatamente isso: o aluno colocaria a foto na pagina do cliente violando a licenca sem saber.
+
+O que ainda depende de voce olhar, porque nenhum filtro resolve:
+
+- **Marca e produto de terceiro.** A busca pode devolver foto que mostra logo, embalagem ou
+  produto de outra empresa. A licenca da FOTO nao te da direito sobre a MARCA que aparece nela.
+  Nunca use numa pagina que vende produto concorrente ou que sugira endosso.
+- **Pessoa identificavel.** Licenca de foto nao e autorizacao de uso de imagem. Para peca
+  publicitaria com rosto reconhecivel, use foto de banco com direito de modelo, ou foto do
+  proprio cliente.
+- **Credito obrigatorio.** CC BY e CC BY-SA exigem creditar autor, fonte e licenca. O credito
+  ja sai pronto na saida da busca: cole no rodape da pagina, nao apague.
+
+Regra pratica: se a foto tem marca visivel ou rosto em primeiro plano, troque. Foto de contexto
+(ambiente, objeto, mao, textura) quase nunca tem esse problema.

@@ -401,7 +401,11 @@ def search_openverse(query: str, limit: int = 6, orientation: str = "landscape",
     params = {
         "q": query,
         "page_size": quantidade,
-        "license_type": "commercial",  # so o que pode ir pra pagina de cliente
+        # commercial E modification: pagina de cliente SEMPRE corta, redimensiona e
+        # sobrepoe texto, o que cria obra derivada. So "commercial" deixa passar
+        # licenca ND (NoDerivatives), que proibe exatamente isso. Verificado: a busca
+        # devolvia CC BY-ND, que o aluno usaria sem saber que estava violando.
+        "license_type": "commercial,modification",
         "mature": "false",
     }
     aspecto = ASPECTO_POR_ORIENTACAO.get(orientation)
