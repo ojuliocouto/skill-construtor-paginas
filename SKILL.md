@@ -1586,6 +1586,13 @@ entregues estaticos: exigem conta Higgsfield") e ofereca as rotas que nao pedem 
 (animacao CSS/Framer Motion no proprio bloco, ou b-roll do acervo aberto). Falta de conta
 degrada o resultado, nao bloqueia a entrega.
 
+**Aluno sem conta nem CLI?** O setup inteiro esta em `references/higgsfield.md`, na secao
+SETUP: criar conta, `npm i -g @higgsfield/cli`, `higgsfield auth login`,
+`npx skills add higgsfield-ai/skills` e, o passo que trava todo mundo e nao aparece em
+tutorial nenhum, `higgsfield workspace set <id>` (sem workspace selecionado, qualquer
+comando responde "No workspace selected"). Conduza a pessoa por eles em vez de so avisar
+que falta conta.
+
 As 5 regras de video em pagina (proporcao unica decidida antes, gerar no tamanho da caixa x2,
 seed anotado, poster com hash proprio, video do heroi e o LCP) estao em
 `references/higgsfield.md` e valem pra QUALQUER rota de video, inclusive a do Replicate.

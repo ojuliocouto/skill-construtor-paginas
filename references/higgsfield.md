@@ -1,27 +1,47 @@
-# Higgsfield em página: animações e vídeos ilustrativos
+# Higgsfield: animação e b-roll na página
 
-**Isto é OPCIONAL e requer conta própria do Higgsfield.** Se você não tem conta,
-use a rota via Replicate documentada em `references/ai-video-generation.md`.
+## SETUP (primeira vez, ~3 minutos)
 
-Para usar o Higgsfield, crie uma chave em **cloud.higgsfield.ai** e exporte as
-duas variáveis de ambiente antes de rodar o script:
+Se a pessoa ainda não tem conta nem CLI, conduza por estes passos. Não pule nenhum,
+e não presuma que já está feito: rode a verificação do passo 5 antes de gerar.
 
+**1. Conta.** Criar em higgsfield.ai. **Plano pago é necessário para uso comercial**
+(o gratuito não libera). Página de cliente é uso comercial.
+
+**2. Instalar a CLI:**
 ```bash
-export HF_API_KEY_ID="sua_key_id"
-export HF_API_KEY_SECRET="seu_secret"
+npm i -g @higgsfield/cli
 ```
 
-Nunca commitar a chave no repositório. Este arquivo é sobre usar **com
-inteligência**: gerar vídeo genérico e bonito sem relação com a página é
-enfeite caro, não prova nada e ainda gasta crédito de verdade.
+**3. Autenticar** (abre o navegador para a pessoa concluir o login):
+```bash
+higgsfield auth login
+```
 
-O Higgsfield já aparece em duas outras skills, e com outro papel:
-- `criativo-imagem-ia`: UGC sintético (pessoa falando pra câmera, tráfego frio).
-- `video-ads-machine`: insert de anúncio, e só quando a GalerIA não tem o asset.
+**4. Instalar as skills companheiras** (trazem geração de imagem, vídeo, áudio, 3D,
+brandkit, thumbnail, e mais):
+```bash
+npx skills add higgsfield-ai/skills
+```
 
-**Em página o papel é um terceiro**: movimento ambiente e b-roll ilustrativo.
-Fundo de herói, textura de seção, um objeto que respira atrás do texto. Ninguém
-fala com a câmera numa landing page.
+**5. Selecionar o workspace.** PASSO QUE FALTA EM TODO TUTORIAL e trava tudo: sem
+workspace selecionado, qualquer comando responde `Error: No workspace selected`.
+```bash
+higgsfield workspace list                 # anote o ID
+higgsfield workspace set <workspace_id>
+higgsfield account status                 # confirma: e-mail, plano e créditos
+```
+O `account status` é a verificação de que deu certo. Se ele imprime o plano e o
+saldo, está pronto. Se erra, volte ao passo que falhou em vez de tentar gerar.
+
+**Sem conta:** siga sem. Entregue os blocos estáticos, DECLARE a pendência na
+entrega ("os blocos X e Y ficaram estáticos: exigem conta Higgsfield") e ofereça
+as rotas que não pedem conta paga: animação em CSS/Framer Motion no próprio bloco,
+ou a rota Replicate de `references/ai-video-generation.md`. Falta de conta degrada
+o resultado, não bloqueia a entrega.
+
+**Rota alternativa por chave de API** (sem CLI, para automação): ver a seção de
+autenticação mais abaixo neste arquivo (`HF_API_KEY_ID` e `HF_API_KEY_SECRET`).
 
 ---
 
