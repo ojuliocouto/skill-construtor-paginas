@@ -599,7 +599,7 @@ STEP 3 (BUILDAR) ─────────────────────
   [ ] NAO → PARA. Volte e complete o que falta. Pagina incompleta = pagina feia.
 
 STEP 4 (VERIFICAR & SHIPAR) ────────────────────────────────
-  GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + IDENTIDADE DA PAGINA COMPLETA (title, meta description, favicon PNG, og:title, og:description, og:image)+ + deploy funcionando + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile do live LIDOS + interacao principal testada)?
+  GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + IDENTIDADE DA PAGINA COMPLETA (title, meta description, favicon PNG, og:title, og:description, og:image) + PASSE DE GOSTO rodado (Step 4.9, com contagem de tells antes/depois)+ + deploy funcionando + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile do live LIDOS + interacao principal testada)?
   [ ] SIM → avanca pro Step 5 (monitoramento)
   [ ] NAO → PARA. Corrige antes de entregar. Sem excecoes. Verificacao quebrada = entrega bloqueada, nunca "entrego sem prova".
 ```
@@ -1381,7 +1381,7 @@ interacao principal nunca foi clicada (uma roleta publicada com o popup morto). 
 5. A mensagem final de entrega deve citar os arquivos de screenshot lidos e o resultado
    do teste de interacao, junto com o veredito da wave (4.0).
 
-**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + IDENTIDADE DA PAGINA COMPLETA (title, meta description, favicon PNG, og:title, og:description, og:image) + deploy funcionando e verificado + ZERO placeholders na pagina live + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada no live)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar. <<<**
+**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + IDENTIDADE DA PAGINA COMPLETA (title, meta description, favicon PNG, og:title, og:description, og:image) + PASSE DE GOSTO rodado (Step 4.9, com contagem de tells antes/depois) + deploy funcionando e verificado + ZERO placeholders na pagina live + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada no live)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar. <<<**
 
 ---
 
@@ -1568,6 +1568,40 @@ entre sessões do mesmo projeto. Estrutura: ver `references/sessions/EXAMPLE.md`
 - Mobbin: https://mobbin.com: 599.800 screenshots de 1.150+ apps, busca por padrão de UI
 
 
+
+
+## STEP 4.9: PASSE DE GOSTO (ultima etapa antes de entregar, OBRIGATORIA)
+
+A `design-taste-frontend` ja rodava nesta skill em dois pontos, e mesmo assim saiu pagina com
+cara de IA. O motivo: nos dois pontos ela roda como LENTE DE AUDITORIA, que da nota e aponta.
+**Apontar o defeito nao e remover o defeito.** Uma nota 8,5 com tres tells presentes continua
+sendo uma pagina com tres tells presentes.
+
+Por isso existe este passo, e ele e o ULTIMO antes da entrega: depois da wave, depois do deploy,
+com a pagina no ar. Carregue a `design-taste-frontend` e passe a pagina inteira com mandato de
+CORRIGIR, nao de pontuar.
+
+**O que este passe caca, na ordem em que mais entrega resultado:**
+
+1. **Icone generico em caixinha.** Quadradinho arredondado com fundo tingido + glifo abstrato e
+   o tell mais reconhecivel que existe. Piora quando o glifo nao significa nada (um risco pra
+   "fortalece a lombar", um alvo pra "respira"). Saidas melhores, em ordem: recorte real de uma
+   foto que a pagina ja tem, virando miniatura; tirar o icone e deixar a tipografia carregar;
+   marca desenhada com personalidade que represente mesmo a ideia. Trocar por OUTRO glifo
+   generico nao resolve nada.
+2. **Uniformidade excessiva.** Todos os cards do mesmo tamanho, todo canto com o mesmo raio,
+   toda sombra igual, toda secao centralizada, toda secao com a mesma estrutura de titulo e
+   subtitulo. Pagina feita por gente tem ritmo: algo quebra a grade, algo e assimetrico.
+3. **Os 15 tells de `references/anti-vibe-coding.md`**, com os numeros medidos, nao no olho.
+
+**O que NAO se mexe neste passe:** paleta e tipografia (vieram do banco de design e ja foram
+decididas), copy (foi travada no COPY LOCK), e qualquer coisa que ja passou por medicao
+(contraste, opacidade calibrada, enquadramento). O passe e de COMPOSICAO e PERSONALIDADE.
+
+**Prova de que rodou:** contar os tells ANTES e DEPOIS. O numero tem que cair, e o antes e
+depois entra na mensagem de entrega. Passe que nao mudou nada e passe que nao rodou.
+
+---
 
 ## MOVIMENTO NA PAGINA: o Higgsfield e passo esperado, nao enfeite
 
