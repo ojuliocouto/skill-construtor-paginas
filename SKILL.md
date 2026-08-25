@@ -599,7 +599,7 @@ STEP 3 (BUILDAR) ─────────────────────
   [ ] NAO → PARA. Volte e complete o que falta. Pagina incompleta = pagina feia.
 
 STEP 4 (VERIFICAR & SHIPAR) ────────────────────────────────
-  GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada)+ + deploy funcionando + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile do live LIDOS + interacao principal testada)?
+  GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + IDENTIDADE DA PAGINA COMPLETA (title, meta description, favicon PNG, og:title, og:description, og:image)+ + deploy funcionando + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile do live LIDOS + interacao principal testada)?
   [ ] SIM → avanca pro Step 5 (monitoramento)
   [ ] NAO → PARA. Corrige antes de entregar. Sem excecoes. Verificacao quebrada = entrega bloqueada, nunca "entrego sem prova".
 ```
@@ -1381,7 +1381,7 @@ interacao principal nunca foi clicada (uma roleta publicada com o popup morto). 
 5. A mensagem final de entrega deve citar os arquivos de screenshot lidos e o resultado
    do teste de interacao, junto com o veredito da wave (4.0).
 
-**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + deploy funcionando e verificado + ZERO placeholders na pagina live + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada no live)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar. <<<**
+**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + IDENTIDADE DA PAGINA COMPLETA (title, meta description, favicon PNG, og:title, og:description, og:image) + deploy funcionando e verificado + ZERO placeholders na pagina live + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada no live)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar. <<<**
 
 ---
 
@@ -1516,7 +1516,7 @@ Ao reusar padroes de projetos anteriores, salve blueprints proprios em `referenc
 - **[references/efeitos-avancados.md](references/efeitos-avancados.md)** - ⭐ NOVO: Catálogo de 15 efeitos avançados copy-paste: 3D Card Tilt, Text Scramble, Magnetic Cursor, Animated Gradient Border (@property CSS), Noise Texture, SVG Blob Morphing, Confetti no CTA (canvas-confetti), CSS Scroll-Timeline nativo, Aurora Background, Glassmorphism com Spotlight, Typing Effect, Parallax Multicamada, Hover Reveal, Counter Animado, Floating Orbs. Inclui tabela de combinações recomendadas por tipo de página.
 - **`scripts/higgsfield.py`** - cliente da API. `--dry-run` monta a requisicao sem gastar credito; `--lote lote.json` gera a pagina inteira de uma vez, que e o certo porque **credito nao faz rollover**. Grava manifesto `_higgsfield.json` com seed, prompt e modelo de cada clipe (sem ele, regenerar devolve outro clipe), nomeia por hash de CONTEUDO e extrai poster com hash PROPRIO. Avisa quando o preset de camera escolhido tem climax (serve pra anuncio, nao pra fundo de secao).
 - **`scripts/gate-video.mjs`** - as 7 checagens executaveis. Rodado contra uma pagina de lancamento em producao achou 12 defeitos reais que tinham passado por revisao humana. Distingue "borrado em DPR1" de "banda jogada fora em DPR2", e trata corte com `object-position` afinado como AVISO e nao reprovacao.
-- **[references/higgsfield.md](references/higgsfield.md)** - Higgsfield (opcional, requer conta propria) pra ANIMACAO e B-ROLL ILUSTRATIVO de pagina: API assincrona em `platform.higgsfield.ai`, endpoints de text-to-video e image-to-video por modelo (veo3.1, kling, seedance, hailuo), campos `aspect_ratio`/`resolution`/`seed`. Traz as 5 REGRAS que vieram de defeito medido numa pagina de lancamento em producao (uma trilha = uma proporcao; gerar no tamanho da caixa; seed anotado; poster com hash proprio; poster do heroi com preload porque ele E o LCP), prompts direcionados com negativos, ordem de preferencia (material real > gravacao de tela > Higgsfield) e o gate de 7 checagens. **Propor antes de gerar: consome credito pago da conta do proprio usuario.**
+- **[references/higgsfield.md](references/higgsfield.md)** - Higgsfield: ANIMACAO e B-ROLL. Passo ESPERADO do Step 3, nao extra. Requer conta propria (paga); sem conta, degrada e declara.
 - **[references/ai-video-generation.md](references/ai-video-generation.md)** - ⭐ NOVO: AI Video com Replicate WAN 2.1: t2v (texto→video) e i2v (anima fotos reais do projeto), pipeline FFmpeg H.264+WebM+poster, embed HTML/CSS com z-index correto, `preload="none"` vs `auto`, mobile/reduced-motion hide, prompts por nicho (natureza, SaaS, arquitetura), checklist e anti-patterns. Aprovado em produção um site institucional real (2026).
 - **[references/veo-video-workflow.md](references/veo-video-workflow.md)** - ⭐ NOVO: Workflow completo Veo 2/3: script Python de geração (mesma GEMINI_API_KEY do nanobanana), pipeline ffmpeg (MP4 H.264 + WebM VP9 + poster WebP), embed correto na página (preload="none", muted, playsinline), CSS mobile (display:none), prompts prontos por nicho (dark tech, WhatsApp, dashboard, energético), checklist de performance
 - **[references/nanobanana-mockup-carousel.md](references/nanobanana-mockup-carousel.md)** - ⭐ NOVO: Geração de screenshots de app com Nanobanana + Magic UI iPhone15Pro/Safari mockups + Carousel premium Framer Motion (básico, 3D perspectiva, auto-play com barra de progresso). Inclui prompts prontos por tipo de produto (WhatsApp SaaS, analytics, plataforma de curso, fintech), seção completa de product showcase, checklist de qualidade
@@ -1566,3 +1566,48 @@ entre sessões do mesmo projeto. Estrutura: ver `references/sessions/EXAMPLE.md`
 
 ### Mobile / UX patterns
 - Mobbin: https://mobbin.com: 599.800 screenshots de 1.150+ apps, busca por padrão de UI
+
+
+
+## MOVIMENTO NA PAGINA: o Higgsfield e passo esperado, nao enfeite
+
+Pagina inteira parada, com bloco de texto e icone, entrega menos do que merece. **No Step 3,
+pergunte SEMPRE quais blocos ganham movimento** e trate isso como parte do build, nao como
+sobremesa. Os candidatos tipicos sao os blocos que hoje so tem texto:
+- lista de beneficios ou "o que muda", que costuma ser 3 ou 4 cards de texto com icone
+- passo a passo do processo
+- fundo de secao intermediaria, pra quebrar a monotonia entre dobras
+
+Ordem de preferencia (nao muda): **material real do cliente → gravacao de tela → Higgsfield**.
+Cena generica de IA se reconhece; imagem real do negocio ganha dela sempre que existir.
+
+**Sem conta Higgsfield:** siga, declare a pendencia na entrega ("os blocos X e Y foram
+entregues estaticos: exigem conta Higgsfield") e ofereca as rotas que nao pedem conta paga
+(animacao CSS/Framer Motion no proprio bloco, ou b-roll do acervo aberto). Falta de conta
+degrada o resultado, nao bloqueia a entrega.
+
+As 5 regras de video em pagina (proporcao unica decidida antes, gerar no tamanho da caixa x2,
+seed anotado, poster com hash proprio, video do heroi e o LCP) estao em
+`references/higgsfield.md` e valem pra QUALQUER rota de video, inclusive a do Replicate.
+
+---
+
+## IDENTIDADE DA PAGINA: title, description e favicon sao GATE, nao checklist
+
+Toda pagina entregue TEM que sair com, no minimo:
+- `<title>` proprio (nao "Document", nao o nome do template)
+- `<meta name="description">` que descreve a oferta, nao o produto generico
+- **favicon PNG** do projeto (`<link rel="icon" type="image/png" href="favicon.png">`) mais
+  `apple-touch-icon`. Favicon so em SVG nao serve: muitos navegadores nao leem.
+- `og:title`, `og:description` e `og:image` com URL ABSOLUTA
+
+Por que virou gate e nao ficou no checklist: ja estava escrito no checklist, com aviso de que
+"saiu zerado na 1a versao", e MESMO ASSIM uma pagina foi entregue sem favicon e sem nenhuma og
+tag (demo de pilates, 25/08/2026). Checklist nao bloqueia, gate bloqueia. Item que so vive em
+lista de conferencia e item que vai ser pulado quando o contexto encher.
+
+O custo de errar e desproporcional ao esforco de acertar: a pagina e compartilhada no WhatsApp e
+no Instagram sem imagem nenhuma e com titulo errado, e parece amadora antes de alguem abrir.
+Sao 6 linhas de HTML.
+
+---
