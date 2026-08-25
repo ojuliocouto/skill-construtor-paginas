@@ -513,42 +513,58 @@ GATE X:
 ---
 ```
 
-**EXTRAIA o publico e a dor. Nao pergunte por eles.**
+**EXTRAIA o basico primeiro. Pergunta simples, que qualquer um responde.**
 
-O pedido real quase sempre chega assim: *"cria uma pagina pra mim de uma academia"*. So isso.
-Nao adianta responder "qual o seu publico-alvo e qual a dor dele?": isso e pergunta de
-marqueteiro, e quem tem academia responde "todo mundo que quer emagrecer", que nao serve pra
-nada. A pessoa nao esta escondendo a informacao, ela so nao pensa nesse vocabulario.
+O pedido real chega assim: *"cria uma pagina pra mim de uma academia"*. So isso. NAO responda
+com "qual o seu publico-alvo e qual a dor dele?": isso e vocabulario de marqueteiro, e quem tem
+academia responde "todo mundo que quer emagrecer", que nao serve pra nada. E NAO pergunte sobre
+cliente antigo logo de cara: muita gente ainda nao abriu o negocio e trava na primeira pergunta.
 
-**Faca uma entrevista curta, com pergunta que ela consegue responder.** Todas sao sobre FATO
-que ela viveu, nunca sobre categoria abstrata:
+**RODADA 1, o basico. Mande as perguntas juntas, numa lista curta, pra pessoa responder de uma
+vez.** Sao todas de fato, sem interpretacao:
 
-1. **"Me conta o ultimo cliente que voce fechou: quem era e o que trouxe ele ate voce?"**
-   Devolve a persona real, nao a imaginada. Quase sempre e mais especifica do que a pessoa diria
-   se voce perguntasse direto.
-2. **"O que ele te falou quando chegou? Se lembrar da frase, melhor."**
-   Isto e ouro: e a voz do cliente verbatim, que vira headline. Anote a frase LITERAL, com as
-   palavras dela, sem traduzir pro seu vocabulario.
-3. **"Quem procura voce e voce percebe que nao e pra voce?"**
-   Devolve o anti-publico, que afia a mira mais rapido que descrever o publico certo. Vira a
-   secao "para quem NAO e".
-4. **"O que essa pessoa ja tinha tentado antes, e por que nao deu certo?"**
-   Devolve a objecao real e o diferencial de verdade, sem voce ter que inventar nenhum dos dois.
+1. **Qual e o nicho, exatamente?** (academia, so musculacao, crossfit, pilates, funcional)
+2. **Onde voce atende?** (cidade e bairro, ou online)
+3. **Atende quem?** (mulheres, homens, os dois; e a faixa de idade, se souber)
+4. **O que voce vende?** (plano mensal, aula avulsa, pacote fechado, avaliacao)
+5. **Quanto custa, mais ou menos?**
+6. **O que voce quer que a pessoa faca nessa pagina?** (agendar aula, chamar no WhatsApp,
+   comprar direto, deixar o contato)
 
-**Se a pessoa travar ou responder generico, NAO insista com a mesma pergunta.** Ofereca um
-palpite pra ela reagir: *"Pelo que costuma acontecer em academia, e gente de 30 a 50 que ja
-tentou treinar sozinha e desistiu, e o que trava e nao saber comecar sem se machucar. E por ai,
-ou o seu caso e outro?"*. Gente e muito melhor em CORRIGIR do que em CRIAR do zero: um palpite
-errado costuma render mais que uma pergunta aberta.
+Com essas seis ja da pra escrever copy que aponta pra alguem. Nicho + cidade + genero + faixa
+etaria ja e um publico; oferta + preco + acao ja e uma pagina.
 
-**Regra de parada:** so avance quando tiver (a) uma pessoa concreta, (b) uma frase que ela diria,
-(c) uma coisa que ela ja tentou. Com isso a copy do Step 1 nasce apontando pra alguem. Sem isso,
-a pagina inteira nasce apontando pra ninguem, e o retrabalho custa a pagina toda, nao um paragrafo.
+**RODADA 2, so SE a pessoa ja atende gente.** Pergunte: *"voce ja tem cliente hoje?"*. Se sim,
+estas quatro rendem muito, porque devolvem material que nao da pra inventar:
 
-Diferenca medida em pagina real (demo de pilates, 25/08/2026): o pedido trazia publico e dor,
-e o resultado foi a headline "Pilates para quem sente dor nas costas e nunca pisou num estudio",
-as tres objecoes reais na secao "isso parece com voce", e o FAQ que ataca "tenho mais de 50 anos,
-ainda da tempo?". Nenhuma dessas tres coisas sai de um briefing que diz so "academia".
+- **"Me conta o ultimo cliente que fechou: quem era e o que trouxe ele ate voce?"** (a persona
+  real, quase sempre mais especifica que a imaginada)
+- **"O que ele te falou quando chegou? Se lembrar da frase, melhor."** (voz do cliente verbatim,
+  vira headline. Anote com as palavras DELA, sem traduzir pro seu vocabulario)
+- **"Quem procura voce e voce percebe que nao e pra voce?"** (o anti-publico afia a mira mais
+  rapido que descrever o publico certo; vira a secao "para quem NAO e")
+- **"O que essa pessoa ja tinha tentado antes, e por que nao deu certo?"** (devolve a objecao
+  real e o diferencial, sem voce inventar nenhum dos dois)
+
+Se a pessoa ainda NAO tem cliente, pule a rodada 2 sem drama e siga com as seis primeiras. Nunca
+transforme a entrevista em interrogatorio: e melhor uma pagina boa com seis respostas do que
+nenhuma pagina porque a pessoa cansou de responder.
+
+**Se travar ou responder generico, NAO repita a pergunta.** Ofereca um palpite pra ela reagir:
+*"Pelo que costuma acontecer em academia de bairro, e gente de 30 a 50 que ja tentou treinar
+sozinha e desistiu, e o que trava e nao saber comecar sem se machucar. E por ai, ou o seu caso
+e outro?"*. Gente e muito melhor em CORRIGIR do que em CRIAR do zero, e um palpite errado rende
+mais que uma pergunta aberta.
+
+**Regra de parada:** so avance com as seis da rodada 1 respondidas. Sem publico e oferta
+definidos na largada, a pagina inteira nasce apontando pra ninguem, e o retrabalho custa a
+pagina toda, nao um paragrafo.
+
+Diferenca medida em pagina real (demo de pilates, 25/08/2026): o pedido trazia nicho, publico,
+faixa etaria e objetivo, e o resultado foi a headline "Pilates para quem sente dor nas costas e
+nunca pisou num estudio", as tres objecoes reais na secao "isso parece com voce", e o FAQ que
+ataca "tenho mais de 50 anos, ainda da tempo?". Nada disso sai de um briefing que diz so
+"academia".
 
 **PROIBIDO** executar Step 1 na mesma resposta que Step 0.
 **PROIBIDO** executar Step 2 na mesma resposta que Step 1.
