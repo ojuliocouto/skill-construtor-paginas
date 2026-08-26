@@ -542,6 +542,8 @@ Neste arquivo (ver MAPA DESTE ARQUIVO, no topo): runbook, os 4 caminhos, porta u
 | Script | Para que |
 |---|---|
 | `scripts/screenshot-prova.js` | prova de entrega (desktop + mobile + clique) e **checagem de identidade da pagina** (4.2b). `--check` confere o Playwright, `--sem-identidade` so pra baseline de pagina de terceiro |
+| `scripts/gate-responsivo.mjs` | 12 telas reais: overflow, CTA na dobra, toque 44px, corpo 14px, imagem distorcida (4.2d) |
+| `scripts/wave.py` | registro das 8 lentes + AUDITOR MASTER, que reprova se alguma nao rodou (4.2e) |
 | `scripts/gate-oclusao.mjs` | acha texto COBERTO por camada decorativa ou CORTADO pela caixa, nas duas telas (4.2d) |
 | `scripts/gate-video.mjs` | as 7 checagens de video executaveis (razao por trilha, escala, corte, poster, frames, LCP, reduced-motion). Sobe o Chromium do Playwright sozinho |
 | `scripts/extrai-identidade.mjs` | extrai paleta real, vars CSS, h1/CTA e imagens de uma URL (caminho CLONAR) |
@@ -575,7 +577,7 @@ Carregar da pasta `references/` APENAS quando o caso pedir:
 | `references/google-workspace.md` | Google Docs/Sheets/Drive (requer scripts locais NAO inclusos no repo) |
 
 ### Referencias especializadas (auditoria e qualidade)
-- `references/audit-agents.md`: wave adversarial de 7 lentes + sintese (Step 4)
+- `references/audit-agents.md`: wave adversarial de 8 lentes + sintese + auditor master (Step 4)
 - `references/scoring-system.md`: rubrica 0-10 por dimensao
 - `references/strategist-audit.md`: auditoria Hook/Story/Offer
 - `references/anti-vibe-coding.md`: 5 sinais de substancia + 15 tells VISUAIS de IA
@@ -1511,7 +1513,7 @@ Se QUALQUER item acima for NAO → corrigir AGORA, antes de ir pro Step 4.
 
 **OBRIGATORIO: Auditoria Adversarial por WAVE DE SUBAGENTS antes do deploy.**
 A auditoria NUNCA e feita pelo mesmo contexto que construiu a pagina (vies: o construtor
-nao enxerga o proprio erro). Dispara-se uma wave de 7 subagents adversariais paralelos,
+nao enxerga o proprio erro). Dispara-se uma wave de 8 subagents adversariais paralelos,
 cada um com UMA lente independente, e um agente de sintese consolida o gate.
 
 ### AUTORIDADE: qual checklist e O portao
@@ -1550,7 +1552,7 @@ reais (jun/2026): um site institucional e um clone. Para tornar isso impossivel 
    **No caminho EDITAR** o bloco e outro, menor: checklist de regressao + prova do ponto alterado
    + pendencias. A wave nao roda ali.
 3. **Escada de fallback da wave** (usar o degrau mais alto disponivel):
-   1. Tool `Workflow` disponivel → wave completa em paralelo (7 lentes, ou 3 na rota expressa).
+   1. Tool `Workflow` disponivel → wave completa em paralelo (8 lentes, ou 3 na rota expressa).
    2. Sem `Workflow`, mas com `Task`/`Agent` (subagentes) → rodar CADA lente como subagente
       independente. E o caso mais comum e PREFERIDO ao fallback manual: preserva a auditoria
       fora do contexto que construiu.
@@ -1565,7 +1567,7 @@ reais (jun/2026): um site institucional e um clone. Para tornar isso impossivel 
 Ver protocolo completo, schema e esqueleto Workflow em `references/audit-agents.md`.
 
 1. Compilar a pagina e subir **preview deploy** (branch, nunca main) ou servir local.
-2. Disparar os 7 agentes EM PARALELO via tool `Workflow` (parallel), passando
+2. Disparar os 8 agentes EM PARALELO via tool `Workflow` (parallel), passando
    `args: { url, arquivos }`:
 
    | Agente | Lente | Reprova (critical) se |
@@ -1577,6 +1579,8 @@ Ver protocolo completo, schema e esqueleto Workflow em `references/audit-agents.
    | `mobile-auditor` | 320/375/768px, hamburger JS | layout quebra, hamburger morto, overflow |
    | `cro-auditor` | CTAs, form, WhatsApp, oferta, message match, Hook/Story/Offer | CTA insuficiente, form/checkout quebrado, sem message match |
    | `a11y-auditor` | focus, labels, alt, ARIA, contraste 4.5:1, zero emoji | falha WCAG critica, emoji na pagina |
+| `responsive-auditor` | as 12 telas reais, mobile E desktop (roda `gate-responsivo.mjs`) | overflow horizontal, CTA fora da dobra, alvo de toque < 44px, corpo < 14px, texto cortado |
+| `content-auditor` | dado inventado, claim sem fonte, travessao, consistencia de contato | claim que nao esta na fonte, travessao > 0, telefone divergente |
 
 3. Cada agente retorna o schema `VERDICT`. Agente de **sintese** consolida em `SINTESE`.
 4. **GATE (regua UNICA, vale pra wave e pro fallback manual):**
@@ -1833,6 +1837,56 @@ ordem de empilhamento. <<<**
 
 ---
 
+### 4.2e AUDITOR MASTER: a wave aconteceu inteira?
+
+```bash
+python3 <dir-da-skill>/scripts/wave.py --projeto <dir> checar
+```
+
+**Por que existe (pedido do dono, 26/08/2026, depois de uma falha em cadeia):**
+
+> *"no final, depois dessas lanes que voce passa, eu preciso que um ultimo auditor master
+> avalie se todas as waves foram feitas, foram executadas. Porque a gente nao pode pular sobre
+> a gente pra fazer auditoria; todos tem que participar do processo."*
+
+Ele estava descrevendo um buraco real. A skill mandava rodar a wave adversarial, eu declarei
+que caiu no "fallback manual" e segui. Resultado: a lente de responsividade **nunca rodou**, a
+pagina foi entregue testada em UMA resolucao, e o CTA do heroi aparecia cortado no monitor
+dele. Ninguem mentiu; o processo simplesmente permitia que uma lente sumisse sem deixar rastro.
+
+**A regra e a mesma do gate de uso de ferramentas: declaracao nao vale, registro com evidencia
+vale.** Cada lente se registra ao terminar; o master reprova se faltar QUALQUER uma.
+
+```bash
+W="python3 <dir-da-skill>/scripts/wave.py --projeto <dir>"
+
+# cada lente, ao terminar
+$W registrar responsive-auditor --veredito aprovado --nota 8.5 \
+   --achados "12 telas medidas; CTA na dobra em todas; 3 alvos de toque corrigidos pra 44px"
+
+# cada gate executavel, com o exit code REAL
+$W gate responsivo --exit 0 --detalhe "12 telas, zero problema"
+$W gate oclusao --exit 0 --detalhe "163 blocos, nenhum coberto"
+
+# e o master, por ultimo
+$W checar
+```
+
+**O que o master bloqueia:** lente que nao rodou, gate sem registro, gate vermelho, lente
+reprovada, nota abaixo de 7, media abaixo de 8. Ele **nao julga se a pagina esta bonita**: isso
+e trabalho das lentes. Ele julga se o PROCESSO aconteceu.
+
+**Lente que nao se aplica** se registra com `--veredito nao_aplicavel` e o motivo, e aparece
+marcada no relatorio. O que nao existe e sumir em silencio.
+
+**`--achados` exige 25 caracteres.** "ok" nao e auditoria: o registro tem que dizer o que foi
+OLHADO e o que foi encontrado, senao ele nao serve pra ninguem revisar depois.
+
+**>>> GATE 4.2e: `wave.py checar` saiu com codigo 0? Se NAO, rode as lentes que faltam. Uma
+lente pulada nao vira "passou por omissao". <<<**
+
+---
+
 ### 4.3 Deploy
 
 ```bash
@@ -1961,7 +2015,7 @@ esta faltando. Nenhuma explicacao substitui rodar de novo verde. <<<**
 
 ---
 
-**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + CONSISTENCIA DE CONTATO conferida digito por digito (colar no bloco de entrega os numeros achados no HTML e nos `tel:`/`wa.me`: mais de um numero distinto sem justificativa REPROVA) + DIFF DE CLAIMS feito (lista de afirmacoes x fonte, com o veredito de cada uma) + IDENTIDADE DA PAGINA (4.2b, com o output do `screenshot-prova.js` sem REPROVA) + GATE DE OCLUSAO 4.2d verde (nenhum texto coberto ou cortado) + PASSE DE GOSTO rodado (4.2c, com os itens de composicao alterados e a contagem de tells, que tem que terminar em 0) + deploy funcionando e verificado + ZERO placeholders + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada) + GATE DE USO 4.6 verde (toda ferramenta que estava viva foi usada, ou dispensada COM MOTIVO que vai na entrega)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar.**
+**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + CONSISTENCIA DE CONTATO conferida digito por digito (colar no bloco de entrega os numeros achados no HTML e nos `tel:`/`wa.me`: mais de um numero distinto sem justificativa REPROVA) + DIFF DE CLAIMS feito (lista de afirmacoes x fonte, com o veredito de cada uma) + IDENTIDADE DA PAGINA (4.2b, com o output do `screenshot-prova.js` sem REPROVA) + GATE DE OCLUSAO 4.2d verde (nenhum texto coberto ou cortado) + RESPONSIVIDADE verde nas 12 telas + AUDITOR MASTER 4.2e verde (todas as 8 lentes rodaram, nenhuma pulada) + PASSE DE GOSTO rodado (4.2c, com os itens de composicao alterados e a contagem de tells, que tem que terminar em 0) + deploy funcionando e verificado + ZERO placeholders + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada) + GATE DE USO 4.6 verde (toda ferramenta que estava viva foi usada, ou dispensada COM MOTIVO que vai na entrega)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar.**
 
 **ENTREGA SEM DEPLOY (pasta local, arquivo unico, aluno sem conta de hosting) e caminho LEGITIMO, nao gate pulado:** a prova 4.5 roda contra o servidor local (`python3 scripts/servidor-gzip.py <pasta> <porta>`), e deploy, QA pos-deploy, Lighthouse e `og:image` com URL absoluta entram como PENDENCIAS DECLARADAS no bloco de entrega. Tudo o mais do GATE 4 continua valendo igual: wave, identidade, passe de gosto, contato, claims e prova lida com os proprios olhos. **<<<**
 
