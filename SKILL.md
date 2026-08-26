@@ -542,6 +542,7 @@ Neste arquivo (ver MAPA DESTE ARQUIVO, no topo): runbook, os 4 caminhos, porta u
 | Script | Para que |
 |---|---|
 | `scripts/screenshot-prova.js` | prova de entrega (desktop + mobile + clique) e **checagem de identidade da pagina** (4.2b). `--check` confere o Playwright, `--sem-identidade` so pra baseline de pagina de terceiro |
+| `scripts/gate-oclusao.mjs` | acha texto COBERTO por camada decorativa ou CORTADO pela caixa, nas duas telas (4.2d) |
 | `scripts/gate-video.mjs` | as 7 checagens de video executaveis (razao por trilha, escala, corte, poster, frames, LCP, reduced-motion). Sobe o Chromium do Playwright sozinho |
 | `scripts/extrai-identidade.mjs` | extrai paleta real, vars CSS, h1/CTA e imagens de uma URL (caminho CLONAR) |
 | `scripts/lado-a-lado.py` | monta original e sua versao lado a lado, mesma escala, pro gate do caminho CLONAR + ELEVAR |
@@ -1791,6 +1792,47 @@ certo" sem citar o que foi olhado.
 
 ---
 
+### 4.2d GATE DE OCLUSAO: conteudo coberto nao e conteudo invisivel
+
+```bash
+node <dir-da-skill>/scripts/gate-oclusao.mjs --url <url>
+```
+
+**Falha real que criou este gate (26/08/2026).** Uma faixa de numeros foi desenhada pra
+atravessar a borda entre duas secoes. A textura de grao da secao de baixo era
+`absolute inset-0` SEM z-index, entao pintava por cima e comia os rotulos ("empresas
+atendidas", "colaboradores impactados"). O dono viu no primeiro olhar. Nenhum gate viu, no
+desktop nem no mobile, e os dois motivos valem pra qualquer pagina:
+
+1. **Coberto nao e invisivel.** O que eu media era `opacity: 0` e `visibility: hidden`. O
+   elemento nao era nem um nem outro: estava la, opaco, com outra coisa na frente. Sao dois
+   defeitos diferentes e so um estava coberto por teste.
+2. **Eu aprovei olhando screenshot reduzido.** O PNG de pagina inteira vinha em 1440px e o
+   visualizador reduziu pra ~450px. Um rotulo de 13px vira 4px nessa escala: o defeito era
+   fisicamente invisivel na imagem que eu usei pra aprovar.
+
+**Regra que sai daqui, e vale pra toda conferencia visual:** detalhe se confere em RECORTE da
+secao, em escala 1:1 ou 2x. Screenshot de pagina inteira serve pra ver ritmo e composicao,
+nunca pra aprovar texto, rotulo, borda ou espacamento.
+
+O gate rola ate cada bloco de texto, pergunta ao navegador quem esta naquele pixel
+(`elementFromPoint`) e reprova quando a resposta nao e o proprio elemento. Roda nas duas telas.
+Tambem pega texto cortado pela propria caixa.
+
+**Causa quase sempre a mesma:** camada decorativa (textura, veu, gradiente) com
+`absolute inset-0` e sem z-index. A decoracao vai pra tras (`-z-10`) e a ordem entre secoes se
+declara com z explicito, em vez de depender da ordem do documento. Cuidado com `isolate`: ele
+fecha o contexto de empilhamento da secao, e ai a secao SEGUINTE pinta por cima da anterior
+INTEIRA, elemento que atravessa a borda incluido.
+
+**Calibrado contra o defeito real:** com o bug reintroduzido o gate acusa 8 blocos cobertos e
+sai 1; com a correcao, passa. Gate que nunca reprova nao vale nada.
+
+**>>> GATE 4.2d: `gate-oclusao.mjs` saiu com codigo 0 nas duas telas? Se NAO, conserte a
+ordem de empilhamento. <<<**
+
+---
+
 ### 4.3 Deploy
 
 ```bash
@@ -1919,7 +1961,7 @@ esta faltando. Nenhuma explicacao substitui rodar de novo verde. <<<**
 
 ---
 
-**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + CONSISTENCIA DE CONTATO conferida digito por digito (colar no bloco de entrega os numeros achados no HTML e nos `tel:`/`wa.me`: mais de um numero distinto sem justificativa REPROVA) + DIFF DE CLAIMS feito (lista de afirmacoes x fonte, com o veredito de cada uma) + IDENTIDADE DA PAGINA (4.2b, com o output do `screenshot-prova.js` sem REPROVA) + PASSE DE GOSTO rodado (4.2c, com os itens de composicao alterados e a contagem de tells, que tem que terminar em 0) + deploy funcionando e verificado + ZERO placeholders + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada) + GATE DE USO 4.6 verde (toda ferramenta que estava viva foi usada, ou dispensada COM MOTIVO que vai na entrega)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar.**
+**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + CONSISTENCIA DE CONTATO conferida digito por digito (colar no bloco de entrega os numeros achados no HTML e nos `tel:`/`wa.me`: mais de um numero distinto sem justificativa REPROVA) + DIFF DE CLAIMS feito (lista de afirmacoes x fonte, com o veredito de cada uma) + IDENTIDADE DA PAGINA (4.2b, com o output do `screenshot-prova.js` sem REPROVA) + GATE DE OCLUSAO 4.2d verde (nenhum texto coberto ou cortado) + PASSE DE GOSTO rodado (4.2c, com os itens de composicao alterados e a contagem de tells, que tem que terminar em 0) + deploy funcionando e verificado + ZERO placeholders + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada) + GATE DE USO 4.6 verde (toda ferramenta que estava viva foi usada, ou dispensada COM MOTIVO que vai na entrega)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar.**
 
 **ENTREGA SEM DEPLOY (pasta local, arquivo unico, aluno sem conta de hosting) e caminho LEGITIMO, nao gate pulado:** a prova 4.5 roda contra o servidor local (`python3 scripts/servidor-gzip.py <pasta> <porta>`), e deploy, QA pos-deploy, Lighthouse e `og:image` com URL absoluta entram como PENDENCIAS DECLARADAS no bloco de entrega. Tudo o mais do GATE 4 continua valendo igual: wave, identidade, passe de gosto, contato, claims e prova lida com os proprios olhos. **<<<**
 
