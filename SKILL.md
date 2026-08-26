@@ -13,7 +13,7 @@ Skill unificada para construir paginas web profissionais, bonitas e de alta conv
 
 O essencial pra rodar, em poucas linhas. O detalhe de cada item esta nas secoes abaixo; conteudo pesado de implementacao fica em `references/` e so deve ser carregado quando o caso pedir (ver Indice).
 
-1. **4 caminhos:** CRIAR do zero / CLONAR (URL ou PDF) / MELHORAR (pagina que ja existe e vai continuar existindo) / EDITAR (mudanca pontual). **Rotear ANTES de tudo** (ver "OS 4 CAMINHOS"): cada um tem fluxo e gates proprios. Rodar 6 steps numa troca de headline e tao errado quanto editar no improviso uma pagina nova.
+1. **5 caminhos:** CRIAR do zero / CLONAR (URL ou PDF) / **CLONAR + ELEVAR** (clone E melhoria no mesmo pedido) / MELHORAR (pagina que ja existe e vai continuar existindo) / EDITAR (mudanca pontual). **Atencao ao 2B:** rodar CLONAR quando o pedido era CLONAR+ELEVAR entrega uma pagina fiel que o dono reprova de olho, porque fidelidade e o oposto de melhoria. **Rotear ANTES de tudo** (ver "OS 4 CAMINHOS"): cada um tem fluxo e gates proprios. Rodar 6 steps numa troca de headline e tao errado quanto editar no improviso uma pagina nova.
 1b. **ANTES DE TUDO:** rodar `python3 <dir-da-skill>/scripts/checar-ferramentas.py`. Critico sem responder = PARA e conduz a correcao. Ferramenta morta com fallback silencioso ja deixou as duas camadas visuais desligadas por meses.
 2. **Step 0 comeca pela ENTREVISTA DE BRIEFING (0.0):** as seis perguntas da rodada 1 pra todo mundo, rodada 2 so pra quem ja tem cliente. Sem as seis respondidas, nao avanca. Antes disso roda o **0.0-PRE**, que e um GATE: `checar-ferramentas.py` manda cada ferramenta FAZER algo e confere o retorno. Ferramenta CRITICA sem responder **para a skill** ate ser conectada (o agente conduz a instalacao, nao so avisa). Opcional degradado segue, com a degradacao DECLARADA na entrega. Por fim, carregar contexto do projeto.
 3. **Ordem sagrada:** COPY (Step 1) → DESIGN (Step 2) → CODIGO (Step 3). Nunca pixel antes de copy travada.
@@ -78,6 +78,7 @@ Declarar o caminho escolhido na primeira resposta, em uma linha, antes de execut
 |---|---|---|
 | nao existe pagina ainda | **CRIAR** | 6 steps completos |
 | "clona / copia / replica" + URL ou PDF | **CLONAR** | fluxo CLONE (abaixo) |
+| clone **e** melhoria no mesmo pedido ("clona e deixa foda", "clone melhorado") | **CLONAR + ELEVAR** | fluxo 2B: identidade intocada, composicao elevada |
 | pagina existe e o pedido e elevar o todo | **MELHORAR** | fluxo MELHORAR (abaixo) |
 | pagina existe e o pedido e um ponto especifico | **EDITAR** | fluxo EDITAR (abaixo) |
 
@@ -134,6 +135,68 @@ minerar VoC, nao escrever copy nova, nao rodar COPY LOCK.** Inventar aqui e defe
    a lado, conferindo cor a cor, fonte, hierarquia, ordem das secoes e mobile. Divergiu
    sem ter sido declarado no delta? Volta.
 6. Step 4 normal (wave, identidade 4.2b, passe de gosto 4.2c, deploy, QA pos, prova 4.5) e pos-sessao.
+
+### CAMINHO 2B: CLONAR + ELEVAR (o pedido e "clona E deixa foda")
+
+**Este caminho nasceu de uma falha real (26/08/2026).** O pedido foi "faz o clone da original e
+deixa foda". Rodei o CAMINHO 2 (CLONAR), cuja regra e fidelidade, entreguei, e o dono
+respondeu: *"a pagina ficou quase igual a original. eu nao te pedi pra fazer uma melhora
+visual?"*. Ele estava certo, e o processo ajudou a errar: **CLONAR mede FIDELIDADE (quanto mais
+parecido, melhor) e MELHORAR mede NAO-REGRESSAO (nao pode piorar). Nenhum dos dois pergunta se
+ficou MELHOR.** Rodando o caminho errado, o gate aprovou uma entrega que o dono reprovou em
+dois segundos de olho.
+
+**Como saber que e este caminho:** o pedido tem as DUAS coisas, clone e melhoria ("clona e
+melhora", "faz igual mas melhor", "clone melhorado", "deixa foda"). Na duvida, pergunte: a
+diferenca entre os dois caminhos e enorme e cara.
+
+#### O que e INTOCAVEL (some com isto e voce destruiu a marca do cliente)
+Extraia com `scripts/extrai-identidade.mjs` e NAO mexa: cor, logo, familia tipografica, copy,
+telefone, endereco, CNPJ, numeros. Identidade real vence qualquer preferencia estetica, sua ou
+de skill de design. Se a `high-end-visual-design` mandar trocar Inter por Geist e Inter for a
+fonte do cliente, a resposta e nao, e o conflito se declara na entrega.
+
+#### O que voce DEVE mudar (e o trabalho, nao um bonus)
+O erro de 26/08 foi confundir HIGIENE com DESIGN. Trocar icone generico por foto, reorganizar
+grid, converter para WebP e otimizar peso e higiene: melhora a pagina e **nao muda o que a
+pessoa VE quando abre**. Elevar mexe nos eixos abaixo.
+
+| Eixo | Pergunta que ele responde | Sinal de que voce nao mexeu |
+|---|---|---|
+| **Composicao** | as secoes ainda sao retangulos empilhados? | toda secao e um container centralizado, uma embaixo da outra |
+| **Escala** | a tipografia tem drama? | h1 e h2 no mesmo tamanho da original, tudo entre 2 e 3rem |
+| **Profundidade** | ha camada, sobreposicao, sangria? | tudo chapado, nada atravessa a borda de uma secao |
+| **Movimento** | o que se mexe, e por que? | so fade-in de scroll, igual em toda secao |
+| **Densidade** | o ritmo varia? | mesma altura de secao e mesmo respiro do inicio ao fim |
+| **Assinatura** | qual e o elemento que so ESTA pagina tem? | nao existe: da pra trocar por qualquer concorrente |
+
+**Regra pratica:** pelo menos **quatro** dos seis eixos precisam ter mudanca NOMEADA, com o
+antes e o depois. Menos que isso, e polimento com outro nome.
+
+#### O gate deste caminho
+
+```bash
+# 1. os dois lado a lado, na mesma escala, numa imagem so
+python3 <dir-da-skill>/scripts/lado-a-lado.py <png-original> <png-sua-versao> comparativo.jpg
+```
+
+2. **OLHE a imagem** e responda, por escrito, antes de qualquer outra coisa:
+   **"o dono veria a diferenca sem eu apontar?"** Se a resposta honesta e nao, volte. Nenhuma
+   lista de melhorias compensa um "nao" aqui.
+3. Liste os EIXOS alterados, com antes e depois. Menos de 4 = nao elevou.
+4. Liste o que foi PRESERVADO da identidade, item a item. Elevar sem preservar e outro defeito,
+   pior: virou outra marca.
+
+**>>> GATE 2B: os dois prints lado a lado, a resposta escrita da pergunta do item 2, quatro ou
+mais eixos com antes/depois, e a lista do que foi preservado? Se NAO, PARA AQUI. <<<**
+
+**Por que nao existe um numero aqui:** a primeira tentativa de gate foi um medidor de distancia
+visual por pixel (ritmo de luminancia, altura, peso claro/escuro). Ele reprovou no proprio teste
+de calibracao: deu 27,3% para a versao que o dono REPROVOU e 26,3% para a corrigida, ou seja,
+apontou a boa como mais parecida com a original. Diferenca de pixel nao mede "cara de igual",
+que mora em composicao e escala. O medidor foi descartado; ficou o olho, com a imagem na mao.
+
+---
 
 ### CAMINHO 3: MELHORAR (a pagina continua sendo a mesma, so melhor)
 
@@ -481,6 +544,7 @@ Neste arquivo (ver MAPA DESTE ARQUIVO, no topo): runbook, os 4 caminhos, porta u
 | `scripts/screenshot-prova.js` | prova de entrega (desktop + mobile + clique) e **checagem de identidade da pagina** (4.2b). `--check` confere o Playwright, `--sem-identidade` so pra baseline de pagina de terceiro |
 | `scripts/gate-video.mjs` | as 7 checagens de video executaveis (razao por trilha, escala, corte, poster, frames, LCP, reduced-motion). Sobe o Chromium do Playwright sozinho |
 | `scripts/extrai-identidade.mjs` | extrai paleta real, vars CSS, h1/CTA e imagens de uma URL (caminho CLONAR) |
+| `scripts/lado-a-lado.py` | monta original e sua versao lado a lado, mesma escala, pro gate do caminho CLONAR + ELEVAR |
 | `scripts/search.py` + `data/` | banco de design: 50 estilos, 21 paletas, 50 font pairings, guidelines UX (keywords em INGLES) |
 | `scripts/assets-search.py` | fotos e videos (Pexels com chave, Openverse sem chave) |
 | `scripts/higgsfield.py` | cliente da API Higgsfield: `--dry-run` monta a requisicao sem gastar credito, `--lote` gera a pagina inteira de uma vez (credito nao faz rollover), grava manifesto com seed e poster com hash proprio |
