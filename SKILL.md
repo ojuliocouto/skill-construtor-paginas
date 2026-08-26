@@ -15,7 +15,7 @@ O essencial pra rodar, em poucas linhas. O detalhe de cada item esta nas secoes 
 
 1. **4 caminhos:** CRIAR do zero / CLONAR (URL ou PDF) / MELHORAR (pagina que ja existe e vai continuar existindo) / EDITAR (mudanca pontual). **Rotear ANTES de tudo** (ver "OS 4 CAMINHOS"): cada um tem fluxo e gates proprios. Rodar 6 steps numa troca de headline e tao errado quanto editar no improviso uma pagina nova.
 1b. **ANTES DE TUDO:** rodar `python3 <dir-da-skill>/scripts/checar-ferramentas.py`. Critico sem responder = PARA e conduz a correcao. Ferramenta morta com fallback silencioso ja deixou as duas camadas visuais desligadas por meses.
-2. **Step 0 comeca pela ENTREVISTA DE BRIEFING (0.0):** as seis perguntas da rodada 1 pra todo mundo, rodada 2 so pra quem ja tem cliente. Sem as seis respondidas, nao avanca. Depois: checar pre-requisitos (MCPs/skills), instalar AUTOMATICAMENTE o que nao pede chave (Stitch), instalar Playwright (o unico necessario na pratica), **oferecer uma vez** 21st.dev/Pexels/Taste Skills e, sem chave, seguir pelo fallback com a degradacao DECLARADA na entrega. Nenhuma dependencia bloqueia o inicio. Por fim, carregar contexto do projeto.
+2. **Step 0 comeca pela ENTREVISTA DE BRIEFING (0.0):** as seis perguntas da rodada 1 pra todo mundo, rodada 2 so pra quem ja tem cliente. Sem as seis respondidas, nao avanca. Antes disso roda o **0.0-PRE**, que e um GATE: `checar-ferramentas.py` manda cada ferramenta FAZER algo e confere o retorno. Ferramenta CRITICA sem responder **para a skill** ate ser conectada (o agente conduz a instalacao, nao so avisa). Opcional degradado segue, com a degradacao DECLARADA na entrega. Por fim, carregar contexto do projeto.
 3. **Ordem sagrada:** COPY (Step 1) → DESIGN (Step 2) → CODIGO (Step 3). Nunca pixel antes de copy travada.
 4. **Step 1:** se o usuario ja trouxe copy, validar e travar (COPY LOCK); senao gerar (copy-pagina-vendas opcional).
 5. **Step 2:** consultar o banco de design (`search.py`, keywords em INGLES) pra estilo/paleta/fonte antes de inventar; wireframe no Stitch (ou fallback).
@@ -268,15 +268,25 @@ Antes de qualquer coisa, checar o que esta DISPONIVEL na sessao e direcionar o
 usuario a instalar o que faltar. O modelo enxerge as ferramentas/skills ativas no
 proprio contexto (lista de tools + system-reminders de skills). Confirmar presenca de:
 
-| Dependencia | Como detectar | Papel | Fallback (caminho legitimo, nunca bloqueia o inicio) |
+**A fonte da verdade desta tabela e o `scripts/checar-ferramentas.py`**, nao o texto: e ele que
+classifica cada uma como CRITICA ou opcional e que reprova. Se divergirem, o script vence, e o
+texto e que esta desatualizado.
+
+**CRITICA = para a skill ate conectar.** Sao as que, faltando, produzem uma pagina pior sem
+ninguem perceber: Playwright (sem prova de entrega voce entrega no escuro), 21st.dev Magic (sem
+ele o layout cai no feito a mao toda vez, que foi exatamente o defeito de 26/08), a skill
+`design-taste-frontend` (sem gate anti-slop a cara de IA passa), o banco de design e a rota de
+foto real. **Opcional = segue, com a degradacao declarada na entrega.**
+
+| Dependencia | Como detectar | Papel | Faltando: bloqueia ou degrada? |
 |-------------|---------------|-------|---------|
-| **Playwright** | `node <dir-da-skill>/scripts/screenshot-prova.js --check` | prova de entrega, extrator de identidade, gate de video | **necessario na pratica** (prova obrigatoria nos 4 caminhos): `npm install -g playwright && npx playwright install chromium` |
+| **Playwright** | `node <dir-da-skill>/scripts/screenshot-prova.js --check` | prova de entrega, extrator de identidade, gate de video | **CRITICA: bloqueia.** Prova obrigatoria nos 4 caminhos: `npm install -g playwright && npx playwright install chromium` |
 | **ffmpeg / ffprobe** | `ffprobe -version` | gate de video (so em pagina com video) | pular o gate de video |
 | **Higgsfield (CLI)** | `higgsfield account status` (imprime e-mail, plano e creditos) | movimento e b-roll nos blocos (Step 3.2b), **passo esperado, nao enfeite** | conta PAGA para uso comercial. Sem ela: material real do cliente, gravacao de tela, b-roll de acervo aberto ou animacao CSS/Framer Motion, com a pendencia declarada na entrega. Setup completo (inclusive o `higgsfield workspace set <id>`, que trava todo mundo) em `references/higgsfield.md` |
 | **HF_API_KEY_ID + HF_API_KEY_SECRET (env)** | `echo $HF_API_KEY_ID` | rota por API do `scripts/higgsfield.py` (lote, `--dry-run`) | usar a CLI (rota assistida) ou seguir sem movimento gerado |
 | **Stitch (MCP)** | tools `mcp__stitch__*` | wireframe (Step 2) | auto-instalar (protocolo item 1); ultimo caso: layout direto no codigo |
-| **21st.dev Magic (MCP)** | tools `mcp__magic__*` | componentes (Step 3) | recomendado (protocolo item 3); fallback: componentes a mao (shadcn/Tailwind) |
-| **design-taste-frontend (skill)** | skill listada | gate anti-slop (Step 4) | recomendado (protocolo item 4); fallback: scoring manual 4.0b |
+| **21st.dev Magic (MCP)** | `checar-ferramentas.py` (estado real, nao presenca na lista) | componentes (Step 3) | **CRITICA: bloqueia.** O fallback "componente a mao" existe, mas era ele que rodava sempre quando o MCP estava morto. Conduza a conexao. |
+| **design-taste-frontend (skill)** | skill listada | gate anti-slop (Step 4 e 4.9) | **CRITICA: bloqueia.** E o unico passo que tira a cara de IA; sem ela o scoring manual 4.0b vira formalidade. |
 | **redesign-existing-projects (skill)** | skill listada | audit-first em clone/redesign (Step 2) | recomendado (protocolo item 4); fallback: auditoria manual das 5 dimensoes |
 | **high-end-visual-design (skill)** | skill listada | acabamento premium (Step 4) | recomendado (protocolo item 4); fallback: segue sem |
 | **impeccable (CLI)** | `npx impeccable --version` | refino UI (Step 4) | opcional, roda via npx quando precisar |
@@ -293,8 +303,11 @@ do codigo (Step 3), que vem antes de `animate` + `impeccable` + `high-end-visual
 
 **Acao (PROTOCOLO DE INSTALACAO, na primeira ativacao com dependencia faltando):**
 
-**NENHUMA dependencia bloqueia o inicio do trabalho.** Todas tem fallback documentado, e o
-fallback e um caminho legitimo: da pra entregar pagina numa maquina limpa, sem chave nenhuma.
+**As CRITICAS bloqueiam; as opcionais tem fallback legitimo.** Quem manda e o
+`checar-ferramentas.py` (0.0-PRE). Ate 26/08/2026 esta secao dizia que nada bloqueava, e o
+resultado foi o pior dos mundos: o 21st.dev morreu, o fallback "faz a mao" rodou em silencio
+por meses e o teto do resultado caiu sem ninguem ser avisado. Fallback de opcional se declara na
+entrega; fallback de critica vira defeito invisivel.
 O que o setup completo faz e levantar o TETO do resultado (componente pronto em vez de a mao,
 foto real em vez de gerada, gate de gosto automatico em vez de manual). Oferecer sempre,
 nunca prender o usuario num loop de instalacao.
@@ -1301,6 +1314,45 @@ Regras quando usar: se compromete LCP < 2.5s, SAI (constraint global vence). Fon
 - Gerar screenshots com Nanobanana → iPhone15Pro + MockupCarousel → seção side-by-side
 - Ver workflow completo em `references/nanobanana-mockup-carousel.md`
 
+### 3.2-ART GATE DO PRIMEIRO BLOCO: o diretor de arte entra ANTES de replicar o padrao
+
+**Construa SO o hero. Pare. Olhe. So depois construa o resto.**
+
+Este e o unico ponto do Step 3 em que corrigir e barato. O hero define token, densidade,
+escala tipografica, ritmo de espacamento e o nivel de acabamento; as outras secoes copiam esse
+padrao. Errar no hero nao custa uma secao, custa a pagina inteira, e o erro so aparecia la no
+Step 4, quando refazer significa mexer em tudo.
+
+```bash
+# 1. Renderize SO o que existe ate agora (funciona em arquivo local)
+node <dir-da-skill>/scripts/screenshot-prova.js "file:///caminho/index.html" ./prova-hero --sem-identidade
+```
+
+2. **OLHE o PNG.** Nao responda de cabeca: abra a imagem. Um checklist respondido de memoria
+   aprova o que os olhos reprovariam (o caso de 26/08: um veu por cima do video deixou o video
+   0 a 7% visivel e o checklist passou liso, porque ninguem abriu a imagem).
+
+3. **Chame a `design-taste-frontend` sobre esse PNG**, com a direcao do Step 2 na mao. Nao e o
+   gate anti-slop do 4.9: aqui ela responde uma pergunta so, e e a que importa agora:
+   **"o que esta na tela e o que a direcao do Step 2 prometia?"**
+
+4. **Compare item a item com o 2.1**, porque o desvio entre a direcao escrita e o codigo e a
+   regra, nao a excecao:
+
+| O que conferir | Reprova quando |
+|---|---|
+| Cor | apareceu hex fora das CSS vars do 2.1 (o build "resolveu" uma cor no meio do caminho) |
+| Tipografia | a escala do 2.1 virou outra coisa, ou entrou peso/familia que nao estava na direcao |
+| Espacamento | o ritmo vertical nao segue a escala; secao respira diferente do que foi desenhado |
+| Densidade | o hero ficou vazio com texto centralizado, quando a direcao pedia layout rico |
+| Acabamento | profundidade veio de glow/aura em vez de sombra real e hierarquia |
+
+**>>> GATE 3.2-ART: o hero na tela corresponde a direcao do Step 2? Se NAO, corrija o hero AGORA,
+antes de construir a proxima secao. Replicar padrao errado e o jeito mais caro de errar. <<<**
+
+Depois de aprovado, o hero vira a REFERENCIA: as demais secoes se conformam a ele, e qualquer
+desvio deliberado (uma secao que quebra o padrao de proposito) se declara na entrega.
+
 ### 3.2b MOVIMENTO NOS BLOCOS: o Higgsfield e passo ESPERADO, nao enfeite
 
 Pagina inteira parada, com bloco de texto e icone, entrega menos do que merece. **Neste step,
@@ -1362,6 +1414,12 @@ for f in *.png *.jpg; do [ -f "$f" ] && cwebp -q 82 "$f" -o "${f%.*}.webp"; done
 ```
 
 ### 3.6 Auto-Revisao Visual (antes de avançar)
+
+**Responda este checklist OLHANDO a pagina renderizada, nunca de memoria.** Rode
+`screenshot-prova.js` sobre a pagina inteira e abra os PNG (desktop e mobile) antes do primeiro
+item. Checklist respondido de cabeca aprova o que os olhos reprovariam: e assim que passa veu que
+apaga o video, favicon deformado e secao que quebrou so no mobile.
+
 Antes de considerar o build "pronto", revisar CADA secao:
 - [ ] Tem pelo menos 1 elemento visual "wow" DO CATALOGO PERMITIDO? (foto tratada, mockup, video integrado, number ticker, marquee, parallax sutil, micro-interacao no CTA)
 - [ ] ZERO tells de IA? (sem blob glow, aurora, floating orbs, glow em botao, glassmorphism generalizado, gradient-clip em titulo: ver `references/anti-vibe-coding.md` V1-V15)
@@ -1731,7 +1789,56 @@ interacao principal nunca foi clicada (uma roleta publicada com o popup morto). 
 5. A mensagem final de entrega deve citar os arquivos de screenshot lidos e o resultado
    do teste de interacao, junto com o veredito da wave (4.0).
 
-**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + CONSISTENCIA DE CONTATO conferida digito por digito (colar no bloco de entrega os numeros achados no HTML e nos `tel:`/`wa.me`: mais de um numero distinto sem justificativa REPROVA) + DIFF DE CLAIMS feito (lista de afirmacoes x fonte, com o veredito de cada uma) + IDENTIDADE DA PAGINA (4.2b, com o output do `screenshot-prova.js` sem REPROVA) + PASSE DE GOSTO rodado (4.2c, com os itens de composicao alterados e a contagem de tells, que tem que terminar em 0) + deploy funcionando e verificado + ZERO placeholders + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar.**
+### 4.6 GATE DE USO: ferramenta viva nao se pula
+
+```bash
+python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir-do-projeto> checar
+```
+
+**A regra, e ela nao tem excecao:** toda ferramenta que o 0.0-PRE mediu como RESPONDENDO
+precisa aparecer no registro de uso, com evidencia. Ferramenta que nao respondeu nao e cobrada,
+porque ali a degradacao ja foi declarada. Nao existe terceira opcao. **"O 21st.dev eu pulei"
+com o 21st.dev vivo REPROVA a entrega.**
+
+**Por que este gate e diferente do 0.0-PRE:** aquele garante que a ferramenta RESPONDE. Este
+garante que ela foi USADA. Sao buracos distintos, e tapar so o primeiro nao resolve nada: da
+pra ter o 21st.dev conectado, verde no verificador, e a pagina sair 100% feita a mao do mesmo
+jeito. O resultado e identico ao do MCP morto, so que agora sem nem a desculpa.
+
+**A evidencia nao e a sua palavra.** Cada registro aponta um artefato que o script confere de
+novo na hora do gate: arquivo que precisa existir e ter tamanho, ou trecho que precisa ser
+achado no codigo. Registro cujo artefato sumiu vale como nao registrado (o componente do
+21st.dev que voce trocou por um card a mao depois: o gate pega).
+
+Registre conforme for usando, nao no fim de memoria:
+
+```bash
+U="python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir-do-projeto>"
+
+# componente que veio mesmo do MCP: o trecho tem que estar no codigo
+$U registrar magic --no-codigo "<classe-ou-nome-do-componente>" --em <dir> --detalhe "hero do 21st.dev"
+# artefato no disco
+$U registrar Playwright --arquivo prova/prova-desktop.png --detalhe "prova de tela lida"
+$U registrar "Higgsfield CLI" --arquivo assets/hero-loop.mp4 --detalhe "b-roll do hero"
+$U registrar "skill design-taste-frontend" --arquivo index.html --detalhe "passe de gosto, 3 tells removidos"
+```
+
+**Nao se aplica a esta pagina? DISPENSE, com motivo, e o motivo vai na entrega:**
+
+```bash
+$U dispensar "ffmpeg/ffprobe" --motivo "esta pagina nao tem video: o gate de video nao se aplica"
+```
+
+Dispensa exige motivo de verdade (o script recusa "nao usei") e sai marcada no relatorio e no
+bloco de entrega. A diferenca entre dispensar e pular e essa: **dispensa e uma decisao assinada
+que o dono le; pulo e uma decisao escondida que ele descobre pelo resultado, meses depois.**
+
+**>>> GATE 4.6: `uso-ferramentas.py checar` saiu com codigo 0? Se NAO, volte e USE o que
+esta faltando. Nenhuma explicacao substitui rodar de novo verde. <<<**
+
+---
+
+**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + CONSISTENCIA DE CONTATO conferida digito por digito (colar no bloco de entrega os numeros achados no HTML e nos `tel:`/`wa.me`: mais de um numero distinto sem justificativa REPROVA) + DIFF DE CLAIMS feito (lista de afirmacoes x fonte, com o veredito de cada uma) + IDENTIDADE DA PAGINA (4.2b, com o output do `screenshot-prova.js` sem REPROVA) + PASSE DE GOSTO rodado (4.2c, com os itens de composicao alterados e a contagem de tells, que tem que terminar em 0) + deploy funcionando e verificado + ZERO placeholders + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada) + GATE DE USO 4.6 verde (toda ferramenta que estava viva foi usada, ou dispensada COM MOTIVO que vai na entrega)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar.**
 
 **ENTREGA SEM DEPLOY (pasta local, arquivo unico, aluno sem conta de hosting) e caminho LEGITIMO, nao gate pulado:** a prova 4.5 roda contra o servidor local (`python3 scripts/servidor-gzip.py <pasta> <porta>`), e deploy, QA pos-deploy, Lighthouse e `og:image` com URL absoluta entram como PENDENCIAS DECLARADAS no bloco de entrega. Tudo o mais do GATE 4 continua valendo igual: wave, identidade, passe de gosto, contato, claims e prova lida com os proprios olhos. **<<<**
 
