@@ -185,14 +185,25 @@ for (const t of TELAS) {
   await ctx.close();
 }
 
-/* 1. RAZAO UNICA POR TRILHA
+/* 1. RAZAO UNICA POR CAIXA
    A fila do herói da /v3 acumulou 11 clipes com 5 razões. Não existe caixa que
-   sirva pras cinco, e o `cover` decide sozinho o que cortar. */
-console.log("\n[1] RAZAO UNICA POR TRILHA");
+   sirva pras cinco, e o `cover` decide sozinho o que cortar.
+
+   CORRECAO (26/08/2026): antes isto agrupava por TRILHA, e vídeo sem trilha caía
+   todo em "raiz". Resultado: uma página com um clipe no herói (caixa 1.5) e outro
+   numa faixa panorâmica (caixa 2.4) REPROVAVA por "2 razões", sendo que as duas
+   caixas são genuinamente diferentes e cada clipe estava certo pra sua. A pergunta
+   real nunca foi "quantas razões existem na página", e sim "dois clipes que dividem
+   a MESMA caixa têm a mesma razão?". Agora agrupa pela razão da CAIXA renderizada. */
+console.log("\n[1] RAZAO UNICA POR CAIXA");
 const trilhas = new Map();
 let medidos1 = 0;
 for (const v of porTela.desktop) {
-  const chave = v.trilha || "sem-trilha";
+  // agrupa pela caixa renderizada (1 casa decimal): mesma caixa, mesma exigência.
+  const razaoCaixa = v.caixa && v.caixa.h
+    ? (v.caixa.w / v.caixa.h).toFixed(1)
+    : null;
+  const chave = razaoCaixa ? `caixa ${razaoCaixa}:1` : (v.trilha || "sem-trilha");
   if (!trilhas.has(chave)) trilhas.set(chave, new Set());
   for (const f of v.fontes) {
     const p = join(PUBLICO, f.replace(/^\//, ""));
