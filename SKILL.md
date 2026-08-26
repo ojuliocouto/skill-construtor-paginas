@@ -14,6 +14,7 @@ Skill unificada para construir paginas web profissionais, bonitas e de alta conv
 O essencial pra rodar, em poucas linhas. O detalhe de cada item esta nas secoes abaixo; conteudo pesado de implementacao fica em `references/` e so deve ser carregado quando o caso pedir (ver Indice).
 
 1. **4 caminhos:** CRIAR do zero / CLONAR (URL ou PDF) / MELHORAR (pagina que ja existe e vai continuar existindo) / EDITAR (mudanca pontual). **Rotear ANTES de tudo** (ver "OS 4 CAMINHOS"): cada um tem fluxo e gates proprios. Rodar 6 steps numa troca de headline e tao errado quanto editar no improviso uma pagina nova.
+1b. **ANTES DE TUDO:** rodar `python3 <dir-da-skill>/scripts/checar-ferramentas.py`. Critico sem responder = PARA e conduz a correcao. Ferramenta morta com fallback silencioso ja deixou as duas camadas visuais desligadas por meses.
 2. **Step 0 comeca pela ENTREVISTA DE BRIEFING (0.0):** as seis perguntas da rodada 1 pra todo mundo, rodada 2 so pra quem ja tem cliente. Sem as seis respondidas, nao avanca. Depois: checar pre-requisitos (MCPs/skills), instalar AUTOMATICAMENTE o que nao pede chave (Stitch), instalar Playwright (o unico necessario na pratica), **oferecer uma vez** 21st.dev/Pexels/Taste Skills e, sem chave, seguir pelo fallback com a degradacao DECLARADA na entrega. Nenhuma dependencia bloqueia o inicio. Por fim, carregar contexto do projeto.
 3. **Ordem sagrada:** COPY (Step 1) → DESIGN (Step 2) → CODIGO (Step 3). Nunca pixel antes de copy travada.
 4. **Step 1:** se o usuario ja trouxe copy, validar e travar (COPY LOCK); senao gerar (copy-pagina-vendas opcional).
@@ -622,7 +623,7 @@ rigor, e processo errado: o gate tem que caber no que foi pedido.
 
 ```
 STEP 0 (ENTENDER & INVENTARIAR) ────────────────────────────
-  GATE 0: As SEIS respostas da rodada 1 (0.0) registradas, cada uma marcada como resposta do
+  GATE 0: checar-ferramentas.py rodado (critico respondendo ou correcao conduzida) + As SEIS respostas da rodada 1 (0.0) registradas, cada uma marcada como resposta do
           usuario ou SUPOSICAO + classificacao + mapa de secoes + flags de copy + inventario
           de assets documentados?
   [ ] SIM → avanca pro Step 1
@@ -675,7 +676,55 @@ STEP 4 (VERIFICAR & SHIPAR) ─────────────────�
 
 Recebe o material do usuario e extrai tudo que precisa ANTES de tocar em copy, design ou codigo.
 
-### 0.0 BRIEFING: entrevista de 2 rodadas (a PRIMEIRA coisa do Step 0)
+### 0.0-PRE FERRAMENTAS: rodar o verificador ANTES de qualquer coisa
+
+```bash
+python3 <dir-da-skill>/scripts/checar-ferramentas.py
+```
+
+**Este e o primeiro comando da skill, antes ate da entrevista de briefing.** Ele nao pergunta se
+a ferramenta esta configurada: ele MANDA cada uma fazer alguma coisa e confere se voltou. Sai
+com codigo diferente de zero quando falta critico.
+
+**Por que existe (26/08/2026, custou meses sem ninguem perceber):** o MCP do 21st.dev estava
+configurado e MORTO havia tempo indeterminado (`Not authenticated: your API key is missing or
+was reset`). A skill mandava "buildar com componentes do 21st.dev OU a mao", o MCP nunca
+respondia, e ela caia no "a mao" TODA VEZ. O Stitch estava no mesmo estado (proxy de pe, tools
+com timeout), entao as DUAS camadas visuais da skill estavam desligadas. O dono percebeu pelo
+RESULTADO ("o design nao ta interessante, pouca coisa e usada do 21st.dev"), nao por erro
+nenhum, porque **fallback silencioso nao reclama**.
+
+A deteccao antiga era "a tool `mcp__magic__*` aparece na lista?". Aparecia. E estava morta.
+**Estar na lista nao e verificacao.** Verificacao e mandar fazer e conferir o retorno.
+
+**O que fazer com o resultado:**
+
+| Resultado | Acao |
+|---|---|
+| Tudo respondendo | Segue pro 0.0 (entrevista de briefing) |
+| **Critico sem responder** | **PARA.** Conduza a pessoa pela correcao (abaixo). Nao comece a pagina. |
+| So opcional degradado | Segue, e DECLARE a degradacao na entrega |
+
+**CONDUZIR, nao avisar.** Quando faltar algo, nao diga "voce precisa configurar o 21st.dev":
+abra a pagina, de o comando pronto e espere a chave. A pessoa que esta usando a skill quase
+sempre nao sabe o que e um MCP.
+
+| Ferramenta | Como conduzir |
+|---|---|
+| **21st.dev (magic)** | Abra `https://21st.dev/mcp`, peca a chave, e rode: `claude mcp remove magic` e depois `claude mcp add magic -- npx -y @21st-dev/magic@latest --api-key <CHAVE>`. Avise que as tools novas so aparecem na proxima sessao. |
+| **Playwright** | `npm i -g playwright && npx playwright install chromium` (baixa ~265 MB; a versao leve e `--only-shell`, ~94 MB) |
+| **Higgsfield** | Setup completo em `references/higgsfield.md`, secao SETUP (inclui o `workspace set`, que trava todo mundo) |
+| **Stitch** | Proxy local. Timeout costuma ser conflito de porta: confira quem esta na porta antes de reiniciar |
+| **ffmpeg** | `brew install ffmpeg` |
+
+**Regra que nasceu daqui, e vale pra qualquer ferramenta que a skill venha a usar:** toda
+dependencia nova precisa entrar no `checar-ferramentas.py` com um teste que a EXERCITA. Se voce
+nao conseguir escrever esse teste, a dependencia nao entra na skill: sem teste, ela vai morrer
+em silencio e degradar o resultado sem avisar ninguem.
+
+---
+
+### 0.0 BRIEFING: entrevista de 2 rodadas (logo depois do verificador de ferramentas)
 
 **Desvio:** se o usuario ja chegou com doc, PDF, briefing fechado ou copy pronta, NAO abra a
 entrevista inteira. Va para o 0.1, leia o material e use a entrevista so para o que ficou em
@@ -872,7 +921,7 @@ Blueprint documentado com:
 - Contexto de funil
 - Inventario de assets (o que existe vs o que precisa criar)
 
-**>>> GATE 0: As seis respostas da rodada 1 (0.0) registradas (resposta do usuario ou SUPOSICAO declarada) + blueprint + inventario de assets documentados por escrito? Assets criticos existem ou ha plano para obtelos? Se NAO, PARA AQUI. <<<**
+**>>> GATE 0: checar-ferramentas.py rodado (critico respondendo ou correcao conduzida) + As seis respostas da rodada 1 (0.0) registradas (resposta do usuario ou SUPOSICAO declarada) + blueprint + inventario de assets documentados por escrito? Assets criticos existem ou ha plano para obtelos? Se NAO, PARA AQUI. <<<**
 
 **PARADA OBRIGATORIA:** Apresentar o blueprint completo ao usuario e perguntar: "Step 0 concluido. Posso avancar para o Step 1 (COPY & MENSAGEM)?", NAO AVANCAR SEM RESPOSTA.
 
