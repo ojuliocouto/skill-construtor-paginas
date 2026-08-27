@@ -101,7 +101,38 @@ for (const [nome, w, h, mob] of TELAS) {
 
   const r = await page.evaluate((ehMobile) => {
     const doc = document.documentElement;
-    const saida = { overflow: doc.scrollWidth - doc.clientWidth, toqueRuim: [], textoPequeno: [], cortado: [], distorcida: [] };
+    const saida = { overflow: doc.scrollWidth - doc.clientWidth, toqueRuim: [], textoPequeno: [], cortado: [], distorcida: [], estouro: [] };
+
+    // OVERFLOW INTERNO. O overflow do DOCUMENTO nao ve corte dentro de container que tem
+    // `overflow-hidden`: ele zera o scrollWidth e o defeito fica invisivel pra qualquer
+    // medicao de pagina. Foi assim que tres cards de depoimento com largura fixa de 390px
+    // dentro de uma trilha de 342px sairam CORTADOS em todo celular, passando limpo por dois
+    // gates (26/08/2026). Aqui a comparacao e filho x pai, nao pagina x viewport.
+    for (const filho of document.querySelectorAll('article, figure, li > div, .card, [class*="rounded"]')) {
+      const pai = filho.parentElement;
+      if (!pai) continue;
+      const csf = getComputedStyle(filho);
+      // Decoracao SAI da caixa de proposito (bloco de cor com offset negativo, sangria,
+      // faixa que atravessa a borda). O que e defeito e CONTEUDO estourando o container.
+      if (filho.getAttribute('aria-hidden') === 'true') continue;
+      if (csf.pointerEvents === 'none') continue;
+      if (csf.position === 'absolute' || csf.position === 'fixed') continue;
+      if (!(filho.innerText || '').trim()) continue;
+      const cf = filho.getBoundingClientRect();
+      const cp = pai.getBoundingClientRect();
+      if (cf.width < 60 || cp.width < 60) continue;
+      const sobra = Math.round(cf.right - cp.right);
+      const sobraEsq = Math.round(cp.left - cf.left);
+      // 2px de folga: sub-pixel de layout nao e defeito
+      if (sobra > 2 || sobraEsq > 2) {
+        const cs = getComputedStyle(pai);
+        const escondido = cs.overflowX === 'hidden' || cs.overflow === 'hidden';
+        saida.estouro.push(
+          `${(filho.innerText || filho.tagName).replace(/\s+/g, ' ').trim().slice(0, 22)} ` +
+          `(+${Math.max(sobra, sobraEsq)}px${escondido ? ', CORTADO pelo overflow-hidden do pai' : ''})`,
+        );
+      }
+    }
 
     // CTA principal acima da dobra: regra de pagina de venda.
     const heroi = document.querySelector('section');
@@ -239,6 +270,8 @@ for (const [nome, w, h, mob] of TELAS) {
   if (r.toqueRuim.length) falhas.push(`${onde}: ${r.toqueRuim.length} alvo(s) de toque < 44px: ${r.toqueRuim.slice(0, 3).join(', ')}`);
   if (r.textoPequeno.length) falhas.push(`${onde}: texto de corpo < 14px: ${r.textoPequeno.slice(0, 3).join(', ')}`);
   if (r.cortado.length) falhas.push(`${onde}: texto cortado pela caixa: ${r.cortado.slice(0, 3).join(', ')}`);
+  if (r.estouro?.length)
+    falhas.push(`${onde}: elemento maior que o container: ${[...new Set(r.estouro)].slice(0, 3).join(', ')}`);
   if (r.distorcida.length) avisos.push(`${onde}: imagem possivelmente distorcida: ${r.distorcida.slice(0, 2).join(', ')}`);
 
   await ctx.close();
