@@ -1901,6 +1901,60 @@ acontecer.
 
 ---
 
+### 4.2g REJEITAR TAMBEM PRECISA DE MEDIDA (27/08/2026)
+
+Gate existe pra impedir que coisa ruim passe. Este item existe pro contrario: pra impedir que
+coisa BOA seja jogada fora por diagnostico feito no olho. Os dois erros custam, e o segundo e
+mais dificil de perceber porque ninguem reclama de um asset que voce nao usou.
+
+**O caso.** Gerei b-roll no Higgsfield a partir da foto da fachada do cliente, olhei o primeiro
+e o ultimo quadro, e rejeitei o clipe inteiro escrevendo em tres arquivos que o modelo *"apagou
+a porta de entrada e deformou o letreiro"*. O dono perguntou: *"pq vc rejeitou? e so o prompt do
+higgsfield ser melhor feito, nao?"*. Fui medir quadro a quadro:
+
+| O que eu afirmei | A medida |
+|---|---|
+| "apagou a porta de entrada" | **falso**: a porta esta nos 121 quadros. No ultimo ela ocupa 57px em vez de 195px, que e ESCORCO de orbita |
+| "deformou o letreiro" | **falso**: letreiro integro; o logo girando pra frente na quina e comportamento 3D correto |
+| "redesenhou o predio" | **falso**: o quadro 0 reconstroi a foto do cliente com **0,70px** de erro mediano de reprojecao |
+
+O defeito real era outro e muito menor: um lens flare inventado a partir do quadro 36 e uma
+janela que nao existe nascendo na empena esquerda no quadro 53, que e uma parede que nenhuma
+foto mostra (o modelo TEM que inventar o que ninguem fotografou). Os dois se resolvem com
+`ffmpeg -t`, sem gastar credito e sem regerar: corte no 52, pingue-pongue, 4,42s continuos e
+100% fieis. **O lever estava na mao e a rejeicao nao procurou.**
+
+E a parte que fecha a conta: eu tinha extraido o quadro 0 daquele mesmo clipe e publicado como
+"a foto limpa da fachada", inclusive escrevendo isso no comentario. O poster no ar diferia da
+chapa real do cliente por **MAE 74** e do quadro 0 do Higgsfield por **MAE 0,80**. Ou seja:
+rejeitei a ferramenta, joguei fora o movimento, fiquei com os pixels dela e ainda documentei o
+contrario.
+
+**As quatro regras que saem disso:**
+
+1. **Material gerado se audita no TEMPO.** A unidade e o QUADRO, nao o clipe. Comparar o
+   primeiro com o ultimo responde "mudou?" e nao responde "QUANDO quebrou?", que e a unica
+   pergunta que gera decisao. Curva de deriva com residuo DEPOIS de compensar o movimento de
+   camera: sem compensar, voce esta medindo a camera andando, nao o modelo redesenhando.
+2. **Escorco nao e apagamento.** Numa orbita, tudo encolhe e vira de perfil. Recorte fixo sobre
+   camera em movimento produz "sumiu" que e mentira. Quadro INTEIRO primeiro.
+3. **Antes de descartar, procure o corte.** Quase todo clipe gerado tem uma janela inicial fiel,
+   porque a deriva acumula. Cortar custa zero. Descartar custa o asset inteiro.
+4. **O defeito vale pela JANELA, nao pelo arquivo.** Meça o defeito no pixel COMPOSTO, com veu,
+   overlay e enquadramento aplicados. Aqui o flare tinha +36 de R-B no arquivo e **3,38 de 255**
+   na tela, porque o veu naquela regiao e 91,5% opaco: invisivel, e nao justificava corte.
+
+**O que continua valendo como recusa legitima:** o segundo clipe animava funcionarias
+identificaveis da empresa, e 83% da mudanca sobrevive a compensacao de movimento, ou seja o
+modelo re-sintetizou rosto de gente real. Isso nao e acabamento e nenhum prompt resolve: e
+decisao de uso de imagem, e quem decide e o dono, nao a skill. A diferenca entre este caso e o
+da fachada e exatamente a diferenca entre uma objecao MEDIDA e uma impressao.
+
+**>>> GATE 4.2g: rejeitou asset gerado? Escreva a MEDIDA que sustenta (qual quadro, qual
+numero) e diga se existe corte que salva. "Ficou ruim" nao e motivo de descarte. <<<**
+
+---
+
 ### 4.2f O CICLO: auditar, corrigir, RE-auditar, e saber a hora de parar
 
 ```bash

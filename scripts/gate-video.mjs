@@ -152,9 +152,29 @@ for (const t of TELAS) {
       if (v.getAttribute("src")) s.add(v.getAttribute("src"));
       if (v.dataset.src) s.add(v.dataset.src);
       (v.dataset.fila || "").split(",").filter(Boolean).forEach((x) => s.add(x.trim()));
+      // `currentSrc` MANDA quando existe: e o arquivo que o navegador escolheu DE FATO
+      // nesta largura, ja resolvidos `media` e ordem das <source>. Enumerar todas as
+      // fontes e medir cada uma contra a caixa atual reprova a pagina por um arquivo que
+      // o navegador nunca vai baixar aqui. Foi o que aconteceu em 27/08/2026: um heroi
+      // com 1920 pra >=1200px e 1280 pra faixa media levou REPROVA porque o gate mediu o
+      // 1280 contra a caixa de 1440, enquanto o currentSrc real era o 1920 (fator medido
+      // 1,33x). Video responsivo e a coisa CERTA, e o gate estava punindo quem fazia.
+      // O gate ja roda em varias telas, entao cada largura cobra a fonte dela.
+      if (v.currentSrc) {
+        // currentSrc vem ABSOLUTO (http://host/assets/x.mp4) e o resolvedor de arquivo
+        // monta `join(PUBLICO, caminho)`. Sem tirar a origem, ele procura por um arquivo
+        // chamado "http:" dentro de dist/ e o gate reprova por "0 arquivos medidos",
+        // que e pior do que a falha original: vira gate cego se declarando rigoroso.
+        try { s.add(new URL(v.currentSrc).pathname); } catch { s.add(v.currentSrc); }
+        return [...s];
+      }
+      // Sem currentSrc (video que ainda nao carregou): cai pra primeira <source>
+      // candidata, que e como o navegador escolheria.
       for (const src of v.querySelectorAll("source")) {
-        if (src.getAttribute("src")) s.add(src.getAttribute("src"));
-        if (src.dataset.src) s.add(src.dataset.src);
+        const m = src.getAttribute("media");
+        if (m && window.matchMedia && !window.matchMedia(m).matches) continue;
+        const u = src.getAttribute("src") || src.dataset.src;
+        if (u) { s.add(u); break; }
       }
       return [...s];
     };
