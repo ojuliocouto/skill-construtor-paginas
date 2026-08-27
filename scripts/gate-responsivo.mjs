@@ -62,6 +62,29 @@ const TELAS = [
 
 const falhas = [];
 const avisos = [];
+
+const luz = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+const lum = (r, g, b) => 0.2126 * luz(r) + 0.7152 * luz(g) + 0.0722 * luz(b);
+const contraste = (a, b) => { const [x, y] = [a, b].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+
+/** Media dos pixels REALMENTE renderizados numa faixa. Decodifica o PNG no proprio
+ *  navegador via canvas, pra nao precisar de biblioteca de imagem. */
+async function mediaDoFundo(page, clip) {
+  const png = await page.screenshot({ clip });
+  return page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = 'data:image/png;base64,' + b64;
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const g = c.getContext('2d');
+    g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    let r = 0, gg = 0, bb = 0, n = 0;
+    for (let i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; bb += d[i + 2]; n++; }
+    return [r / n, gg / n, bb / n];
+  }, png.toString('base64'));
+}
 const navegador = await chromium.launch();
 
 console.log('\nGATE DE RESPONSIVIDADE  ' + URL_ALVO);
@@ -85,6 +108,28 @@ for (const [nome, w, h, mob] of TELAS) {
     const cta = heroi && heroi.querySelector('a[href^="#"], a[href^="tel:"], a[href^="http"], button');
     saida.ctaBottom = cta ? Math.round(cta.getBoundingClientRect().bottom) : null;
     saida.viewportH = window.innerHeight;
+
+    // A lista de botoes candidatos sai daqui; a MEDICAO do fundo acontece fora do
+    // evaluate, sobre o pixel renderizado (ver `mediaDoFundo`). getComputedStyle do pai
+    // mente quando o fundo e video, foto ou gradiente, e foi assim que um CTA camuflado
+    // passou por todo gate de acessibilidade.
+    saida.botoes = [...document.querySelectorAll('a, button')]
+      .filter((el) => {
+        const cs = getComputedStyle(el);
+        const txt = (el.innerText || '').trim();
+        const c = el.getBoundingClientRect();
+        return txt.length > 3 && txt.length < 44 && cs.backgroundColor !== 'rgba(0, 0, 0, 0)'
+          && c.width >= 40 && c.height >= 20;
+      })
+      .slice(0, 12)
+      .map((el) => {
+        const c = el.getBoundingClientRect();
+        return {
+          texto: (el.innerText || '').trim().slice(0, 24),
+          cor: getComputedStyle(el).backgroundColor,
+          x: Math.round(c.x), y: Math.round(c.y), w: Math.round(c.width), h: Math.round(c.height),
+        };
+      });
 
     if (ehMobile) {
       // Alvo de toque: 44px e o minimo de Apple HIG e WCAG 2.5.5.
@@ -141,6 +186,40 @@ for (const [nome, w, h, mob] of TELAS) {
     return saida;
   }, mob);
 
+  // CTA CONTRA O FUNDO, no pixel. Um botao tem DOIS contrastes e o segundo quase nunca e
+  // medido: texto/botao (4,5:1) e BOTAO/FUNDO (3:1).
+  r.ctaSemContraste = [];
+  // ROLA ate cada botao antes de medir. A primeira versao media so o que ja estava na
+  // viewport inicial, entao o CTA do FIM da pagina (justamente o que estava camuflado)
+  // nunca era testado, e o gate passava com o defeito na tela.
+  const alvos = await page.$$('a, button');
+  for (const el of alvos) {
+    const info = await el.evaluate((n) => {
+      const cs = getComputedStyle(n);
+      const txt = (n.innerText || '').trim();
+      const c = n.getBoundingClientRect();
+      if (txt.length < 4 || txt.length > 44) return null;
+      if (cs.backgroundColor === 'rgba(0, 0, 0, 0)') return null;
+      if (c.width < 40 || c.height < 20) return null;
+      return { texto: txt.slice(0, 24), cor: cs.backgroundColor };
+    });
+    if (!info) continue;
+    try {
+      await el.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(260);
+      const cx = await el.boundingBox();
+      if (!cx || cx.y < 30) continue;
+      const fundo = await mediaDoFundo(page, {
+        x: Math.round(cx.x), y: Math.round(cx.y) - 30,
+        width: Math.min(Math.round(cx.width), w - Math.round(cx.x)), height: 20,
+      });
+      const [br, bg, bb] = (info.cor.match(/[\d.]+/g) || [0, 0, 0]).slice(0, 3).map(Number);
+      const c = contraste(lum(br, bg, bb), lum(...fundo));
+      if (c < 3) r.ctaSemContraste.push(`${info.texto} (${c.toFixed(2)}:1)`);
+    } catch { /* elemento saiu da arvore: ignora */ }
+  }
+  await page.evaluate(() => window.scrollTo(0, 0));
+
   const ctaOk = r.ctaBottom !== null && r.ctaBottom <= r.viewportH;
   const marca = (b) => (b ? 'ok  ' : 'FALHA');
   console.log(
@@ -154,6 +233,8 @@ for (const [nome, w, h, mob] of TELAS) {
 
   const onde = `${nome} (${w}x${h})`;
   if (r.overflow > 0) falhas.push(`${onde}: overflow horizontal de ${r.overflow}px`);
+  if (r.ctaSemContraste?.length)
+    falhas.push(`${onde}: CTA camuflado no fundo (< 3:1): ${r.ctaSemContraste.slice(0, 3).join(', ')}`);
   if (!ctaOk) falhas.push(`${onde}: CTA do heroi abaixo da dobra (termina em ${r.ctaBottom}px de ${r.viewportH}px)`);
   if (r.toqueRuim.length) falhas.push(`${onde}: ${r.toqueRuim.length} alvo(s) de toque < 44px: ${r.toqueRuim.slice(0, 3).join(', ')}`);
   if (r.textoPequeno.length) falhas.push(`${onde}: texto de corpo < 14px: ${r.textoPequeno.slice(0, 3).join(', ')}`);
@@ -169,8 +250,11 @@ avisos.forEach((a) => console.log('  aviso: ' + a));
 if (falhas.length) {
   falhas.forEach((f) => console.log('  FALHA: ' + f));
   console.log(`\n  REPROVA: ${falhas.length} problema(s) de responsividade em ${TELAS.length} telas.`);
-  console.log('  Lembre que ALTURA conta tanto quanto largura: janela baixa com titulo grande');
-  console.log('  empurra o CTA pra fora da dobra, e teste de largura sozinho nunca pega isso.\n');
+  console.log('  Duas lembrancas que custaram caro aqui:');
+  console.log('   - ALTURA conta tanto quanto largura: janela baixa com titulo grande empurra o');
+  console.log('     CTA pra fora da dobra, e teste de largura sozinho nunca pega isso.');
+  console.log('   - um botao tem DOIS contrastes: o texto dentro dele E ele contra o fundo.');
+  console.log('     Consertar so o primeiro ja produziu botao verde escuro em secao verde escura.\n');
   process.exit(1);
 }
 console.log(`  PASSA: ${TELAS.length} telas, nenhum problema de responsividade.\n`);
