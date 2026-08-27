@@ -117,13 +117,19 @@ def checagens():
            saida.splitlines()[0][:110] if saida else "",
            "npm i -g @higgsfield/cli && higgsfield auth login && higgsfield workspace set <id>")
 
-    for s, papel, critico in [
-        ("design-taste-frontend", "gate anti-slop e passe de gosto (Step 4.9)", True),
-        ("frontend-design", "direcao estetica antes do codigo (Step 2)", False),
-        ("high-end-visual-design", "acabamento premium (Step 4)", False),
-        ("animate", "movimento e microinteracao (Step 4)", False),
+    # O comando de instalacao vai LITERAL: quem cai aqui esta com a ferramenta faltando e
+    # precisa copiar e colar. Placeholder do tipo `<fonte>` nao instala nada, so parece que
+    # instrui (era o que estava aqui ate 27/08/2026). As fontes sao as mesmas da SKILL.md.
+    TASTE = "npx skills add Leonxlnx/taste-skill"
+    for s, papel, critico, fix in [
+        ("design-taste-frontend", "gate anti-slop e passe de gosto (Step 4.9)", True, TASTE),
+        ("frontend-design", "direcao estetica antes do codigo (Step 2)", False,
+         "npx -y skills add anthropics/skills --skill frontend-design --agent claude-code"),
+        ("high-end-visual-design", "acabamento premium (Step 4)", False, TASTE),
+        ("animate", "movimento e microinteracao (Step 4)", False,
+         "npx -y skills add https://github.com/delphi-ai/animate-skill --agent claude-code"),
     ]:
-        yield (f"skill {s}", papel, critico, skill_existe(s), "", f"npx skills add <fonte>/{s}")
+        yield (f"skill {s}", papel, critico, skill_existe(s), "", fix)
 
     ok, saida = roda(
         f'env -u PEXELS_API_KEY python3 "{RAIZ}/scripts/assets-search.py" "office" --type openverse -n 1')
