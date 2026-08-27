@@ -81,11 +81,30 @@ def checagens():
            "npm i -g playwright && npx playwright install chromium")
 
     def _mcp(nome, papel, critico, url_fix):
-        est, det = estado_mcp(nome)
-        return (nome, papel, critico, est == "conectado", f"{est}: {det[:110]}", url_fix)
+        # nome pode ser uma string ou uma tupla de nomes aceitos (o mesmo servidor ja
+        # apareceu com nomes diferentes conforme o transporte). Basta UM responder.
+        nomes = (nome,) if isinstance(nome, str) else tuple(nome)
+        piores = []
+        for n in nomes:
+            est, det = estado_mcp(n)
+            if est == "conectado":
+                return (n, papel, critico, True, f"{est}: {det[:110]}", url_fix)
+            piores.append((n, est, det))
+        n, est, det = piores[0]
+        rotulo = nomes[0] if len(nomes) == 1 else " ou ".join(nomes)
+        return (rotulo, papel, critico, False, f"{est}: {det[:110]}", url_fix)
 
-    yield _mcp("magic", "componentes do 21st.dev (Step 3)", True,
-               "chave nova em https://21st.dev/mcp, depois: claude mcp remove magic && claude mcp add magic -- npx -y @21st-dev/magic@latest --api-key SUA_CHAVE")
+    # O servidor do 21st.dev ja teve DOIS nomes: "magic" (transporte stdio, via npx) e
+    # "21st" (transporte HTTP). Em 27/08/2026 o "magic" estava com a chave resetada e foi
+    # ESCOPO IMPORTA: adicionar sem --scope user prende o servidor ao projeto do
+    # diretorio atual, e ele SOME quando o cwd muda. Aconteceu em 27/08/2026: o
+    # `claude mcp list` dizia Connected na home e nao listava nada dentro da pasta da
+    # skill (que tem git proprio, entao e outro projeto). Sempre `--scope user`.
+    # REMOVIDO; entrou o "21st" por HTTP. Aceitar os dois nomes evita o proximo falso
+    # negativo: o servidor conectado com nome novo e o verificador reprovando por
+    # procurar o antigo, que e exatamente o que aconteceu hoje.
+    yield _mcp(("21st", "magic"), "componentes do 21st.dev (Step 3)", True,
+               'chave nova em https://21st.dev/mcp, depois: claude mcp add --transport http 21st https://21st.dev/api/mcp --header "x-api-key: SUA_CHAVE"')
     yield _mcp("stitch", "wireframe (Step 2)", False,
                "proxy local: conferir se ~/.claude/scripts/stitch-proxy.py responde na porta configurada (conflito de porta e a causa comum)")
 
