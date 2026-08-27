@@ -164,12 +164,22 @@ def cmd_checar(args):
         problemas.append(f"{len(gates_faltando)} gate(s) executavel(is) sem registro: {', '.join(gates_faltando)}")
     if gates_vermelhos:
         problemas.append(f"gate(s) vermelho(s): {', '.join(gates_vermelhos)}")
+    # NOTA NAO E ASSUNTO DO MASTER. Ele pergunta uma coisa so: "o processo aconteceu inteiro?".
+    # Quem decide se a nota basta e o CICLO (`rodada`), que olha critico, regressao e gravidade
+    # ao longo das rodadas. Enquanto o master tambem barrava por piso de nota, os dois gates se
+    # contradiziam: o ciclo mandava ENTREGAR com nota declarada e o master travava a mesma
+    # entrega pela mesma nota, e nao existia estado que satisfizesse os dois. Isso e o "ficar
+    # travado" que o dono proibiu, so que escrito em dois arquivos diferentes.
+    # Duas regras que valem sempre: cada gate responde UMA pergunta, e dois gates nunca
+    # respondem a mesma.
     if reprovadas:
-        problemas.append(f"lente(s) com veredito REPROVADO: {', '.join(reprovadas)}")
+        print(f"  SINAL: lente(s) com veredito REPROVADO: {', '.join(reprovadas)}")
+        print("         Reprovacao de lente e insumo do CICLO, nao trava do master.")
     if baixas:
-        problemas.append("nota abaixo de %.1f: %s" % (PISO_NOTA, ", ".join(f"{l} ({n})" for l, n in baixas)))
+        print("  SINAL: nota abaixo de %.1f: %s" % (PISO_NOTA, ", ".join(f"{l} ({n})" for l, n in baixas)))
     if notas and media < PISO_MEDIA:
-        problemas.append(f"media {media:.2f} abaixo do piso {PISO_MEDIA}")
+        print(f"  SINAL: media {media:.2f} abaixo do piso {PISO_MEDIA}. Quem decide se isso entrega")
+        print("         e `wave.py rodada`, e a nota vai DECLARADA na entrega.")
 
     if problemas:
         for p in problemas:
@@ -245,18 +255,48 @@ def cmd_rodada(args):
     for r in hist:
         print(f"  rodada {r['n']}: media {r['media']:.2f}, {r['criticos']} critico(s)")
 
-    # 2. regressao
+    # 2. REGRESSAO = achado NOVO causado por correcao minha, nao nota que caiu.
+    #
+    # A primeira versao disto comparava a nota de cada lente com a da rodada anterior. Parece
+    # obvio e esta ERRADO, e custou uma rodada inteira pra ficar claro: cada rodada sorteia
+    # auditores independentes, e a nota deles nao e uma medida calibrada, e um julgamento. Na
+    # rodada 4 desta pagina a wave gastou 446 chamadas de ferramenta contra uma fracao disso nas
+    # anteriores (a lente de a11y mediu contraste no pixel composto de 89 nos de texto, viewport
+    # a viewport) e TODAS as oito notas cairam, com a media indo de 6,88 pra 6,19. A pagina nao
+    # tinha piorado: a REGUA tinha ficado mais fina. Com o criterio antigo isso e regressao em
+    # oito lentes e o ciclo nunca fecha, que e exatamente o "ficar travado" que o dono proibiu.
+    #
+    # O que e comparavel entre rodadas e o ACHADO, porque ele vem com medida e local. Entao
+    # regressao passa a ser declarada: quantos achados confirmados desta rodada foram CAUSADOS
+    # por uma correcao da rodada anterior. Isso e verificavel (da pra apontar o commit) e nao
+    # depende de quem auditou. A queda de nota continua sendo impressa, como sinal, nunca como
+    # trava.
     regrediu = []
+    if getattr(args, "regressoes", 0):
+        regrediu = [f"{args.regressoes} achado(s) confirmado(s) causado(s) por correcao da rodada anterior"]
+    caiu = []
     if len(hist) >= 2:
         ant = hist[-2]["notas"]
         for k, v in atual["notas"].items():
             if v is not None and ant.get(k) is not None and v < ant[k] - 0.01:
-                regrediu.append(f"{k} {ant[k]} -> {v}")
+                caiu.append(f"{k} {ant[k]} -> {v}")
 
     ganho = (hist[-1]["media"] - hist[-2]["media"]) if len(hist) >= 2 else None
     convergiu = (len(hist) >= 3
                  and (hist[-1]["media"] - hist[-2]["media"]) < GANHO_MINIMO
                  and (hist[-2]["media"] - hist[-3]["media"]) < GANHO_MINIMO)
+    # Porta de saida que nao depende de nota nenhuma: a gravidade secou. Zero critico e zero
+    # alto confirmados quer dizer que o que sobrou e acabamento, e acabamento nao segura entrega.
+    # Sem isto, uma rodada com auditores mais duros pode empurrar a media pra baixo pra sempre.
+    secou = args.criticos == 0 and getattr(args, "altos", None) == 0
+
+    if caiu:
+        print("-" * 74)
+        print("  SINAL (nao trava): notas que cairam em relacao a rodada anterior:")
+        for c in caiu:
+            print(f"    - {c}")
+        print("  Auditor de cada rodada e sorteado de novo: nota que cai pode ser regua mais fina,")
+        print("  nao pagina pior. O que trava e achado NOVO causado por correcao (--regressoes).")
 
     print("-" * 74)
     if args.criticos > 0:
@@ -271,6 +311,11 @@ def cmd_rodada(args):
         return 1
     if media >= PISO_MEDIA and all(n >= PISO_NOTA for n in notas):
         print(f"  ENTREGA: media {media:.2f} no piso e nenhuma lente abaixo de {PISO_NOTA}.\n")
+        return 0
+    if secou:
+        print("  ENTREGA COM NOTA DECLARADA: zero critico e zero ALTO confirmados. O que sobrou")
+        print(f"  e acabamento, e acabamento nao segura entrega. A media {media:.2f} vai escrita na")
+        print("  entrega, com a lista do que ficou aberto.\n")
         return 0
     if convergiu:
         print(f"  ENTREGA COM NOTA DECLARADA: zero critico, zero regressao, e a media parou de")
@@ -313,6 +358,13 @@ def main():
     ro = sub.add_parser("rodada", help="fecha a rodada e decide: roda de novo ou entrega?")
     ro.add_argument("--criticos", type=int, required=True,
                     help="quantos achados CRITICOS sobreviveram a verificacao adversarial")
+    ro.add_argument("--altos", type=int, default=None,
+                    help="quantos achados ALTOS sobreviveram. Zero critico + zero alto fecha o "
+                         "ciclo mesmo sem o piso de media: o que sobra e acabamento")
+    ro.add_argument("--regressoes", type=int, default=0,
+                    help="quantos achados confirmados desta rodada foram CAUSADOS por uma "
+                         "correcao da rodada anterior. E isto que trava o ciclo, nao nota que "
+                         "caiu: cada rodada sorteia auditor novo e a nota nao e calibrada")
     ro.set_defaults(func=cmd_rodada)
 
     args = ap.parse_args()

@@ -1887,11 +1887,25 @@ lente pulada nao vira "passou por omissao". <<<**
 
 ---
 
+**O master NAO julga nota (corrigido em 27/08/2026).** Ele responde uma pergunta so: *o
+processo aconteceu inteiro?*. Lente que faltou, gate vermelho, gate sem registro: isso trava.
+Nota baixa nao, porque quem decide se a nota basta e o CICLO (4.2f). Enquanto o master tambem
+barrava por piso de nota, os dois gates se contradiziam de frente: o ciclo mandava ENTREGAR com
+a nota declarada e o master travava a MESMA entrega pela MESMA nota, e nao existia estado que
+satisfizesse os dois ao mesmo tempo. E o "ficar travado" que o dono proibiu, so que escrito em
+dois arquivos diferentes. As notas continuam aparecendo no relatorio do master, como SINAL.
+
+**Regra que vale pra qualquer par de gates:** cada gate responde UMA pergunta, e dois gates
+nunca respondem a mesma. Gate duplicado nao e redundancia saudavel, e deadlock esperando
+acontecer.
+
+---
+
 ### 4.2f O CICLO: auditar, corrigir, RE-auditar, e saber a hora de parar
 
 ```bash
 W="python3 <dir-da-skill>/scripts/wave.py --projeto <dir>"
-$W rodada --criticos <quantos criticos sobreviveram a verificacao>
+$W rodada --criticos <criticos confirmados> --altos <altos confirmados> --regressoes <achados causados pela rodada anterior>
 ```
 
 **Pedido do dono (27/08/2026), depois de duas waves seguidas:**
@@ -1915,11 +1929,33 @@ entrega pior que criterio honesto.
 | # | Criterio | Por que |
 |---|---|---|
 | 1 | **ZERO critico confirmado** | Inegociavel, em qualquer rodada. Critico e o que quebra uso, mente pro visitante ou expoe o cliente. Nao se negocia com media. |
-| 2 | **Nenhuma REGRESSAO** | Nenhuma lente pode ter caido em relacao a rodada anterior. Se caiu, a correcao quebrou outra coisa, e isso nao e avanco. |
-| 3 | **Piso OU convergencia** | Ou a media chegou a 8,0, ou duas rodadas seguidas subiram menos de 0,3. Nesse ponto o retorno virou marginal. |
+| 2 | **Nenhuma REGRESSAO** | Nenhum achado confirmado desta rodada pode ter sido CAUSADO por uma correcao da rodada anterior. Se foi, a correcao quebrou outra coisa, e isso nao e avanco. |
+| 3 | **Gravidade secou, OU piso, OU convergencia** | Zero critico e zero ALTO confirmados (o que sobrou e acabamento); ou a media chegou a 8,0; ou duas rodadas seguidas subiram menos de 0,3. |
 
-Bateu 1 e 2 e convergiu? **ENTREGA, com a nota real escrita na entrega.** Teto de 4 rodadas
+Bateu 1 e 2 e fechou o 3? **ENTREGA, com a nota real escrita na entrega.** Teto de 4 rodadas
 como ultimo freio.
+
+**A armadilha que quase travou o ciclo, e por que o criterio 2 mudou (27/08/2026).** A primeira
+versao media regressao pela NOTA: qualquer lente que caisse em relacao a rodada anterior
+segurava a entrega. Parece obvio e esta errado. Cada rodada sorteia auditores independentes, e
+a nota deles nao e uma medida calibrada, e um julgamento. Na rodada 4 desta pagina a wave gastou
+**446 chamadas de ferramenta** contra uma fracao disso nas anteriores (a lente de a11y mediu
+contraste no pixel composto de 89 nos de texto, viewport a viewport, e descartou duas rodadas de
+numeros proprios por contaminacao), e **as oito notas cairam**, com a media indo de 6,88 pra
+6,19. A pagina nao tinha piorado: a REGUA tinha ficado mais fina, e as duas coisas sao
+indistinguiveis olhando so pro numero. Pelo criterio antigo aquilo era regressao em oito lentes
+e o ciclo nunca fecharia, que e exatamente o "ficar travado" que o dono proibiu.
+
+O que E comparavel entre rodadas e o **achado**, porque ele vem com medida e local: da pra
+apontar qual correcao o causou. Naquela mesma rodada havia UMA regressao de verdade por esse
+criterio, e ela nada tinha a ver com as notas: a foto 06.webp passou a aparecer duas vezes no
+mesmo viewport porque eu tinha trocado o fundo de uma secao sem conferir quem mais usava o
+arquivo. Essa trava o ciclo. As oito notas caindo, nao.
+
+**Regra derivada, vale pra qualquer metrica de qualidade julgada por agente:** compare
+ACHADOS entre rodadas, nunca NOTAS. Nota serve pra declarar na entrega e pra sinalizar
+tendencia; ela nao serve de gate entre rodadas porque o instrumento muda junto com o objeto
+medido. O script imprime a queda de nota como SINAL, com esse aviso, e nao trava por causa dela.
 
 **A parte que evita a "nota do": a nota vai DECLARADA.** Nota 6,8 escrita na entrega, junto com
 o que ficou em aberto e o custo de cada item, e honesta: o dono decide se aquilo basta pro uso
@@ -2166,6 +2202,14 @@ Documentar o que funcionou na pattern library pessoal:
 - **Evitar overlaps entre secoes com margin negativo**: extremamente fragil com animacoes de fundo. Preferir manter conteudo dentro de uma unica secao
 - Badges/selos decorativos sem funcao ("● online", "live feed" falso): cara de vibe-coding
 - **NUNCA entregar pagina com botao de compra/CTA que nao dispara, ou sem footer legal**: os 2 maiores tells de vibe-coding (ver `references/anti-vibe-coding.md`)
+- **NUNCA corrigir por `str.replace`/`sed` sem `assert` e sem MEDIR o efeito**: quando o trecho
+  procurado nao existe, a troca falha em SILENCIO (codigo 0, build verde, arquivo intacto). Em
+  27/08/2026 duas correcoes de uma mesma rodada sairam no-op assim: os pontos da linha do tempo
+  nunca entraram no DOM (`::before` com `content: none`) e a quebra de grade dos cartoes nunca
+  aconteceu, porque eu escrevi o alvo de cabeca (`text-brand-dark/85`) e o arquivo tinha `/50`.
+  As duas passaram no `vite build` e nao mudaram um pixel. Regra: uma linha de `assert velho in t`
+  por troca, contagem impressa, e depois `getComputedStyle`/`getBoundingClientRect` no render pra
+  confirmar que o pixel mudou. **`✓ built` nao e prova de que a edicao aconteceu.**
 
 ---
 
