@@ -543,7 +543,7 @@ Neste arquivo (ver MAPA DESTE ARQUIVO, no topo): runbook, os 4 caminhos, porta u
 |---|---|
 | `scripts/screenshot-prova.js` | prova de entrega (desktop + mobile + clique) e **checagem de identidade da pagina** (4.2b). `--check` confere o Playwright, `--sem-identidade` so pra baseline de pagina de terceiro |
 | `scripts/gate-responsivo.mjs` | 12 telas reais: overflow, CTA na dobra, toque 44px, corpo 14px, imagem distorcida (4.2d) |
-| `scripts/wave.py` | registro das 8 lentes + AUDITOR MASTER, que reprova se alguma nao rodou (4.2e) |
+| `scripts/wave.py` | registro das 8 lentes, AUDITOR MASTER (4.2e) e o CICLO de rodadas com criterio de parada (4.2f) |
 | `scripts/gate-oclusao.mjs` | acha texto COBERTO por camada decorativa ou CORTADO pela caixa, nas duas telas (4.2d) |
 | `scripts/gate-video.mjs` | as 7 checagens de video executaveis (razao por trilha, escala, corte, poster, frames, LCP, reduced-motion). Sobe o Chromium do Playwright sozinho |
 | `scripts/extrai-identidade.mjs` | extrai paleta real, vars CSS, h1/CTA e imagens de uma URL (caminho CLONAR) |
@@ -1887,6 +1887,54 @@ lente pulada nao vira "passou por omissao". <<<**
 
 ---
 
+### 4.2f O CICLO: auditar, corrigir, RE-auditar, e saber a hora de parar
+
+```bash
+W="python3 <dir-da-skill>/scripts/wave.py --projeto <dir>"
+$W rodada --criticos <quantos criticos sobreviveram a verificacao>
+```
+
+**Pedido do dono (27/08/2026), depois de duas waves seguidas:**
+
+> *"se for o caso, tem que ter na skill, entao bora. so nao podemos ficar travados ou com a
+> skill nota do"*
+
+As duas metades desse pedido brigam entre si, e e por isso que o criterio precisa ser escrito
+com cuidado. "Nao ficar travado" pede uma saida; "nao ficar com nota do" pede que a saida nao
+seja render-se. Uma rodada de wave nao e o fim do processo: e uma iteracao dele.
+
+**O que a pratica mostrou em DOIS projetos** (uma landing e a skill de dashboards): o painel
+adversarial NUNCA para de achar coisa. A nota sobe rapido nas primeiras rodadas e depois
+oscila, porque cada rodada encontra um canto novo e menor. Nesta pagina foi 5,69 -> 6,44 na
+segunda, com os achados confirmados caindo de 17 para 6. Exigir media 8,0 como UNICA porta de
+saida transforma o processo num loop que so termina por cansaco, e loop que termina por cansaco
+entrega pior que criterio honesto.
+
+**As tres portas de saida, e a ordem importa:**
+
+| # | Criterio | Por que |
+|---|---|---|
+| 1 | **ZERO critico confirmado** | Inegociavel, em qualquer rodada. Critico e o que quebra uso, mente pro visitante ou expoe o cliente. Nao se negocia com media. |
+| 2 | **Nenhuma REGRESSAO** | Nenhuma lente pode ter caido em relacao a rodada anterior. Se caiu, a correcao quebrou outra coisa, e isso nao e avanco. |
+| 3 | **Piso OU convergencia** | Ou a media chegou a 8,0, ou duas rodadas seguidas subiram menos de 0,3. Nesse ponto o retorno virou marginal. |
+
+Bateu 1 e 2 e convergiu? **ENTREGA, com a nota real escrita na entrega.** Teto de 4 rodadas
+como ultimo freio.
+
+**A parte que evita a "nota do": a nota vai DECLARADA.** Nota 6,8 escrita na entrega, junto com
+o que ficou em aberto e o custo de cada item, e honesta: o dono decide se aquilo basta pro uso
+dele. Nota 6,8 escondida atras da palavra "auditado" e que e nota do. O que esta proibido nao e
+entregar 6,8, e entregar 6,8 dizendo 8,5.
+
+**O que NUNCA sai do lugar entre rodadas:** critico e critico. Se a rodada 4 ainda tem um
+critico confirmado, nao existe entrega, existe conserto. O teto de rodadas solta a media, nunca
+o critico.
+
+**>>> GATE 4.2f: `wave.py rodada --criticos N` saiu com codigo 0? Se NAO, ele diz exatamente o
+que falta: corrigir critico, desfazer regressao, ou rodar mais uma. <<<**
+
+---
+
 ### 4.3 Deploy
 
 ```bash
@@ -2015,7 +2063,7 @@ esta faltando. Nenhuma explicacao substitui rodar de novo verde. <<<**
 
 ---
 
-**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + CONSISTENCIA DE CONTATO conferida digito por digito (colar no bloco de entrega os numeros achados no HTML e nos `tel:`/`wa.me`: mais de um numero distinto sem justificativa REPROVA) + DIFF DE CLAIMS feito (lista de afirmacoes x fonte, com o veredito de cada uma) + IDENTIDADE DA PAGINA (4.2b, com o output do `screenshot-prova.js` sem REPROVA) + GATE DE OCLUSAO 4.2d verde (nenhum texto coberto ou cortado) + RESPONSIVIDADE verde nas 12 telas + AUDITOR MASTER 4.2e verde (todas as 8 lentes rodaram, nenhuma pulada) + PASSE DE GOSTO rodado (4.2c, com os itens de composicao alterados e a contagem de tells, que tem que terminar em 0) + deploy funcionando e verificado + ZERO placeholders + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada) + GATE DE USO 4.6 verde (toda ferramenta que estava viva foi usada, ou dispensada COM MOTIVO que vai na entrega)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar.**
+**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + CONSISTENCIA DE CONTATO conferida digito por digito (colar no bloco de entrega os numeros achados no HTML e nos `tel:`/`wa.me`: mais de um numero distinto sem justificativa REPROVA) + DIFF DE CLAIMS feito (lista de afirmacoes x fonte, com o veredito de cada uma) + IDENTIDADE DA PAGINA (4.2b, com o output do `screenshot-prova.js` sem REPROVA) + GATE DE OCLUSAO 4.2d verde (nenhum texto coberto ou cortado) + RESPONSIVIDADE verde nas 12 telas + AUDITOR MASTER 4.2e verde (todas as 8 lentes rodaram, nenhuma pulada) + CICLO 4.2f fechado (zero critico, zero regressao, piso ou convergencia) com a NOTA REAL escrita na entrega + PASSE DE GOSTO rodado (4.2c, com os itens de composicao alterados e a contagem de tells, que tem que terminar em 0) + deploy funcionando e verificado + ZERO placeholders + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada) + GATE DE USO 4.6 verde (toda ferramenta que estava viva foi usada, ou dispensada COM MOTIVO que vai na entrega)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar.**
 
 **ENTREGA SEM DEPLOY (pasta local, arquivo unico, aluno sem conta de hosting) e caminho LEGITIMO, nao gate pulado:** a prova 4.5 roda contra o servidor local (`python3 scripts/servidor-gzip.py <pasta> <porta>`), e deploy, QA pos-deploy, Lighthouse e `og:image` com URL absoluta entram como PENDENCIAS DECLARADAS no bloco de entrega. Tudo o mais do GATE 4 continua valendo igual: wave, identidade, passe de gosto, contato, claims e prova lida com os proprios olhos. **<<<**
 

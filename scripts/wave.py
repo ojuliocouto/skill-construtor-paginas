@@ -186,6 +186,109 @@ def cmd_checar(args):
     return 0
 
 
+
+# ============================ O CICLO ============================
+# Pedido do dono (27/08/2026), depois de duas rodadas de wave:
+#   "se for o caso, tem que ter na skill, entao bora. so nao podemos ficar travados
+#    ou com a skill nota do"
+#
+# As duas metades desse pedido brigam entre si, e e por isso que o criterio precisa ser
+# escrito com cuidado:
+#   - "nao ficar travado" = nao pode existir loop infinito de corrigir e re-auditar
+#   - "nao ficar com nota do" = nao pode entregar qualquer coisa so pra sair do loop
+#
+# O que a pratica mostrou em DOIS projetos (esta pagina e a skill de dashboards): o painel
+# adversarial NUNCA para de achar coisa. A nota sobe rapido nas primeiras rodadas e depois
+# oscila, porque cada rodada encontra um canto novo e menor. Exigir media 8,0 como unica
+# porta de saida transforma o processo num loop que so termina por cansaco.
+#
+# Entao a porta de saida tem TRES criterios, e o que manda e o primeiro:
+#
+#   1. ZERO CRITICO CONFIRMADO. Inegociavel, em qualquer rodada. Critico e o que quebra
+#      uso, mente pro visitante ou expoe o cliente. Isso nao se negocia com media.
+#   2. NENHUMA REGRESSAO. Nenhuma lente pode ter caido em relacao a rodada anterior. Se
+#      caiu, a correcao quebrou outra coisa e a rodada nao conta como avanco.
+#   3. CONVERGENCIA ou PISO. Ou a media chegou ao piso (8,0), ou duas rodadas seguidas
+#      subiram menos de 0,3: nesse ponto o retorno virou marginal e insistir e queimar
+#      tempo pra caçar canto minusculo.
+#
+# Bateu 1 e 2 e convergiu? ENTREGA, com a nota real declarada na entrega. Nota 6,8 declarada
+# e honesta; nota 6,8 escondida atras de "auditado" e que e nota do.
+TETO_RODADAS = 4
+GANHO_MINIMO = 0.3
+
+
+def cmd_rodada(args):
+    """Fecha a rodada atual e diz se roda de novo ou entrega."""
+    d = carregar(args.projeto)
+    hist = d.setdefault("rodadas", [])
+    lentes = d.get("lentes", {})
+    if len(lentes) < len(LENTES):
+        print(f"ERRO: so {len(lentes)} de {len(LENTES)} lentes registradas. "
+              "Rode a wave inteira antes de fechar a rodada.", file=sys.stderr)
+        return 2
+
+    notas = [v["nota"] for v in lentes.values() if v.get("nota") is not None]
+    media = sum(notas) / len(notas) if notas else 0.0
+    atual = {
+        "n": len(hist) + 1,
+        "quando": datetime.datetime.now().isoformat(timespec="seconds"),
+        "media": round(media, 2),
+        "criticos": args.criticos,
+        "notas": {k: v.get("nota") for k, v in lentes.items()},
+    }
+    hist.append(atual)
+    salvar(args.projeto, d)
+
+    print(f"\nRODADA {atual['n']}  media {media:.2f}  criticos confirmados: {args.criticos}")
+    print("=" * 74)
+    for r in hist:
+        print(f"  rodada {r['n']}: media {r['media']:.2f}, {r['criticos']} critico(s)")
+
+    # 2. regressao
+    regrediu = []
+    if len(hist) >= 2:
+        ant = hist[-2]["notas"]
+        for k, v in atual["notas"].items():
+            if v is not None and ant.get(k) is not None and v < ant[k] - 0.01:
+                regrediu.append(f"{k} {ant[k]} -> {v}")
+
+    ganho = (hist[-1]["media"] - hist[-2]["media"]) if len(hist) >= 2 else None
+    convergiu = (len(hist) >= 3
+                 and (hist[-1]["media"] - hist[-2]["media"]) < GANHO_MINIMO
+                 and (hist[-2]["media"] - hist[-3]["media"]) < GANHO_MINIMO)
+
+    print("-" * 74)
+    if args.criticos > 0:
+        print(f"  CONTINUA: {args.criticos} critico(s) confirmado(s). Critico nao negocia com media.")
+        print("  Corrija os criticos e rode a wave de novo.\n")
+        return 1
+    if regrediu:
+        print("  CONTINUA: houve REGRESSAO, a correcao quebrou outra coisa:")
+        for r in regrediu:
+            print(f"    - {r}")
+        print("  Conserte a regressao antes de seguir.\n")
+        return 1
+    if media >= PISO_MEDIA and all(n >= PISO_NOTA for n in notas):
+        print(f"  ENTREGA: media {media:.2f} no piso e nenhuma lente abaixo de {PISO_NOTA}.\n")
+        return 0
+    if convergiu:
+        print(f"  ENTREGA COM NOTA DECLARADA: zero critico, zero regressao, e a media parou de")
+        print(f"  subir (ultimos ganhos: {ganho:+.2f}). Insistir aqui caça canto minusculo.")
+        print(f"  A nota {media:.2f} VAI NA ENTREGA, escrita. Nota declarada e honesta;")
+        print("  nota escondida atras de 'auditado' e que e nota do.\n")
+        return 0
+    if len(hist) >= TETO_RODADAS:
+        print(f"  ENTREGA COM NOTA DECLARADA: teto de {TETO_RODADAS} rodadas atingido, sem critico")
+        print(f"  e sem regressao. Media {media:.2f} vai declarada na entrega, junto com o que")
+        print("  ficou em aberto e o custo estimado de cada item.\n")
+        return 0
+    faltam = TETO_RODADAS - len(hist)
+    print(f"  CONTINUA: sem critico, mas a media ({media:.2f}) ainda sobe e o piso e {PISO_MEDIA}.")
+    print(f"  Ganho da ultima rodada: {ganho:+.2f}. Restam {faltam} rodada(s) ate o teto.\n")
+    return 1
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--projeto", default=os.getcwd())
@@ -206,6 +309,11 @@ def main():
 
     c = sub.add_parser("checar", help="AUDITOR MASTER: o processo aconteceu inteiro?")
     c.set_defaults(func=cmd_checar)
+
+    ro = sub.add_parser("rodada", help="fecha a rodada e decide: roda de novo ou entrega?")
+    ro.add_argument("--criticos", type=int, required=True,
+                    help="quantos achados CRITICOS sobreviveram a verificacao adversarial")
+    ro.set_defaults(func=cmd_rodada)
 
     args = ap.parse_args()
     return args.func(args)
