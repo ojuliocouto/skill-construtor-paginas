@@ -85,6 +85,39 @@ async function mediaDoFundo(page, clip) {
     return [r / n, gg / n, bb / n];
   }, png.toString('base64'));
 }
+/** Espera a FAIXA QUE VAI SER MEDIDA parar de mudar, e devolve a media ja assentada.
+ *
+ *  Existe porque a espera fixa de 260ms daqui media pagina no meio do fade. Um bloco
+ *  revelado com `transition: opacity 700ms` esta ~37% opaco aos 260ms, entao a faixa
+ *  amostrada e a MISTURA do cartao com o que esta atras dele, uma cor que nao existe na
+ *  paleta. Medido em 27/08/2026 num cartao branco revelado sobre fundo verde escuro:
+ *  o gate lia rgb(80,115,90) e reprovava a 1.91:1 um botao cujo contraste real e 10.13:1.
+ *  Reprovava 6 de 6. O incentivo ficava invertido: punia pagina com fade caprichado e
+ *  passava pagina sem animacao nenhuma.
+ *
+ *  Por que NAO basta esperar `getAnimations()` terminarem: logo depois de rolar, o
+ *  IntersectionObserver que dispara o reveal ainda nao rodou, entao nao existe animacao
+ *  pra esperar, a espera volta na hora e a medida sai com o bloco em opacidade zero.
+ *  Testado: esse caminho tambem reprovava 6 de 6, so que lendo o fundo de tras.
+ *
+ *  Medir o proprio alvo ate ele parar cobre os tres casos de uma vez, e mais: imagem
+ *  preguicosa que chega depois, fonte que troca, poster de video. Duas leituras iguais
+ *  seguidas (dentro da tolerancia) = a pintura assentou.
+ */
+async function fundoAssentado(page, clip, teto = 2500, tolerancia = 2) {
+  const fim = Date.now() + teto;
+  let anterior = await mediaDoFundo(page, clip);
+  let iguais = 0;
+  while (Date.now() < fim) {
+    await page.waitForTimeout(120);
+    const atual = await mediaDoFundo(page, clip);
+    iguais = atual.every((v, i) => Math.abs(v - anterior[i]) <= tolerancia) ? iguais + 1 : 0;
+    anterior = atual;
+    if (iguais >= 2) break;
+  }
+  return anterior;
+}
+
 const navegador = await chromium.launch();
 
 console.log('\nGATE DE RESPONSIVIDADE  ' + URL_ALVO);
@@ -237,10 +270,10 @@ for (const [nome, w, h, mob] of TELAS) {
     if (!info) continue;
     try {
       await el.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(260);
       const cx = await el.boundingBox();
       if (!cx || cx.y < 30) continue;
-      const fundo = await mediaDoFundo(page, {
+      // Nada de prazo chutado aqui: mede ate a propria faixa parar de mudar.
+      const fundo = await fundoAssentado(page, {
         x: Math.round(cx.x), y: Math.round(cx.y) - 30,
         width: Math.min(Math.round(cx.width), w - Math.round(cx.x)), height: 20,
       });
