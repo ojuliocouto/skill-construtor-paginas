@@ -126,6 +126,43 @@ async function conferirIdentidade(page) {
 }
 
 // Estado observável da página, pra o clique ter prova além do pixel.
+/** Passa a rolagem pela pagina INTEIRA antes de fotografar, e devolve quantos passos deu.
+ *
+ *  Existe porque em 27/08/2026 a prova de uma pagina real saiu com metade dos blocos em
+ *  branco e o script imprimiu OK: conteudo com reveal por IntersectionObserver so entra
+ *  quando a rolagem passa por ele, e o `fullPage` do Playwright NAO rola, ele expande o
+ *  viewport. Resultado: fundo, cartao e sombra desenhados, e nenhuma letra dentro.
+ *  O medidor de banda chapada nao pegava, porque o gradiente e o grao pintam a faixa.
+ *
+ *  Mata tambem o `scroll-behavior: smooth`, que faz a rolagem chegar atrasada e a medicao
+ *  fotografar a faixa errada. Passar aqui tambem acorda imagem com loading="lazy".
+ */
+async function revelarPagina(page) {
+  await page.addStyleTag({
+    content: 'html,body{scroll-behavior:auto !important}',
+  }).catch(() => { /* CSP pode barrar style tag: a rolagem abaixo ainda vale */ });
+
+  const passos = await page.evaluate(async () => {
+    const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
+    const passo = Math.max(200, Math.round(window.innerHeight * 0.8));
+    let n = 0;
+    // A altura cresce conforme o conteudo entra: reler a cada volta, com teto de seguranca.
+    for (let y = 0; y < document.documentElement.scrollHeight && n < 400; y += passo) {
+      window.scrollTo(0, y);
+      n++;
+      await dorme(120);
+    }
+    window.scrollTo(0, document.documentElement.scrollHeight);
+    await dorme(300);
+    window.scrollTo(0, 0);
+    await dorme(300);
+    return n;
+  });
+
+  await page.waitForTimeout(700);
+  return passos;
+}
+
 async function lerEstado(page, el) {
   const pagina = await page.evaluate(() => ({
     scrollY: Math.round(window.scrollY),
@@ -240,6 +277,10 @@ async function main() {
         await page.waitForTimeout(4000);
       });
       await page.waitForTimeout(1500);
+
+      // Sem esta passada, pagina com reveal por rolagem sai fotografada como casca vazia.
+      const passos = await revelarPagina(page);
+      console.log(`  reveal           ${vp.name}: ${passos} passos de rolagem antes do print`);
 
       if (vp.name === 'desktop' && !semIdentidade) {
         falhasIdentidade = await conferirIdentidade(page);
