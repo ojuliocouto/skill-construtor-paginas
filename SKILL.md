@@ -21,6 +21,7 @@ O essencial pra rodar, em poucas linhas. O detalhe de cada item esta nas secoes 
 5. **Step 2:** consultar o banco de design (`search.py`, keywords em INGLES) pra estilo/paleta/fonte antes de inventar; wireframe no Stitch (ou fallback).
 6. **Step 3:** buildar com componentes do 21st.dev (ou a mao), **assets reais** (foto/mockup/video, nunca so SVG+gradiente), zero dado inventado.
 7. **Step 4 e O PORTAO:** rodar a wave de auditoria adversarial (7 lentes + sintese). Deploy acontece DENTRO do Step 4, DEPOIS da wave.
+7b. **Gate barato que roda ANTES da wave:** `gate-classes-mortas.py`. Classe de utilitario invalida passa no build e morre no CSS, e nenhum gate visual pega. Ja custou uma barra fixa sem fundo em 92% da rolagem.
 8. **ENFORCEMENT (caminhos CRIAR, CLONAR e MELHORAR):** a mensagem de entrega DEVE conter o BLOCO OBRIGATORIO DA ENTREGA, com as quatro linhas fixas (veredito da wave, identidade da pagina, passe de gosto, prova de entrega) mais as pendencias. Texto unico e completo na secao "ENFORCEMENT DO GATE" do Step 4, item 2. Sem o bloco = voce pulou o gate = falhou. **No caminho EDITAR a wave NAO roda:** ali o bloco e o checklist de regressao + a prova do ponto alterado.
 9. **MCPs/skills sao obrigatorios QUANDO conectados;** se ausentes, usar o fallback documentado, nunca travar.
 10. **Bloqueia entrega:** 3+ tells de IA, pagina sem asset real, footer-legal/checkout quebrado, dado inventado, nota < 7 em qualquer dimensao.
@@ -81,6 +82,7 @@ Declarar o caminho escolhido na primeira resposta, em uma linha, antes de execut
 | clone **e** melhoria no mesmo pedido ("clona e deixa foda", "clone melhorado") | **CLONAR + ELEVAR** | fluxo 2B: identidade intocada, composicao elevada |
 | pagina existe e o pedido e elevar o todo | **MELHORAR** | fluxo MELHORAR (abaixo) |
 | pagina existe e o pedido e um ponto especifico | **EDITAR** | fluxo EDITAR (abaixo) |
+| pagina existe e o pedido e outra LINGUAGEM pro mesmo conteudo ("a mesma ideia, mais tecnologica", "faz uma versao dark", "uma mais sobria") | **VARIANTE VISUAL** | fluxo 5 (abaixo) |
 
 **Na duvida entre MELHORAR e EDITAR, pergunte.** A diferenca e escopo: mexer em uma
 coisa nomeada e EDITAR; revisar a pagina e MELHORAR. Errar pra mais (rodar melhoria
@@ -279,6 +281,49 @@ erro de processo.
 **Gates que NAO se aplicam ao caminho EDITAR:** COPY LOCK, direcao visual, wireframe,
 wave de 7 lentes. Uma edicao pontual nao precisa reauditar a pagina inteira. O que
 continua valendo: regressao, prova de entrega e as regras absolutas de output.
+
+### CAMINHO 5: VARIANTE VISUAL (mesmo conteudo, outra linguagem)
+
+Sinal no pedido: a pagina ja existe e o que se pede e outra LINGUAGEM para o mesmo
+conteudo. "A mesma ideia, so que mais tecnologica." "Faz uma versao dark." "Uma mais
+sobria pra mostrar pro cliente."
+
+Nao e CRIAR (a copy existe e ja esta travada), nao e CLONAR (nao ha fidelidade a medir),
+nao e MELHORAR (a versao anterior continua no ar e valida) e nao e EDITAR (muda tudo
+menos o conteudo). Rodar por analogia funciona ate certo ponto e deixa buraco.
+
+**TRAVADO, e nao se negocia:** copy palavra por palavra, dados de contato, identidade de
+marca (cor, logo, familia tipografica), ordem das secoes, ancoras do menu, destino do
+lead. Variante e sobre FORMA.
+
+**MUDA:** terreno, grade, escala, densidade, movimento, familias de layout, acabamento.
+
+Fluxo: herda o COPY LOCK e os tokens da versao anterior, refaz o Step 2 (direcao) inteiro,
+refaz o Step 3, e o Step 4 roda completo, incluindo wave.
+
+#### O gate deste caminho
+
+1. As duas versoes lado a lado (`scripts/lado-a-lado.py`), na mesma escala.
+2. Responda por escrito: **"as duas leem como duas direcoes legitimas, ou como uma boa e
+   uma pior?"** Variante que fica pior que a anterior nao e variante, e regressao com
+   outro nome. **A nota da wave da variante nao pode ficar abaixo da nota da versao que
+   ela quer acompanhar.**
+3. Liste o que foi PRESERVADO, item a item. Sem isso a variante virou outra marca.
+4. **Registre o que foi REJEITADO da direcao nova, e por que.** Quando o banco de design
+   devolveu "Cyberpunk UI" e "HUD / Sci-Fi FUI" para uma busca de dark tech, aceitar teria
+   trazido neon, glitch e scanline (tells banidos) para dentro de uma pagina de empresa de
+   seguranca do trabalho. A recusa vai escrita no codigo, senao o proximo aceita.
+
+#### A armadilha propria deste caminho: forma que pede conteudo que a fonte nao tem
+
+Medido numa variante "tecnica" de uma copy institucional curta: a tabela de ocorrencias
+ficou com **55% de regua vazia**, porque e a forma de um relatorio sem o dado do
+relatorio. A linguagem de dado pede dado; se a fonte nao fornece e a regra proibe
+inventar, a forma fica oca e a variante sai pior que a original.
+
+**Antes de escolher a linguagem, pergunte se o CONTEUDO a sustenta.** Copy curta e
+institucional nao sustenta gramatica de painel. Isso se decide no Step 2, nao depois de
+construir.
 
 ---
 
@@ -544,6 +589,7 @@ Neste arquivo (ver MAPA DESTE ARQUIVO, no topo): runbook, os 4 caminhos, porta u
 | `scripts/screenshot-prova.js` | prova de entrega (desktop + mobile + clique) e **checagem de identidade da pagina** (4.2b). `--check` confere o Playwright, `--sem-identidade` so pra baseline de pagina de terceiro |
 | `scripts/gate-responsivo.mjs` | 12 telas reais: overflow, CTA na dobra, toque 44px, corpo 14px, imagem distorcida (4.2d) |
 | `scripts/wave.py` | registro das 8 lentes, AUDITOR MASTER (4.2e) e o CICLO de rodadas com criterio de parada (4.2f) |
+| `scripts/gate-classes-mortas.py` | acha classe de utilitario que existe no codigo e NAO existe no CSS gerado: o build passa e o estilo nunca chega na tela (4.2c-bis) |
 | `scripts/gate-oclusao.mjs` | acha texto COBERTO por camada decorativa ou CORTADO pela caixa, nas duas telas (4.2d) |
 | `scripts/gate-video.mjs` | as 7 checagens de video executaveis (razao por trilha, escala, corte, poster, frames, LCP, reduced-motion). Sobe o Chromium do Playwright sozinho |
 | `scripts/extrai-identidade.mjs` | extrai paleta real, vars CSS, h1/CTA e imagens de uma URL (caminho CLONAR) |
@@ -776,6 +822,14 @@ nenhum, porque **fallback silencioso nao reclama**.
 
 A deteccao antiga era "a tool `mcp__magic__*` aparece na lista?". Aparecia. E estava morta.
 **Estar na lista nao e verificacao.** Verificacao e mandar fazer e conferir o retorno.
+
+**E o teste tem que exercitar a CREDENCIAL, nao so a conexao.** Um MCP passou verde neste
+verificador e devolveu `HTTP 401 (invalid authentication credentials)` na primeira chamada
+real da sessao. O ping alcancava o servidor; o que faltava era a chave, e nada no teste
+usava a chave. Ferramenta que responde ao ping e falha na chamada real e PIOR que
+ferramenta ausente: a ausencia e declarada e vira fallback consciente, essa e descoberta
+pelo resultado, tarde. Todo teste de ferramenta com credencial precisa fazer uma chamada
+que a USE (listar, buscar, ler algo).
 
 **O que fazer com o resultado:**
 
@@ -1516,6 +1570,36 @@ A auditoria NUNCA e feita pelo mesmo contexto que construiu a pagina (vies: o co
 nao enxerga o proprio erro). Dispara-se uma wave de 8 subagents adversariais paralelos,
 cada um com UMA lente independente, e um agente de sintese consolida o gate.
 
+### GATE COM ESPERA FIXA MEDE O INSTRUMENTO, NAO A PAGINA
+
+Vale para TODO gate deste Step, e para qualquer medicao automatizada que voce escrever.
+
+Um gate que rola, espera um prazo fixo e fotografa esta medindo a pagina JUNTO com o
+proprio atraso. Com animacao de entrada em curso, a regiao amostrada cai no lugar errado e
+produz numero que nunca existiu para ninguem. Caso medido (08/2026): o gate leu **botao
+branco contra botao branco, 1,09:1**, numa composicao cujo contraste real e 12,4:1, e
+reprovou 12 de 12 telas. A pagina estava certa; a espera de 260ms e que pegava o bloco no
+meio do caminho.
+
+**Como diagnosticar sem perseguir fantasma:** por eliminacao, com REPETICAO (5 execucoes
+por cenario, porque o defeito e intermitente e uma unica passada nao distingue sorte de
+causa). No caso acima: fade de 700ms reprovou 4 de 5; sem fade, 1 de 5; deslocamento de
+14px, 0 de 6.
+
+Duas regras saem daqui:
+
+- **Gate que mede cor espera a regiao ESTABILIZAR** (duas leituras iguais dentro de
+  tolerancia, com teto de tempo), nunca um prazo. Isso cobre de brinde imagem preguicosa
+  que chega depois, troca de fonte e poster de video. Um gate com prazo fixo pune pagina
+  com animacao caprichada e aprova pagina sem movimento nenhum: incentivo invertido.
+- **Antes de implementar a correcao de uma hipotese, MEÇA A HIPOTESE.** Neste mesmo caso a
+  explicacao mais plausivel (`scroll-behavior: smooth` corrompendo a captura) foi
+  REFUTADA por medicao: a API que o gate usa ignora essa propriedade. A correcao ja tinha
+  sido implementada e trouxe regressao propria. Correcao baseada em causa errada e pior
+  que nenhuma, porque parece conserto.
+
+---
+
 ### AUTORIDADE: qual checklist e O portao
 
 A skill tem varias listas (1.5 copy, 3.3 Brazil, 3.6 auto-revisao, 4.2 QA, Checklist
@@ -1688,6 +1772,9 @@ Executar auditoria estrategica completa usando `references/strategist-audit.md`:
 - [ ] ZERO placeholder/Lorem Ipsum
 - [ ] ZERO dado inventado (numero, estatistica, "100%", depoimento). Se nao esta na fonte, NAO existe.
 - [ ] **Diff de claims:** listar TODA afirmacao factual/promessa da pagina (urgencia, escassez, garantia, "sem gravacao", "vagas limitadas", bonus) e conferir uma a uma contra o briefing/material do usuario. Claim que nao esta na fonte = REMOVER (nao e polimento, e dado inventado).
+- [ ] **FOTO TAMBEM AFIRMA, e o diff de claims tem que cobri-la.** Caso medido (08/2026): cinco frentes de servico administrativas ilustradas com fotos do proprio cliente, duas delas de procedimento clinico (eletroencefalograma e coleta de sangue). Nenhuma palavra foi inventada, e mesmo assim a pagina passou a sugerir um servico que a fonte nao declara. E a mesma falha que ja tinha custado uma rodada por escrito, num canal que o checklist nao cobria. **Liste o que cada FOTO mostra, contra o titulo ao lado dela.** Se a imagem afirma algo que a fonte nao diz, ela sai do lado daquele titulo (pode viver numa faixa sem titulo colado).
+- [ ] **DADO ESTRUTURADO TAMBEM AFIRMA.** Um `areaServed` no JSON-LD declara area de atendimento, e e justamente o campo que o buscador le para montar resultado local; um `priceRange` declara faixa de preco. Conferir cada campo do JSON-LD contra a fonte, do mesmo jeito que se confere a copy. Campo nao obrigatorio que a fonte nao sustenta: apagar.
+- [ ] **TEXTO ALTERNATIVO E CONTEUDO, nao acessorio.** Numa auditoria, 4 de 5 alts descreviam cena diferente da que estava na foto, e quem usa leitor de tela recebia descricao falsa da operacao de uma empresa real. Alt gerado por template ("foto 3 de 16") e o mesmo problema com outra cara: dezesseis imagens com uma descricao efetiva. Escrever cada alt OLHANDO a imagem.
 - [ ] Textos revisados (sem typos)
 - [ ] Precos corretos
 - [ ] Links de checkout corretos
@@ -1733,6 +1820,23 @@ node <dir-da-skill>/scripts/screenshot-prova.js <url> <outdir>
   dominio: sem deploy, deixar o caminho relativo no HTML, gerar a imagem, e declarar
   "og:image com URL absoluta pendente ate o dominio existir". Isso e pendencia declarada,
   nao gate aberto.
+
+**INDEXACAO: fora do dominio final, a pagina nasce `noindex`.** Item de GATE, nao de gosto.
+
+Publicar a pagina de um cliente REAL num dominio de teste, com `robots.txt` liberado,
+`canonical` apontando para si mesma e CNPJ, telefone e endereco no JSON-LD, cria um
+duplicado completo competindo com o site do proprio cliente na busca. Quem paga a conta e
+ele, e ninguem pediu isso.
+
+Enquanto a pagina nao estiver no dominio definitivo:
+- `<meta name="robots" content="noindex, nofollow">` no HTML
+- `robots.txt` com `Disallow: /`
+- sem `sitemap.xml`
+- `canonical` e o campo `url` do JSON-LD apontando para a **pagina original do cliente**,
+  nunca para o endereco de teste
+
+Isso sai, tudo de uma vez, quando o dominio final existir. Colocar na entrega como
+pendencia declarada, junto com o `og:image` absoluto.
 
 **Gotcha do favicon:** favicon TEM que ser quadrado. Redimensionar preservando proporcao
 (`sips -Z`, `object-fit` e afins) a partir de uma foto 3:2 devolve 32x21, nao 32x32, e o
@@ -1793,6 +1897,67 @@ a contagem de tells ANTES e DEPOIS. **O DEPOIS tem que ser 0.** Como o Step 3.6 
 exigem zero tells antes daqui, `0 → 0` e resultado VALIDO e comum: nesse caso a prova e a lista
 de itens de composicao inspecionados (icones, ritmo, assimetria), nunca "rodei e estava tudo
 certo" sem citar o que foi olhado.
+
+---
+
+### 4.2c-bis GATE DE CLASSE MORTA: o build passa e o estilo nunca chega na tela
+
+```bash
+python3 <dir-da-skill>/scripts/gate-classes-mortas.py --projeto <dir>
+```
+
+**Framework de utilitario nao reclama de classe invalida.** Ela fica no HTML, o build sai
+verde, e o navegador ignora. O que sobra e um estilo que voce jura ter aplicado e que
+nunca chegou na tela.
+
+Custos medidos num unico projeto (08/2026): quatro numa pagina e uma na seguinte.
+
+| Classe | O que ela NAO fez |
+|---|---|
+| `bg-<cor>/97` | a barra fixa ficou **sem fundo em 92% da rolagem**, com o texto da pagina atravessando os links do menu |
+| `bg-<cor>/12` | o disco da seta do CTA ficou sem preenchimento |
+| `border-<cor>/12` | o fio do rodape caiu no cinza padrao do framework, virando a coisa mais clara de uma pagina inteiramente verde |
+| `outline-3` | os campos do formulario ficaram **sem anel de foco**: o `focus:outline-none` matou a regra global e o `outline-3`, que nao existe, nao repos nada |
+| `shadow-lift` | token que existia em OUTRO tema do mesmo projeto: o unico controle sobre as fotos ficou sem separacao do fundo |
+
+**Por que nenhum outro gate pega:** o build passa; o gate visual quase nunca ve, porque a
+diferenca e um fio de 1px ou um fundo que falta atras de uma barra, e isso some em
+screenshot reduzido; e quem escreveu conferiu o ARQUIVO, nao o PIXEL.
+
+**A regra que sai daqui, e vale alem deste gate:** `assert` de troca prova que o ARQUIVO
+mudou. So medicao no navegador prova que o PIXEL mudou. Edicao de classe utilitaria
+precisa das duas, sempre.
+
+Calibrado contra os cinco defeitos acima: com eles reintroduzidos o gate sai 1 e nomeia
+os cinco arquivos; sem eles, sai 0.
+
+**>>> GATE 4.2c-bis: `gate-classes-mortas.py` saiu com codigo 0? Se NAO, a classe nao
+existe no CSS e o estilo que voce acha que aplicou nao esta na tela. <<<**
+
+---
+
+### 4.2c-ter COMENTARIO QUE AFIRMA COMPORTAMENTO E UMA PROMESSA
+
+Nasceu de **tres reincidencias no mesmo projeto**, e as tres passaram por revisao sem
+serem notadas, justamente porque o comentario era convincente:
+
+| O que o comentario afirmava | O que a medicao achou |
+|---|---|
+| "a barra fica solida depois que a pagina rola" | nunca ficava: a classe de fundo nao existia |
+| "a grade nasce ALINHADA ao casco" | defasagem de 48px, exatamente meia celula (porcentagem em `background-position` resolve contra area menos tamanho da imagem, e para gradiente isso da zero) |
+| "os mesmos quatro numeros reaparecem na secao seguinte" | a secao seguinte renderizava so o primeiro: tres numeros sumiam da pagina inteira em janela baixa |
+
+O padrao e sempre o mesmo: o comentario descreve a INTENCAO, o codigo entrega outra
+coisa, e o comentario passa a PROTEGER o defeito, porque quem revisa depois le a
+afirmacao, acredita e nao reconfere.
+
+**Regra:** comentario que afirma comportamento observavel ("fica solido", "aparece",
+"reaparece", "alinha", "some", "pinta") so entra depois de a afirmacao ser medida. Sem
+medicao, escreva a intencao ("a ideia aqui e...") ou nao escreva. Comentario que mente e
+pior que comentario que falta.
+
+**Na wave isto vira material de auditoria:** as lentes tratam comentario que afirma
+comportamento como CLAIM a verificar, do mesmo jeito que tratam numero na copy.
 
 ---
 
@@ -2153,7 +2318,7 @@ esta faltando. Nenhuma explicacao substitui rodar de novo verde. <<<**
 
 ---
 
-**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + CONSISTENCIA DE CONTATO conferida digito por digito (colar no bloco de entrega os numeros achados no HTML e nos `tel:`/`wa.me`: mais de um numero distinto sem justificativa REPROVA) + DIFF DE CLAIMS feito (lista de afirmacoes x fonte, com o veredito de cada uma) + IDENTIDADE DA PAGINA (4.2b, com o output do `screenshot-prova.js` sem REPROVA) + GATE DE OCLUSAO 4.2d verde (nenhum texto coberto ou cortado) + RESPONSIVIDADE verde nas 12 telas + AUDITOR MASTER 4.2e verde (todas as 8 lentes rodaram, nenhuma pulada) + CICLO 4.2f fechado (zero critico, zero regressao, piso ou convergencia) com a NOTA REAL escrita na entrega + PASSE DE GOSTO rodado (4.2c, com os itens de composicao alterados e a contagem de tells, que tem que terminar em 0) + deploy funcionando e verificado + ZERO placeholders + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada) + GATE DE USO 4.6 verde (toda ferramenta que estava viva foi usada, ou dispensada COM MOTIVO que vai na entrega)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar.**
+**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + CONSISTENCIA DE CONTATO conferida digito por digito (colar no bloco de entrega os numeros achados no HTML e nos `tel:`/`wa.me`: mais de um numero distinto sem justificativa REPROVA) + DIFF DE CLAIMS feito (lista de afirmacoes x fonte, com o veredito de cada uma) + IDENTIDADE DA PAGINA (4.2b, com o output do `screenshot-prova.js` sem REPROVA) + GATE DE CLASSE MORTA 4.2c-bis verde (nenhuma classe do codigo ausente do CSS gerado) + GATE DE OCLUSAO 4.2d verde (nenhum texto coberto ou cortado) + RESPONSIVIDADE verde nas 12 telas + AUDITOR MASTER 4.2e verde (todas as 8 lentes rodaram, nenhuma pulada) + CICLO 4.2f fechado (zero critico, zero regressao, piso ou convergencia) com a NOTA REAL escrita na entrega + PASSE DE GOSTO rodado (4.2c, com os itens de composicao alterados e a contagem de tells, que tem que terminar em 0) + deploy funcionando e verificado + ZERO placeholders + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada) + GATE DE USO 4.6 verde (toda ferramenta que estava viva foi usada, ou dispensada COM MOTIVO que vai na entrega)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar.**
 
 **ENTREGA SEM DEPLOY (pasta local, arquivo unico, aluno sem conta de hosting) e caminho LEGITIMO, nao gate pulado:** a prova 4.5 roda contra o servidor local (`python3 scripts/servidor-gzip.py <pasta> <porta>`), e deploy, QA pos-deploy, Lighthouse e `og:image` com URL absoluta entram como PENDENCIAS DECLARADAS no bloco de entrega. Tudo o mais do GATE 4 continua valendo igual: wave, identidade, passe de gosto, contato, claims e prova lida com os proprios olhos. **<<<**
 
