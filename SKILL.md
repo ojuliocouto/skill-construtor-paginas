@@ -1079,6 +1079,16 @@ Antes de produzir qualquer copy, checar o que o usuario ja trouxe:
 > `copy-pagina-vendas` e OPCIONAL e so entra quando NAO ha copy boa. Se o usuario ja tem a copy,
 > pular direto pra validacao + COPY LOCK. Nunca reescrever copy que o usuario aprovou.
 
+**Instalacao da copy-pagina-vendas** (ela e uma skill separada; se nao estiver na maquina, este e
+o unico passo):
+
+```bash
+git clone https://github.com/ojuliocouto/skill-copy-pagina-vendas.git ~/.claude/skills/copy-pagina-vendas
+```
+
+Se o clone nao for possivel no momento, seguir sem ela: coletar o briefing do usuario e escrever a
+copy diretamente com os frameworks citados, deixando claro que a skill dedicada faz isso melhor.
+
 ### 1.1 VoC Mining (Voice of Customer)
 
 Identificar linguagem real dos clientes, palavras que eles usam, nao palavras que achamos que eles usam.
