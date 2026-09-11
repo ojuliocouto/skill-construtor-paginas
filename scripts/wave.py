@@ -15,8 +15,8 @@ defeito apareceu no monitor dele. Auto-declaracao de "rodei a auditoria" nao e a
 
 A regra aqui e a mesma do gate de uso de ferramentas: **declaracao nao vale, registro com
 evidencia vale.** Cada lente se registra com veredito, nota e achados. O MASTER (`checar`)
-reprova se faltar QUALQUER lente, se alguma reprovou, se a nota furou o piso, ou se algum
-gate executavel nao esta verde.
+reprova se faltar qualquer lente ou se algum gate executável não estiver verde.
+Notas e vereditos das lentes alimentam o ciclo `rodada`, que decide o encerramento.
 
 Uso:
     python3 scripts/wave.py --projeto <dir> registrar <lente> --nota 8.5 \\
@@ -27,6 +27,7 @@ Uso:
 import argparse
 import datetime
 import json
+import math
 import os
 import sys
 from pathlib import Path
@@ -80,6 +81,9 @@ def salvar(projeto, dados):
 
 
 def cmd_registrar(args):
+    if args.nota is not None and (not math.isfinite(args.nota) or not 0 <= args.nota <= 10):
+        print("ERRO: nota precisa ser finita entre 0 e 10.", file=sys.stderr)
+        return 2
     if args.lente not in LENTES:
         print(f"ERRO: lente desconhecida '{args.lente}'. Validas: {', '.join(sorted(LENTES))}",
               file=sys.stderr)
@@ -231,9 +235,22 @@ GANHO_MINIMO = 0.3
 def cmd_rodada(args):
     """Fecha a rodada atual e diz se roda de novo ou entrega."""
     d = carregar(args.projeto)
+    for campo in ("criticos", "altos", "regressoes"):
+        valor = getattr(args, campo, None)
+        if valor is not None and (type(valor) is not int or valor < 0):
+            print("ERRO: contagens precisam ser inteiros não negativos.")
+            return 2
+    for registro in d.get("lentes", {}).values():
+        nota = registro.get("nota")
+        if nota is not None and (type(nota) not in (int, float) or not math.isfinite(nota) or not 0 <= nota <= 10):
+            print("ERRO: nota precisa ser finita entre 0 e 10.")
+            return 2
+    # Fechar o ciclo sem os gates permitia imprimir ENTREGA para um processo incompleto.
+    if cmd_checar(args) != 0:
+        return 1
     hist = d.setdefault("rodadas", [])
     lentes = d.get("lentes", {})
-    if len(lentes) < len(LENTES):
+    if not set(LENTES).issubset(lentes):
         print(f"ERRO: so {len(lentes)} de {len(LENTES)} lentes registradas. "
               "Rode a wave inteira antes de fechar a rodada.", file=sys.stderr)
         return 2
@@ -330,7 +347,8 @@ def cmd_rodada(args):
         return 0
     faltam = TETO_RODADAS - len(hist)
     print(f"  CONTINUA: sem critico, mas a media ({media:.2f}) ainda sobe e o piso e {PISO_MEDIA}.")
-    print(f"  Ganho da ultima rodada: {ganho:+.2f}. Restam {faltam} rodada(s) ate o teto.\n")
+    ganho_texto = f"{ganho:+.2f}" if ganho is not None else "primeira rodada, sem comparação"
+    print(f"  Ganho da última rodada: {ganho_texto}. Restam {faltam} rodada(s) até o teto.\n")
     return 1
 
 
