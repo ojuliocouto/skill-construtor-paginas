@@ -13,22 +13,22 @@ Skill unificada para construir paginas web profissionais, bonitas e de alta conv
 
 O essencial pra rodar, em poucas linhas. O detalhe de cada item esta nas secoes abaixo; conteudo pesado de implementacao fica em `references/` e so deve ser carregado quando o caso pedir (ver Indice).
 
-1. **5 caminhos:** CRIAR do zero / CLONAR (URL ou PDF) / **CLONAR + ELEVAR** (clone E melhoria no mesmo pedido) / MELHORAR (pagina que ja existe e vai continuar existindo) / EDITAR (mudanca pontual). **Atencao ao 2B:** rodar CLONAR quando o pedido era CLONAR+ELEVAR entrega uma pagina fiel que o dono reprova de olho, porque fidelidade e o oposto de melhoria. **Rotear ANTES de tudo** (ver "OS 4 CAMINHOS"): cada um tem fluxo e gates proprios. Rodar 6 steps numa troca de headline e tao errado quanto editar no improviso uma pagina nova.
+1. **5 caminhos:** CRIAR do zero / CLONAR (URL ou PDF) / **CLONAR + ELEVAR** (clone E melhoria no mesmo pedido) / MELHORAR (pagina que ja existe e vai continuar existindo) / EDITAR (mudanca pontual). **Atencao ao 2B:** rodar CLONAR quando o pedido era CLONAR+ELEVAR entrega uma pagina fiel que o dono reprova de olho, porque fidelidade e o oposto de melhoria. **Rotear ANTES de tudo** (ver "CAMINHOS DE EXECUÇÃO"): cada um tem fluxo e gates proprios. Rodar 6 steps numa troca de headline e tao errado quanto editar no improviso uma pagina nova.
 1b. **ANTES DE TUDO:** rodar `python3 <dir-da-skill>/scripts/checar-ferramentas.py`. Critico sem responder = PARA e conduz a correcao. Ferramenta morta com fallback silencioso ja deixou as duas camadas visuais desligadas por meses.
 2. **Step 0 comeca pela ENTREVISTA DE BRIEFING (0.0):** as seis perguntas da rodada 1 pra todo mundo, rodada 2 so pra quem ja tem cliente. Sem as seis respondidas, nao avanca. Antes disso roda o **0.0-PRE**, que e um GATE: `checar-ferramentas.py` manda cada ferramenta FAZER algo e confere o retorno. Ferramenta CRITICA sem responder **para a skill** ate ser conectada (o agente conduz a instalacao, nao so avisa). Opcional degradado segue, com a degradacao DECLARADA na entrega. Por fim, carregar contexto do projeto.
 3. **Ordem sagrada:** COPY (Step 1) → DESIGN (Step 2) → CODIGO (Step 3). Nunca pixel antes de copy travada.
 4. **Step 1:** se o usuario ja trouxe copy, validar e travar (COPY LOCK); senao gerar (copy-pagina-vendas opcional).
 5. **Step 2:** consultar o banco de design (`search.py`, keywords em INGLES) pra estilo/paleta/fonte antes de inventar; wireframe no Stitch (ou fallback).
-6. **Step 3:** buildar com componentes do 21st.dev (ou a mao), **assets reais** (foto/mockup/video, nunca so SVG+gradiente), zero dado inventado.
-7. **Step 4 e O PORTAO:** rodar a wave de auditoria adversarial (7 lentes + sintese). Deploy acontece DENTRO do Step 4, DEPOIS da wave.
+6. **Step 3:** buildar com componentes do 21st.dev, após passar no gate de entrada, **assets reais** (foto/mockup/video, nunca so SVG+gradiente), zero dado inventado.
+7. **Step 4 e O PORTAO:** rodar a wave de auditoria adversarial (8 lentes + síntese). Deploy acontece DENTRO do Step 4, DEPOIS da wave.
 7b. **Gate barato que roda ANTES da wave:** `gate-classes-mortas.py`. Classe de utilitario invalida passa no build e morre no CSS, e nenhum gate visual pega. Ja custou uma barra fixa sem fundo em 92% da rolagem.
 8. **ENFORCEMENT (caminhos CRIAR, CLONAR e MELHORAR):** a mensagem de entrega DEVE conter o BLOCO OBRIGATORIO DA ENTREGA, com as quatro linhas fixas (veredito da wave, identidade da pagina, passe de gosto, prova de entrega) mais as pendencias. Texto unico e completo na secao "ENFORCEMENT DO GATE" do Step 4, item 2. Sem o bloco = voce pulou o gate = falhou. **No caminho EDITAR a wave NAO roda:** ali o bloco e o checklist de regressao + a prova do ponto alterado.
-9. **MCPs/skills sao obrigatorios QUANDO conectados;** se ausentes, usar o fallback documentado, nunca travar.
-10. **Bloqueia entrega:** 3+ tells de IA, pagina sem asset real, footer-legal/checkout quebrado, dado inventado, nota < 7 em qualquer dimensao.
+9. **Ferramentas críticas bloqueiam quando ausentes;** opcionais podem degradar com motivo declarado.
+10. **Bloqueia entrega:** 3+ tells de IA, pagina sem asset real, footer-legal/checkout quebrado, dado inventado, crítico confirmado ou regressão confirmada. O ciclo 4.2f decide sobre as notas.
 11. **Regras absolutas do output:** zero travessao (grep U+2014 = 0), zero emoji, acentuacao PT-BR correta, consistencia de contato.
 11b. **NUNCA INVENTAR ID VISUAL.** Se o usuario indicou/forneceu a identidade (pasta de assets, logo, paleta, fontes, link, PDF, slides), USAR O ASSET REAL. Recriar logo em texto/SVG aproximado, chutar cor ou fonte = PROIBIDO. So criar do zero quando NAO ha ID indicada. Logo legivel demais a 40px? Aumenta o tamanho ou pede uma versao, nunca substitui por uma invencao.
 12. **Pos-sessao:** registrar contexto em `references/sessions/` e `references/projects/` (locais). Proibido entregar e nao registrar.
-13. **Atalhos:** capture simples/pagina trivial → ROTA EXPRESSA (steps colapsados, wave de 3 lentes). Sessao nao-interativa ou "faz direto" → sem paradas, gates inline (ver excecao no protocolo de execucao).
+13. **Atalhos:** capture simples/pagina trivial → ROTA EXPRESSA (steps colapsados, wave de oito lentes). Sessao nao-interativa ou "faz direto" → sem paradas, gates inline (ver excecao no protocolo de execucao).
 
 ---
 
@@ -36,7 +36,7 @@ O essencial pra rodar, em poucas linhas. O detalhe de cada item esta nas secoes 
 
 | Bloco | Secoes |
 |---|---|
-| **Roteamento** | RUNBOOK, QUANDO ACIONAR, OS 4 CAMINHOS (CRIAR / CLONAR / MELHORAR / EDITAR), PORTA UNICA |
+| **Roteamento** | RUNBOOK, QUANDO ACIONAR, CAMINHOS DE EXECUÇÃO (CRIAR / CLONAR / MELHORAR / EDITAR), PORTA UNICA |
 | **Preparacao** | PROTOCOLO DE ATIVACAO (pre-requisitos + instalacao), GATE DE QUALIDADE auxiliar, PROTOCOLO POS-SESSAO, Indice de `references/` |
 | **O fluxo** | Processo de 6 Steps, parada forcada, rota expressa, regras inegociaveis, anti-patterns, gates, tech stack, **Step 0** (0.0 briefing, 0.1 a 0.7), **Step 1** copy, **Step 2** direcao, **Step 3** build (3.2 video, **3.2b movimento/Higgsfield**, 3.6 auto-revisao), **Step 4** (4.0 wave, 4.0b/4.1 scoring, 4.2 QA, **4.2b identidade**, **4.2c passe de gosto**, 4.3 deploy, 4.4 QA pos, 4.5 prova, GATE 4), **Step 5** medir |
 | **Apendice** | Regras de deploy, anti-patterns de codigo, blueprints, projetos e sessoes locais, links e galerias |
@@ -66,11 +66,11 @@ anti-patterns no fim deste arquivo e o checklist visual em `references/anti-vibe
 
 ---
 
-## OS 4 CAMINHOS: ROTEAR ANTES DE QUALQUER COISA
+## CAMINHOS DE EXECUÇÃO: ROTEAR ANTES DE QUALQUER COISA
 
 O fluxo de 6 steps foi desenhado pra pagina NOVA. Aplicar ele inteiro numa troca de
 headline gera atrito e faz o usuario abandonar a skill; e pular ele numa pagina nova
-gera pagina feia. Por isso a PRIMEIRA decisao e sempre: **qual dos 4 caminhos e este?**
+gera pagina feia. Por isso a PRIMEIRA decisao e sempre: **qual caminho corresponde ao pedido?**
 
 Declarar o caminho escolhido na primeira resposta, em uma linha, antes de executar:
 `Caminho: EDITAR (mudanca pontual em pagina existente).`
@@ -88,7 +88,7 @@ Declarar o caminho escolhido na primeira resposta, em uma linha, antes de execut
 coisa nomeada e EDITAR; revisar a pagina e MELHORAR. Errar pra mais (rodar melhoria
 quando ele queria trocar uma palavra) irrita tanto quanto errar pra menos.
 
-**O que vale nos 4 caminhos, sem excecao:** nunca inventar ID visual, nunca inventar
+**O que vale em todos os caminhos, sem excecao:** nunca inventar ID visual, nunca inventar
 dado, zero travessao, zero emoji, acentuacao correta, asset real, e prova de entrega
 (screenshot do resultado lido com os proprios olhos) antes de dizer que acabou.
 
@@ -102,7 +102,7 @@ os 6 steps, com parada forcada entre eles e os 4 gates.** O fluxo detalhado esta
 
 Resumo da ordem, que e sagrada: Step 0 entender e inventariar, Step 1 COPY (fecha em
 COPY LOCK), Step 2 DIRECAO (banco de design + wireframe), Step 3 BUILDAR (componentes e
-assets reais), Step 4 AUDITAR (wave de 7 lentes) e so entao deploy, Step 5 pos-sessao.
+assets reais), Step 4 AUDITAR (wave de 8 lentes) e so entao deploy, Step 5 pos-sessao.
 Nunca pixel antes de copy travada.
 
 ---
@@ -251,8 +251,7 @@ tudo e derrubando a conversao que existia.
    Identidade so muda com pedido explicito.
 5. **Aplicar em lotes revisaveis**, do maior impacto pro menor.
 6. **GATE DE MELHORIA (nao-regressao, ADICIONAL ao GATE 4, nunca no lugar dele)**: antes e
-   depois lado a lado, com a nota de cada dimensao nos dois estados. **Se alguma dimensao
-   piorou, nao entrega.** Lighthouse entra so como comparacao CONDICIONAL: **se houve baseline
+   depois lado a lado, com a nota de cada dimensao nos dois estados. **Se houver regressão confirmada por medida, não entregue. Queda de nota isolada é sinal, conforme o ciclo 4.2f.** Lighthouse entra so como comparacao CONDICIONAL: **se houve baseline
    de Lighthouse**, o novo tem que ser igual ou melhor; **sem navegador nao ha baseline**, entao
    vira pendencia declarada e NAO bloqueia (igual ao item 1 e ao 4.2). O que bloqueia aqui e a
    nao-regressao por dimensao, que nao depende de navegador.
@@ -279,7 +278,7 @@ erro de processo.
 7. Registro curto na sessao (o que mudou e onde), sem o relatorio completo.
 
 **Gates que NAO se aplicam ao caminho EDITAR:** COPY LOCK, direcao visual, wireframe,
-wave de 7 lentes. Uma edicao pontual nao precisa reauditar a pagina inteira. O que
+wave de 8 lentes. Uma edicao pontual nao precisa reauditar a pagina inteira. O que
 continua valendo: regressao, prova de entrega e as regras absolutas de output.
 
 ### CAMINHO 5: VARIANTE VISUAL (mesmo conteudo, outra linguagem)
@@ -388,17 +387,17 @@ foto real. **Opcional = segue, com a degradacao declarada na entrega.**
 
 | Dependencia | Como detectar | Papel | Faltando: bloqueia ou degrada? |
 |-------------|---------------|-------|---------|
-| **Playwright** | `node <dir-da-skill>/scripts/screenshot-prova.js --check` | prova de entrega, extrator de identidade, gate de video | **CRITICA: bloqueia.** Prova obrigatoria nos 4 caminhos: `npm install -g playwright && npx playwright install chromium` |
+| **Playwright** | `node <dir-da-skill>/scripts/screenshot-prova.js --check` | prova de entrega, extrator de identidade, gate de video | **CRITICA: bloqueia.** Prova obrigatoria em todos os caminhos: `npm install -g playwright && npx playwright install chromium` |
 | **ffmpeg / ffprobe** | `ffprobe -version` | gate de video (so em pagina com video) | pular o gate de video |
 | **Higgsfield (CLI)** | `higgsfield account status` (imprime e-mail, plano e creditos) | movimento e b-roll nos blocos (Step 3.2b), **passo esperado, nao enfeite** | conta PAGA para uso comercial. Sem ela: material real do cliente, gravacao de tela, b-roll de acervo aberto ou animacao CSS/Framer Motion, com a pendencia declarada na entrega. Setup completo (inclusive o `higgsfield workspace set <id>`, que trava todo mundo) em `references/higgsfield.md` |
-| **HF_API_KEY_ID + HF_API_KEY_SECRET (env)** | `echo $HF_API_KEY_ID` | rota por API do `scripts/higgsfield.py` (lote, `--dry-run`) | usar a CLI (rota assistida) ou seguir sem movimento gerado |
+| **HF_API_KEY_ID + HF_API_KEY_SECRET (env)** | verificar presença da variável sem imprimir o valor | rota por API do `scripts/higgsfield.py` (lote, `--dry-run`) | usar a CLI (rota assistida) ou seguir sem movimento gerado |
 | **Stitch (MCP)** | tools `mcp__stitch__*` | wireframe (Step 2) | auto-instalar (protocolo item 1); ultimo caso: layout direto no codigo |
 | **21st.dev Magic (MCP)** | `checar-ferramentas.py` (estado real, nao presenca na lista) | componentes (Step 3) | **CRITICA: bloqueia.** O fallback "componente a mao" existe, mas era ele que rodava sempre quando o MCP estava morto. Conduza a conexao. |
 | **design-taste-frontend (skill)** | skill listada | gate anti-slop (Step 4 e 4.9) | **CRITICA: bloqueia.** E o unico passo que tira a cara de IA; sem ela o scoring manual 4.0b vira formalidade. |
 | **redesign-existing-projects (skill)** | skill listada | audit-first em clone/redesign (Step 2) | recomendado (protocolo item 4); fallback: auditoria manual das 5 dimensoes |
 | **high-end-visual-design (skill)** | skill listada | acabamento premium (Step 4) | recomendado (protocolo item 4); fallback: segue sem |
 | **impeccable (CLI)** | `npx impeccable --version` | refino UI (Step 4) | opcional, roda via npx quando precisar |
-| **PEXELS_API_KEY (env)** | `echo $PEXELS_API_KEY` | assets-search.py videos/fotos | recomendado (protocolo item 3); **fallback que NAO precisa de chave: `--type photo` cai sozinho na Openverse e devolve FOTO REAL** (credito ao autor obrigatorio, ver `references/assets-sem-chave.md`) |
+| **PEXELS_API_KEY (env)** | verificar presença da variável sem imprimir o valor | assets-search.py videos/fotos | recomendado (protocolo item 3); **fallback que NAO precisa de chave: `--type photo` cai sozinho na Openverse e devolve FOTO REAL** (credito ao autor obrigatorio, ver `references/assets-sem-chave.md`) |
 | **frontend-design (skill)** | skill listada | direcao estetica ANTES do codigo (Step 2) | recomendado (protocolo item 4); fallback: seguir so com design-taste-frontend |
 | **animate (skill)** | skill listada | movimento e microinteracao (Step 4, DEPOIS da UI pronta) | recomendado (protocolo item 4); fallback: animar a mao com Framer Motion, sem sistema |
 | **canvas-design (skill)** | skill listada | peca grafica ESTATICA que acompanha a pagina (PNG/PDF) | opcional: so entra se o pedido incluir arte estatica |
@@ -421,38 +420,22 @@ foto real em vez de gerada, gate de gosto automatico em vez de manual). Oferecer
 nunca prender o usuario num loop de instalacao.
 
 1. **Instalar AUTOMATICAMENTE o que nao precisa de segredo do usuario** (fazer, nao perguntar):
-   - Stitch: `npm install -g stitch-mcp && claude mcp add stitch -- stitch-mcp proxy`
+   - Stitch: `npm install -g stitch-mcp && claude mcp add stitch --scope user -- stitch-mcp proxy`
    - impeccable: nada a instalar (roda via `npx impeccable`)
    Executar, confirmar com o comando de deteccao e avisar o usuario do que foi instalado.
-2. **Playwright: o unico que na pratica voce precisa.** A prova de entrega (screenshot lido)
-   e obrigatoria nos 4 caminhos, e depende dele. Se faltar, instalar de cara:
+2. **Playwright: necessário para a prova visual.** A prova de entrega (screenshot lido)
+   e obrigatoria em todos os caminhos, e depende dele. Se faltar, instalar de cara:
    `npm install -g playwright && npx playwright install chromium`.
-3. **Oferecer as credenciais gratuitas (21st.dev Magic e Pexels)** uma vez, com o link:
-   - 21st.dev Magic: chave gratuita em https://21st.dev (usar no `claude mcp add magic` abaixo).
-   - Pexels: chave gratuita em https://www.pexels.com/api/ (exportar no shell).
-   Se o usuario nao quiser agora, SEGUIR pelo fallback e registrar na entrega o que rodou
-   degradado. Nao repetir o pedido a cada step.
-4. **Oferecer as Taste Skills (https://www.tasteskill.dev/)** e as skills `frontend-design` e
-   `animate` do mesmo jeito: melhoram muito o resultado, nao bloqueiam. Sem as taste skills o
-   gate anti-slop roda no scoring manual (4.0b); declarar isso na entrega.
-5. **Modo nao-interativo** (sem como perguntar): executar o passo 1 automaticamente,
-   usar fallbacks para o resto e INCLUIR na mensagem de entrega o bloco de instalacao
-   com o que falta e o comando pronto de cada item.
-
-**Registro honesto e obrigatorio:** o que rodou por fallback DEVE aparecer na entrega
-(ex: "gate rodou em modo manual, taste skills nao instaladas"). Degradar em silencio e
-que e proibido, nao degradar.
-
-A unica coisa que NUNCA acontece e travar a sessao em loop esperando: ou instala agora,
-ou o usuario dispensa por escrito, ou (nao-interativo) segue por fallback com pendencia
-obrigatoria declarada.
+3. **Conduzir a configuração do 21st.dev:** ferramenta crítica. Sem resposta utilizável, o Step 0 continua bloqueado. Pexels é opcional.
+4. **Instalar `design-taste-frontend`:** também é crítica. As demais skills de design são opcionais.
+5. **Modo não interativo:** registrar o bloqueio crítico e os comandos de instalação. A ausência de interação não autoriza substituir ferramenta crítica por fallback.
 
 ```bash
 # --- 21st.dev Magic (componentes) --- precisa de API key gratuita em https://21st.dev
-claude mcp add magic --env API_KEY=<sua-chave-21st> -- npx -y @21st-dev/magic@latest
+claude mcp add magic --scope user --env API_KEY=<sua-chave-21st> -- npx -y @21st-dev/magic@latest
 
 # --- Google Stitch (wireframe) --- binario global stitch-mcp
-npm install -g stitch-mcp && claude mcp add stitch -- stitch-mcp proxy
+npm install -g stitch-mcp && claude mcp add stitch --scope user -- stitch-mcp proxy
 
 # --- Taste Skills (anti-slop) --- instalar de https://www.tasteskill.dev/
 #   design-taste-frontend, redesign-existing-projects, high-end-visual-design
@@ -640,7 +623,7 @@ Carregar da pasta `references/` APENAS quando o caso pedir:
 
 ## Processo de 6 Steps: Workflow Principal
 
-**ESTE E O WORKFLOW DO CAMINHO 1 (CRIAR do zero).** Para CLONAR, MELHORAR ou EDITAR, ver "OS 4 CAMINHOS": os fluxos sao outros e os gates mudam. No caminho CRIAR, os 6 steps sao sequenciais e nenhum pode ser pulado. Copy vem antes de design. Design vem antes de codigo.
+**ESTE E O WORKFLOW DO CAMINHO 1 (CRIAR do zero).** Para CLONAR, MELHORAR ou EDITAR, ver "CAMINHOS DE EXECUÇÃO": os fluxos sao outros e os gates mudam. No caminho CRIAR, os 6 steps sao sequenciais e nenhum pode ser pulado. Copy vem antes de design. Design vem antes de codigo.
 
 Tempo estimado: 80-120 minutos do material ate pagina live.
 
@@ -652,7 +635,7 @@ Tempo estimado: 80-120 minutos do material ate pagina live.
 
 **CADA STEP TERMINA COM UMA PARADA. EU NAO AVANÇO SEM CONFIRMACAO DO USUARIO.**
 
-**Escopo desta regra:** ela so vale nos caminhos CRIAR, CLONAR e MELHORAR. No caminho EDITAR (mudanca pontual) NAO existe parada entre steps: executa o escopo travado, testa regressao, publica e mostra a prova. Ver "OS 4 CAMINHOS".
+**Escopo desta regra:** ela so vale nos caminhos CRIAR, CLONAR e MELHORAR. No caminho EDITAR (mudanca pontual) NAO existe parada entre steps: executa o escopo travado, testa regressao, publica e mostra a prova. Ver "CAMINHOS DE EXECUÇÃO".
 
 Nao importa a urgencia, nao importa o tamanho do material, nao importa que o proximo step seja "obvio". Cada step e uma resposta separada. O usuario le, aprova ou corrige, e SO ENTAO o proximo step comeca.
 
@@ -694,7 +677,7 @@ Para capture page simples (< 3 telas, formulario + headline) ou pagina explicita
 
 1. **Steps 0-2 em UMA resposta:** blueprint + copy lock + direcao visual apresentados juntos, com os 3 gates checados inline (uma unica parada de confirmacao, ou nenhuma no modo nao-interativo).
 2. **Step 3 normal** (as regras inegociaveis continuam valendo).
-3. **Step 4 com wave reduzida a 3 lentes:** `design-critic`, `cro-auditor`, `mobile-auditor` + sweeps de QA (contato, travessao, emoji, dado inventado). O bloco de veredito na entrega continua OBRIGATORIO.
+3. **Step 4 com as oito lentes registradas no `wave.py`:** a rota expressa reduz a apresentação, não a cobertura da auditoria. O bloco de veredito na entrega continua OBRIGATORIO.
 
 O que a rota expressa NAO dispensa: **as seis respostas da rodada 1 do briefing (0.0: nicho, local, publico, oferta, preco, acao)**, copy antes de codigo, identidade real quando indicada, assets criticos confirmados (incluindo o destino do lead), identidade da pagina (4.2b), passe de gosto (4.2c) e o BLOCO OBRIGATORIO DA ENTREGA completo. O que ela colapsa e a APRESENTACAO dos steps, nunca a entrevista nem os gates.
 
@@ -740,16 +723,16 @@ O que a rota expressa NAO dispensa: **as seis respostas da rodada 1 do briefing 
 ### GATES OBRIGATORIOS ENTRE STEPS
 
 **Estes gates sao do caminho CRIAR.** Os outros caminhos tem gate proprio, descrito em
-"OS 4 CAMINHOS": CLONAR troca os gates 1 e 2 pelo **gate de fidelidade** (original e clone lado
+"CAMINHOS DE EXECUÇÃO": CLONAR troca os gates 1 e 2 pelo **gate de fidelidade** (original e clone lado
 a lado) e fecha no GATE 4 normal; MELHORAR fecha no GATE 4 **mais** o **gate de melhoria**
 (antes e depois com nota por dimensao, e nenhuma dimensao pode ter piorado), que e um gate
 ADICIONAL de nao-regressao, nao um substituto; EDITAR fecha no **checklist de regressao + prova
-do ponto alterado**, e so ele dispensa a wave. Exigir COPY LOCK num clone ou wave de 7 lentes numa troca de headline nao e
+do ponto alterado**, e so ele dispensa a wave. Exigir COPY LOCK num clone ou wave de 8 lentes numa troca de headline nao e
 rigor, e processo errado: o gate tem que caber no que foi pedido.
 
 ```
 STEP 0 (ENTENDER & INVENTARIAR) ────────────────────────────
-  GATE 0: checar-ferramentas.py rodado (critico respondendo ou correcao conduzida) + As SEIS respostas da rodada 1 (0.0) registradas, cada uma marcada como resposta do
+  GATE 0: checar-ferramentas.py rodado (ferramentas críticas aprovadas pelo verificador) + As SEIS respostas da rodada 1 (0.0) registradas, cada uma marcada como resposta do
           usuario ou SUPOSICAO + classificacao + mapa de secoes + flags de copy + inventario
           de assets documentados?
   [ ] SIM → avanca pro Step 1
@@ -773,8 +756,8 @@ STEP 3 (BUILDAR) ─────────────────────
   [ ] NAO → PARA. Volte e complete o que falta. Pagina incompleta = pagina feia.
 
 STEP 4 (VERIFICAR & SHIPAR) ────────────────────────────────
-  GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0,
-          sem notas <7) + QA checklist 100% (Lighthouse 90+ quando houver navegador; sem ele,
+  GATE 4: Auditoria Designer (notas declaradas, ciclo 4.2f aprovado) + Auditoria Estrategista (notas declaradas,
+          ciclo 4.2f aprovado) + QA checklist 100% (Lighthouse 90+ quando houver navegador; sem ele,
           pendencia declarada) + consistencia de contato conferida digito por digito + diff de
           claims feito + IDENTIDADE DA PAGINA (4.2b, conferida pelo script) + PASSE DE GOSTO
           rodado (4.2c) + deploy funcionando (ou, na entrega SEM deploy, servidor local com o
@@ -799,6 +782,11 @@ STEP 4 (VERIFICAR & SHIPAR) ─────────────────�
 ---
 
 ## Step 0: ENTENDER & INVENTARIAR (5-10 min)
+
+Ao concluir esta etapa, grave seu JSON e as evidências conforme `references/gate-etapas.md`.
+Execute `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 0 --arquivo evidencias/etapa-0.json`.
+Saída diferente de zero bloqueia o avanço. Na entrega, execute também `checar 4`.
+Este registro do fluxo CRIAR não se aplica aos caminhos com fluxo próprio.
 
 Recebe o material do usuario e extrai tudo que precisa ANTES de tocar em copy, design ou codigo.
 
@@ -845,7 +833,7 @@ sempre nao sabe o que e um MCP.
 
 | Ferramenta | Como conduzir |
 |---|---|
-| **21st.dev (magic)** | Abra `https://21st.dev/mcp`, peca a chave, e rode: `claude mcp remove magic` e depois `claude mcp add magic -- npx -y @21st-dev/magic@latest --api-key <CHAVE>`. Avise que as tools novas so aparecem na proxima sessao. |
+| **21st.dev (magic)** | Abra `https://21st.dev/mcp`, peca a chave, e rode: `claude mcp add --transport http 21st https://21st.dev/api/mcp --scope user --header "x-api-key: SUA_CHAVE"`. Avise que as tools novas so aparecem na proxima sessao. |
 | **Playwright** | `npm i -g playwright && npx playwright install chromium` (baixa ~265 MB; a versao leve e `--only-shell`, ~94 MB) |
 | **Higgsfield** | Setup completo em `references/higgsfield.md`, secao SETUP (inclui o `workspace set`, que trava todo mundo) |
 | **Stitch** | Proxy local. Timeout costuma ser conflito de porta: confira quem esta na porta antes de reiniciar |
@@ -1055,13 +1043,18 @@ Blueprint documentado com:
 - Contexto de funil
 - Inventario de assets (o que existe vs o que precisa criar)
 
-**>>> GATE 0: checar-ferramentas.py rodado (critico respondendo ou correcao conduzida) + As seis respostas da rodada 1 (0.0) registradas (resposta do usuario ou SUPOSICAO declarada) + blueprint + inventario de assets documentados por escrito? Assets criticos existem ou ha plano para obtelos? Se NAO, PARA AQUI. <<<**
+**>>> GATE 0: checar-ferramentas.py rodado (ferramentas críticas aprovadas pelo verificador) + As seis respostas da rodada 1 (0.0) registradas (resposta do usuario ou SUPOSICAO declarada) + blueprint + inventario de assets documentados por escrito? Assets criticos existem ou ha plano para obtelos? Se NAO, PARA AQUI. <<<**
 
 **PARADA OBRIGATORIA:** Apresentar o blueprint completo ao usuario e perguntar: "Step 0 concluido. Posso avancar para o Step 1 (COPY & MENSAGEM)?", NAO AVANCAR SEM RESPOSTA.
 
 ---
 
 ## Step 1: COPY & MENSAGEM (10-20 min)
+
+Ao concluir esta etapa, grave seu JSON e as evidências conforme `references/gate-etapas.md`.
+Execute `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 1 --arquivo evidencias/etapa-1.json`.
+Saída diferente de zero bloqueia o avanço. Na entrega, execute também `checar 4`.
+Este registro do fluxo CRIAR não se aplica aos caminhos com fluxo próprio.
 
 **O step mais critico do processo.** Copy define o que vai ser construido. Design serve a copy, nao o contrario. Nenhum pixel antes de copy aprovada.
 
@@ -1233,6 +1226,11 @@ base imutavel. Qualquer mudanca de copy requer voltar ao Step 1.
 
 ## Step 2: DIRECIONAR (5-10 min)
 
+Ao concluir esta etapa, grave seu JSON e as evidências conforme `references/gate-etapas.md`.
+Execute `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 2 --arquivo evidencias/etapa-2.json`.
+Saída diferente de zero bloqueia o avanço. Na entrega, execute também `checar 4`.
+Este registro do fluxo CRIAR não se aplica aos caminhos com fluxo próprio.
+
 Define a direcao visual baseada na copy aprovada no Step 1. O design serve a copy, nunca o contrario.
 
 ### 2.0 Consultar o BANCO DE DESIGN (OBRIGATORIO, antes de inventar cor/fonte/estilo)
@@ -1369,6 +1367,11 @@ Documento com:
 ---
 
 ## Step 3: BUILDAR (30-60 min)
+
+Ao concluir esta etapa, grave seu JSON e as evidências conforme `references/gate-etapas.md`.
+Execute `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 3 --arquivo evidencias/etapa-3.json`.
+Saída diferente de zero bloqueia o avanço. Na entrega, execute também `checar 4`.
+Este registro do fluxo CRIAR não se aplica aos caminhos com fluxo próprio.
 
 Construcao do codigo, secao por secao, com assets criados INLINE. A copy do Step 1 e a direcao visual do Step 2 estao travadas, apenas implementar.
 
@@ -1575,6 +1578,11 @@ Se QUALQUER item acima for NAO → corrigir AGORA, antes de ir pro Step 4.
 
 ## Step 4: VERIFICAR & SHIPAR (20-30 min)
 
+Ao concluir esta etapa, grave seu JSON e as evidências conforme `references/gate-etapas.md`.
+Execute `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 4 --arquivo evidencias/etapa-4.json`.
+Saída diferente de zero bloqueia o avanço. Na entrega, execute também `checar 4`.
+Este registro do fluxo CRIAR não se aplica aos caminhos com fluxo próprio.
+
 **OBRIGATORIO: Auditoria Adversarial por WAVE DE SUBAGENTS antes do deploy.**
 A auditoria NUNCA e feita pelo mesmo contexto que construiu a pagina (vies: o construtor
 nao enxerga o proprio erro). Dispara-se uma wave de 8 subagents adversariais paralelos,
@@ -1619,7 +1627,7 @@ chegar limpo na wave; nenhuma delas substitui ou dispensa a wave. Entrega = wave
 
 **Escopo:** isto vale nos caminhos CRIAR, CLONAR e MELHORAR. O caminho EDITAR (mudanca
 pontual) tem portao proprio, menor e proporcional: checklist de regressao + prova do ponto
-alterado. Rodar a wave de 7 lentes numa troca de headline nao e rigor, e processo errado.
+alterado. Rodar a wave de 8 lentes numa troca de headline nao e rigor, e processo errado.
 
 ### ENFORCEMENT DO GATE (ler antes de tudo, falha historica recorrente)
 
@@ -1646,7 +1654,7 @@ reais (jun/2026): um site institucional e um clone. Para tornar isso impossivel 
    **No caminho EDITAR** o bloco e outro, menor: checklist de regressao + prova do ponto alterado
    + pendencias. A wave nao roda ali.
 3. **Escada de fallback da wave** (usar o degrau mais alto disponivel):
-   1. Tool `Workflow` disponivel → wave completa em paralelo (8 lentes, ou 3 na rota expressa).
+   1. Tool `Workflow` disponivel → wave completa em paralelo (8 lentes, inclusive na rota expressa).
    2. Sem `Workflow`, mas com `Task`/`Agent` (subagentes) → rodar CADA lente como subagente
       independente. E o caso mais comum e PREFERIDO ao fallback manual: preserva a auditoria
       fora do contexto que construiu.
@@ -1670,24 +1678,15 @@ Ver protocolo completo, schema e esqueleto Workflow em `references/audit-agents.
    | `assets-auditor` | presenca de imagem/mockup/video real | so texto+gradiente+SVG, SaaS sem mockup, lead magnet sem mockup do material |
    | `visual-auditor` | hierarquia, paleta, spacing, grid desktop | formato carta, side-by-side em coluna unica, sem hierarquia |
    | `motion-auditor` | scroll reveal, hover, hero entrance, counters | hero estatico, secao sem feedback, card sem hover |
-   | `mobile-auditor` | 320/375/768px, hamburger JS | layout quebra, hamburger morto, overflow |
    | `cro-auditor` | CTAs, form, WhatsApp, oferta, message match, Hook/Story/Offer | CTA insuficiente, form/checkout quebrado, sem message match |
    | `a11y-auditor` | focus, labels, alt, ARIA, contraste 4.5:1, zero emoji | falha WCAG critica, emoji na pagina |
 | `responsive-auditor` | as 12 telas reais, mobile E desktop (roda `gate-responsivo.mjs`) | overflow horizontal, CTA fora da dobra, alvo de toque < 44px, corpo < 14px, texto cortado |
 | `content-auditor` | dado inventado, claim sem fonte, travessao, consistencia de contato | claim que nao esta na fonte, travessao > 0, telefone divergente |
 
 3. Cada agente retorna o schema `VERDICT`. Agente de **sintese** consolida em `SINTESE`.
-4. **GATE (regua UNICA, vale pra wave e pro fallback manual):**
-   - Qualquer achado `critical` => `deploy_liberado: false` => PARA, devolve fixes,
-     construtor corrige e re-roda SO as lentes que reprovaram.
-   - Qualquer lente/dimensao com nota < 7 => BLOQUEIA (mesmo sem critical).
-   - Media geral < 8.0 => NAO libera: aplicar os polimentos apontados e re-scorar.
-   - Libera deploy apenas com: zero criticos + todas as notas >= 7 + media >= 8.0.
-   (O taste-gate usa escala propria 1-5 com corte 4.0; ele alimenta a lente design-critic,
-   nao substitui esta regua.)
+4. **GATE:** registre todas as lentes e execute `wave.py checar` e `wave.py rodada` (4.2e e 4.2f). Críticos e regressões confirmados bloqueiam. O ciclo admite piso, gravidade esgotada, convergência ou teto, sempre com a nota real e as pendências declaradas. A síntese não pode criar um piso incompatível com o ciclo.
 
-> Se a tool `Workflow` nao estiver disponivel na sessao, cair no fallback manual abaixo
-> (4.0b Designer + 4.1 Estrategista pontuados inline) e DOCUMENTAR que a wave foi pulada.
+Sem `Workflow`, use subagentes disponíveis. Sem subagentes, registre a autoavaliação e sua limitação, conforme a escada de fallback acima.
 
 ---
 
@@ -1707,7 +1706,7 @@ Pontuar cada dimensao de 0-10 usando `references/scoring-system.md`:
 | Performance Visual | /10 | |
 | Trust Signals (ver `references/trust-signals-placement.md`) | /10 | |
 
-**Media minima para avancar: 8.0/10. Qualquer nota < 7 = BLOQUEIO.**
+**Registre as notas reais. A decisão de encerramento pertence ao ciclo 4.2f; esta tabela não cria um segundo bloqueio por nota.**
 
 **Excecao unica, para quem ainda NAO tem cliente:** se o briefing (0.0) registrou a flag
 `sem prova social`, a dimensao Prova Social entra como **N/A** e sai do calculo da media, desde
@@ -1741,15 +1740,15 @@ Executar auditoria estrategica completa usando `references/strategist-audit.md`:
 | Urgencia & Escassez | /10 | |
 | Message Match com o Trafego | /10 | |
 
-**Media minima para avancar: 8.0/10. Qualquer nota < 7 = BLOQUEIO.**
+**Registre as notas reais. A decisão de encerramento pertence ao ciclo 4.2f; esta tabela não cria um segundo bloqueio por nota.**
 
 ---
 
-**Se qualquer dimensao (designer OU estrategista) ficou abaixo de 7:**
+**Se uma dimensão apontou um defeito verificável:**
 1. Identificar o que esta errado
 2. Corrigir no codigo/copy
 3. Re-pontuar
-4. So avancar quando todas as notas forem >= 7 (idealmente >= 8)
+4. Execute o ciclo 4.2f com os achados confirmados e registre a decisão.
 
 ---
 
@@ -2047,8 +2046,7 @@ $W gate oclusao --exit 0 --detalhe "163 blocos, nenhum coberto"
 $W checar
 ```
 
-**O que o master bloqueia:** lente que nao rodou, gate sem registro, gate vermelho, lente
-reprovada, nota abaixo de 7, media abaixo de 8. Ele **nao julga se a pagina esta bonita**: isso
+**O que o master bloqueia:** lente que nao rodou, gate sem registro, gate vermelho, registro inválido. Notas e vereditos das lentes alimentam o ciclo 4.2f. Ele **nao julga se a pagina esta bonita**: isso
 e trabalho das lentes. Ele julga se o PROCESSO aconteceu.
 
 **Lente que nao se aplica** se registra com `--veredito nao_aplicavel` e o motivo, e aparece
@@ -2220,6 +2218,27 @@ git add . && git commit -m "feat: nova pagina" && git push
 - Paths relativos (sem `/` inicial)
 - Deploy IMEDIATO apos qualquer edicao
 
+#### Proteção do projeto no deploy
+
+### Quando deployar
+- **Pagina nova ou mudanca visual/estrutural:** deploy acontece DENTRO do Step 4, DEPOIS da wave de auditoria. Nunca antes. (Esta regra vence qualquer outra: ver ENFORCEMENT DO GATE.)
+- **Hotfix pos-wave em projeto ja no ar** (typo, link, contato, ajuste pontual que nao muda layout): deploy imediato apos a edicao, sem esperar o usuario pedir, seguido dos sweeps rapidos de QA (contato, travessao, links).
+
+### NUNCA Sobrescrever Projetos Existentes
+- Ao subir pagina nova em projeto Cloudflare Pages (ou Vercel, etc.) que JA TEM CONTEUDO, **NUNCA** fazer deploy de uma pasta avulsa que sobrescreva o conteudo inteiro.
+- **SEMPRE** criar uma subpasta dentro do projeto existente para a pagina nova.
+- **Workflow correto:**
+  1. Verificar o que ja existe no projeto hospedado (checar `dist/public/`, `wrangler.toml`, etc.)
+  2. Criar a pagina nova em subpasta (ex: `dist/public/evento-0326-v1/`)
+  3. Copiar a subpasta para dentro do projeto original
+  4. Fazer deploy a partir do diretorio raiz do projeto original (ex: `dist/public/`)
+- **Workflow ERRADO (nunca fazer):** deployar pasta avulsa direto com `wrangler pages deploy minha-pasta/`: isso APAGA tudo que existia antes no projeto.
+- Motivo: Cloudflare Pages substitui TODOS os arquivos do deploy anterior. Se voce deployar so a subpasta, todas as outras paginas/rotas desaparecem.
+
+---
+
+
+
 ### 4.4 QA Pos-Deploy
 
 - [ ] Pagina live = pagina local (comparar visualmente)
@@ -2328,13 +2347,18 @@ esta faltando. Nenhuma explicacao substitui rodar de novo verde. <<<**
 
 ---
 
-**>>> GATE 4: Auditoria Designer (media ≥8.0, sem notas <7) + Auditoria Estrategista (media ≥8.0, sem notas <7) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + CONSISTENCIA DE CONTATO conferida digito por digito (colar no bloco de entrega os numeros achados no HTML e nos `tel:`/`wa.me`: mais de um numero distinto sem justificativa REPROVA) + DIFF DE CLAIMS feito (lista de afirmacoes x fonte, com o veredito de cada uma) + IDENTIDADE DA PAGINA (4.2b, com o output do `screenshot-prova.js` sem REPROVA) + GATE DE CLASSE MORTA 4.2c-bis verde (nenhuma classe do codigo ausente do CSS gerado) + GATE DE OCLUSAO 4.2d verde (nenhum texto coberto ou cortado) + RESPONSIVIDADE verde nas 12 telas + AUDITOR MASTER 4.2e verde (todas as 8 lentes rodaram, nenhuma pulada) + CICLO 4.2f fechado (zero critico, zero regressao, piso ou convergencia) com a NOTA REAL escrita na entrega + PASSE DE GOSTO rodado (4.2c, com os itens de composicao alterados e a contagem de tells, que tem que terminar em 0) + deploy funcionando e verificado + ZERO placeholders + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada) + GATE DE USO 4.6 verde (toda ferramenta que estava viva foi usada, ou dispensada COM MOTIVO que vai na entrega)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar.**
+**>>> GATE 4: Auditoria Designer (notas declaradas, ciclo 4.2f aprovado) + Auditoria Estrategista (notas declaradas, ciclo 4.2f aprovado) + QA checklist 100% pass (Lighthouse 90+ quando houver navegador; sem ele, pendencia declarada) + CONSISTENCIA DE CONTATO conferida digito por digito (colar no bloco de entrega os numeros achados no HTML e nos `tel:`/`wa.me`: mais de um numero distinto sem justificativa REPROVA) + DIFF DE CLAIMS feito (lista de afirmacoes x fonte, com o veredito de cada uma) + IDENTIDADE DA PAGINA (4.2b, com o output do `screenshot-prova.js` sem REPROVA) + GATE DE CLASSE MORTA 4.2c-bis verde (nenhuma classe do codigo ausente do CSS gerado) + GATE DE OCLUSAO 4.2d verde (nenhum texto coberto ou cortado) + RESPONSIVIDADE verde nas 12 telas + AUDITOR MASTER 4.2e verde (todas as 8 lentes rodaram, nenhuma pulada) + CICLO 4.2f fechado (zero critico, zero regressao, piso ou convergencia) com a NOTA REAL escrita na entrega + PASSE DE GOSTO rodado (4.2c, com os itens de composicao alterados e a contagem de tells, que tem que terminar em 0) + deploy funcionando e verificado + ZERO placeholders + PROVA DE ENTREGA 4.5 (screenshots desktop/mobile LIDOS + interacao principal testada) + GATE DE USO 4.6 verde (toda ferramenta que estava viva foi usada, ou dispensada COM MOTIVO que vai na entrega)? Se NAO em qualquer item, PARA AQUI. Corrige TUDO antes de entregar.**
 
 **ENTREGA SEM DEPLOY (pasta local, arquivo unico, aluno sem conta de hosting) e caminho LEGITIMO, nao gate pulado:** a prova 4.5 roda contra o servidor local (`python3 scripts/servidor-gzip.py <pasta> <porta>`), e deploy, QA pos-deploy, Lighthouse e `og:image` com URL absoluta entram como PENDENCIAS DECLARADAS no bloco de entrega. Tudo o mais do GATE 4 continua valendo igual: wave, identidade, passe de gosto, contato, claims e prova lida com os proprios olhos. **<<<**
 
 ---
 
 ## Step 5: MEDIR & ITERAR (ongoing, primeiro check 48h)
+
+Ao concluir esta etapa, grave seu JSON e as evidências conforme `references/gate-etapas.md`.
+Execute `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 5 --arquivo evidencias/etapa-5.json`.
+Saída diferente de zero bloqueia o avanço. Na entrega, execute também `checar 4`.
+Este registro do fluxo CRIAR não se aplica aos caminhos com fluxo próprio.
 
 **A pagina NAO esta pronta quando vai ao ar. Esta pronta quando CONVERTE.**
 
@@ -2382,26 +2406,6 @@ Documentar o que funcionou na pattern library pessoal:
 
 
 
-
-
-## Regras de Deploy (OBRIGATORIO)
-
-### Quando deployar
-- **Pagina nova ou mudanca visual/estrutural:** deploy acontece DENTRO do Step 4, DEPOIS da wave de auditoria. Nunca antes. (Esta regra vence qualquer outra: ver ENFORCEMENT DO GATE.)
-- **Hotfix pos-wave em projeto ja no ar** (typo, link, contato, ajuste pontual que nao muda layout): deploy imediato apos a edicao, sem esperar o usuario pedir, seguido dos sweeps rapidos de QA (contato, travessao, links).
-
-### NUNCA Sobrescrever Projetos Existentes
-- Ao subir pagina nova em projeto Cloudflare Pages (ou Vercel, etc.) que JA TEM CONTEUDO, **NUNCA** fazer deploy de uma pasta avulsa que sobrescreva o conteudo inteiro.
-- **SEMPRE** criar uma subpasta dentro do projeto existente para a pagina nova.
-- **Workflow correto:**
-  1. Verificar o que ja existe no projeto hospedado (checar `dist/public/`, `wrangler.toml`, etc.)
-  2. Criar a pagina nova em subpasta (ex: `dist/public/evento-0326-v1/`)
-  3. Copiar a subpasta para dentro do projeto original
-  4. Fazer deploy a partir do diretorio raiz do projeto original (ex: `dist/public/`)
-- **Workflow ERRADO (nunca fazer):** deployar pasta avulsa direto com `wrangler pages deploy minha-pasta/`: isso APAGA tudo que existia antes no projeto.
-- Motivo: Cloudflare Pages substitui TODOS os arquivos do deploy anterior. Se voce deployar so a subpasta, todas as outras paginas/rotas desaparecem.
-
----
 
 
 ## Anti-Patterns de codigo (NUNCA FACA)
@@ -2492,8 +2496,8 @@ entre sessões do mesmo projeto. Estrutura: ver `references/sessions/EXAMPLE.md`
 ## Galerias de Referência Visual: Atualizadas 2026
 
 ### Por componente / seção (usar antes de construir)
-- CTA Gallery: https://cta.gallery: referência obrigatória antes de qualquer CTA section
-- Navbar Gallery: https://navbar.gallery: referência obrigatória antes de qualquer NavBar
+- CTA Gallery: https://cta.gallery: referência opcional antes de qualquer CTA section
+- Navbar Gallery: https://navbar.gallery: referência opcional antes de qualquer NavBar
 - Component Gallery: https://component.gallery: 60 componentes × 95 design systems × 2.676 exemplos
 
 ### Por tipo de site

@@ -12,7 +12,7 @@ Stacks: **React, Next.js, Vue, Svelte, HTML+Tailwind**. Ships with color palette
 
 - [Why this over a generic prompt](#why-this-over-a-generic-prompt)
 - [When it activates](#when-it-activates-4-mandatory-triggers)
-- [The four paths](#the-four-paths)
+- [Caminhos de execução](#caminhos-de-execução)
 - [Prerequisites & onboarding](#prerequisites--onboarding-step-0)
 - [Installation](#installation)
 - [The 6-step flow](#the-6-step-flow)
@@ -40,7 +40,7 @@ A "generic" page-building skill is usually a single system prompt ("you are an e
 | **Design source** | invents hex codes and fonts on the fly | queries a real design DB (50 styles, 21 palettes, 50 font pairings) via `search.py` |
 | **Cloning** | "gets inspired", approximate | fidelity: real colors via `getComputedStyle`, real logo download, never invents identity |
 | **Memory** | forgets every session | persists project brand tokens + session learnings locally, resumes where it left off |
-| **Onboarding** | assumes tools exist or fails | checks MCPs/plugins, guides install, always has a documented fallback |
+| **Onboarding** | assumes tools exist or fails | checks MCPs/plugins, guides install, bloqueia críticas; declara fallback de opcionais |
 | **Integrations** | text only | Stitch (wireframe), 21st.dev (components), Pexels/Lottie assets, AI image (nanobanana), video (Veo), PDF→page |
 
 ### When the generic prompt is actually better
@@ -48,7 +48,7 @@ A "generic" page-building skill is usually a single system prompt ("you are an e
 Honesty matters more than selling this. Reach for a plain prompt when:
 
 - The page is trivial or throwaway and you want it **fast** (the 6-step process is overhead).
-- You have **no setup** (the MCPs and API keys here are optional but unlock the best parts).
+- You have **no setup** (o 21st.dev exige configuração própria e bloqueia quando ausente).
 - You want zero opinionation and full manual control.
 
 This skill wins on **consistency, fidelity, and anti-slop** for real client work; it costs **speed and lightness** on trivial pages.
@@ -68,16 +68,18 @@ Any of the four runs the skill **before any code**. No slash command needed: jus
 
 ---
 
-## The four paths
+## Caminhos de execução
 
 **The skill routes before it executes** and states the chosen path in its first reply. This matters: running the full 6-step ritual to change one headline is as wrong as improvising a brand new page. Each path has its own flow and its own gate.
 
 | Path | Starts from | Copy | Wireframe (Stitch) | Closing gate |
 |------|-------------|------|--------------------|--------------|
-| **1. CREATE from scratch** | a brief | written fresh (Step 1) | yes | full 6-step flow + adversarial wave (7 lenses) |
+| **1. CREATE from scratch** | a brief | written fresh (Step 1) | yes | full 6-step flow + adversarial wave (8 lentes) |
 | **2. CLONE** (URL or PDF) | a live URL / PDF | reproduced exactly | no (structure is given) | **fidelity gate**: original and clone side by side |
+| **2B. CLONAR + ELEVAR** | URL/PDF e pedido de melhoria | preservada | nova composição | comparativo, identidade preservada e quatro eixos alterados |
+| **VARIANTE VISUAL** | versão anterior | preservada | nova direção | comparativo e wave completa |
 | **3. IMPROVE** | an existing page | kept/improved | no (structure exists) | **improvement gate**: before and after scored per dimension, nothing may get worse |
-| **4. EDIT** (surgical change) | an existing page | untouched unless asked | no | **regression checklist + proof of the changed spot**. No COPY LOCK, no wireframe, no 7-lens wave |
+| **4. EDIT** (surgical change) | an existing page | untouched unless asked | no | **regression checklist + proof of the changed spot**. No COPY LOCK, no wireframe, no 8-lens wave |
 
 CREATE, CLONE and IMPROVE share the Step 3 build (21st.dev components) and the Step 4 quality gate with the adversarial audit. EDIT deliberately does not: a one-line change does not re-audit the whole page.
 
@@ -87,7 +89,7 @@ CREATE, CLONE and IMPROVE share the Step 3 build (21st.dev components) and the S
 
 On activation the skill runs a **prerequisite check** and tells you what to install before proceeding.
 
-**Nothing is hard-blocked.** Every dependency has a documented fallback, so you can run the skill on a clean machine with no API key at all and still get a page: components get hand written instead of pulled from 21st.dev, the taste gate runs on the manual rubric, and images come from AI generation or from you. The skill will offer to install what is missing and tell you what it is degrading, then carry on. Installing the optional pieces raises the ceiling of the result; it is not a gate to get started.
+**Dependências críticas bloqueiam o início.** Playwright, 21st.dev, design-taste-frontend, banco de design e busca de fotos precisam passar no verificador. Somente opcionais admitem degradação declarada. Execute `python3 scripts/checar-ferramentas.py` antes do briefing.
 
 ### What you need before anything
 
@@ -99,13 +101,13 @@ On activation the skill runs a **prerequisite check** and tells you what to inst
 | **git** | cloning this repo, versioning your page | **required** |
 | **Chrome or Chromium** | only for the Lighthouse score. If you have none, the skill uses the Chromium that Playwright already downloaded (`export CHROME_PATH="$(node -e "console.log(require('playwright').chromium.executablePath())")"`, then add `--no-sandbox`). If that also fails, Lighthouse becomes a declared pending item and **does not block delivery** | optional |
 
-### Optional, raises quality
+### Dependências críticas e opcionais
 
 | Dependency | Type | Role | Fallback if missing |
 |------------|------|------|---------------------|
 | **Stitch** | MCP (`mcp__stitch__*`) | wireframe (Step 2) | lay the structure straight in code |
-| **21st.dev Magic** | MCP (`mcp__magic__*`) | UI components (Step 3) | hand-write components (shadcn/Tailwind) |
-| **design-taste-frontend** | skill | anti-slop gate (Step 4) | manual scoring rubric (4.0b) |
+| **21st.dev Magic** | MCP (`mcp__magic__*`) | UI components (Step 3) | **Crítica: configurar antes de continuar** |
+| **design-taste-frontend** | skill | anti-slop gate (Step 4) | **Crítica: instalar antes de continuar** |
 | **frontend-design** | skill | aesthetic direction before code (Step 2) | run with design-taste-frontend only |
 | **redesign-existing-projects** | skill | audit-first for clone/redesign | manual 5-dimension audit |
 | **high-end-visual-design** | skill | premium finish | optional |
@@ -119,10 +121,10 @@ Install commands surfaced by the skill:
 
 ```bash
 # 21st.dev Magic (components): free API key at https://21st.dev
-claude mcp add magic --env API_KEY=<your-21st-key> -- npx -y @21st-dev/magic@latest
+claude mcp add magic --scope user --env API_KEY=<your-21st-key> -- npx -y @21st-dev/magic@latest
 
 # Google Stitch (wireframe): global binary stitch-mcp
-npm install -g stitch-mcp && claude mcp add stitch -- stitch-mcp proxy
+npm install -g stitch-mcp && claude mcp add stitch --scope user -- stitch-mcp proxy
 
 # Taste Skills (anti-slop): from https://www.tasteskill.dev/
 #   design-taste-frontend, redesign-existing-projects, high-end-visual-design
@@ -202,7 +204,7 @@ Flag and fix before shipping: mono uppercase kicker labels with a square/bar · 
 
 ## Adversarial audit wave (Step 4)
 
-The audit is **never** done by the same context that built the page (builders don't see their own mistakes). Step 4 fans out **7 adversarial subagents in parallel**, each with one independent lens, then a synthesis agent consolidates the gate. Orchestrated via the `Workflow` tool. Full protocol, schema, and skeleton in `references/audit-agents.md`.
+The audit is **never** done by the same context that built the page (builders don't see their own mistakes). Step 4 fans out **8 adversarial subagents in parallel**, each with one independent lens, then a synthesis agent consolidates the gate. Orchestrated via the `Workflow` tool. Full protocol, schema, and skeleton in `references/audit-agents.md`.
 
 | Agent | Lens | Blocks delivery (critical) if |
 |-------|------|-------------------------------|
@@ -210,11 +212,12 @@ The audit is **never** done by the same context that built the page (builders do
 | `assets-auditor` | real image/mockup/video presence | text+gradient+SVG only, SaaS without a mockup, lead magnet without the material mockup |
 | `visual-auditor` | hierarchy, palette, spacing, desktop grid | letter format, side-by-side collapsed to one column |
 | `motion-auditor` | scroll reveal, hover, hero entrance, counters | static hero, no feedback, dead hover |
-| `mobile-auditor` | 320/375/768px, JS hamburger | layout breaks, dead hamburger, overflow |
+| `responsive-auditor` | 12 telas, inclusive desktop baixo | overflow, corte, toque e CTA |
+| `content-auditor` | conteúdo e fontes | dado inventado, contato divergente |
 | `cro-auditor` | CTAs, form, offer, message match, Hook/Story/Offer | weak CTA, broken form/checkout, no message match |
 | `a11y-auditor` | focus, labels, alt, ARIA, 4.5:1 contrast, no emoji | critical WCAG failure, emoji on page |
 
-**Gate (one rule, identical in `SKILL.md` and `references/audit-agents.md`):** zero criticals + every lens >= 7 + average >= 8.0 releases the deploy. Any critical → `deploy_liberado: false`, returns the fix list, builder fixes and re-runs only the failed lenses. Any lens < 7 blocks even with no critical. Average < 8.0 → apply the polish notes and re-score; it does not ship. If the `Workflow` tool is unavailable, it falls back to manual scoring (Step 4.0b) and logs that the wave was skipped.
+**Decisão de entrega:** `wave.py checar` confere o processo; `wave.py rodada` decide o encerramento. Críticos e regressões confirmados bloqueiam. O ciclo admite piso, gravidade esgotada, convergência ou teto, com nota real e pendências declaradas. Sem Workflow, use subagentes disponíveis; sem subagentes, declare a autoavaliação.
 
 ---
 
@@ -234,7 +237,7 @@ The audit is **never** done by the same context that built the page (builders do
 - **Gradient Border Beam**: variant 4b (auto-rotating, `@property` + conic-gradient + mask ring) and **variant 4c (border glow that follows the cursor)**. One `mousemove` listener powers a whole grid.
 - 3D tilt, text scramble, magnetic cursor, noise texture, blob morph, confetti, aurora, glassmorphism spotlight, parallax, animated counters, floating orbs.
 
-Rule: minimum 2 effects per page (1 background + 1 interaction), maximum 2 per section. The primary CTA must have at least an elaborate hover plus confetti or magnetic.
+Escolha efeitos pelo conteúdo e pela identidade. Aurora, glow decorativo e floating orbs do catálogo são exemplos proibidos neste fluxo. Confetti e magnetic não são obrigatórios no CTA.
 
 ---
 
@@ -296,7 +299,7 @@ construtor-paginas/
 
 | File | Purpose |
 |------|---------|
-| `references/audit-agents.md` | Adversarial audit wave: 7 lenses + synthesis, schema, Workflow skeleton |
+| `references/audit-agents.md` | Adversarial audit wave: 8 lentes + synthesis, schema, Workflow skeleton |
 | `references/design-laws.md` | Color (OKLCH), typography, motion rules |
 | `references/anti-vibe-coding.md` | 5 substance signals + 15 visual AI tells + fixes |
 | `references/taste-gate.md` · `references/scoring-system.md` | Quality scoring rubric |
@@ -314,3 +317,27 @@ construtor-paginas/
 ## License
 
 Proprietary. Exclusive to **Júlio Couto / iAutomate**. All rights reserved. No redistribution, resale, or reuse without express permission.
+
+## Verificação de processo e limites das provas
+
+No fluxo CRIAR, cada Step registra evidências no `scripts/gate-etapas.py`.
+Formato e campos: [gate-etapas.md](references/gate-etapas.md). O script bloqueia
+etapa pulada, campos ausentes e evidência alterada. Não autentica aprovação humana.
+
+O verificador de ferramentas atual mede níveis diferentes: MCP por `claude mcp list`,
+skills por presença local, Playwright por instalação, banco e busca por execução.
+Um resultado OK no MCP comprova conexão, não uma chamada útil autenticada.
+Antes do uso real, faça uma chamada de leitura e confira o retorno. Essa lacuna do
+verificador ainda exige implementação; não descreva o OK como prova de uso completo.
+
+Testes reproduzíveis, executados na raiz:
+
+```bash
+python3 scripts/test-uso-ferramentas.py
+python3 scripts/test-wave.py
+python3 scripts/test-gate-etapas.py
+node scripts/test-gates-visuais.cjs
+```
+
+O teste visual usa Chromium, ffmpeg e páginas locais sintéticas. Ele não aprova
+design de cliente. A conferência visual dos PNGs continua obrigatória.

@@ -12,3 +12,7 @@ references/desafio-ia-patterns.md
 
 # Frames do gate de video: saida de execucao, nunca versionar.
 _gate-frames/
+
+# Evidências de cliente ficam fora do repositório público.
+.etapas-verificadas.json
+evidencias/

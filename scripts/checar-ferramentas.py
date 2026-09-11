@@ -104,7 +104,7 @@ def checagens():
     # negativo: o servidor conectado com nome novo e o verificador reprovando por
     # procurar o antigo, que e exatamente o que aconteceu hoje.
     yield _mcp(("21st", "magic"), "componentes do 21st.dev (Step 3)", True,
-               'chave nova em https://21st.dev/mcp, depois: claude mcp add --transport http 21st https://21st.dev/api/mcp --header "x-api-key: SUA_CHAVE"')
+               'chave nova em https://21st.dev/mcp, depois: claude mcp add --transport http 21st https://21st.dev/api/mcp --scope user --header "x-api-key: SUA_CHAVE"')
     yield _mcp("stitch", "wireframe (Step 2)", False,
                "proxy local: conferir se ~/.claude/scripts/stitch-proxy.py responde na porta configurada (conflito de porta e a causa comum)")
 
