@@ -272,10 +272,13 @@ async function main() {
         hasTouch: vp.movel,
         deviceScaleFactor: vp.dpr,
       });
-      await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 }).catch(async () => {
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+      const resposta = await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 }).catch(async () => {
+        const tentativa = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
         await page.waitForTimeout(4000);
+        return tentativa;
       });
+      // Uma página de erro pode ter identidade completa e gerar um PNG convincente.
+      if (resposta && resposta.status() >= 400) throw new Error(`HTTP ${resposta.status()}: a página não carregou com sucesso`);
       await page.waitForTimeout(1500);
 
       // Sem esta passada, pagina com reveal por rolagem sai fotografada como casca vazia.
@@ -357,6 +360,7 @@ async function main() {
       `PRINTS CAPTURADOS COM RESSALVA: o clique nao mudou nada visivel em ${cliquesInertes.join(' e ')}. ` +
       'Confira o seletor e a interacao antes de declarar pronto.'
     );
+    process.exitCode = 1;
   } else {
     console.log('OK: agora LEIA os PNGs com a tool Read antes de declarar pronto.');
   }
