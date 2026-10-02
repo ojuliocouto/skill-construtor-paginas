@@ -154,5 +154,27 @@ class Docs(unittest.TestCase):
         self.assertIn("evidência mudou", g)
 
 
+    def test_t5_caminho_criar_em_uma_pagina_e_na_ordem(self):
+        cc = RAIZ / "references" / "caminho-criar.md"
+        self.assertTrue(cc.exists(), "references/caminho-criar.md nao existe")
+        texto = cc.read_text(encoding="utf-8")
+        self.assertLessEqual(len(texto.splitlines()), 110, "caminho-criar.md passou de uma pagina")
+        ordem = ["checar-ferramentas.py", "registrar 0", "registrar 1", "search.py", "registrar 2",
+                 "screenshot-prova.js", "tailwindcss", "registrar 3", "servidor-gzip.py", "gate-sem-kicker.py",
+                 "gate-classes-mortas.py", "gate-responsivo.mjs", "gate-oclusao.mjs", "uso-ferramentas.py",
+                 "wave.py --projeto <dir> checar", "wave.py --projeto <dir> rodada", "registrar 4"]
+        pos = [texto.find(o) for o in ordem]
+        self.assertNotIn(-1, pos, [o for o, p in zip(ordem, pos) if p < 0])
+        self.assertEqual(pos, sorted(pos), "comandos fora de ordem no caminho-criar.md")
+        runbook = self.secao("## RUNBOOK", "## MAPA DESTE ARQUIVO")
+        self.assertIn("references/caminho-criar.md", runbook)
+
+    def test_t5_ordem_4_2f_antes_de_4_2g_e_gate_4_em_lista(self):
+        s = SKILL.read_text(encoding="utf-8")
+        self.assertLess(s.index("### 4.2f "), s.index("### 4.2g "))
+        gate = s[s.index(">>> GATE 4:"):s.index("**ENTREGA SEM DEPLOY")]
+        self.assertGreaterEqual(len(re.findall(r"^- ", gate, flags=re.M)), 12, "GATE 4 ainda e paragrafo unico")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
