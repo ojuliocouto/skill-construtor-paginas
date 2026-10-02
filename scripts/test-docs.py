@@ -91,5 +91,17 @@ class Docs(unittest.TestCase):
         self.assertNotIn("Obrigatoria no Step 1", s)
 
 
+    def test_t16_modelo_curto_de_copy_para_servico_local(self):
+        modelo = RAIZ / "references" / "copy-servico-local.md"
+        self.assertTrue(modelo.exists())
+        m = modelo.read_text(encoding="utf-8").lower()
+        for parte in ("headline", "subt", "3 dores", "mecanismo", "como agendar", "formas", "dúvidas", "chamada final"):
+            self.assertIn(parte, m, parte)
+        s = self.secao("### 1.0 De onde vem a copy?", "### 1.1 ")
+        self.assertIn("references/copy-servico-local.md", s)
+        hero = self.secao("### 1.4 Copy Wireframe", "### 1.5 ")
+        self.assertRegex(hero.lower(), r"micro-copy.{0,160}(opcional|nunca no hero)")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -1094,6 +1094,11 @@ Antes de produzir qualquer copy, checar o que o usuario ja trouxe:
 - **Chegou sem copy, ou com copy fraca/incompleta:** produzir a copy seguindo 1.1 a 1.4.
   Aqui, **opcionalmente**, acionar a skill `copy-pagina-vendas` (frameworks Brunson/Hormozi/
   Schwartz) para gerar a copy de venda, e o construtor transforma o resultado em pagina.
+- **Servico local / agendamento** (estudio, clinica, consultorio: pagina com UMA acao, agendar,
+  e sem oferta empilhada): use o modelo curto `references/copy-servico-local.md` (headline,
+  subtitulo, 3 dores, mecanismo, como agendar, formas de atender, duvidas, chamada final). A
+  `copy-pagina-vendas` nao serve aqui: o modo Classico e pra venda acima de R$ 297 e o modo
+  Desafio e pra evento.
 - **Caso de duvida:** perguntar ao usuario se ele tem copy ou quer que ela seja criada.
 
 > `copy-pagina-vendas` e OPCIONAL e so entra quando NAO ha copy boa. Se o usuario ja tem a copy,
@@ -1103,7 +1108,8 @@ Antes de produzir qualquer copy, checar o que o usuario ja trouxe:
 o unico passo):
 
 ```bash
-git clone https://github.com/ojuliocouto/skill-copy-pagina-vendas.git ~/.claude/skills/copy-pagina-vendas
+# <pasta-das-skills> = onde o seu Claude Code procura skills (no padrao, ~/.claude/skills)
+git clone https://github.com/ojuliocouto/skill-copy-pagina-vendas.git <pasta-das-skills>/copy-pagina-vendas
 ```
 
 Se o clone nao for possivel no momento, seguir sem ela: coletar o briefing do usuario e escrever a
@@ -1188,7 +1194,9 @@ HERO:
 - H1: "___________"
 - Subheadline: "___________"
 - CTA button: "___________"
-- Micro-copy abaixo do CTA: "___________"
+- Micro-copy abaixo do CTA (OPCIONAL, nunca no hero): "___________"
+  (a `design-taste-frontend` proibe texto embaixo do botao do hero; garantia ou detalhe vai no
+  subtitulo. Fora do hero, uma linha curta embaixo do botao e permitida.)
 
 SECAO 2 ([nome]):
 - Titulo: "___________"
