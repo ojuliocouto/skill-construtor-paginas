@@ -192,8 +192,79 @@ def detect_domain(query):
     return best if scores[best] > 0 else "style"
 
 
+# ============ PORTUGUES -> INGLES ============
+# Os CSVs sao indexados em ingles: "estudio de pilates acolhedor" devolvia 0 resultados no
+# teste com aluno (02/10/2026). Os termos comuns de quem usa a skill sao traduzidos antes da
+# busca; termo que ja esta em ingles passa intacto.
+TRADUCOES = {
+    "pilates": "pilates yoga wellness fitness",
+    "estudio": "studio wellness",
+    "studio": "studio wellness",
+    "clinica": "medical clinic healthcare",
+    "consultorio": "medical clinic healthcare",
+    "fisioterapia": "physiotherapy healthcare wellness",
+    "fisioterapeuta": "physiotherapy healthcare wellness",
+    "academia": "fitness gym",
+    "musculacao": "fitness gym",
+    "crossfit": "fitness gym energy",
+    "restaurante": "restaurant food",
+    "lanchonete": "restaurant food",
+    "cafeteria": "cafe coffee food",
+    "advocacia": "legal law firm",
+    "advogado": "legal law firm",
+    "advogada": "legal law firm",
+    "juridico": "legal law firm",
+    "dentista": "dental healthcare",
+    "odontologia": "dental healthcare",
+    "saude": "healthcare health",
+    "beleza": "beauty spa",
+    "salao": "beauty salon spa",
+    "estetica": "beauty spa aesthetic",
+    "spa": "beauty spa",
+    "yoga": "yoga wellness",
+    "bem-estar": "wellness",
+    "mentoria": "coaching education",
+    "curso": "education course",
+    "escola": "education school",
+    "loja": "ecommerce store",
+    "imobiliaria": "real estate",
+    "contabilidade": "finance accounting",
+    "acolhedor": "warm calm soft",
+    "acolhedora": "warm calm soft",
+    "calmo": "calm soft",
+    "escuro": "dark",
+    "claro": "light",
+    "moderno": "modern",
+    "moderna": "modern",
+    "minimalista": "minimal minimalism",
+    "elegante": "elegant luxury",
+    "sofisticado": "elegant luxury premium",
+    "divertido": "playful vibrant",
+    "colorido": "vibrant colorful",
+    "confianca": "trust professional",
+    "profissional": "professional",
+    "tecnologia": "tech saas",
+}
+
+
+def _sem_acento(texto):
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFD", texto) if unicodedata.category(c) != "Mn")
+
+
+def traduzir(query):
+    """Troca termo comum em portugues pela expansao em ingles. Mantem o que nao conhece."""
+    saida = []
+    for palavra in query.split():
+        chave = _sem_acento(palavra.lower()).strip(".,;:!?")
+        saida.append(TRADUCOES.get(chave, palavra))
+    return " ".join(saida)
+
+
 def search(query, domain=None, max_results=MAX_RESULTS):
     """Main search function with auto-domain detection"""
+    original = query
+    query = traduzir(query)
     if domain is None:
         domain = detect_domain(query)
 
@@ -207,7 +278,7 @@ def search(query, domain=None, max_results=MAX_RESULTS):
 
     return {
         "domain": domain,
-        "query": query,
+        "query": original if original == query else f"{original} (traduzido: {query})",
         "file": config["file"],
         "count": len(results),
         "results": results

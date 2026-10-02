@@ -8,6 +8,18 @@ description: "Use quando o usuario quiser criar uma pagina web (landing page, sa
 
 Skill unificada para construir paginas web profissionais, bonitas e de alta conversao. Combina o melhor de 7 skills especializadas em uma unica referencia.
 
+**Glossario (as palavras em ingles que aparecem neste arquivo):**
+- **gate**: portao. Comando ou checagem que REPROVA (sai com codigo 1) e impede avancar.
+- **tell**: sinal que entrega pagina feita por IA (kicker, numero gigante, brilho atras do texto).
+- **kicker / eyebrow**: rotulo curto em caixa alta, com letra espacada, em cima do titulo. Proibido.
+- **wave / lente**: rodada de auditoria com 8 revisores independentes; cada revisor e uma lente.
+- **fallback**: rota reserva quando a ferramenta principal falta (ex.: componente a mao sem 21st.dev).
+- **MCP**: conector que da ferramentas novas ao Claude (21st.dev, Stitch). Aparece em `claude mcp list`.
+- **LCP**: tempo ate o maior elemento da primeira tela aparecer. Meta: abaixo de 2,5 s.
+- **og:image**: imagem que aparece quando o link e compartilhado no WhatsApp e no Instagram.
+- **dials / design read**: ajustes e leitura de direcao visual das skills de design (Step 2).
+- **CTA**: o botao da acao principal (agendar, comprar, chamar no WhatsApp).
+
 ---
 
 ## RUNBOOK (a espinha: leia isto primeiro, o resto e detalhe)
@@ -20,7 +32,7 @@ O essencial pra rodar, em poucas linhas. O detalhe de cada item esta nas secoes 
 2. **Step 0 comeca pela ENTREVISTA DE BRIEFING (0.0):** as seis perguntas da rodada 1 pra todo mundo, rodada 2 so pra quem ja tem cliente. Sem as seis respondidas, nao avanca. Antes disso roda o **0.0-PRE**, que e um GATE: `checar-ferramentas.py` manda cada ferramenta FAZER algo e confere o retorno. Ferramenta CRITICA sem responder **para a skill** ate ser conectada (o agente conduz a instalacao, nao so avisa). Opcional degradado segue, com a degradacao DECLARADA na entrega. Por fim, carregar contexto do projeto.
 3. **Ordem sagrada:** COPY (Step 1) → DESIGN (Step 2) → CODIGO (Step 3). Nunca pixel antes de copy travada.
 4. **Step 1:** se o usuario ja trouxe copy, validar e travar (COPY LOCK); senao gerar (copy-pagina-vendas opcional).
-5. **Step 2:** consultar o banco de design (`search.py`, keywords em INGLES) pra estilo/paleta/fonte antes de inventar; wireframe no Stitch (ou fallback).
+5. **Step 2:** consultar o banco de design (`search.py`: aceita os termos comuns em portugues, como pilates, estudio, clinica, consultorio, academia, restaurante, advocacia, e traduz sozinho) pra estilo/paleta/fonte antes de inventar; wireframe no Stitch (ou fallback).
 6. **Step 3:** buildar com componentes do 21st.dev, após passar no gate de entrada, **assets reais** (foto/mockup/video, nunca so SVG+gradiente), zero dado inventado.
 7. **Step 4 e O PORTAO:** rodar a wave de auditoria adversarial (8 lentes + síntese). Deploy acontece DENTRO do Step 4, DEPOIS da wave.
 7b. **Gate barato que roda ANTES da wave:** `gate-classes-mortas.py`. Classe de utilitario invalida passa no build e morre no CSS, e nenhum gate visual pega. Ja custou uma barra fixa sem fundo em 92% da rolagem.
@@ -583,7 +595,7 @@ Neste arquivo (ver MAPA DESTE ARQUIVO, no topo): runbook, os 4 caminhos, porta u
 | `scripts/gate-video.mjs` | as 7 checagens de video executaveis (razao por trilha, escala, corte, poster, frames, LCP, reduced-motion). Sobe o Chromium do Playwright sozinho |
 | `scripts/extrai-identidade.mjs` | extrai paleta real, vars CSS, h1/CTA e imagens de uma URL (caminho CLONAR) |
 | `scripts/lado-a-lado.py` | monta original e sua versao lado a lado, mesma escala, pro gate do caminho CLONAR + ELEVAR |
-| `scripts/search.py` + `data/` | banco de design: 50 estilos, 21 paletas, 50 font pairings, guidelines UX (keywords em INGLES) |
+| `scripts/search.py` + `data/` | banco de design: 50 estilos, 21 paletas, 50 font pairings, guidelines UX (indexado em ingles; traduz os termos comuns em portugues) |
 | `scripts/assets-search.py` | fotos e videos (Pexels com chave, Openverse sem chave) |
 | `scripts/higgsfield.py` | cliente da API Higgsfield: `--dry-run` monta a requisicao sem gastar credito, `--lote` gera a pagina inteira de uma vez (credito nao faz rollover), grava manifesto com seed e poster com hash proprio |
 | `scripts/github-search.py` | referencias de template no GitHub (Step 0.5) |
@@ -1253,7 +1265,7 @@ NUNCA inventar paleta/fonte do zero quando o banco tem opcao validada.
 
 Rodar os 3:
 
-**IMPORTANTE: buscar com keywords em INGLES.** O banco (CSVs) e indexado em ingles; query em portugues retorna 0 resultados. Traduzir o tom/nicho antes de buscar (ex.: "mentoria dark premium" → "dark premium coaching").
+**O banco (CSVs) e indexado em ingles, e o `search.py` traduz os termos comuns em portugues** (pilates, estudio, clinica, consultorio, academia, restaurante, advocacia, saude, beleza, acolhedor, escuro, moderno e outros: lista em `TRADUCOES`, no `scripts/core.py`). A saida mostra a consulta traduzida. Termo fora da lista e 0 resultado? Traduza voce (ex.: "mentoria dark premium" → "dark premium coaching").
 
 ```bash
 SKILL=~/.claude/skills/construtor-paginas
