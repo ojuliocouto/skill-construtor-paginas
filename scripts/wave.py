@@ -53,6 +53,7 @@ GATES = {
     "oclusao": "gate-oclusao.mjs (texto coberto ou cortado)",
     "responsivo": "gate-responsivo.mjs (12 telas)",
     "uso-ferramentas": "uso-ferramentas.py (ferramenta viva foi usada)",
+    "sem-kicker": "gate-sem-kicker.py (pagina do Julio/EA nao leva supratitulo em caixa alta)",
 }
 
 PISO_NOTA = 7.0

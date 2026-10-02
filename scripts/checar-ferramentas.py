@@ -141,6 +141,11 @@ def checagens():
     yield ("Banco de design", "paleta, estilo e tipografia (Step 2)", True,
            ok and "results" in saida.lower(), "", "conferir data/*.csv no repo")
 
+    gate_sk = RAIZ / "scripts" / "gate-sem-kicker.py"
+    existe_gate = gate_sk.exists()
+    yield ("gate-sem-kicker.py", "pre-deploy: pagina do Julio/EA sem supratitulo em caixa alta", True,
+           existe_gate, "", "copiar ~/.claude/scripts/gate-sem-kicker.py para scripts/ da skill")
+
 
 def main():
     linhas = []
