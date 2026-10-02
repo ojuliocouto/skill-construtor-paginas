@@ -18,8 +18,8 @@ from pathlib import Path
 PAGINAS = {
     "0": ("briefing", "inventario", "pendencias_cliente"),
     "1": ("referencias",),
-    "2": ("direcao", "tipografia", "paleta", "imagem", "ritmo", "assinatura", "referencias_usadas"),
-    "3": ("copy", "aprovacao"),
+    "2": ("direcao", "tipografia", "paleta", "imagem", "ritmo", "assinatura", "referencias_usadas", "foto_publico"),
+    "3": ("copy", "aprovacao", "sustentacao"),
     "4": ("primeiro_bloco", "stack", "imagens"),
     "5": ("gates", "auditores", "claims", "contato", "passe_de_gosto", "prova", "pendencias"),
 }
@@ -65,6 +65,17 @@ def validar(projeto, arquivo, etapa, campos, perfil):
                 raise ValueError(f"Briefing incompleto: {campo}. Fato ausente deve constar como pendente, nunca inventado.")
     if perfil == "paginas" and etapa == "1":
         gate_de_referencias(projeto)
+    # Auditoria da v3 (02/10/2026): modelo de 25 anos de top cropped para mulheres de 35 a 60, e
+    # "faz a avaliação e começa" com a avaliação pendente no briefing. As duas decisões passam a
+    # deixar rastro conferível: público -> foto -> por quê, e a tabela de sustentação da copy.
+    if perfil == "paginas" and etapa == "2":
+        fp = doc["foto_publico"]
+        if not isinstance(fp, list) or not all(isinstance(i, dict) and all(str(i.get(k) or "").strip() for k in ("publico", "foto", "porque")) for i in fp):
+            raise ValueError("Etapa 2: foto_publico é uma lista de {publico, foto, porque}, uma linha por foto de pessoa.")
+    if perfil == "paginas" and etapa == "3":
+        alvo = (projeto / str(doc["sustentacao"])).resolve()
+        if not alvo.is_relative_to(projeto) or not alvo.is_file() or "|" not in alvo.read_text(encoding="utf-8"):
+            raise ValueError("Etapa 3: sustentacao aponta para a tabela 'frase da página -> linha do briefing' (evidencias/sustentacao.md).")
     if "passe_de_gosto" in campos:
         passe = doc["passe_de_gosto"]
         if not isinstance(passe, dict) or type(passe.get("antes")) is not int or passe["antes"] < 0 or type(passe.get("depois")) is not int or passe["depois"] != 0 or not passe.get("inspecao"):

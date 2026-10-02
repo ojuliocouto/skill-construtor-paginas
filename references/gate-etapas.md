@@ -14,8 +14,8 @@ cópias estáveis dos documentos aprovados: modificar a evidência invalida a et
 |---|---|---|
 | 0 | a. briefing | `briefing` com seis respostas (`nicho`, `local`, `publico`, `oferta`, `preco`, `acao`), `inventario` (o material real que existe), `pendencias_cliente` |
 | 1 | b. referências | `referencias` (caminho do manifesto). O registro roda o `gate-referencias.py` e bloqueia se ele reprovar |
-| 2 | c. plano visual | `direcao`, `tipografia`, `paleta`, `imagem`, `ritmo`, `assinatura`, `referencias_usadas` |
-| 3 | d. copy | `copy`, `aprovacao` |
+| 2 | c. plano visual | `direcao`, `tipografia`, `paleta`, `imagem`, `ritmo`, `assinatura`, `referencias_usadas`, `foto_publico` (lista de `{publico, foto, porque}`, uma linha por foto de pessoa) |
+| 3 | d. copy | `copy`, `aprovacao`, `sustentacao` (caminho da tabela `evidencias/sustentacao.md`, a mesma que o `gate-verdade.py` lê) |
 | 4 | e. construção | `primeiro_bloco`, `stack`, `imagens` (cada imagem com fonte e licença) |
 | 5 | f, g, h. gates, auditores e prova | `gates`, `auditores`, `claims`, `contato`, `passe_de_gosto`, `prova`, `pendencias` |
 

@@ -53,6 +53,38 @@ class Etapas(unittest.TestCase):
         self.doc['arquivos'] = ['inexistente.txt']
         self.assertEqual(self.rodar('registrar', '0', '--arquivo', 'etapa.json'), 1)
 
+    # Auditoria da v3 (02/10/2026): foto do hero contra o público e promessa fora do briefing.
+    # O plano visual passa a registrar público -> foto -> por quê, e a copy, a tabela de sustentação.
+    def validar(self, etapa, doc):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('ge', SCRIPT)
+        ge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ge)
+        (self.pasta / 'e.json').write_text(json.dumps(doc))
+        try:
+            ge.validar(self.pasta.resolve(), (self.pasta / 'e.json').resolve(), etapa, ge.PAGINAS[etapa], 'paginas')
+            return 0
+        except ValueError:
+            return 1
+
+    def test_plano_visual_exige_foto_contra_o_publico(self):
+        base = {'direcao': 'x', 'tipografia': 'x', 'paleta': 'x', 'imagem': 'x', 'ritmo': 'x',
+                'assinatura': 'x', 'referencias_usadas': ['x'], 'arquivos': ['briefing.txt']}
+        self.assertEqual(self.validar('2', base), 1)
+        base['foto_publico'] = [{'publico': 'Mulheres de 35 a 60 com dor', 'foto': 'hero.webp'}]
+        self.assertEqual(self.validar('2', base), 1, 'sem o porquê')
+        base['foto_publico'][0]['porque'] = 'Aluna adulta com a profissional ao lado'
+        self.assertEqual(self.validar('2', base), 0)
+
+    def test_copy_exige_tabela_de_sustentacao(self):
+        base = {'copy': 'copy.md', 'aprovacao': 'x', 'arquivos': ['briefing.txt']}
+        self.assertEqual(self.validar('3', base), 1)
+        base['sustentacao'] = 'evidencias/sustentacao.md'
+        self.assertEqual(self.validar('3', base), 1, 'arquivo de sustentação inexistente')
+        (self.pasta / 'evidencias').mkdir()
+        (self.pasta / 'evidencias' / 'sustentacao.md').write_text('| Frase da página | Linha |\n|---|---|\n| A | "b" |\n')
+        self.assertEqual(self.validar('3', base), 0)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
