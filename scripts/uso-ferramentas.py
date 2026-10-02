@@ -16,6 +16,12 @@ Evidencia nao e a palavra do agente. Cada registro aponta para um ARTEFATO que e
 confere de novo, agora: arquivo que precisa existir e ter tamanho, ou trecho que precisa ser
 encontrado no codigo. Registro cuja evidencia sumiu vale como nao registrado.
 
+Versao 3 (02/10/2026): so as dependencias da skill sao cobradas, porque so elas sao
+criticas: o Playwright (prints das referencias e prova de entrega) e a skill
+`frontend-design` (plano visual escrito antes do codigo). Ferramenta opcional viva (21st.dev,
+Stitch, Higgsfield, skills de acabamento) NUNCA reprova: quem usar registra, quem nao usar
+segue, e a pagina nao sai pior por isso.
+
 Uso:
     python3 scripts/uso-ferramentas.py registrar <ferramenta> --arquivo <path> [--detalhe "..."]
     python3 scripts/uso-ferramentas.py registrar <ferramenta> --no-codigo "<trecho>" --em <dir>
@@ -33,20 +39,24 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 REGISTRO = ".ferramentas-usadas.json"
 
-# Ferramentas que, ESTANDO VIVAS, precisam ter sido usadas. A chave casa com o rotulo do
-# checar-ferramentas.py; o valor explica o que se espera ver na pagina.
+# Ferramentas que, ESTANDO VIVAS, precisam ter sido usadas. Na v3 sao so as criticas. A chave
+# casa com o rotulo do checar-ferramentas.py; o valor explica o que se espera ver.
 COBRADAS = {
-    "magic": "componente de UI vindo do 21st.dev (nao card feito a mao)",
-    "Playwright": "prova de tela da pagina publicada (PNG desktop e mobile)",
-    "skill design-taste-frontend": "passe de gosto / gate anti-slop rodado sobre a pagina",
-    "Banco de design": "paleta e tipografia tiradas do banco (search.py), nao inventadas",
-    "Assets sem chave (Openverse)": "foto real na pagina (nao so SVG e gradiente)",
-    "Higgsfield CLI": "movimento ou b-roll gerado nos blocos",
-    "stitch": "wireframe da estrutura antes do codigo",
-    "ffmpeg/ffprobe": "gate de video rodado (so quando a pagina tem video)",
-    "skill frontend-design": "direcao estetica definida antes do codigo",
-    "skill high-end-visual-design": "passe de acabamento premium",
-    "skill animate": "movimento e microinteracao aplicados",
+    "Playwright": "prints das referencias e prova de tela da pagina (PNG desktop e mobile)",
+    "skill frontend-design": "plano visual escrito antes do codigo (plano-visual.md)",
+}
+
+# Opcionais: aceitam registro (aparece no relatorio), nunca sao cobradas.
+OPCIONAIS = {
+    "magic": "componente de UI vindo do 21st.dev",
+    "stitch": "wireframe no Stitch",
+    "Higgsfield CLI": "movimento ou b-roll gerado",
+    "ffmpeg/ffprobe": "gate de video (so quando a pagina tem video)",
+    "skill design-taste-frontend": "segunda opiniao anti-slop",
+    "skill high-end-visual-design": "passe de acabamento",
+    "skill animate": "movimento em React",
+    "Banco de design": "consulta ao banco (search.py)",
+    "Assets sem chave (Openverse)": "foto com licenca aberta via Openverse",
 }
 
 
@@ -85,7 +95,7 @@ def criticas():
         spec.loader.exec_module(chk)
         return {nome for nome, critico in chk.CRITICIDADE.items() if critico}
     except Exception:
-        return {"Playwright", "skill design-taste-frontend", "Banco de design", "Assets sem chave (Openverse)"}
+        return {"python3", "node", "Playwright", "skill frontend-design"}
 
 
 def motivo_recusado(motivo):
@@ -265,7 +275,9 @@ def cmd_checar(args):
         else:
             faltando.append((f, papel, motivo))
 
-    mortas = [f for f in COBRADAS if f in estados and not estados[f]]
+    mortas = [f for f in cobraveis if f in estados and not estados[f]]
+    opcionais_usadas = [(f, dados[f].get("detalhe", "")) for f in dados
+                        if f not in COBRADAS and not dados[f].get("dispensada")]
 
     print("\nGATE DE USO DAS FERRAMENTAS\n" + "=" * 74)
     print(f"  caminho: {getattr(args, 'caminho', 'criar')} "
@@ -281,6 +293,8 @@ def cmd_checar(args):
         print(f"          motivo: {motivo}")
     for f in mortas:
         print(f"  [n/a  ] {f}: nao respondeu no gate de entrada, uso nao cobrado")
+    for f, detalhe in opcionais_usadas:
+        print(f"  [opcional] {f}: {detalhe or 'registrada'} (opcional, nao cobrada)")
     print("=" * 74)
 
     if faltando:

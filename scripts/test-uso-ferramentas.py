@@ -30,18 +30,26 @@ class GateUso(unittest.TestCase):
     def registro(self):
         return {"evidencia": {"tipo": "arquivo", "valor": "prova.png"}}
 
+    def criticas_ok(self):
+        return {"Playwright": self.registro(), "skill frontend-design": self.registro()}
+
     def test_positivo_com_artefatos(self):
-        self.assertEqual(self.checar({"magic": True, "Playwright": True},
-                                    {"magic": self.registro(), "Playwright": self.registro()}), 0)
+        self.assertEqual(self.checar({"Playwright": True, "skill frontend-design": True}, self.criticas_ok()), 0)
 
     def test_negativo_sem_uso(self):
-        self.assertEqual(self.checar({"magic": True}, {}), 1)
+        self.assertEqual(self.checar({"Playwright": True}, {}), 1)
 
-    def test_alias_nao_pode_sumir_da_cobranca(self):
-        for nome in ("21st", "21st ou magic (21st.dev)"):
+    def test_frontend_design_viva_sem_plano_reprova(self):
+        # v3: o plano visual da frontend-design e uma das tres dependencias. Sem evidencia, reprova.
+        self.assertEqual(self.checar({"Playwright": True, "skill frontend-design": True},
+                                    {"Playwright": self.registro()}), 1)
+
+    def test_opcional_viva_e_nao_usada_nunca_reprova(self):
+        # v3: 21st.dev, Stitch, Higgsfield e skills de acabamento sao opcionais de verdade.
+        for nome in ("21st", "magic", "stitch", "Higgsfield CLI", "skill design-taste-frontend"):
             with self.subTest(nome=nome):
-                self.assertEqual(self.checar({nome: True, "Playwright": True},
-                                            {"Playwright": self.registro()}), 1)
+                self.assertEqual(self.checar({nome: True, "Playwright": True, "skill frontend-design": True},
+                                            self.criticas_ok()), 0)
 
     def test_pasta_nao_e_artefato(self):
         self.assertFalse(uso.evidencia_vale({"tipo": "arquivo", "valor": "."}, self.projeto)[0])
@@ -76,14 +84,17 @@ class GateUso(unittest.TestCase):
         self.assertEqual(self.checar({"Playwright": True}, registros), 1)
 
     def test_opcional_21st_aceita_dispensa_com_motivo(self):
-        registros = {"Playwright": self.registro(),
+        registros = {**self.criticas_ok(),
                      "21st": {"dispensada": True, "motivo": "pagina em HTML puro, componentes feitos a mao em Tailwind"}}
-        self.assertEqual(self.checar({"21st": True, "Playwright": True}, registros), 0)
+        self.assertEqual(self.checar({"21st": True, "Playwright": True, "skill frontend-design": True}, registros), 0)
+
+    def test_frontend_design_e_critica_e_nao_aceita_dispensa(self):
+        self.assertNotEqual(self.dispensar("plano feito de cabeca, sem a skill", "skill frontend-design"), 0)
 
     def test_critico_morto_nao_desaparece(self):
         retorno = argparse.Namespace(returncode=1, stdout=json.dumps([
             {"ferramenta": "Playwright", "ok": True, "critico": True},
-            {"ferramenta": "21st", "ok": False, "critico": True}]))
+            {"ferramenta": "skill frontend-design", "ok": False, "critico": True}]))
         with patch.object(uso.subprocess, "run", return_value=retorno):
             estados, erro = uso.estado_das_ferramentas()
         self.assertIsNone(estados)
