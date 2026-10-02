@@ -326,9 +326,11 @@ etapa pulada, campos ausentes e evidência alterada. Não autentica aprovação 
 
 O verificador de ferramentas atual mede níveis diferentes: MCP por `claude mcp list`,
 skills por presença local, Playwright por instalação, banco e busca por execução.
-Um resultado OK no MCP comprova conexão, não uma chamada útil autenticada.
-Antes do uso real, faça uma chamada de leitura e confira o retorno. Essa lacuna do
-verificador ainda exige implementação; não descreva o OK como prova de uso completo.
+O 21st.dev é a exceção que já faz chamada real: com a chave em `TWENTYFIRST_API_KEY`, o
+verificador roda initialize, tools/list e uma busca de componente; sem a chave ele sai como
+opcional ausente, nunca verde. 21st.dev e Higgsfield são opcionais (o aluno sem conta paga
+faz a página com componente a mão em Tailwind e movimento em CSS). Nos outros MCPs, um OK
+comprova conexão, não uma chamada útil autenticada.
 
 Testes reproduzíveis, executados na raiz:
 
@@ -336,7 +338,13 @@ Testes reproduzíveis, executados na raiz:
 python3 scripts/test-uso-ferramentas.py
 python3 scripts/test-wave.py
 python3 scripts/test-gate-etapas.py
+python3 scripts/test-gate-sem-kicker.py
+python3 scripts/test-classes-mortas.py
+python3 scripts/test-search.py
+python3 scripts/test-docs.py
+python3 scripts/test-checar-ferramentas.py
 node scripts/test-gates-visuais.cjs
+node scripts/test-print-cabecalho.cjs
 ```
 
 O teste visual usa Chromium, ffmpeg e páginas locais sintéticas. Ele não aprova
