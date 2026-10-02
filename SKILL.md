@@ -2300,7 +2300,12 @@ python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir-do-projeto> che
 **A regra, e ela nao tem excecao:** toda ferramenta que o 0.0-PRE mediu como RESPONDENDO
 precisa aparecer no registro de uso, com evidencia. Ferramenta que nao respondeu nao e cobrada,
 porque ali a degradacao ja foi declarada. Nao existe terceira opcao. **"O 21st.dev eu pulei"
-com o 21st.dev vivo REPROVA a entrega.**
+com o 21st.dev vivo e sem dispensa assinada REPROVA a entrega.**
+
+**Quem aceita dispensa:** so ferramenta OPCIONAL (21st.dev, Higgsfield, Stitch, ffmpeg, skills
+de acabamento). Ferramenta CRITICA viva (Playwright, `design-taste-frontend`, banco de design,
+Openverse, gate de tells) nao se dispensa: o script recusa o `dispensar` e o `checar` reprova
+dispensa antiga. A lista de criticas vem do `checar-ferramentas.py` (dicionario `CRITICIDADE`).
 
 **Por que este gate e diferente do 0.0-PRE:** aquele garante que a ferramenta RESPONDE. Este
 garante que ela foi USADA. Sao buracos distintos, e tapar so o primeiro nao resolve nada: da
@@ -2331,7 +2336,7 @@ $U registrar "skill design-taste-frontend" --arquivo index.html --detalhe "passe
 $U dispensar "ffmpeg/ffprobe" --motivo "esta pagina nao tem video: o gate de video nao se aplica"
 ```
 
-Dispensa exige motivo de verdade (o script recusa "nao usei") e sai marcada no relatorio e no
+Dispensa exige motivo de verdade (o script recusa motivo com menos de 15 caracteres e qualquer motivo que contenha "nao usei" ou "não usei", em qualquer caixa) e sai marcada no relatorio e no
 bloco de entrega. A diferenca entre dispensar e pular e essa: **dispensa e uma decisao assinada
 que o dono le; pulo e uma decisao escondida que ele descobre pelo resultado, meses depois.**
 

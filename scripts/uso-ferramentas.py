@@ -70,6 +70,32 @@ CAMINHOS = {
 }
 COBRADAS_EDICAO = {"Playwright"}
 
+# Motivo que nao e motivo. "teste: nao usei" passou no teste com aluno (02/10/2026) porque o
+# script so contava caracteres. Recusar a frase, em qualquer caixa e com ou sem acento.
+MOTIVOS_RECUSADOS = ("nao usei", "não usei")
+
+
+def criticas():
+    """Ferramentas CRITICAS segundo o checar-ferramentas.py (fonte unica). Critica viva nao
+    aceita dispensa: ou e usada, ou o 0.0-PRE mediu que esta ausente e ai nem e cobrada."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("chk", RAIZ / "scripts" / "checar-ferramentas.py")
+    chk = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(chk)
+        return {nome for nome, critico in chk.CRITICIDADE.items() if critico}
+    except Exception:
+        return {"Playwright", "skill design-taste-frontend", "Banco de design", "Assets sem chave (Openverse)"}
+
+
+def motivo_recusado(motivo):
+    m = " ".join(str(motivo or "").lower().split())
+    if len(m) < 15:
+        return "dispensa exige motivo de verdade (>= 15 caracteres)"
+    if any(r in m for r in MOTIVOS_RECUSADOS):
+        return "'nao usei' nao e motivo: diga por que a ferramenta nao se aplica a esta pagina"
+    return None
+
 
 def caminho_registro(projeto):
     return Path(projeto) / REGISTRO
@@ -176,8 +202,13 @@ def cmd_registrar(args):
 def cmd_dispensar(args):
     """Dispensa uma ferramenta com motivo. NAO e pular: e uma decisao assinada, que sai no
     relatorio e no bloco de entrega para o dono cobrar. Pular calado continua reprovando."""
-    if not args.motivo or len(args.motivo.strip()) < 15:
-        print("ERRO: dispensa exige motivo de verdade (>= 15 caracteres), nao 'nao usei'.",
+    erro = motivo_recusado(args.motivo)
+    if erro:
+        print(f"ERRO: {erro}.", file=sys.stderr)
+        return 2
+    if args.ferramenta in criticas():
+        print(f"ERRO: {args.ferramenta} e CRITICA e nao aceita dispensa. Use a ferramenta e registre "
+              "a evidencia; se ela nao responde, o checar-ferramentas.py ja a marca como ausente.",
               file=sys.stderr)
         return 2
     dados = carregar(args.projeto)
@@ -212,12 +243,20 @@ def cmd_checar(args):
         f: p for f, p in COBRADAS.items() if f in COBRADAS_EDICAO}
     vivas = {f: papel for f, papel in cobraveis.items() if estados.get(f)}
     faltando, ok_list, dispensadas = [], [], []
+    sem_dispensa = criticas()
     for f, papel in sorted(vivas.items()):
         reg = dados.get(f)
         if not reg:
             faltando.append((f, papel, "nao aparece no registro de uso"))
             continue
-        if reg.get("dispensada") and len(str(reg.get("motivo", "")).strip()) >= 15:
+        if reg.get("dispensada"):
+            if f in sem_dispensa:
+                faltando.append((f, papel, "ferramenta CRITICA nao aceita dispensa: use e registre a evidencia"))
+                continue
+            erro = motivo_recusado(reg.get("motivo"))
+            if erro:
+                faltando.append((f, papel, f"dispensa invalida: {erro}"))
+                continue
             dispensadas.append((f, reg.get("motivo", "")))
             continue
         ok, motivo = evidencia_vale(reg.get("evidencia"), projeto)

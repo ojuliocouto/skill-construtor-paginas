@@ -56,6 +56,30 @@ class GateUso(unittest.TestCase):
     def test_trecho_vazio_reprova(self):
         self.assertFalse(uso.evidencia_vale({"tipo": "codigo", "valor": "", "em": str(self.projeto)}, self.projeto)[0])
 
+    def dispensar(self, motivo, ferramenta="ffmpeg/ffprobe"):
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return uso.cmd_dispensar(argparse.Namespace(projeto=self.projeto, ferramenta=ferramenta, motivo=motivo))
+
+    def test_dispensa_nao_usei_e_recusada(self):
+        # Relatorio do aluno: "teste: nao usei" passou porque so se exigia 15 caracteres.
+        for motivo in ("teste: nao usei", "Não usei porque não quis mexer", "NAO USEI esta ferramenta hoje"):
+            with self.subTest(motivo=motivo):
+                self.assertNotEqual(self.dispensar(motivo), 0)
+
+    def test_dispensa_com_motivo_real_passa(self):
+        self.assertEqual(self.dispensar("esta pagina nao tem video: o gate de video nao se aplica"), 0)
+
+    def test_critica_nao_aceita_dispensa(self):
+        # Ferramenta critica viva nao se dispensa: ou usa, ou o 0.0-PRE mediu ausente.
+        self.assertNotEqual(self.dispensar("motivo longo o bastante para passar", "Playwright"), 0)
+        registros = {"Playwright": {"dispensada": True, "motivo": "motivo longo o bastante para passar"}}
+        self.assertEqual(self.checar({"Playwright": True}, registros), 1)
+
+    def test_opcional_21st_aceita_dispensa_com_motivo(self):
+        registros = {"Playwright": self.registro(),
+                     "21st": {"dispensada": True, "motivo": "pagina em HTML puro, componentes feitos a mao em Tailwind"}}
+        self.assertEqual(self.checar({"21st": True, "Playwright": True}, registros), 0)
+
     def test_critico_morto_nao_desaparece(self):
         retorno = argparse.Namespace(returncode=1, stdout=json.dumps([
             {"ferramenta": "Playwright", "ok": True, "critico": True},
