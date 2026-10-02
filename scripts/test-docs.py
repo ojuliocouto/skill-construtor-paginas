@@ -1,40 +1,177 @@
 """O texto da skill também tem gate: o que o aluno copia e cola precisa rodar.
 
-Cada teste nasce de uma travada do teste com aluno (02/10/2026). Texto não roda sozinho,
-então o que dá pra medir no texto vira asserção aqui.
+Os testes nasceram das travadas do teste com aluno (02/10/2026) e da v3 (mesmo dia): a skill
+depende só da `frontend-design`, dos auditores e da pesquisa de referências, o SKILL.md só
+roteia, e cada caminho mora no próprio arquivo. Texto não roda sozinho, então o que dá para
+medir no texto vira asserção aqui.
 """
+import importlib.util
 import pathlib
 import re
 import unittest
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 SKILL = RAIZ / "SKILL.md"
+REF = RAIZ / "references"
+CAMINHOS = REF / "caminhos"
+CRIAR = CAMINHOS / "criar.md"
+LOCAIS = {"preferencias-dono-ea.md", "desafio-ia-patterns.md"}  # gitignored, nunca vão pro repo
+OPCIONAIS = ("21st", "Stitch", "Higgsfield", "nanobanana", "brandkit", "design-taste-frontend", "animate",
+             "high-end-visual-design", "magicui", "Magic UI", "shadcn", "Pexels")
+
+
+def ler(p):
+    return p.read_text(encoding="utf-8")
 
 
 def textos(*globs):
     for g in globs:
         for p in sorted(RAIZ.glob(g)):
-            if "__pycache__" in p.parts or "sessions" in p.parts or "projects" in p.parts:
+            partes = set(p.parts)
+            if {"__pycache__", "sessions", "projects", "arquivo"} & partes or p.name in LOCAIS:
                 continue
-            yield p, p.read_text(encoding="utf-8")
+            yield p, ler(p)
 
 
-class Docs(unittest.TestCase):
-    def test_t4_nenhum_comando_em_variavel_que_o_zsh_nao_roda(self):
-        # W="python3 ..."; $W registrar -> zsh: "no such file or directory" (exit 127).
+def wave():
+    spec = importlib.util.spec_from_file_location("wave", RAIZ / "scripts" / "wave.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+class Estrutura(unittest.TestCase):
+    def test_v3_skill_curta_versionada_e_so_roteia(self):
+        s = ler(SKILL)
+        self.assertLessEqual(len(s.splitlines()), 420, "SKILL.md passou de ~400 linhas")
+        self.assertRegex(s[:600], r"(?m)^version: 3\.0\.0$")
+        for nome in ("criar", "clonar", "clonar-elevar", "melhorar", "editar"):
+            arq = CAMINHOS / f"{nome}.md"
+            self.assertTrue(arq.exists(), f"falta {arq.name}")
+            self.assertIn(f"references/caminhos/{nome}.md", s, f"SKILL.md não roteia para {nome}")
+
+    def test_v3_tres_dependencias_no_topo(self):
+        topo = ler(SKILL)[:2500].lower()
+        for d in ("frontend-design", "auditores", "referências reais"):
+            self.assertIn(d, topo, d)
+
+    def test_v3_opcionais_so_na_secao_do_fim(self):
+        s = ler(SKILL)
+        i = s.index("## Ferramentas opcionais")
+        antes = s[:i]
+        achados = [o for o in OPCIONAIS if re.search(rf"\b{re.escape(o)}\b", antes, re.I)]
+        self.assertEqual(achados, [], "ferramenta opcional citada no caminho principal do SKILL.md")
+        depois = s[i:]
+        for o in ("21st", "Stitch", "Higgsfield", "nanobanana", "brandkit", "shadcn"):
+            self.assertIn(o.lower(), depois.lower(), o)
+
+    def test_v3_caminho_criar_sem_ferramenta_opcional(self):
+        c = ler(CRIAR)
+        achados = [o for o in OPCIONAIS if o != "Pexels" and re.search(rf"\b{re.escape(o)}\b", c, re.I)]
+        self.assertEqual(achados, [])
+
+    def test_v3_caminho_criar_em_etapas_na_ordem(self):
+        c = ler(CRIAR)
+        etapas = ["## a. Briefing", "## b. Pesquisa de referências", "## c. Plano visual", "## d. Copy",
+                  "## e. Construção", "## f. Gates mecânicos", "## g. Auditores", "## h. Prova"]
+        pos = [c.find(e) for e in etapas]
+        self.assertNotIn(-1, pos, [e for e, p in zip(etapas, pos) if p < 0])
+        self.assertEqual(pos, sorted(pos), "etapas fora de ordem")
+        ordem = ["checar-ferramentas.py", "registrar 0", "capturar-referencias.mjs", "gate-referencias.py",
+                 "registrar 1", "frontend-design", "plano-visual.md", "registrar 2", "copy-servico-local.md",
+                 "registrar 3", "tailwindcss", "screenshot-prova.js", "registrar 4", "servidor-gzip.py",
+                 "gate-sem-kicker.py", "gate-classes-mortas.py", "gate-responsivo.mjs", "gate-oclusao.mjs",
+                 "uso-ferramentas.py --projeto <dir> checar", "wave.py --projeto <dir> registrar",
+                 "wave.py --projeto <dir> checar", "wave.py --projeto <dir> rodada", "registrar 5"]
+        p, ultimo = [], -1
+        for o in ordem:
+            achado = c.find(o, ultimo + 1)
+            p.append(achado)
+            if achado >= 0:
+                ultimo = achado
+        self.assertNotIn(-1, p, [o for o, x in zip(ordem, p) if x < 0])
+
+    def test_v3_gate_de_referencias_bloqueia_antes_do_plano(self):
+        c = ler(CRIAR)
+        b = c[c.index("## b."):c.index("## c.")]
+        self.assertIn("6", b)
+        self.assertRegex(b.lower(), r"n[aã]o come[cç]a")
+        self.assertIn("lido", b)
+
+    def test_v3_frontend_design_acionada_de_verdade_e_banco_opcional(self):
+        c = ler(CRIAR)
+        plano = c[c.index("## c."):c.index("## d.")]
+        self.assertRegex(plano, r"Skill tool")
+        self.assertRegex(plano.lower(), r"search\.py.{0,200}(opcional|nunca decide)|(opcional|nunca decide).{0,200}search\.py")
+
+    def test_v3_auditores_subagente_ou_sequencial_e_nona_lente(self):
+        a = ler(REF / "auditores.md")
+        self.assertRegex(a.lower(), r"subagente")
+        self.assertRegex(a.lower(), r"sequ[eê]ncia")
+        self.assertIn("comparacao-referencias", a)
+        self.assertRegex(a.lower(), r"volta ao plano visual")
+        w = wave()
+        self.assertIn("comparacao-referencias", w.LENTES)
+        for lente in w.LENTES:
+            self.assertIn(lente, a, lente)
+            self.assertIn(lente, ler(RAIZ / "README.md"), f"README sem a lente {lente}")
+
+    def test_v3_nenhum_link_quebrado_nos_arquivos_do_fluxo(self):
         ruins = []
-        for p, t in textos("SKILL.md", "README.md", "references/*.md"):
+        for p, t in textos("SKILL.md", "README.md", "references/*.md", "references/caminhos/*.md"):
+            for alvo in set(re.findall(r"references/[A-Za-z0-9_./-]+\.(?:md|yaml)", t)):
+                if not (RAIZ / alvo).exists():
+                    ruins.append(f"{p.name}: {alvo}")
+            for alvo in set(re.findall(r"scripts/[A-Za-z0-9_.-]+\.(?:py|mjs|cjs|js)", t)):
+                if not (RAIZ / alvo).exists():
+                    ruins.append(f"{p.name}: {alvo}")
+        self.assertEqual(ruins, [])
+
+    def test_v3_nenhuma_referencia_orfa_no_topo(self):
+        # Tudo que mora em references/ (fora de arquivo/, projects/, sessions/ e dos locais) tem
+        # que ser citado pelo SKILL.md ou por um caminho. Órfão vai para references/arquivo/.
+        citados = ler(SKILL) + "".join(ler(p) for p in CAMINHOS.glob("*.md"))
+        orfaos = [p.name for p in REF.glob("*.md") if p.name not in LOCAIS and p.name not in citados]
+        self.assertEqual(orfaos, [])
+        self.assertTrue((REF / "arquivo" / "README.md").exists())
+
+    def test_v3_projetos_e_sessoes_fora_do_git(self):
+        gi = ler(RAIZ / ".gitignore")
+        self.assertIn("references/projects/*", gi)
+        self.assertIn("references/sessions/*", gi)
+        self.assertIn("references/preferencias-dono-ea.md", gi)
+
+    def test_v3_readme_em_ingles_e_changelog(self):
+        r = ler(RAIZ / "README.md")
+        self.assertRegex(r, r"(?i)what it is")
+        self.assertRegex(r, r"(?i)what it is not")
+        self.assertRegex(r, r"(?i)install")
+        self.assertRegex(r, r"(?i)prerequisites")
+        self.assertIn("frontend-design", r)
+        ch = ler(RAIZ / "CHANGELOG.md")
+        self.assertIn("3.0.0", ch)
+        self.assertRegex(ch, r"(?i)v2.{0,10}v3|2\.0\.0.{0,40}3\.0\.0")
+
+    def test_zero_travessao(self):
+        ruins = [p.name for p, t in textos("SKILL.md", "README.md", "CHANGELOG.md", "references/*.md",
+                                           "references/caminhos/*.md") if re.search("[—–]", t)]
+        self.assertEqual(ruins, [])
+
+
+class Travadas(unittest.TestCase):
+    """As travadas do teste com aluno que continuam valendo na v3."""
+
+    def test_t4_nenhum_comando_em_variavel_que_o_zsh_nao_roda(self):
+        ruins = []
+        for p, t in textos("SKILL.md", "README.md", "references/*.md", "references/caminhos/*.md"):
             for n, linha in enumerate(t.splitlines(), 1):
                 if re.match(r'\s*[A-Z]+="(python3|node|npx)\b', linha) or re.search(r'\$[A-Z]+ (registrar|gate|checar|rodada|dispensar)\b', linha):
                     ruins.append(f"{p.name}:{n}: {linha.strip()[:70]}")
         self.assertEqual(ruins, [])
 
-
     def test_t19_nenhum_caminho_fixo_na_pasta_do_dono(self):
-        # So funcionava porque o dono tem a skill em ~/.claude/skills. Instalacao (git clone,
-        # skills add) e o unico lugar onde o destino aparece por extenso.
         ruins = []
-        for p, t in textos("SKILL.md", "README.md", "references/*.md"):
+        for p, t in textos("SKILL.md", "README.md", "references/*.md", "references/caminhos/*.md"):
             for n, linha in enumerate(t.splitlines(), 1):
                 if re.search(r"(~|\$HOME)/\.claude/skills/", linha) and not re.search(r"git clone|skills add", linha):
                     ruins.append(f"{p.name}:{n}: {linha.strip()[:70]}")
@@ -43,13 +180,12 @@ class Docs(unittest.TestCase):
         self.assertEqual(ruins, [])
 
     def test_t19_dir_da_skill_explicado(self):
-        self.assertRegex(SKILL.read_text(encoding="utf-8")[:6000], r"<dir-da-skill>.{0,40}(pasta|diret)")
-
+        self.assertRegex(ler(SKILL)[:6000], r"<dir-da-skill>.{0,40}(pasta|diret)")
 
     def test_t6_preferencias_genericas_existem_e_nao_citam_pessoa(self):
-        pref = RAIZ / "references" / "preferencias-de-design.md"
-        self.assertTrue(pref.exists(), "references/preferencias-de-design.md nao existe")
-        texto = pref.read_text(encoding="utf-8")
+        pref = REF / "preferencias-de-design.md"
+        self.assertTrue(pref.exists())
+        texto = ler(pref)
         for nome in ("Júlio", "Julio", "Thales", "MaestrIA", "AutonomIA", "EA", "Operação Claude Code", "Laude"):
             self.assertNotRegex(texto, rf"\b{re.escape(nome)}\b", nome)
         for regra in ("kicker", "01/02/03", "número gigante", "inteira", "pricing", "lado a lado", "vermelho"):
@@ -57,7 +193,7 @@ class Docs(unittest.TestCase):
 
     def test_t6_skill_e_scripts_falam_de_toda_pagina(self):
         ruins = []
-        for p, t in textos("SKILL.md", "references/index.yaml", "scripts/*.py", "scripts/*.js", "scripts/*.mjs", "hooks/*.py"):
+        for p, t in textos("SKILL.md", "references/caminhos/*.md", "scripts/*.py", "scripts/*.js", "scripts/*.mjs", "hooks/*.py"):
             if p.name.startswith("test-"):
                 continue
             for n, linha in enumerate(t.splitlines(), 1):
@@ -65,131 +201,58 @@ class Docs(unittest.TestCase):
                     ruins.append(f"{p.name}:{n}: {linha.strip()[:70]}")
         self.assertEqual(ruins, [])
 
-
-    def secao(self, inicio, fim):
-        t = SKILL.read_text(encoding="utf-8")
-        i = t.index(inicio)
-        return t[i:t.index(fim, i)]
-
-    def test_t7_precedencia_banco_x_skills_de_design_no_2_0(self):
-        s = self.secao("### 2.0 Consultar o BANCO DE DESIGN", "### 2.1 ")
-        self.assertRegex(s.lower(), r"ponto de partida")
-        self.assertRegex(s.lower(), r"pr[oó]ximo resultado do banco")
-        self.assertRegex(s.lower(), r"creme")
-        self.assertRegex(s.lower(), r"motivo")
-
-
     def test_t8_tipo_servico_local_com_stack_definida(self):
-        pt = (RAIZ / "references" / "page-types.md").read_text(encoding="utf-8").lower()
+        pt = ler(REF / "page-types.md").lower()
         self.assertIn("servico-local", pt)
         self.assertRegex(pt, r"(?s)### servi[cç]o local.{0,500}stack definida: html \+ tailwind compilado")
-        s = SKILL.read_text(encoding="utf-8")
-        tabela = self.secao("### DECISÃO DE TECH STACK", "**Se o projeto destino")
-        self.assertRegex(tabela.lower(), r"servi[cç]o local.*html \+ tailwind compilado")
-        proibido = self.secao("**PROIBIDO HTML/CSS PURO", "\n\n")
-        self.assertRegex(proibido.lower(), r"servi[cç]o local")
-        self.assertNotRegex(s, r"Obrigat[oó]ria no Step 1")
-
+        self.assertRegex(ler(CRIAR).lower(), r"stack padr[aã]o: html \+ tailwind compilado")
 
     def test_t16_modelo_curto_de_copy_para_servico_local(self):
-        modelo = RAIZ / "references" / "copy-servico-local.md"
-        self.assertTrue(modelo.exists())
-        m = modelo.read_text(encoding="utf-8").lower()
+        m = ler(REF / "copy-servico-local.md").lower()
         for parte in ("headline", "subt", "3 dores", "mecanismo", "como agendar", "formas", "dúvidas", "chamada final"):
             self.assertIn(parte, m, parte)
-        s = self.secao("### 1.0 De onde vem a copy?", "### 1.1 ")
-        self.assertIn("references/copy-servico-local.md", s)
-        hero = self.secao("### 1.4 Copy Wireframe", "### 1.5 ")
-        self.assertRegex(hero.lower(), r"micro-copy.{0,160}(opcional|nunca no hero)")
-
+        d = ler(CRIAR)
+        d = d[d.index("## d."):d.index("## e.")]
+        self.assertIn("references/copy-servico-local.md", d)
 
     def test_t17_sem_cliente_ainda_diz_o_que_mostra_e_o_que_oculta(self):
-        s = SKILL.read_text(encoding="utf-8")
-        i = s.find("SEM CLIENTE AINDA")
-        self.assertGreater(i, 0, "paragrafo SEM CLIENTE AINDA ausente no SKILL.md")
-        trecho = s[i:i + 2500].lower()
+        c = ler(CRIAR)
+        i = c.find("Sem cliente ainda")
+        self.assertGreater(i, 0)
+        trecho = c[i:i + 900].lower()
         for item in ("mostra", "oculta", "hidden", "credencial", "foto", "cnpj", "placeholder"):
             self.assertIn(item, trecho, item)
-        modelo = (RAIZ / "references" / "copy-servico-local.md").read_text(encoding="utf-8").lower()
-        self.assertIn("sem cliente ainda", modelo)
-
-
-    def test_t9_audit_agents_e_readme_com_as_8_lentes_do_wave(self):
-        import importlib.util
-        spec = importlib.util.spec_from_file_location("wave", RAIZ / "scripts" / "wave.py")
-        wave = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(wave)
-        aa = (RAIZ / "references" / "audit-agents.md").read_text(encoding="utf-8")
-        for lente in wave.LENTES:
-            self.assertIn(lente, aa, lente)
-        for velho in ("mobile-auditor", "7 agentes", "Os 7", "os 7 verdicts", "libera APENAS", "score < 7"):
-            self.assertNotIn(velho, aa, velho)
-        self.assertIn("4.2f", aa)
-        readme = (RAIZ / "README.md").read_text(encoding="utf-8")
-        self.assertNotRegex(readme, r"\b7 parallel|\bmobile-auditor")
-        for lente in wave.LENTES:
-            self.assertIn(lente, readme, lente)
-
+        self.assertIn("sem cliente ainda", ler(REF / "copy-servico-local.md").lower())
 
     def test_t14_seo_abaixo_de_90_sob_noindex_e_esperado(self):
-        perf = self.secao("**Performance:**", "**Conteúdo:**").lower()
-        self.assertRegex(perf, r"(?s)noindex.{0,300}seo|seo.{0,300}noindex")
-        self.assertIn("esperado", perf)
-        self.assertIn("is-crawlable", perf)
+        f = ler(CRIAR)
+        f = f[f.index("## f."):f.index("## g.")].lower()
+        self.assertRegex(f, r"(?s)seo.{0,200}noindex")
+        self.assertIn("esperado", f)
+        self.assertIn("is-crawlable", f)
 
+    def test_t15_movimento_em_css_por_padrao(self):
+        e = ler(CRIAR)
+        e = e[e.index("## e."):e.index("## f.")].lower()
+        self.assertIn("movimento em css", e)
+        self.assertNotRegex(ler(SKILL), r"(?i)higgsfield[^\n]{0,40}passo esperado")
 
-    def test_t15_movimento_rota_padrao_css_e_higgsfield_opcional_logo_no_inicio(self):
-        s = SKILL.read_text(encoding="utf-8")
-        self.assertNotRegex(s, r"(?i)higgsfield[^\n]{0,40}passo esperado|passo esperado, nao enfeite")
-        i = s.index("### 3.2b MOVIMENTO")
-        inicio = s[i:i + 700].lower()
-        self.assertIn("css", inicio)
-        self.assertIn("opcional", inicio)
-        self.assertRegex(inicio, r"rota padr[aã]o")
-
-
-    def test_t18_reregistrar_etapa_3_depois_da_wave_e_esperado(self):
-        g = (RAIZ / "references" / "gate-etapas.md").read_text(encoding="utf-8").lower()
-        self.assertRegex(g, r"(?s)etapa 3.{0,400}wave.{0,400}esperado", "gate-etapas.md nao explica a etapa 3 depois da wave")
+    def test_t18_reregistrar_construcao_depois_dos_auditores_e_esperado(self):
+        g = ler(REF / "gate-etapas.md").lower()
+        self.assertRegex(g, r"(?s)etapa 4.{0,400}auditores.{0,400}esperado")
         self.assertIn("evidência mudou", g)
 
-
-    def test_t5_caminho_criar_em_uma_pagina_e_na_ordem(self):
-        cc = RAIZ / "references" / "caminho-criar.md"
-        self.assertTrue(cc.exists(), "references/caminho-criar.md nao existe")
-        texto = cc.read_text(encoding="utf-8")
-        self.assertLessEqual(len(texto.splitlines()), 110, "caminho-criar.md passou de uma pagina")
-        ordem = ["checar-ferramentas.py", "registrar 0", "registrar 1", "search.py", "registrar 2",
-                 "screenshot-prova.js", "tailwindcss", "registrar 3", "servidor-gzip.py", "gate-sem-kicker.py",
-                 "gate-classes-mortas.py", "gate-responsivo.mjs", "gate-oclusao.mjs", "uso-ferramentas.py",
-                 "wave.py --projeto <dir> checar", "wave.py --projeto <dir> rodada", "registrar 4"]
-        pos = [texto.find(o) for o in ordem]
-        self.assertNotIn(-1, pos, [o for o, p in zip(ordem, pos) if p < 0])
-        self.assertEqual(pos, sorted(pos), "comandos fora de ordem no caminho-criar.md")
-        runbook = self.secao("## RUNBOOK", "## MAPA DESTE ARQUIVO")
-        self.assertIn("references/caminho-criar.md", runbook)
-
-    def test_t5_ordem_4_2f_antes_de_4_2g_e_gate_4_em_lista(self):
-        s = SKILL.read_text(encoding="utf-8")
-        self.assertLess(s.index("### 4.2f "), s.index("### 4.2g "))
-        gate = s[s.index(">>> GATE 4:"):s.index("**ENTREGA SEM DEPLOY")]
-        self.assertGreaterEqual(len(re.findall(r"^- ", gate, flags=re.M)), 12, "GATE 4 ainda e paragrafo unico")
-
-
     def test_t21_acentuacao_no_texto_sem_tocar_em_codigo(self):
-        # Fora de bloco de codigo com linguagem, de `inline`, de URL e de identificador
-        # (palavra colada em - _ / . < > { }), estas palavras so existem com acento.
         sem = {"nao", "pagina", "paginas", "secao", "secoes", "voce", "tambem", "ja", "ate", "entao", "usuario",
                "codigo", "numero", "titulo", "botao", "preco", "conteudo", "obrigatorio", "padrao", "decisao",
                "direcao", "acao", "versao", "sessao", "video", "proprio", "unica", "unico", "visivel", "minimo",
                "maximo", "ultimo", "critico", "rapido", "publico", "trafego", "referencia", "pendencia", "regressao",
                "medicao", "composicao", "animacao", "atencao", "comecar", "servico", "estudio", "clinica",
-               "consultorio", "saude", "facil", "possivel", "dificil", "necessario", "horario", "analise"}
+               "consultorio", "saude", "facil", "possivel", "dificil", "necessario", "horario", "analise",
+               "referencias", "construcao", "licenca"}
         fence_codigo = re.compile(r"\s*```\s*([\w+-]+)")
         ruins = []
-        for p, t in textos("SKILL.md", "references/*.md"):
-            if p.name in ("preferencias-dono-ea.md", "desafio-ia-patterns.md"):
-                continue
+        for p, t in textos("SKILL.md", "references/*.md", "references/caminhos/*.md"):
             dentro = codigo = False
             for n, linha in enumerate(t.splitlines(), 1):
                 if linha.strip().startswith("```"):
@@ -210,16 +273,6 @@ class Docs(unittest.TestCase):
                     if m.group(1).lower() in sem:
                         ruins.append(f"{p.name}:{n}: {m.group(1)}")
         self.assertEqual(len(ruins), 0, f"{len(ruins)} palavras sem acento, ex.: {ruins[:8]}")
-
-
-    def test_t5_index_yaml_aponta_para_titulos_reais(self):
-        linhas = SKILL.read_text(encoding="utf-8").splitlines()
-        idx = (RAIZ / "references" / "index.yaml").read_text(encoding="utf-8")
-        self.assertTrue(idx.endswith("\n"), "index.yaml termina no meio de uma linha")
-        entradas = re.findall(r"^  [\w]+: (\d+)$", idx, flags=re.M)
-        self.assertGreater(len(entradas), 50)
-        for n in entradas:
-            self.assertTrue(linhas[int(n) - 1].startswith("#"), f"linha {n} do SKILL.md nao e titulo")
 
 
 if __name__ == "__main__":
