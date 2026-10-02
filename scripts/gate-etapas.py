@@ -4,21 +4,35 @@ Uso: python3 scripts/gate-etapas.py --projeto DIR registrar ETAPA --arquivo JSON
      python3 scripts/gate-etapas.py --projeto DIR checar ETAPA
 O JSON contém campos obrigatórios e uma lista `arquivos` de evidências do projeto.
 Valida presença, sequência e integridade. Julgamento de qualidade continua nas lentes.
+
+Perfil `paginas` (v3, caminho CRIAR): 0 briefing, 1 referências (roda o
+gate-referencias.py), 2 plano visual, 3 copy, 4 construção, 5 entrega.
 """
 import argparse
 import hashlib
+import importlib.util
 import json
 import sys
 from pathlib import Path
 
 PAGINAS = {
-    "0": ("briefing", "inventario", "secoes"),
-    "1": ("copy", "aprovacao"),
-    "2": ("paleta", "fontes", "layouts", "assets"),
-    "3": ("primeiro_bloco", "movimento"),
-    "4": ("claims", "contato", "passe_de_gosto", "entrega", "pendencias"),
-    "5": ("contexto", "medicao"),
+    "0": ("briefing", "inventario", "pendencias_cliente"),
+    "1": ("referencias",),
+    "2": ("direcao", "tipografia", "paleta", "imagem", "ritmo", "assinatura", "referencias_usadas"),
+    "3": ("copy", "aprovacao"),
+    "4": ("primeiro_bloco", "stack", "imagens"),
+    "5": ("gates", "auditores", "claims", "contato", "passe_de_gosto", "prova", "pendencias"),
 }
+
+
+def gate_de_referencias(projeto):
+    """A etapa 1 so registra se o gate-referencias.py passar no mesmo projeto."""
+    spec = importlib.util.spec_from_file_location("gref", Path(__file__).with_name("gate-referencias.py"))
+    gref = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gref)
+    validas, problemas = gref.checar(projeto)
+    if problemas:
+        raise ValueError("Etapa 1: gate de referências reprovou: " + " | ".join(problemas[-3:]))
 DASH = {
     "1": ("ambiente",),
     "2": ("operacao", "inventario"),
@@ -49,6 +63,8 @@ def validar(projeto, arquivo, etapa, campos, perfil):
         for campo in ("nicho", "local", "publico", "oferta", "preco", "acao"):
             if not isinstance(doc["briefing"], dict) or not doc["briefing"].get(campo):
                 raise ValueError(f"Briefing incompleto: {campo}. Fato ausente deve constar como pendente, nunca inventado.")
+    if perfil == "paginas" and etapa == "1":
+        gate_de_referencias(projeto)
     if "passe_de_gosto" in campos:
         passe = doc["passe_de_gosto"]
         if not isinstance(passe, dict) or type(passe.get("antes")) is not int or passe["antes"] < 0 or type(passe.get("depois")) is not int or passe["depois"] != 0 or not passe.get("inspecao"):
