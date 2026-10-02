@@ -66,5 +66,18 @@ class Docs(unittest.TestCase):
         self.assertEqual(ruins, [])
 
 
+    def secao(self, inicio, fim):
+        t = SKILL.read_text(encoding="utf-8")
+        i = t.index(inicio)
+        return t[i:t.index(fim, i)]
+
+    def test_t7_precedencia_banco_x_skills_de_design_no_2_0(self):
+        s = self.secao("### 2.0 Consultar o BANCO DE DESIGN", "### 2.1 ")
+        self.assertRegex(s.lower(), r"ponto de partida")
+        self.assertRegex(s.lower(), r"pr[oó]ximo resultado do banco")
+        self.assertRegex(s.lower(), r"creme")
+        self.assertRegex(s.lower(), r"motivo")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

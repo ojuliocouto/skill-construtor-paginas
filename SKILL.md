@@ -1267,6 +1267,17 @@ NUNCA inventar paleta/fonte do zero quando o banco tem opcao validada.
 
 **PRECEDENCIA (quem vence):** 1º identidade REAL indicada pelo usuario (logo, paleta, fontes: regra inegociavel); 2º brand tokens de projeto existente carregados no Protocolo de Ativacao (consistencia de funil vence sugestao do banco); 3º banco de design (`search.py`). O banco e a fonte quando NAO ha identidade nem projeto anterior; nunca sobrepoe os dois primeiros.
 
+**BANCO x SKILLS DE DESIGN: o banco e PONTO DE PARTIDA, nao sentenca.** Depois de tirar paleta e
+fonte do banco, passe o resultado pela `frontend-design` e pela `design-taste-frontend`. Se uma
+delas reprovar o que o banco devolveu (caso medido no teste com aluno, 02/10/2026: o banco deu
+creme #FFF8F0 + dourado #A16207 + Lora serifada para um estudio de pilates, e as duas skills
+chamam exatamente esse trio de visual padrao de IA), **pegue o proximo resultado do banco**
+(`-n 3` e o segundo da lista, ou o segundo par de fonte) e declare por escrito, no output do
+Step 2, o MOTIVO da troca: qual resultado foi descartado, qual skill reprovou e por que. Se os
+tres primeiros resultados forem reprovados, ajuste UM eixo do primeiro (troca o acento ou a
+fonte de titulo) e declare do mesmo jeito. Nunca fique parado decidindo: a regra e esta, e o
+aluno do teste perdeu 20 minutos sem ela.
+
 Rodar os 3:
 
 **O banco (CSVs) e indexado em ingles, e o `search.py` traduz os termos comuns em portugues** (pilates, estudio, clinica, consultorio, academia, restaurante, advocacia, saude, beleza, acolhedor, escuro, moderno e outros: lista em `TRADUCOES`, no `scripts/core.py`). A saida mostra a consulta traduzida. Termo fora da lista e 0 resultado? Traduza voce (ex.: "mentoria dark premium" → "dark premium coaching").
