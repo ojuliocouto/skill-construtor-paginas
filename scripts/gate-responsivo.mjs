@@ -225,9 +225,21 @@ for (const [nome, w, h, mob] of TELAS) {
     }
 
     // Texto cortado pela propria caixa.
+    // Conteudo SO para leitor de tela (sr-only: caixa de 1px com clip) nao e texto cortado: e
+    // o padrao de acessibilidade do link "Pular para o conteudo". Reprovar isso empurrava o
+    // aluno a apagar um recurso de acessibilidade (teste com aluno, 02/10/2026).
+    const soLeitorDeTela = (el, cs) => {
+      const c = el.getBoundingClientRect();
+      const clip = (cs.clip || '').replace(/\s+/g, '');
+      const clipPath = cs.clipPath || '';
+      return (c.width <= 1.5 && c.height <= 1.5)
+        || clip === 'rect(0px,0px,0px,0px)' || clip === 'rect(0,0,0,0)' || clip === 'rect(1px,1px,1px,1px)'
+        || /inset\(50%\)/.test(clipPath);
+    };
     for (const el of document.querySelectorAll('p, h1, h2, h3, li, span, a')) {
       const cs = getComputedStyle(el);
       if (cs.overflow !== 'hidden' && cs.overflowY !== 'hidden') continue;
+      if (soLeitorDeTela(el, cs)) continue;
       if (cs.webkitLineClamp !== 'none') continue;                 // clamp e intencional
       if (el.scrollHeight - el.clientHeight > 4 && (el.innerText || '').trim().length > 8) {
         saida.cortado.push((el.innerText || '').trim().slice(0, 26));

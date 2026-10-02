@@ -30,6 +30,9 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/primeiro-oculto') corpo = texto.replace('<button', '<button style="display:none">Menu</button><button');
   if (rota === '/todos-ocultos') corpo = texto.replace('<button', '<button style="display:none"');
   if (rota === '/wame-sem-numero') corpo += '<a href="https://wa.me/?text=Ol%C3%A1">Chamar no WhatsApp</a>';
+  // Link "Pular para o conteudo" no padrao sr-only (clip 1px) reprovava as 12 telas como
+  // "texto cortado", empurrando o aluno a apagar um recurso de acessibilidade.
+  if (rota === '/sr-only') corpo = '<a href="#c" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0">Pular para o conteúdo</a>' + texto;
   if (rota.startsWith('/dash')) corpo = '<h1>Painel 2026</h1><div class="kpi__value">' + (rota === '/dash-ok' ? 'R$ 150,00' : '&#8212;') + '</div>';
   res.writeHead(rota === '/erro' ? 500 : 200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end('<!doctype html><html lang="pt-BR"><head><meta name="viewport" content="width=device-width,initial-scale=1">' + (rota === '/sem-identidade' ? '' : head) + style + '</head><body>' + corpo + '</body></html>');
@@ -69,6 +72,7 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['oclusao-negativa', 'gate-oclusao.mjs', ['--url', url + '/coberto'], 1],
     ['responsivo-positivo', 'gate-responsivo.mjs', ['--url', url + '/ok'], 0],
     ['responsivo-negativo', 'gate-responsivo.mjs', ['--url', url + '/overflow'], 1],
+    ['responsivo-sr-only', 'gate-responsivo.mjs', ['--url', url + '/sr-only'], 0],
     ['video-ausente', 'gate-video.mjs', ['--url', url + '/ok', '--publico', pasta, '--frames', path.join(pasta, 'frames-ausente')], 0],
     ['video-positivo', 'gate-video.mjs', ['--url', url + '/video-ok', '--publico', pasta, '--frames', path.join(pasta, 'frames-positivo')], 0],
     ['video-negativo', 'gate-video.mjs', ['--url', url + '/video', '--publico', pasta, '--frames', path.join(pasta, 'frames-negativo')], 1],
