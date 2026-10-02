@@ -34,7 +34,7 @@ NAO_AFIRMAR = """
 
 
 def html(corpo, meta="A aula experimental é gratuita. Antes da primeira aula, avaliação postural com fisioterapeuta."):
-    return (f'<!doctype html><html><head><title>Studio</title><meta name="description" content="{meta}">'
+    return (f'<!doctype html><html><head><title>Studio | Pilates</title><meta name="description" content="{meta}">'
             f'<meta property="og:description" content="{meta}"></head><body>{corpo}'
             '<section hidden><p>Depoimento grátis escondido.</p></section><script>var x="grátis";</script></body></html>')
 
@@ -46,6 +46,7 @@ TABELA_OK = """# Sustentação
 | Antes da primeira aula, avaliação postural com fisioterapeuta. | "Antes da primeira aula, avaliação postural com fisioterapeuta" |
 | Turmas de até 4 pessoas. | "aulas em grupo de até 4 pessoas" |
 | Studio | interpretação: nome da marca |
+| Studio \\| Pilates | interpretação: nome da marca no title |
 """
 
 CORPO_OK = "<h1>Studio</h1><p>Turmas de até 4 pessoas.</p><p>A aula experimental é gratuita.</p><p>Você conhece o estúdio.</p>"

@@ -118,7 +118,8 @@ def ler_tabela(texto):
     for l in texto.splitlines():
         if not l.strip().startswith("|"):
             continue
-        cel = [c.strip() for c in l.strip().strip("|").split("|")]
+        # "\|" é a barra escapada do Markdown (o title costuma ter "Marca | Assunto").
+        cel = [c.strip().replace("\x00", "|") for c in l.strip().replace("\\|", "\x00").strip("|").split("|")]
         if len(cel) < 2 or set(cel[0]) <= set("-: ") or norm(cel[0]).startswith("frase da p"):
             continue
         linhas.append((cel[0], cel[1]))
