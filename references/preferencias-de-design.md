@@ -6,33 +6,78 @@ qualquer nicho, e têm precedência sobre o banco de design e sobre o estilo sug
 qualquer skill de design. A única coisa que vence esta lista é a identidade REAL do cliente
 (logo, cor e fonte que ele já usa).
 
-Os itens marcados com **[gate]** são cobrados por script: `scripts/gate-sem-kicker.py`
-reprova e sai com código 1. Os outros se conferem no print, com os próprios olhos.
+Os itens marcados com **[gate]** são cobrados por script e reprovam com código 1 (o nome do
+script vai ao lado). Os outros se conferem no print, com os próprios olhos, e a lente
+design-critic cobra. A marca `gosto:N` no fim de cada item liga a regra à correção que a
+originou; `scripts/test-preferencias.py` reprova se uma correção nova ficar sem par aqui.
 
 ## Proibido (lê como "cara de IA" ou "mal feito")
 
-- **[gate] Kicker em caixa alta abrindo seção.** Rótulo curto, em caixa alta e com letra
-  espaçada, em cima do título ("POR QUE CONTINUAR", "PARA VOCÊ"). A seção abre direto no
-  título. Rótulo pequeno só DENTRO de card, na fonte dos títulos, em tamanho contido, numa
-  linha, nunca em caixa alta espaçada.
-- **[gate] Numeração decorativa 01/02/03** no topo de card ou de passo.
-- **[gate] Número gigante decorativo em card** (um "4" ou um "1" enorme ao lado do título,
-  como enfeite). Se o número é informação, ele vai na frase ("turmas de até 4 pessoas").
+- **[gate `gate-sem-kicker.py`] Kicker em caixa alta abrindo seção.** Rótulo curto, em caixa
+  alta e com letra espaçada, em cima do título ("POR QUE CONTINUAR", "PARA VOCÊ"). A seção abre
+  direto no título. <!-- gosto:1 -->
+- **Rótulo interno de card** ("Esse programa exige"): na fonte dos títulos, em tamanho contido,
+  numa linha, nunca em caixa alta espaçada. <!-- gosto:8 -->
+- **[gate `gate-sem-kicker.py`] Numeração decorativa 01/02/03** no topo de card ou de passo.
+  <!-- gosto:2 -->
+- **[gate `gate-sem-kicker.py`] Número gigante decorativo em card** (um "4" ou um "1" enorme ao
+  lado do título, como enfeite). Se o número é informação, ele vai na frase ("turmas de até 4
+  pessoas").
 - **Foto de pessoa num retângulo de bordas redondas puro.** Foto de gente pede moldura com
   identidade: um recorte com forma própria, um fio na cor da marca deslocado, o símbolo da
-  marca na borda. Retângulo arredondado com sombra é o padrão de template.
-- **Pílula flutuante sobre a foto** (legenda em cápsula por cima da imagem, "Fulano, seu
-  mentor"). A foto fica limpa; a legenda, se houver, vai embaixo dela.
+  marca na borda. Retângulo arredondado com sombra é o padrão de template. Sem pílula ou
+  legenda flutuante sobre a foto: a legenda, se houver, vai embaixo dela. <!-- gosto:3 -->
 - **Crop que decapita a pessoa ou esconde a cena.** A pessoa aparece INTEIRA. Se não couber,
   a seção vira split, com a foto num lado e o conteúdo no outro. O crop se confere na JANELA
-  renderizada (print), nunca no arquivo.
+  renderizada (print), nunca no arquivo. <!-- gosto:4 -->
 - **Imagem que não casa com o conteúdo da seção.** Pessoa rindo numa seção de dor reprova;
-  pose avançada de exercício numa página para iniciante com dor também. Liste o que cada foto
-  mostra contra o título ao lado dela.
+  pose avançada de exercício numa página para iniciante com dor também. Seção de problema pode
+  viver sem imagem. Liste o que cada foto mostra contra o título ao lado dela. <!-- gosto:5 -->
 - **Imagem decorativa dentro da seção de preço (pricing).** É a seção mais importante da
-  página e fica limpa.
-- **Colunas desbalanceadas** (uma termina muito antes da outra). Alinhar pelo topo ou
-  reestruturar a seção.
+  página e fica limpa. <!-- gosto:6 -->
+- **[gate `gate-simetria.mjs`] Colunas desbalanceadas** (uma termina muito antes da outra):
+  colunas vizinhas não terminam com mais de 80 px de diferença. Alinhar pelo topo e pela base,
+  ou reestruturar a seção. <!-- gosto:11 -->
+- **Pílula de etiqueta dentro de mockup** (um chip "exemplo" no cabeçalho de uma caixa de
+  entrada, de uma tela, de um cartão). O aviso de que é exemplo vai só como legenda discreta
+  embaixo do mockup, nunca como chip ou pílula dentro dele. <!-- gosto:14 -->
+
+## Itens paralelos, passos, FAQ e fecho
+
+- **[gate `gate-simetria.mjs`] Itens paralelos vão em caixas simétricas e animadas.** Grupo de
+  3 ou 4 itens do mesmo tipo (situações, benefícios, passos, perguntas) é grade de caixas com
+  mesma largura, mesma altura, topo e conteúdo interno alinhados, e entrada escalonada ao
+  rolar. Item solto flutuando em alturas diferentes (escada) reprova. Sequência de passos
+  também vira grade de caixas iguais (em linha no desktop, uma coluna no celular), com o
+  título da seção em largura total em cima: "título à esquerda + lista vertical à direita"
+  reprova no desktop ("não tá simétrico"). Título de seção de processo fala com quem compra
+  ("Como funciona para você começar"), não com quem constrói. <!-- gosto:15 -->
+- **[gate `gate-simetria.mjs`] Caixa de grade tem ícone animado ÚNICO e alturas iguais
+  medidas.** Top e height iguais com 1 px de tolerância, medidos depois da animação; o texto
+  de cada caixa na mesma faixa de linhas. Cada caixa com um SVG próprio, desenhado para o
+  texto dela e animado (traço que se desenha, leve deslocamento). Biblioteca de ícone genérico
+  em quadradinho continua proibida: o problema era o genérico, não o ícone. <!-- gosto:20 -->
+- **Fecho e FAQ também animam.** Seção final parada e FAQ numa caixa só com metade da tela
+  vazia reprovam. FAQ com o título em largura total e as perguntas em grade (ou numa coluna
+  centrada), entrando com movimento; fecho com pelo menos um movimento além do título.
+  <!-- gosto:19 -->
+
+## Botões e oferta
+
+- **Botões de navegação rolam para a oferta** (`#oferta`, ou a seção de agendamento no
+  serviço local), MENOS o do topo. Só os botões DENTRO da oferta e no fecho saem para o
+  checkout, o WhatsApp ou o formulário. <!-- gosto:7 -->
+- **Botão do topo não fala de preço.** O botão da primeira dobra puxa para a dor ou para a
+  solução ("Ver como funciona", levando à seção que explica), e o preço não aparece na
+  primeira dobra. Botão de preço só depois da prova e na barra. <!-- gosto:16 -->
+- **Preço composto não parece plano alternativo.** Entrada + mensalidade vão num bloco só, com
+  "+" entre as partes e a linha-resumo "R$ X na entrada + R$ Y por mês". Dois cartões soltos
+  lado a lado leem como "escolha um ou outro". <!-- gosto:17 -->
+- **[gate `gate-responsivo.mjs`] Botão em UMA linha** em 320, 360, 390 e 768 px. Rótulo curto
+  no celular ("Agendar pelo WhatsApp") em vez de botão que quebra em duas linhas.
+- **[gate `gate-responsivo.mjs`] Botão a no máximo 2 telas** em qualquer ponto da rolagem do
+  celular: barra fixa depois do hero ou botão repetido. Trecho de mais de 2 telas sem nenhum
+  botão visível reprova.
 
 ## Estruturas aprovadas
 
@@ -40,19 +85,40 @@ reprova e sai com código 1. Os outros se conferem no print, com os próprios ol
   2 colunas, total no cabeçalho); cards de preço em fileira (empilham no tablet), preço
   grande em linha própria, parcela embaixo, regra separada por fio; botão centralizado
   fechando a seção.
-- **Botões rolam para a oferta:** todos os botões de rolagem da página miram a seção de
-  oferta (ou de agendamento, no serviço local). Só os botões DENTRO dela e no fecho saem
-  para o checkout, o WhatsApp ou o formulário.
 - **Par de comparação (antes e depois, com e sem): LADO A LADO e ASSIMÉTRICO.** Empilhado
   reprova; simétrico também. O lado que interessa leva mais largura, começa mais alto e
   carrega o movimento; o outro fica mais estreito, recuado e parado. O título de cada coluna
-  fica centralizado sobre a própria coluna.
+  fica centralizado sobre a própria coluna. Duas OPÇÕES (grupo e particular, plano A e B) não
+  são comparação: ficam lado a lado, alinhadas pelo topo e com a mesma altura. <!-- gosto:12 -->
 - **Bom = cor viva COM movimento; ruim = vermelho parado.** A cor do botão (CTA) não serve
   de sinal de aprovação: sobre fundo escuro, laranja e vermelho leem como alerta.
+  <!-- gosto:13 -->
 - **Imagem gerada por IA:** conceito criativo encaixado no produto, nunca retrato de estúdio
-  genérico. Rosto de gente real só com material real ou com autorização de uso de imagem.
+  genérico ("mais do mesmo"). Rosto de gente real só com material real ou com autorização de
+  uso de imagem. <!-- gosto:9 -->
 - **Vídeo de fundo:** véu mais leve (a faixa sob o texto intacta e o contraste medido no
-  pixel) e clipe mais lento (playbackRate perto de 0,7) para dar tempo de ver.
+  pixel) e clipe mais lento (playbackRate perto de 0,7) para dar tempo de ver. <!-- gosto:10 -->
+
+## Texto na tela
+
+- **[gate `gate-texto.mjs`] Sem palavra sozinha na última linha (viúva) em h1 e h2**, no
+  desktop e no celular. `text-wrap: balance` nos títulos e `text-wrap: pretty` nos parágrafos
+  resolvem quase todos os casos; o resto se resolve na copy.
+- **[gate `gate-texto.mjs`] Todo item de texto visível começa com letra maiúscula**: descrição
+  de card, item de lista, legenda, rótulo de botão. "até 4 pessoas por turma" reprova.
+- **[gate `gate-texto.mjs`] No máximo uma palavra em itálico colorida na página inteira.** A
+  fórmula "serifa + uma palavra em itálico colorida" repetida em vários títulos é tell (ver
+  V16 em `references/anti-vibe-coding.md`).
+
+## Foto e público
+
+- **A foto bate com o público do briefing**: idade, perfil e roupa adequada ao que a página
+  vende. Para mulheres de 35 a 60 com dor, modelo de 25 de top cropped em pose avançada
+  reprova. O plano visual registra a tabela "público -> foto escolhida -> por quê".
+- **Nenhum elemento gráfico atravessa rosto ou corpo de pessoa na foto** (linha, grade,
+  selo, forma da assinatura). A assinatura mora ao lado da foto, nunca por cima de gente.
+- **Foto com logo de terceiro na cena reprova** (outro estúdio na parede, marca de fabricante
+  legível, nome de academia na roupa). Retoque o logo ou troque a foto, e registre o retoque.
 
 ## Lições operacionais
 
@@ -72,4 +138,8 @@ reprova e sai com código 1. Os outros se conferem no print, com os próprios ol
 - **`radial-gradient` em porcentagem mede até o CANTO mais longe.** Numa máscara de caixa
   quadrada, 82% fica fora da borda e a máscara não apaga nada. Use `closest-side`.
 - **Promessa só do que o negócio entrega**, conferida contra a fonte e contra as outras
-  versões da página.
+  versões da página. A tabela "frase da página -> linha do briefing" do passo d e o
+  `scripts/gate-verdade.py` cobram isso, inclusive na meta description e na og:description.
+- **Só sobe para o ar o que é página.** O deploy sai de `dist/`, montada pelo
+  `scripts/montar-dist.py` e conferida pelo `scripts/gate-publicacao.py`: prints de terceiros,
+  briefing, evidências e JSON de auditoria nunca vão junto.
