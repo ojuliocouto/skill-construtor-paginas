@@ -2310,7 +2310,12 @@ interacao principal nunca foi clicada (uma roleta publicada com o popup morto). 
    checklist: ID visual real, sem tells de IA, sem secao quebrada, popup/resultado da
    interacao visivel no pos-clique.
 3. Pagina com interacao principal: o `--click` e OBRIGATORIO nos DOIS viewports (o script
-   ja faz). Form de captura: submeter um lead de teste e confirmar o destino (webhook,
+   ja faz). Ele clica no primeiro elemento VISIVEL do seletor em cada tela (o botao do
+   cabecalho costuma sumir no celular); se nenhum aparece, a mensagem e "o seletor existe mas
+   esta oculto neste viewport", e a saida e trocar pelo seletor do botao que aparece ali.
+   Link de WhatsApp sem numero (`wa.me/?text=...`) sai como `AVISO DESTINO DO LEAD`: o clique
+   abre o app sem destinatario, entao o numero entra em PENDENCIAS DECLARADAS e a pagina nao
+   recebe trafego ate ele existir. Form de captura: submeter um lead de teste e confirmar o destino (webhook,
    planilha, CRM) antes de declarar pronto.
 4. Usar Playwright headless (o script acima), NUNCA o Chrome MCP pra essa prova: em pagina
    pesada o MCP da timeout de 45s e derruba a verificacao (falha recorrente nas sessoes).

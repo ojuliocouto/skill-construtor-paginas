@@ -280,6 +280,7 @@ async function main() {
   fs.mkdirSync(outdir, { recursive: true });
   const shots = [];
   const cliquesInertes = [];
+  const avisosLead = [];
   let falhasIdentidade = [];
   let browser;
 
@@ -325,9 +326,40 @@ async function main() {
       await page.screenshot({ path: file, fullPage: true });
       shots.push(file);
 
+      if (vp.name === 'desktop') {
+        // DESTINO DO LEAD: link de WhatsApp sem numero abre o app sem destinatario. O clique
+        // "passa" e a prova dizia OK (teste com aluno, 02/10/2026). Avisa sempre, com o total.
+        const semNumero = await page.evaluate(() => [...document.querySelectorAll('a[href]')]
+          .map((a) => a.href)
+          .filter((h) => {
+            try {
+              const u = new URL(h);
+              if (/(^|\.)wa\.me$/i.test(u.hostname)) return !/^\/\d{8,}/.test(u.pathname);
+              if (/whatsapp\.com$/i.test(u.hostname) && /\/send/.test(u.pathname)) return !/\d{8,}/.test(u.searchParams.get('phone') || '');
+            } catch { /* href invalido nao e link de WhatsApp */ }
+            return false;
+          }).length);
+        if (semNumero) {
+          avisosLead.push(`${semNumero} link(s) de WhatsApp sem número: o botão abre o WhatsApp sem destinatário. ` +
+            'Declare como PENDÊNCIA: a página não recebe tráfego até o número entrar.');
+        }
+      }
+
       if (clickSel) {
-        const el = page.locator(clickSel).first();
-        await el.waitFor({ state: 'visible', timeout: 10000 });
+        // O seletor mais natural (a[data-whatsapp]) costuma achar primeiro o botao do
+        // cabecalho, escondido no celular. Usar o primeiro VISIVEL neste viewport.
+        const todos = page.locator(clickSel);
+        const total = await todos.count();
+        if (!total) throw new Error(`o seletor "${clickSel}" nao existe na pagina (${vp.name})`);
+        let el = null;
+        for (let i = 0; i < total && !el; i++) {
+          if (await todos.nth(i).isVisible()) el = todos.nth(i);
+        }
+        if (!el) {
+          throw new Error(`o seletor "${clickSel}" existe mas está oculto neste viewport (${vp.name}, ${vp.width}px): ` +
+            `${total} elemento(s), nenhum visível. Use um seletor do botão que aparece nesta tela`);
+        }
+        await el.scrollIntoViewIfNeeded().catch(() => {});
 
         // O print de ANTES sai com a mesma configuração do de depois (mesma
         // janela, fullPage false). Comparar fullPage com viewport dava
@@ -386,6 +418,8 @@ async function main() {
     );
     process.exit(1);
   }
+
+  for (const a of avisosLead) console.log(`AVISO DESTINO DO LEAD: ${a}`);
 
   if (cliquesInertes.length) {
     console.log(

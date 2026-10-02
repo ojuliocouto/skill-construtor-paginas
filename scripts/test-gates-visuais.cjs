@@ -25,12 +25,17 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/overflow') corpo += '<div style="width:3000px">Conteúdo que excede a janela</div>';
   if (rota === '/video') corpo += '<video src="/inexistente.mp4" width="320" height="180"></video>';
   if (rota === '/video-ok') corpo += '<link rel="preload" as="image" href="/poster.png" fetchpriority="high"><video src="/controle.mp4" poster="/poster.png" width="320" height="180"></video>';
+  // Relatorio do aluno: o 1o elemento do seletor estava escondido no viewport e o clique
+  // dava "locator.waitFor: Timeout"; e link wa.me sem numero passava como OK.
+  if (rota === '/primeiro-oculto') corpo = texto.replace('<button', '<button style="display:none">Menu</button><button');
+  if (rota === '/todos-ocultos') corpo = texto.replace('<button', '<button style="display:none"');
+  if (rota === '/wame-sem-numero') corpo += '<a href="https://wa.me/?text=Ol%C3%A1">Chamar no WhatsApp</a>';
   if (rota.startsWith('/dash')) corpo = '<h1>Painel 2026</h1><div class="kpi__value">' + (rota === '/dash-ok' ? 'R$ 150,00' : '&#8212;') + '</div>';
   res.writeHead(rota === '/erro' ? 500 : 200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end('<!doctype html><html lang="pt-BR"><head><meta name="viewport" content="width=device-width,initial-scale=1">' + (rota === '/sem-identidade' ? '' : head) + style + '</head><body>' + corpo + '</body></html>');
 });
 
-function rodar(nome, script, args, esperado) {
+function rodar(nome, script, args, esperado, padrao) {
   return new Promise((resolve) => {
     const filho = spawn(process.execPath, [script, ...args], { cwd: pasta });
     let saida = '';
@@ -40,8 +45,9 @@ function rodar(nome, script, args, esperado) {
     filho.on('close', code => {
       clearTimeout(teto);
       fs.writeFileSync(path.join(pasta, nome + '.log'), saida);
-      const passou = code === esperado;
-      console.log(`${passou ? 'OK' : 'FALHA'} ${nome}: exit=${code}, esperado=${esperado}`);
+      const casou = !padrao || padrao.test(saida);
+      const passou = code === esperado && casou;
+      console.log(`${passou ? 'OK' : 'FALHA'} ${nome}: exit=${code}, esperado=${esperado}${padrao ? `, mensagem ${casou ? 'presente' : 'AUSENTE'}` : ''}`);
       resolve(passou);
     });
   });
@@ -56,6 +62,9 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['clique-inerte', 'screenshot-prova.js', [url + '/inerte', path.join(pasta, 'inerte'), '--click', 'button'], 1],
     ['clique-positivo', 'screenshot-prova.js', [url + '/ok', path.join(pasta, 'clique'), '--click', 'button'], 0],
     ['http-negativo', 'screenshot-prova.js', [url + '/erro', path.join(pasta, 'erro')], 1],
+    ['clique-primeiro-oculto', 'screenshot-prova.js', [url + '/primeiro-oculto', path.join(pasta, 'primeiro-oculto'), '--click', 'button'], 0],
+    ['clique-todos-ocultos', 'screenshot-prova.js', [url + '/todos-ocultos', path.join(pasta, 'todos-ocultos'), '--click', 'button'], 1, /existe mas est[aá] oculto/],
+    ['wame-sem-numero', 'screenshot-prova.js', [url + '/wame-sem-numero', path.join(pasta, 'wame')], 0, /sem n[uú]mero/],
     ['oclusao-positiva', 'gate-oclusao.mjs', ['--url', url + '/ok'], 0],
     ['oclusao-negativa', 'gate-oclusao.mjs', ['--url', url + '/coberto'], 1],
     ['responsivo-positivo', 'gate-responsivo.mjs', ['--url', url + '/ok'], 0],
@@ -74,8 +83,8 @@ servidor.listen(0, '127.0.0.1', async () => {
   if (!selecionados.length) throw new Error('O filtro não selecionou nenhum controle.');
   // Duas execuções por vez evitam que falta de memória pareça defeito da página.
   for (let i = 0; i < selecionados.length; i += 2) {
-    resultados.push(...await Promise.all(selecionados.slice(i, i + 2).map(([nome, arquivo, args, esperado]) =>
-      rodar(nome, path.isAbsolute(arquivo) ? arquivo : script(arquivo), args, esperado))));
+    resultados.push(...await Promise.all(selecionados.slice(i, i + 2).map(([nome, arquivo, args, esperado, padrao]) =>
+      rodar(nome, path.isAbsolute(arquivo) ? arquivo : script(arquivo), args, esperado, padrao))));
   }
   console.log(`Evidências: ${pasta}`);
   console.log(`${resultados.filter(Boolean).length}/${resultados.length} controles passaram`);
