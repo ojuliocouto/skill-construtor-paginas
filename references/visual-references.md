@@ -158,7 +158,7 @@ Recursos pesquisados e validados. Usar conforme o tipo de problema.
 
 | Biblioteca | Ícones | Estilos | Gratuito | Frameworks | Nota |
 |-----------|--------|---------|---------|-----------|------|
-| **Hugeicons** | 46.000+ | 10 | 4.600+ gratuitos | React, Vue, Angular, Svelte, Flutter | ⭐ Melhor para landing pages premium |
+| **Hugeicons** | 60.000+ (Pro) | 10 (Pro) | 6.000+ gratuitos, só Stroke Rounded | React, Vue, Angular, Svelte, React Native | ⭐ Melhor para landing pages premium |
 | Lucide | ~1.500 | 1 (stroke) | Todos | React, Vue, Svelte | Ótimo para UI simples, dashboards |
 | Heroicons | ~300 | 2 (outline/solid) | Todos | React, Vue | Tailwind UI: bom mas limitado |
 
@@ -167,6 +167,8 @@ Recursos pesquisados e validados. Usar conforme o tipo de problema.
 - **Lucide** para dashboards e UI de produtos onde consistência > variedade
 
 ### Estilos disponíveis no Hugeicons
+> Apenas **Stroke Rounded** vem no pacote gratuito. Os outros 9 exigem licença Pro
+> (`@hugeicons-pro/core-*`).
 ```
 Stroke Rounded   ← padrão mais usado, clean e moderno
 Twotone Rounded  ← dois tons, bom para ícones destacados
@@ -180,14 +182,21 @@ Solid Sharp      ← arestas + sólido
 ```
 
 ### Instalação Hugeicons (React)
+O pacote `hugeicons-react` está **DEPRECATED** ("no longer maintained", conforme o
+próprio npm). A biblioteca foi dividida em dois pacotes: um renderizador e um de ícones.
+
 ```bash
-npm install hugeicons-react
+npm install @hugeicons/react @hugeicons/core-free-icons
 ```
 ```tsx
-import { Home01Icon, SearchIcon, CheckmarkCircle01Icon } from 'hugeicons-react'
-// 46.000+ ícones tree-shakable
-<Home01Icon size={24} color="#7F41F9" strokeWidth={1.5} />
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Home01Icon, SearchIcon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons'
+
+// A API mudou: o ícone agora é PROP, não componente.
+<HugeiconsIcon icon={Home01Icon} size={24} color="#7F41F9" strokeWidth={1.5} />
 ```
+Os nomes exportados aceitam os dois sufixos (`SearchIcon` e `SearchFreeIcons` são o
+mesmo ícone); a documentação oficial usa `...Icon`.
 
 ### CDN (sem instalação)
 ```html

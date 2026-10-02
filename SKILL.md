@@ -2496,7 +2496,7 @@ entre sessões do mesmo projeto. Estrutura: ver `references/sessions/EXAMPLE.md`
 - Zod: https://zod.dev
 - Lucide Icons: https://lucide.dev (UI simples, dashboards: ~1.500 ícones, 1 estilo)
 - Heroicons: https://heroicons.com (Tailwind UI: ~300 ícones, outline/solid)
-- **Hugeicons: https://hugeicons.com** (landing pages premium: 46.000+ ícones, 10 estilos, `npm install hugeicons-react`)
+- **Hugeicons: https://hugeicons.com** (landing pages premium: 6.000+ ícones gratuitos em Stroke Rounded; 10 estilos só no Pro. `npm install @hugeicons/react @hugeicons/core-free-icons`: o pacote antigo `hugeicons-react` está DEPRECATED)
 
 ## Galerias de Referência Visual: Atualizadas 2026
 
