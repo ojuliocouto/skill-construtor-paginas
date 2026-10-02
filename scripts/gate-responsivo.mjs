@@ -20,6 +20,10 @@
  *   - corpo de texto >= 14px no mobile (abaixo disso e ilegivel em uso real)
  *   - texto cortado pela caixa
  *   - imagem distorcida (proporcao do arquivo x proporcao renderizada)
+ *   - botao em UMA linha nas telas de ate 768px (auditoria da v3, 02/10/2026: o botao principal
+ *     quebrava em 2 linhas em 360 e 320px, com 68px de altura, e este gate dava PASSA)
+ *   - celular: botao a no maximo 2 telas em qualquer ponto da rolagem (a mesma v3 tinha 6 telas
+ *     sem botao nenhum entre o hero e o fecho; barra fixa ou botao repetido resolvem)
  *
  * Uso: node scripts/gate-responsivo.mjs --url <url>
  */
@@ -191,6 +195,31 @@ for (const [nome, w, h, mob] of TELAS) {
       }
     }
 
+    // BOTAO EM UMA LINHA. Conta as linhas do proprio texto do botao, palavra por palavra, pelo
+    // topo de cada retangulo de texto. Altura do botao nao serve: padding grande engana.
+    saida.botaoQuebrado = [];
+    if (window.innerWidth <= 768) {
+      for (const el of document.querySelectorAll('a, button, [data-cta]')) {
+        const cs = getComputedStyle(el);
+        const txt = (el.innerText || '').replace(/\s+/g, ' ').trim();
+        const c = el.getBoundingClientRect();
+        const temCaixa = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || el.hasAttribute('data-cta');
+        if (!temCaixa || txt.length < 4 || txt.length > 60 || c.width < 40 || c.height < 20) continue;
+        if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+        const topos = [];
+        const andar = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        for (let n = andar.nextNode(); n; n = andar.nextNode()) {
+          const r = document.createRange();
+          r.selectNodeContents(n);
+          for (const ret of r.getClientRects()) {
+            if (ret.width < 1) continue;
+            if (!topos.some((t) => Math.abs(t - ret.top) < 4)) topos.push(ret.top);
+          }
+        }
+        if (topos.length > 1) saida.botaoQuebrado.push(`"${txt.slice(0, 30)}" quebra em ${topos.length} linhas (${Math.round(c.height)}px)`);
+      }
+    }
+
     // CTA principal acima da dobra: regra de pagina de venda.
     const heroi = document.querySelector('section');
     const cta = heroi && heroi.querySelector('a[href^="#"], a[href^="tel:"], a[href^="http"], button');
@@ -329,7 +358,38 @@ for (const [nome, w, h, mob] of TELAS) {
       if (c < 3) r.ctaSemContraste.push(`${info.texto} (${c.toFixed(2)}:1)`);
     } catch { /* elemento saiu da arvore: ignora */ }
   }
-  await page.evaluate(() => window.scrollTo(0, 0));
+  // BOTAO A NO MAXIMO 2 TELAS (celular). Rola a pagina de verdade, um terco de tela por vez, e
+  // pergunta em cada parada se ALGUM botao esta visivel na janela. Assim barra fixa que so
+  // aparece depois do hero conta, e botao escondido no celular (hidden sm:inline-flex) nao conta.
+  r.trechoSemBotao = null;
+  if (mob) {
+    const altura = await page.evaluate(() => document.documentElement.scrollHeight);
+    const passo = Math.max(120, Math.round(h / 3));
+    let inicio = null, pior = 0, piorInicio = 0;
+    for (let y = 0; y <= Math.max(0, altura - h) + passo; y += passo) {
+      const yy = Math.min(y, Math.max(0, altura - h));
+      await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), yy);
+      await page.waitForTimeout(160);
+      const visivel = await page.evaluate(() => [...document.querySelectorAll('a, button, [data-cta]')].some((el) => {
+        const cs = getComputedStyle(el);
+        const txt = (el.innerText || '').trim();
+        const temCaixa = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || el.hasAttribute('data-cta');
+        if (!temCaixa || txt.length < 4 || txt.length > 60) return false;
+        if (el.checkVisibility && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return false;
+        const c = el.getBoundingClientRect();
+        return c.width >= 40 && c.height >= 20 && c.bottom > 0 && c.top < window.innerHeight;
+      }));
+      if (visivel) { inicio = null; }
+      else {
+        if (inicio === null) inicio = yy;
+        const trecho = yy - inicio + h;
+        if (trecho > pior) { pior = trecho; piorInicio = inicio; }
+      }
+      if (yy >= altura - h) break;
+    }
+    if (pior > 2 * h) r.trechoSemBotao = { px: pior, telas: pior / h, de: piorInicio };
+  }
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
 
   const ctaOk = r.ctaBottom !== null && r.ctaBottom <= r.viewportH;
   const marca = (b) => (b ? 'ok  ' : 'FALHA');
@@ -347,6 +407,8 @@ for (const [nome, w, h, mob] of TELAS) {
   if (r.ctaSemContraste?.length)
     falhas.push(`${onde}: CTA camuflado no fundo (< 3:1): ${r.ctaSemContraste.slice(0, 3).join(', ')}`);
   if (!ctaOk) falhas.push(`${onde}: CTA do heroi abaixo da dobra (termina em ${r.ctaBottom}px de ${r.viewportH}px)`);
+  if (r.botaoQuebrado?.length) falhas.push(`${onde}: botao em mais de uma linha: ${r.botaoQuebrado.slice(0, 3).join(', ')}`);
+  if (r.trechoSemBotao) falhas.push(`${onde}: ${r.trechoSemBotao.telas.toFixed(1)} telas sem nenhum botao visivel a partir de y ${r.trechoSemBotao.de} (maximo 2): barra fixa no celular ou botao repetido`);
   if (r.toqueRuim.length) falhas.push(`${onde}: ${r.toqueRuim.length} alvo(s) de toque < 44px: ${r.toqueRuim.slice(0, 3).join(', ')}`);
   if (r.textoPequeno.length) falhas.push(`${onde}: texto de corpo < 14px: ${r.textoPequeno.slice(0, 3).join(', ')}`);
   if (r.cortado.length) falhas.push(`${onde}: texto cortado pela caixa: ${r.cortado.slice(0, 3).join(', ')}`);

@@ -33,6 +33,12 @@ const servidor = http.createServer((req, res) => {
   // Link "Pular para o conteudo" no padrao sr-only (clip 1px) reprovava as 12 telas como
   // "texto cortado", empurrando o aluno a apagar um recurso de acessibilidade.
   if (rota === '/sr-only') corpo = '<a href="#c" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0">Pular para o conteúdo</a>' + texto;
+  // Auditoria da v3 (02/10/2026): o botão principal quebrava em 2 linhas em 360 e 320 px e o
+  // gate passava; no celular eram 6 telas sem botão nenhum entre o hero e o fecho.
+  const longo = '<p>' + 'Texto corrido de seção para ocupar a tela do celular sem nenhum botão no meio. '.repeat(6) + '</p>';
+  if (rota === '/botao-duas-linhas') corpo = texto.replace('Ver resultado', 'Agendar aula experimental grátis pelo WhatsApp');
+  if (rota === '/sem-cta-longo') corpo = texto + longo.repeat(14);
+  if (rota === '/cta-fixo') corpo = texto + longo.repeat(14) + '<div style="height:80px"></div><a href="#c" style="position:fixed;left:12px;right:12px;bottom:12px;text-align:center">Agendar agora</a>';
   if (rota.startsWith('/dash')) corpo = '<h1>Painel 2026</h1><div class="kpi__value">' + (rota === '/dash-ok' ? 'R$ 150,00' : '&#8212;') + '</div>';
   res.writeHead(rota === '/erro' ? 500 : 200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end('<!doctype html><html lang="pt-BR"><head><meta name="viewport" content="width=device-width,initial-scale=1">' + (rota === '/sem-identidade' ? '' : head) + style + '</head><body>' + corpo + '</body></html>');
@@ -73,6 +79,9 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['responsivo-positivo', 'gate-responsivo.mjs', ['--url', url + '/ok'], 0],
     ['responsivo-negativo', 'gate-responsivo.mjs', ['--url', url + '/overflow'], 1],
     ['responsivo-sr-only', 'gate-responsivo.mjs', ['--url', url + '/sr-only'], 0],
+    ['responsivo-botao-duas-linhas', 'gate-responsivo.mjs', ['--url', url + '/botao-duas-linhas'], 1, /quebra em \d linhas/],
+    ['responsivo-sem-cta-longo', 'gate-responsivo.mjs', ['--url', url + '/sem-cta-longo'], 1, /sem nenhum bot[aã]o/],
+    ['responsivo-cta-fixo', 'gate-responsivo.mjs', ['--url', url + '/cta-fixo'], 0],
     ['video-ausente', 'gate-video.mjs', ['--url', url + '/ok', '--publico', pasta, '--frames', path.join(pasta, 'frames-ausente')], 0],
     ['video-positivo', 'gate-video.mjs', ['--url', url + '/video-ok', '--publico', pasta, '--frames', path.join(pasta, 'frames-positivo')], 0],
     ['video-negativo', 'gate-video.mjs', ['--url', url + '/video', '--publico', pasta, '--frames', path.join(pasta, 'frames-negativo')], 1],
