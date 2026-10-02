@@ -44,7 +44,7 @@ class Estrutura(unittest.TestCase):
     def test_v3_skill_curta_versionada_e_so_roteia(self):
         s = ler(SKILL)
         self.assertLessEqual(len(s.splitlines()), 420, "SKILL.md passou de ~400 linhas")
-        self.assertRegex(s[:600], r"(?m)^version: 3\.0\.0$")
+        self.assertRegex(s[:600], r"(?m)^version: 3\.\d+\.\d+$")
         for nome in ("criar", "clonar", "clonar-elevar", "melhorar", "editar"):
             arq = CAMINHOS / f"{nome}.md"
             self.assertTrue(arq.exists(), f"falta {arq.name}")
@@ -156,6 +156,31 @@ class Estrutura(unittest.TestCase):
         ruins = [p.name for p, t in textos("SKILL.md", "README.md", "CHANGELOG.md", "references/*.md",
                                            "references/caminhos/*.md") if re.search("[—–]", t)]
         self.assertEqual(ruins, [])
+
+    # Auditoria da v3 (02/10/2026): o que a nota 5,5 ensinou precisa estar escrito no caminho.
+    def test_v31_foto_publico_logo_e_nada_por_cima_de_pessoa(self):
+        c = ler(CRIAR).lower()
+        self.assertIn("público -> foto escolhida -> por quê", c)
+        self.assertRegex(c, r"logo de terceiro")
+        self.assertRegex(c, r"atravessa rosto ou corpo")
+
+    def test_v31_auditor_independente_e_autoavaliacao_nao_libera(self):
+        for t in (ler(CRIAR), ler(REF / "auditores.md"), ler(SKILL)):
+            t = re.sub(r"\s+", " ", t)
+            self.assertRegex(t.lower(), r"subagente auditor independente")
+            self.assertRegex(t.lower(), r"autoavalia[cç][aã]o n[aã]o libera entrega")
+
+    def test_v31_jornal_de_filetes_e_tell(self):
+        a = ler(REF / "anti-vibe-coding.md")
+        self.assertRegex(a, r"V16 \| \*\*\"Jornal de filetes\"")
+        self.assertIn("jornal de filetes", re.sub(r"\s+", " ", ler(CRIAR)).lower())
+
+    def test_v31_deploy_so_da_dist_e_tabela_de_sustentacao(self):
+        c = ler(CRIAR)
+        self.assertIn("montar-dist.py", c)
+        self.assertIn("gate-publicacao.py", c)
+        self.assertIn("evidencias/sustentacao.md", c)
+        self.assertIn("gate-verdade.py", c)
 
 
 class Travadas(unittest.TestCase):

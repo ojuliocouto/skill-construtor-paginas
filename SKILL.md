@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.0.0
+version: 3.1.0
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -107,9 +107,11 @@ revisão. Nenhuma linha de código antes dele. O banco de design (`scripts/searc
 As 9 lentes de `references/auditores.md`: design-critic, assets-auditor, visual-auditor,
 motion-auditor, responsive-auditor, cro-auditor, a11y-auditor, content-auditor e
 **comparacao-referencias** (a página está no nível das referências printadas? Se não, volta ao
-plano visual). Rodam como **subagentes independentes quando o ambiente permite**; quando não
-permite, a **mesma checagem em sequência**, uma lente por vez, declarada como autoavaliação.
-Cada lente se registra no `scripts/wave.py`; o master confere que todas rodaram e o ciclo
+plano visual). A rodada roda com **subagente auditor independente quando o ambiente permite**;
+quando não permite, a mesma checagem em sequência serve para achar defeito, mas é
+autoavaliação, e **nota de autoavaliação não libera entrega**: o `wave.py rodada` responde
+AUDITORIA INDEPENDENTE PENDENTE até uma rodada de outra sessão ou de outra pessoa. Cada lente
+se registra no `scripts/wave.py` com `--origem`; o master confere que todas rodaram e o ciclo
 decide se entrega.
 
 ---
@@ -123,11 +125,11 @@ Detalhe, comandos e gates de cada passo: `references/caminhos/criar.md`.
 | a. Briefing | o que vende, para quem, oferta, preço, ação, material real; o que falta vira pendência do cliente | `gate-etapas.py registrar 0` |
 | b. Referências | 6 a 10 páginas reais printadas e lidas, `referencias/sintese.md` | `gate-referencias.py` e `registrar 1` |
 | c. Plano visual | `plano-visual.md` pela `frontend-design` | `registrar 2` |
-| d. Copy | texto de cada seção, só com fato do briefing | `registrar 3` |
+| d. Copy | texto de cada seção, só com fato do briefing, e a tabela frase da página -> linha do briefing | `gate-verdade.py` e `registrar 3` |
 | e. Construção | HTML + Tailwind compilado, hero primeiro, imagens com licença | `registrar 4` |
-| f. Gates mecânicos | sem kicker, classes mortas, 12 telas, oclusão, identidade, uso, referências | cada exit no `wave.py gate` |
-| g. Auditores | 9 lentes registradas, ciclo fechado, passe de gosto com 0 tells | `wave.py checar` e `wave.py rodada` |
-| h. Prova | prints desktop 1440 e celular 390 lidos, clique testado, bloco de entrega | `registrar 5` |
+| f. Gates mecânicos | sem kicker, classes mortas, 12 telas (botão em uma linha, botão a 2 telas), oclusão, simetria, texto, verdade, publicação, identidade, uso, referências | cada exit no `wave.py gate` |
+| g. Auditores | 9 lentes por subagente independente, ciclo fechado, passe de gosto com 0 tells | `wave.py checar` e `wave.py rodada` |
+| h. Prova | prints desktop 1440 e celular 390 e 360 lidos, clique testado, deploy só da `dist/`, bloco de entrega | `registrar 5` |
 
 **Ordem:** briefing, referências, plano, copy, código. O plano vem das referências; a copy
 preenche o ritmo que o plano desenhou e nunca inventa fato; o código segue os dois.
@@ -160,7 +162,7 @@ depois o plano visual. Nenhuma skill de design passa por cima dessa ordem.
 ## Bloco obrigatório da entrega (CRIAR, CLONAR, CLONAR + ELEVAR, MELHORAR)
 
 ```
-AUDITORES: <subagentes | sequencial> | nota por lente | média | críticos: <lista ou nenhum> | ciclo: <saída do wave.py rodada>
+AUDITORES: <subagente independente | sessão independente | autoavaliação (não libera)> | nota por lente | média | críticos: <lista ou nenhum> | ciclo: <saída do wave.py rodada>
 REFERÊNCIAS: <N> páginas lidas | comparacao-referencias: <aprovado | reprovado> e por quê
 IDENTIDADE DA PÁGINA: title / description / favicon PNG quadrado / og:title / og:description / og:image (saída do screenshot-prova.js)
 PASSE DE GOSTO: tells antes -> depois (o depois é 0) + o que foi inspecionado
@@ -210,8 +212,12 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `servidor-gzip.py` | serve o build local com compressão | f |
 | `gate-sem-kicker.py` | kicker, 01/02/03 e número gigante, em HTML, Tailwind e `.css` | f |
 | `gate-classes-mortas.py` | classe do código que não existe no CSS gerado | f |
-| `gate-responsivo.mjs` | 12 telas: rolagem lateral, CTA na dobra, toque 44px, corpo 14px | f |
+| `gate-responsivo.mjs` | 12 telas: rolagem lateral, CTA na dobra, toque 44px, corpo 14px, botão em uma linha, botão a 2 telas no celular | f |
 | `gate-oclusao.mjs` | texto coberto por camada ou cortado pela caixa | f |
+| `gate-simetria.mjs` | itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas | f |
+| `gate-texto.mjs` | viúva em h1 e h2, item em minúscula, itálico colorido repetido | f |
+| `gate-verdade.py` | toda promessa (e a meta description) com linha do briefing que sustente | d, f |
+| `montar-dist.py` + `gate-publicacao.py` | `dist/` só com o que a página usa, e o gate que reprova a casa na publicação | f, h |
 | `gate-video.mjs` | as 7 checagens de vídeo (só em página com vídeo) | f |
 | `uso-ferramentas.py` | Playwright e `frontend-design` foram usados de verdade | f |
 | `wave.py` | registro das 9 lentes, auditor master e ciclo de rodadas | f, g |

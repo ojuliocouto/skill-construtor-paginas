@@ -35,8 +35,8 @@ Everything else (21st.dev, Stitch, Higgsfield, image generators, brand kits, ext
 | c. Visual plan | `plano-visual.md` written through the `frontend-design` skill: direction, 4 to 6 named hex colors, type scale, how imagery enters, section rhythm, signature element, and what changed in the self-review pass | `gate-etapas.py registrar 2` |
 | d. Copy | section copy using only facts from the briefing (short local-service model included) | `gate-etapas.py registrar 3` |
 | e. Build | HTML + compiled Tailwind by default (React only when the project truly needs it), hero first and checked against the plan, freely licensed images chosen by what the references taught, license recorded | `gate-etapas.py registrar 4` |
-| f. Mechanical gates | no uppercase kicker or decorative numbers, dead utility classes, 12 real viewports, occluded text, page identity (title, description, square favicon, og tags), tool usage, references | each exit code recorded in `wave.py gate` |
-| g. Auditors | 9 lenses: `design-critic`, `assets-auditor`, `visual-auditor`, `motion-auditor`, `responsive-auditor`, `cro-auditor`, `a11y-auditor`, `content-auditor`, `comparacao-referencias` | `wave.py checar` (every lens and gate ran) and `wave.py rodada` (the review cycle) |
+| f. Mechanical gates | no uppercase kicker or decorative numbers, dead utility classes, 12 real viewports (including one-line buttons up to 768 px and a button within 2 screens on phones), occluded text, symmetry of parallel items and columns (`gate-simetria.mjs`), on-screen text (widows, lowercase starts, repeated colored italics: `gate-texto.mjs`), every promise backed by a briefing line (`gate-verdade.py`), a publish folder with nothing but the page (`montar-dist.py` + `gate-publicacao.py`), page identity, tool usage, references | each exit code recorded in `wave.py gate` |
+| g. Auditors | 9 lenses: `design-critic`, `assets-auditor`, `visual-auditor`, `motion-auditor`, `responsive-auditor`, `cro-auditor`, `a11y-auditor`, `content-auditor`, `comparacao-referencias`, run by an independent auditor subagent when the environment allows. A self-review score never releases delivery | `wave.py checar` (every lens and gate ran) and `wave.py rodada` (the review cycle, which answers AUDITORIA INDEPENDENTE PENDENTE while any lens is `--origem autoavaliacao`) |
 | h. Proof | desktop 1440 and mobile 390 screenshots read by the agent, main interaction clicked, delivery block | `gate-etapas.py registrar 5` |
 
 - **Auditors run as independent subagents when the environment allows it** (one per lens, in parallel, none seeing the others). When it does not, the same checks run sequentially, one lens at a time, and the record says it was a self-review.
@@ -140,6 +140,9 @@ python3 scripts/test-gate-sem-kicker.py
 python3 scripts/test-classes-mortas.py
 python3 scripts/test-search.py
 python3 scripts/test-docs.py
+python3 scripts/test-preferencias.py
+python3 scripts/test-publicacao.py
+python3 scripts/test-gate-verdade.py
 node scripts/test-capturar-referencias.cjs
 node scripts/test-gates-visuais.cjs
 node scripts/test-print-cabecalho.cjs

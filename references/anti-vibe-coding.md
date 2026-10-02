@@ -49,7 +49,7 @@ Itens **1, 2 e 5** são **YELLOW**: corrigir se presentes, mas não bloqueiam so
 
 ### Limiar de bloqueio dos tells VISUAIS (V1-V15)
 
-Os tells visuais abaixo não bloqueavam sozinhos. Agora bloqueiam por acúmulo:
+Os tells visuais abaixo (V1 a V16) não bloqueavam sozinhos. Agora bloqueiam por acúmulo:
 
 ```
 0-2 tells visuais presentes → YELLOW (corrigir, mas não bloqueia)
@@ -89,6 +89,7 @@ onde o cliente apontou cada um destes em prints. A lente design-critic conta est
 | V13 | **Separador decorativo de ícone** (raio/bolt) entre itens de marquee | Enfeite que a IA cospe | Ponto (•), barra, ou só espaçamento. |
 | V14 | **Seção com clip diagonal + gradiente** repetida com tratamentos diferentes | Estética de template; incoerência de marca | Padronizar (cor chapada). Variar superfícies por cor (claro/escuro), não por efeito. |
 | V15 | **Logo minúscula** (<56px desktop) | Faz a marca parecer "perdida"/genérica | Logo proeminente: mín 56-64px desktop, 40-48px mobile. Ao clonar, baixar o logo REAL do site. |
+| V16 | **"Jornal de filetes"**: muitos filetes finos de 1 px (cabeçalho, seção, item, card), serifa com UMA palavra em itálico colorida repetida em vários títulos e fundo de grade decorativo | Medido na auditoria de 02/10/2026: 14 filetes, itálico colorido em 3 de 7 títulos e grade no fecho. Serifa + filete + muito branco é o terceiro visual padrão de IA, depois do creme com terracota e do quase preto com acento ácido | No máximo um trecho em itálico colorido na página (`gate-texto.mjs` reprova o segundo); separar por cor de superfície e espaço, não por fio; nada de grade de fundo como enfeite. `gate-texto.mjs` avisa a partir de 10 filetes |
 
 **Regra-mãe destes tells:** quando o brief é *clonar e melhorar* uma loja real, a referência de
 "bonito" é o concorrente do nicho (Netshoes, Centauro, Nike.com.br, Dafiti), **não** o Dribbble/landing

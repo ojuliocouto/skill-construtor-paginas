@@ -1,5 +1,41 @@
 # Changelog
 
+## 3.1.0 (02/10/2026): o que a auditoria independente da v3 achou vira gate
+
+Um auditor independente deu 5,5 à página do estúdio feita pela v3, que a autoavaliação tinha
+aprovado com média 7,78 e "tells 0". Cada achado grave virou regra medida, com teste vermelho
+antes e verde depois.
+
+### Adicionado
+- `scripts/gate-simetria.mjs`: itens paralelos (3 a 6 do mesmo tipo) com topo e altura iguais
+  com 1 px de tolerância depois da animação; escada reprova; lista vertical ao lado do h2 reprova
+  no desktop; colunas vizinhas com mais de 80 px de diferença na base reprovam.
+- `scripts/gate-texto.mjs`: viúva em h1 e h2 em 6 telas, item de texto que começa com minúscula
+  e mais de um trecho em itálico colorido; aviso a partir de 10 filetes de 1 px.
+- `scripts/gate-verdade.py`: tabela `evidencias/sustentacao.md` (frase da página -> linha do
+  briefing, mais os padrões de Não afirmar por pendência), cobrando também title, meta
+  description e og:description.
+- `scripts/montar-dist.py` e `scripts/gate-publicacao.py`: o deploy sai só de `dist/`, com o
+  que a página referencia (CSS em linha opcional); pasta de trabalho, .md, JSON de auditoria,
+  fonte de build e arquivo não usado reprovam.
+- `scripts/test-preferencias.py`: cada item numerado da memória de gosto do dono precisa de par
+  `gosto:N` nos arquivos de preferência (pula com aviso quando a memória não existe).
+- Tell V16 "jornal de filetes" em `references/anti-vibe-coding.md`.
+
+### Mudado
+- `gate-responsivo.mjs`: botão em uma linha até 768 px e, no celular, trecho de mais de 2
+  telas sem botão visível reprova.
+- `wave.py`: `--origem` em cada lente; autoavaliação não libera entrega (AUDITORIA INDEPENDENTE
+  PENDENTE); gates `simetria`, `texto`, `verdade` e `publicacao` no master.
+- `gate-etapas.py`: etapa 2 exige `foto_publico` (público -> foto -> por quê) e etapa 3 exige
+  `sustentacao`.
+- `references/preferencias-de-design.md`: itens 14 a 17, 19 e 20 da memória de gosto (passos e
+  itens paralelos em grade de caixas iguais, FAQ e fecho animados, ícone próprio animado, botão
+  do topo sem preço, preço composto num bloco, sem pílula em mockup) e as regras novas de foto,
+  texto e publicação. O item só do dono vai para o arquivo local.
+- `references/caminhos/criar.md` e `references/auditores.md`: foto contra o público, nada por
+  cima de pessoa, logo de terceiro, tabela de sustentação, subagente auditor independente.
+
 ## 3.0.0 (02/10/2026): enxuto, três dependências
 
 Decisão do dono: "se o construtor só precisar do front end designer e auditores, e pesquisa

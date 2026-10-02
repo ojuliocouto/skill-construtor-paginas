@@ -9,17 +9,21 @@ comparacao-referencias. Quem decide se entrega é o ciclo (`wave.py rodada`), n�
 ## Como rodar
 
 1. A página servida com compressão (`scripts/servidor-gzip.py`) e os gates do passo f verdes.
-2. **Quando o ambiente permite subagentes:** uma lente por subagente, em paralelo, cada um
-   recebendo só a URL, os arquivos, o briefing e a pasta `referencias/`, sem ver o trabalho dos
-   outros. Com a tool `Workflow`, uma chamada `parallel`; com `Agent`/`Task`, um subagente por
-   lente. É o modo preferido: preserva a distância entre quem construiu e quem audita.
-3. **Quando não permite** (sem subagente, máquina carregada, pedido de agente único): a MESMA
-   checagem roda em sequência, uma lente por vez, cada uma com o próprio critério abaixo e com
-   medição no navegador. Antes de cada lente, releia só o critério dela e procure o defeito como
-   se a página fosse de outra pessoa. No registro, escreva que foi sequencial, para quem ler
-   saber que é autoavaliação.
+2. **Quando o ambiente permite subagentes (o padrão):** a rodada roda com subagente auditor
+   independente (o tipo `auditor`, ou um subagente comum com mandato de refutar), uma lente por
+   subagente ou um auditor para as nove, recebendo só a URL, a `dist/`, o briefing, a tabela
+   de sustentação, a pasta `referencias/` e as preferências, sem o histórico da construção.
+   Com a tool `Workflow`, uma chamada `parallel`; com `Agent`/`Task`, um subagente por lente.
+   Registro com `--origem subagente`.
+3. **Quando não permite** (sem subagente, pedido de agente único): a MESMA checagem roda em
+   sequência, uma lente por vez, para achar e corrigir defeito. Ela é autoavaliação, e **nota de
+   autoavaliação não libera entrega**: o registro leva `--origem autoavaliacao` e o `wave.py rodada` responde
+   AUDITORIA INDEPENDENTE PENDENTE até a rodada independente acontecer em outra sessão, sem o
+   histórico (`--origem sessao-independente`), ou com outra pessoa (`--origem pessoa`). Custo
+   medido de confiar na autoavaliação (02/10/2026): média 7,78 e "tells 0" contra 5,5 e cinco
+   achados graves do auditor independente, na mesma página.
 4. Cada lente devolve o schema abaixo e se registra:
-   `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> registrar <lente> --veredito <aprovado|reprovado> --nota <0-10> --achados "<o que olhou, o que mediu, o que achou>"`
+   `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> registrar <lente> --veredito <aprovado|reprovado> --nota <0-10> --origem <subagente|sessao-independente|pessoa|autoavaliacao> --achados "<o que olhou, o que mediu, o que achou>"`
 5. Master: `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> checar` (todas as lentes e
    todos os gates registrados).
 6. Ciclo: `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`.
@@ -64,11 +68,12 @@ calibrada. Nota que cai pode ser régua mais fina, não página pior.
 
 ### 1. design-critic (cara de IA, gosto)
 Lê a página inteira no print e em recortes 1:1. Conta os tells de
-`references/anti-vibe-coding.md` (V1 a V15) e as proibições de
-`references/preferencias-de-design.md`. Aplica a autocrítica da `frontend-design`: alguma
+`references/anti-vibe-coding.md` (V1 a V16, o V16 é o "jornal de filetes") e as proibições de
+`references/preferencias-de-design.md`, item por item (inclusive itens paralelos em caixas
+iguais, passos em grade, FAQ e fecho com movimento, legenda que explica o design). Aplica a autocrítica da `frontend-design`: alguma
 parte do plano virou o padrão que sairia para qualquer página parecida? Os três visuais
-padrão de IA (creme com serifa e terracota; quase preto com um acento ácido; jornal com fios
-finos e zero raio) só valem se o briefing pediu.
+padrão de IA (creme com serifa e terracota; quase preto com um acento ácido; "jornal de
+filetes", com fios finos, itálico colorido repetido e grade de fundo) só valem se o briefing pediu.
 **Reprova (crítico) se:** 3 ou mais tells presentes, footer sem identificação, ou botão que
 não leva a lugar nenhum.
 
@@ -76,8 +81,11 @@ não leva a lugar nenhum.
 A página não pode ser só texto, gradiente e ícone. Confere cada imagem: de onde veio, qual a
 licença (está em `imagens/LICENCAS.md`?), se casa com o título ao lado, se o recorte na JANELA
 (não no arquivo) mostra o que importa, se há legenda de imagem ilustrativa quando a foto não é
-do cliente.
-**Reprova (crítico) se:** nenhuma imagem real, imagem sem licença registrada, foto que sugere
+do cliente, colada na foto. Confere a tabela público -> foto -> por quê do plano visual
+contra a foto aberta (idade, perfil, roupa), procura logo de terceiro num recorte ampliado 4x
+e confirma que nenhum elemento gráfico atravessa rosto ou corpo de pessoa.
+**Reprova (crítico) se:** nenhuma imagem real, foto que contradiz o público, logo de terceiro
+legível na cena, linha ou forma por cima de pessoa, imagem sem licença registrada, foto que sugere
 ser do cliente (o espaço, a profissional) sem ser, ou logo indicado pelo cliente trocado por
 invenção.
 
@@ -113,8 +121,10 @@ Foco visível, label, alt que descreve a foto de verdade (olhando a foto), ARIA,
 alt, controle sem nome acessível.
 
 ### 8. content-auditor (verdade)
-Diff de claims: toda afirmação da página (texto, foto, alt, JSON-LD, comentário que afirma
-comportamento) contra o briefing. Sweep de travessão (U+2014 e U+2013 = 0). Telefone e
+Diff de claims: toda afirmação da página (texto, foto, alt, JSON-LD, title, meta description,
+og:description, comentário que afirma comportamento) contra o briefing, pela tabela
+`evidencias/sustentacao.md` e pelo `gate-verdade.py`. Lê também o que a frase INSINUA: "você
+chega, faz a avaliação e começa" afirma mesmo dia sem dizer "mesmo dia". Sweep de travessão (U+2014 e U+2013 = 0). Telefone e
 WhatsApp dígito por dígito em todo `tel:` e `wa.me`.
 **Reprova (crítico) se:** dado, depoimento, número, preço ou credencial que não está na fonte;
 travessão; contato divergente.
