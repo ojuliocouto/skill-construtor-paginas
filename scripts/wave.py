@@ -23,6 +23,7 @@ Uso:
         --veredito aprovado --achados "o que olhou e o que encontrou"
     python3 scripts/wave.py --projeto <dir> gate <nome> --exit 0 --detalhe "..."
     python3 scripts/wave.py --projeto <dir> checar        # o AUDITOR MASTER
+    python3 scripts/wave.py --projeto <dir> rodada --criticos 0 --altos 4 --pendencias-do-usuario 2 --regressoes 0
 """
 import argparse
 import datetime
@@ -236,7 +237,7 @@ GANHO_MINIMO = 0.3
 def cmd_rodada(args):
     """Fecha a rodada atual e diz se roda de novo ou entrega."""
     d = carregar(args.projeto)
-    for campo in ("criticos", "altos", "regressoes"):
+    for campo in ("criticos", "altos", "regressoes", "pendencias_do_usuario"):
         valor = getattr(args, campo, None)
         if valor is not None and (type(valor) is not int or valor < 0):
             print("ERRO: contagens precisam ser inteiros não negativos.")
@@ -246,6 +247,17 @@ def cmd_rodada(args):
         if nota is not None and (type(nota) not in (int, float) or not math.isfinite(nota) or not 0 <= nota <= 10):
             print("ERRO: nota precisa ser finita entre 0 e 10.")
             return 2
+    # PENDENCIA DO USUARIO (teste com aluno, 02/10/2026): achado ALTO que so some com dado que
+    # apenas o cliente tem (numero do WhatsApp, foto do espaco, CREFITO, depoimento). Sem este
+    # campo o criterio "zero alto" nunca fica verdadeiro e o ciclo so solta pelo teto. Ele NAO
+    # conta como alto, mas nunca apaga critico e vai DECLARADO na entrega, item por item.
+    pend = getattr(args, "pendencias_do_usuario", 0) or 0
+    altos_informados = getattr(args, "altos", None)
+    if pend and (altos_informados is None or pend > altos_informados):
+        print("ERRO: --pendencias-do-usuario conta altos que dependem do cliente, entao precisa de "
+              "--altos e nao pode ser maior que ele.")
+        return 2
+    altos_reais = None if altos_informados is None else altos_informados - pend
     # Fechar o ciclo sem os gates permitia imprimir ENTREGA para um processo incompleto.
     if cmd_checar(args) != 0:
         return 1
@@ -263,6 +275,8 @@ def cmd_rodada(args):
         "quando": datetime.datetime.now().isoformat(timespec="seconds"),
         "media": round(media, 2),
         "criticos": args.criticos,
+        "altos": altos_informados,
+        "pendencias_do_usuario": pend,
         "notas": {k: v.get("nota") for k, v in lentes.items()},
     }
     hist.append(atual)
@@ -306,7 +320,7 @@ def cmd_rodada(args):
     # Porta de saida que nao depende de nota nenhuma: a gravidade secou. Zero critico e zero
     # alto confirmados quer dizer que o que sobrou e acabamento, e acabamento nao segura entrega.
     # Sem isto, uma rodada com auditores mais duros pode empurrar a media pra baixo pra sempre.
-    secou = args.criticos == 0 and getattr(args, "altos", None) == 0
+    secou = args.criticos == 0 and altos_reais == 0
 
     if caiu:
         print("-" * 74)
@@ -333,7 +347,12 @@ def cmd_rodada(args):
     if secou:
         print("  ENTREGA COM NOTA DECLARADA: zero critico e zero ALTO confirmados. O que sobrou")
         print(f"  e acabamento, e acabamento nao segura entrega. A media {media:.2f} vai escrita na")
-        print("  entrega, com a lista do que ficou aberto.\n")
+        print("  entrega, com a lista do que ficou aberto.")
+        if pend:
+            print(f"  {pend} alto(s) dependem de dado que so o cliente tem: vao em PENDENCIAS DECLARADAS,")
+            print("  um por linha, com o que falta e onde entra na pagina. A pagina nao recebe trafego")
+            print("  enquanto o destino do lead estiver entre eles.")
+        print()
         return 0
     if convergiu:
         print(f"  ENTREGA COM NOTA DECLARADA: zero critico, zero regressao, e a media parou de")
@@ -380,6 +399,10 @@ def main():
     ro.add_argument("--altos", type=int, default=None,
                     help="quantos achados ALTOS sobreviveram. Zero critico + zero alto fecha o "
                          "ciclo mesmo sem o piso de media: o que sobra e acabamento")
+    ro.add_argument("--pendencias-do-usuario", dest="pendencias_do_usuario", type=int, default=0,
+                    help="quantos dos --altos so somem com dado que apenas o cliente tem (numero do "
+                         "WhatsApp, foto do espaco, credencial). Nao contam como alto, vao declarados "
+                         "na entrega e nunca apagam critico")
     ro.add_argument("--regressoes", type=int, default=0,
                     help="quantos achados confirmados desta rodada foram CAUSADOS por uma "
                          "correcao da rodada anterior. E isto que trava o ciclo, nao nota que "

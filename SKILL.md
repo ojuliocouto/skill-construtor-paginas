@@ -2161,6 +2161,18 @@ segunda, com os achados confirmados caindo de 17 para 6. Exigir media 8,0 como U
 saida transforma o processo num loop que so termina por cansaco, e loop que termina por cansaco
 entrega pior que criterio honesto.
 
+**Alto que depende de dado do cliente (`--pendencias-do-usuario N`).** Numero do WhatsApp,
+foto do espaco, credencial do profissional, depoimento: quando o achado ALTO so some com algo
+que apenas o cliente tem, ele NAO conta como alto. Passe quantos dos `--altos` sao desse tipo:
+
+```bash
+python3 <dir-da-skill>/scripts/wave.py --projeto <dir> rodada --criticos 0 --altos 4 --pendencias-do-usuario 2 --regressoes 0
+```
+
+Cada um vai no bloco PENDENCIAS DECLARADAS, com o que falta e onde entra na pagina. Nunca vale
+pra critico, e nao pode ser maior que `--altos` (o script recusa). Sem este campo, no teste com
+aluno (02/10/2026), o criterio "zero alto" nunca ficou verdadeiro e o ciclo so soltou pelo teto.
+
 **As tres portas de saida, e a ordem importa:**
 
 | # | Criterio | Por que |
