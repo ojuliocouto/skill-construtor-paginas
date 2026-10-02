@@ -35,7 +35,7 @@ A "generic" page-building skill is usually a single system prompt ("you are an e
 | | Generic prompt | construtor-paginas |
 |---|----------------|--------------------|
 | **Process** | jumps straight to code | gated 6-step flow with forced stops; copy → design → code, copy locked before any markup |
-| **Audit** | same context that built it (biased), or none | adversarial wave of 7 parallel subagents (design, assets, visual, motion, mobile, CRO, a11y) + synthesis that **blocks delivery** on any critical |
+| **Audit** | same context that built it (biased), or none | adversarial wave of 8 parallel lenses (`design-critic`, `assets-auditor`, `visual-auditor`, `motion-auditor`, `responsive-auditor`, `cro-auditor`, `a11y-auditor`, `content-auditor`, the same list as `scripts/wave.py`) + synthesis; the 4.2f cycle (`wave.py rodada`) **blocks delivery** on any confirmed critical or regression |
 | **Anti-slop** | none (so it produces the "AI look") | explicit 15 visual AI tells + Taste Gate scoring (ship only at avg ≥ 4.0) |
 | **Design source** | invents hex codes and fonts on the fly | queries a real design DB (50 styles, 21 palettes, 50 font pairings) via `search.py` |
 | **Cloning** | "gets inspired", approximate | fidelity: real colors via `getComputedStyle`, real logo download, never invents identity |

@@ -3,8 +3,10 @@
 A auditoria de design NUNCA pode ser feita pelo mesmo contexto que construiu a pagina:
 o construtor nao enxerga o proprio erro. Por isso o Step 4 dispara uma **wave de
 subagents adversariais paralelos**, cada um com UMA lente independente, sem ver o
-trabalho dos outros. Um agente de sintese consolida e o gate bloqueia a entrega se
-qualquer item critico reprovar.
+trabalho dos outros. Sao **8 lentes**, as mesmas do `scripts/wave.py` (dicionario `LENTES`):
+design-critic, assets-auditor, visual-auditor, motion-auditor, responsive-auditor,
+cro-auditor, a11y-auditor e content-auditor. Um agente de sintese consolida; quem decide se
+entrega e o ciclo 4.2f (`wave.py rodada`), nao a nota.
 
 Orquestracao via tool `Workflow` (parallel/pipeline). Alinhado com a regra global de
 planejamento (waves de subagents) e com as regras criticas de workflow do usuario.
@@ -21,10 +23,13 @@ planejamento (waves de subagents) e com as regras criticas de workflow do usuari
 > mobile (`chromium.launch({channel:'msedge'})` ou conectar via CDP). O agente DEVE olhar
 > a imagem, nao confiar so no codigo. Validado num projeto real (maquina sem Chrome).
 
-3. Disparar os 7 agentes EM PARALELO (uma unica chamada Workflow `parallel`).
-4. Cada agente retorna o schema `VERDICT` abaixo.
-5. Agente de sintese consolida. Critico reprovado = **BLOQUEIO**, devolve fixes.
-6. Construtor aplica os fixes e re-roda SO os agentes que reprovaram.
+3. Disparar as 8 lentes EM PARALELO (uma unica chamada Workflow `parallel`; sem Workflow,
+   um subagente por lente).
+4. Cada lente retorna o schema `VERDICT` abaixo e se registra no `wave.py registrar`.
+5. Agente de sintese consolida. Critico confirmado = **BLOQUEIO**, devolve fixes.
+6. Construtor aplica os fixes e re-roda as lentes que tinham achado (as outras podem manter o
+   registro anterior, desde que a correcao nao tenha mexido no que elas olham). Fecha a rodada
+   com `wave.py rodada` (ciclo 4.2f do SKILL.md).
 
 ---
 
@@ -42,14 +47,21 @@ planejamento (waves de subagents) e com as regras criticas de workflow do usuari
 }
 ```
 
-- `severidade: critical` em qualquer achado => `aprovado: false` => bloqueia deploy.
-- **Regua unica do gate** (identica a do SKILL.md, Step 4): zero criticos + todas as lentes >= 7 + media >= 8.0 => libera. Lente < 7 bloqueia mesmo sem critical. Media < 8.0 => aplicar polimentos e re-scorar antes de liberar.
+- `severidade: critical` em qualquer achado confirmado => bloqueia deploy.
+- **Regua unica do gate = o ciclo 4.2f do SKILL.md** (`wave.py rodada`), nada alem dele:
+  1. zero critico confirmado (inegociavel);
+  2. nenhuma regressao (achado causado por correcao da rodada anterior);
+  3. gravidade secou (zero critico e zero alto; alto que depende de dado do cliente entra em
+     `--pendencias-do-usuario`), OU media >= 8,0 com nenhuma lente abaixo de 7, OU convergencia
+     (duas rodadas subindo menos de 0,3), OU teto de 4 rodadas.
+  Nota baixa sozinha NAO trava: ela vai DECLARADA na entrega. A sintese nao cria um piso
+  proprio de nota.
 - **`evidencia` e OBRIGATORIA e VERIFICAVEL:** screenshot, medicao (px, ratio de contraste, touch target), trecho de codigo com linha, ou passo de reproducao. Achado sem evidencia concreta = descartado pela sintese, nao conta como critico. Motivo: auditor sem obrigacao de evidencia gera falso-positivo (caso real: 2 de 5 "criticos" refutados com medicao).
 - **`fix` NUNCA pode violar as regras da skill:** proibido sugerir inventar depoimento, criar escassez/urgencia falsa, adicionar dado que nao esta no briefing, ou usar elementos dos tells V1-V15 como "melhoria". A sintese descarta fixes toxicos e registra a ocorrencia.
 
 ---
 
-## Os 7 agentes (lentes independentes)
+## As 8 lentes (independentes, as mesmas do `wave.py`)
 
 ### 1. design-critic (taste / anti-slop)
 Roda a skill `design-taste-frontend` sobre a pagina pronta. Avalia as 6 dimensoes de
@@ -94,11 +106,12 @@ Scroll reveal, hover, counters, hero entrance, micro-interacoes. Consulta
 **Reprova (critical) se:** hero sem animacao de entrada, secoes estaticas sem feedback,
 cards sem reacao ao hover.
 
-### 4. mobile-auditor (responsivo)
-Breakpoints 320px / 375px / 768px, hamburger JS funcional, sem overflow/texto cortado.
+### 4. responsive-auditor (as 12 telas, celular E desktop)
+Roda `scripts/gate-responsivo.mjs` (12 telas reais, de 320x568 a 1920x1080, inclusive o
+notebook baixo 1366x768) e olha os prints. Hamburger funcional, sem overflow, CTA na dobra.
 Consulta `references/mobile-checklist-detailed.md`.
-**Reprova (critical) se:** layout quebra no mobile, hamburger nao funciona, overflow
-horizontal.
+**Reprova (critical) se:** overflow horizontal, CTA fora da dobra, alvo de toque < 44px,
+corpo < 14px, texto cortado, hamburger que nao abre.
 
 ### 5. cro-auditor (conversao / funil)
 CTAs suficientes e bem posicionados, form funcional, WhatsApp, oferta/value stack,
@@ -114,26 +127,34 @@ zero emojis. Consulta `references/trust-signals-placement.md` para selos.
 **Reprova (critical) se:** falha WCAG critica (contraste, label, alt ausente em imagem de
 conteudo), emoji na pagina.
 
+### 7. content-auditor (conteudo e fontes)
+Confere cada afirmacao da pagina contra o briefing: numero, preco, credencial, prazo,
+depoimento, campo do JSON-LD, o que cada FOTO afirma e o comentario que afirma comportamento.
+Roda o sweep de travessao e confere telefone e WhatsApp digito por digito.
+**Reprova (critical) se:** claim que nao esta na fonte, travessao > 0, telefone divergente,
+depoimento ou numero inventado.
+
 ---
 
 ## Agente de sintese (consolidador)
 
-Recebe os 7 verdicts. Produz:
+Recebe os 8 verdicts. Produz:
 
 ```json
 {
   "deploy_liberado": false,
   "criticos": [ { "lente": "...", "item": "...", "fix": "..." } ],
   "polimentos": [ { "lente": "...", "item": "...", "fix": "..." } ],
-  "scores": { "design": 7.5, "visual": 8, "motion": 6, "mobile": 9, "cro": 8, "a11y": 7 }
+  "scores": { "design-critic": 7.5, "assets-auditor": 8, "visual-auditor": 8, "motion-auditor": 6,
+              "responsive-auditor": 9, "cro-auditor": 8, "a11y-auditor": 7, "content-auditor": 8.5 }
 }
 ```
 
-Regra do gate (LITERALMENTE a mesma do SKILL.md, Step 4, e do README):
+Regra do gate (LITERALMENTE a do ciclo 4.2f do SKILL.md, executada pelo `wave.py rodada`):
 - `criticos.length > 0` => `deploy_liberado: false`. PARA. Devolve a lista pro construtor.
-- Qualquer lente com `score < 7` => `deploy_liberado: false`, mesmo sem nenhum critico.
-- Media dos scores < 8.0 => `deploy_liberado: false`: aplicar os polimentos apontados e re-scorar.
-- Libera deploy APENAS com: zero criticos + todas as lentes >= 7 + media >= 8.0.
+- Regressao confirmada (achado causado pela correcao anterior) => `deploy_liberado: false`.
+- Sem critico e sem regressao, `deploy_liberado` segue o `wave.py rodada`: gravidade secou,
+  piso de media, convergencia ou teto. A nota real vai escrita na entrega, sempre.
 
 ---
 
@@ -142,7 +163,7 @@ Regra do gate (LITERALMENTE a mesma do SKILL.md, Step 4, e do README):
 ```js
 export const meta = {
   name: 'auditoria-pagina',
-  description: 'Wave adversarial de 7 agentes auditando a pagina antes do deploy',
+  description: 'Wave adversarial de 8 lentes auditando a pagina antes do deploy',
   phases: [{ title: 'Auditar' }, { title: 'Sintese' }],
 }
 
@@ -154,9 +175,10 @@ const LENTES = [
   { key: 'assets-auditor',  ref: 'SKILL.md regra PROIBIDO ENTREGAR SEM ASSETS VISUAIS' },
   { key: 'visual-auditor', ref: 'desktop-layout-rules.md, typography-scale.md' },
   { key: 'motion-auditor', ref: 'animation-audit.md, section-transitions.md' },
-  { key: 'mobile-auditor', ref: 'mobile-checklist-detailed.md' },
+  { key: 'responsive-auditor', ref: 'gate-responsivo.mjs (12 telas), mobile-checklist-detailed.md' },
   { key: 'cro-auditor',    ref: 'strategist-audit.md, cta-placement-map.md' },
   { key: 'a11y-auditor',   ref: 'trust-signals-placement.md' },
+  { key: 'content-auditor', ref: 'briefing do Step 0, diff de claims do 4.2, sweep de travessao' },
 ]
 
 const verdicts = await parallel(LENTES.map(l => () =>
@@ -177,4 +199,5 @@ return sintese
 ```
 
 Quem chama o Workflow passa `args: { url, arquivos }`. O retorno governa o gate do Step 4:
-`deploy_liberado:false` => corrigir criticos e re-rodar so as lentes reprovadas.
+`deploy_liberado:false` => corrigir criticos e re-rodar as lentes que tinham achado; depois,
+`wave.py rodada` decide (ciclo 4.2f).

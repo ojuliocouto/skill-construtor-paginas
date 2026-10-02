@@ -114,5 +114,22 @@ class Docs(unittest.TestCase):
         self.assertIn("sem cliente ainda", modelo)
 
 
+    def test_t9_audit_agents_e_readme_com_as_8_lentes_do_wave(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("wave", RAIZ / "scripts" / "wave.py")
+        wave = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(wave)
+        aa = (RAIZ / "references" / "audit-agents.md").read_text(encoding="utf-8")
+        for lente in wave.LENTES:
+            self.assertIn(lente, aa, lente)
+        for velho in ("mobile-auditor", "7 agentes", "Os 7", "os 7 verdicts", "libera APENAS", "score < 7"):
+            self.assertNotIn(velho, aa, velho)
+        self.assertIn("4.2f", aa)
+        readme = (RAIZ / "README.md").read_text(encoding="utf-8")
+        self.assertNotRegex(readme, r"\b7 parallel|\bmobile-auditor")
+        for lente in wave.LENTES:
+            self.assertIn(lente, readme, lente)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -1725,8 +1725,8 @@ Ver protocolo completo, schema e esqueleto Workflow em `references/audit-agents.
    | `motion-auditor` | scroll reveal, hover, hero entrance, counters | hero estatico, secao sem feedback, card sem hover |
    | `cro-auditor` | CTAs, form, WhatsApp, oferta, message match, Hook/Story/Offer | CTA insuficiente, form/checkout quebrado, sem message match |
    | `a11y-auditor` | focus, labels, alt, ARIA, contraste 4.5:1, zero emoji | falha WCAG critica, emoji na pagina |
-| `responsive-auditor` | as 12 telas reais, mobile E desktop (roda `gate-responsivo.mjs`) | overflow horizontal, CTA fora da dobra, alvo de toque < 44px, corpo < 14px, texto cortado |
-| `content-auditor` | dado inventado, claim sem fonte, travessao, consistencia de contato | claim que nao esta na fonte, travessao > 0, telefone divergente |
+   | `responsive-auditor` | as 12 telas reais, mobile E desktop (roda `gate-responsivo.mjs`) | overflow horizontal, CTA fora da dobra, alvo de toque < 44px, corpo < 14px, texto cortado |
+   | `content-auditor` | dado inventado, claim sem fonte, travessao, consistencia de contato | claim que nao esta na fonte, travessao > 0, telefone divergente |
 
 3. Cada agente retorna o schema `VERDICT`. Agente de **sintese** consolida em `SINTESE`.
 4. **GATE:** registre todas as lentes e execute `wave.py checar` e `wave.py rodada` (4.2e e 4.2f). Críticos e regressões confirmados bloqueiam. O ciclo admite piso, gravidade esgotada, convergência ou teto, sempre com a nota real e as pendências declaradas. A síntese não pode criar um piso incompatível com o ciclo.
