@@ -75,7 +75,7 @@ onde o cliente apontou cada um destes em prints. Rodar no GATE DE QUALIDADE, jun
 | # | Tell visual | Por que delata | Correção |
 |---|-------------|----------------|----------|
 | V1 | **Micro-label uppercase em fonte mono (Space Grotesk) com quadradinho/barra** como kicker de seção ("NOVA COLEÇÃO", "ESCOLHA SEU TERRENO") | Assinatura nº 1 de landing de SaaS/startup gerada. Varejo real não rotula seção assim. | Tirar o kicker. Título forte direto + link "Ver todos". Mono só em tag minúscula funcional (preço, selo). |
-| V2 | **Número gigante decorativo** ("01", "02") atrás/ao lado de elementos | Vocabulário de "hero de agência" | Remover. Numeração não agrega em e-commerce. |
+| V2 | **Número gigante decorativo** ("01", "02", ou um "4" solto em card) atrás/ao lado de elementos | Vocabulário de "hero de agência" | Remover. Numeração não agrega. **Gate executável:** `scripts/gate-sem-kicker.py` reprova número sozinho com fonte >= 48px e a sequência 01/02/03. |
 | V3 | **Palavra gigante de contorno** (`text-stroke`) atrás do conteúdo | Tell de template/portfólio Dribbble | Remover. Se quiser textura, usar marquee de marcas ou pattern sutil. |
 | V4 | **Blob de glow radial desfocado** (`blur-[100px]` rounded-full) atrás do produto | Estética SaaS/IA, "aura" | Remover. Profundidade vem de sombra real no produto. |
 | V5 | **Speed streaks / raios animados** decorativos | Clichê "esportivo gerado por prompt" | Remover. Energia vem de cor + composição diagonal, não de raios. |

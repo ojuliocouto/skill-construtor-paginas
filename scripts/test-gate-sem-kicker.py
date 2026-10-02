@@ -1,4 +1,4 @@
-"""Gate de tells (sem kicker, sem numeração decorativa): mutantes têm que reprovar.
+"""Gate de tells (sem kicker, sem numeração decorativa nem número gigante): mutantes têm que reprovar.
 
 O mutante Tailwind do relatório do aluno (02/10/2026) passou com "ok" na versão antiga:
 o gate só lia regra CSS dentro do HTML e classe com nome label/kicker/eyebrow. Este teste
@@ -53,6 +53,33 @@ class GateTells(unittest.TestCase):
 
     def test_tracking_tight_nao_e_kicker(self):
         code, out = self.rodar('<p class="uppercase tracking-tight">Ok</p><h2>Título</h2>')
+        self.assertEqual(code, 0, out)
+
+    def test_numero_gigante_em_card_reprova(self):
+        html = '<article class="rounded-2xl"><span class="text-[72px] font-bold leading-none">4</span><h3>Em grupo</h3></article>'
+        code, out = self.rodar(html)
+        self.assertEqual(code, 1, out)
+
+    def test_numero_gigante_por_classe_tailwind_reprova(self):
+        code, out = self.rodar('<div class="card"><p class="text-7xl text-blush">1</p><h3>Particular</h3></div>')
+        self.assertEqual(code, 1, out)
+
+    def test_numeracao_01_02_03_reprova(self):
+        html = ''.join(f'<li><span class="text-sm">0{i}</span><h3>Passo {i}</h3></li>' for i in (1, 2, 3))
+        code, out = self.rodar(f'<ol>{html}</ol>')
+        self.assertEqual(code, 1, out)
+
+    def test_numero_no_meio_do_texto_passa(self):
+        code, out = self.rodar('<p class="text-7xl">Turmas de até 4 pessoas</p>')
+        self.assertEqual(code, 0, out)
+
+    def test_numero_gigante_por_css_externo_reprova(self):
+        html = '<div class="card"><span class="marca-num">1</span><h3>Particular</h3></div>'
+        code, out = self.rodar(html, '.marca-num{font-size:4rem;font-weight:700}')
+        self.assertEqual(code, 1, out)
+
+    def test_numero_pequeno_de_passo_passa(self):
+        code, out = self.rodar('<li><span class="text-sm font-bold">1</span><h3>Chame no WhatsApp</h3></li>')
         self.assertEqual(code, 0, out)
 
 
