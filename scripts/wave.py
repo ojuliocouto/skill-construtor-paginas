@@ -18,11 +18,20 @@ evidencia vale.** Cada lente se registra com veredito, nota e achados. O MASTER 
 reprova se faltar qualquer lente ou se algum gate executável não estiver verde.
 Notas e vereditos das lentes alimentam o ciclo `rodada`, que decide o encerramento.
 
+Versao 3 (02/10/2026): entra a NONA lente, `comparacao-referencias`. Ela responde uma
+pergunta so: a pagina esta no nivel das referencias printadas no passo b? Reprovada, o
+ciclo nao fecha por nota nenhuma e manda voltar ao plano visual (passo c). Ela nao aceita
+"nao aplicavel": no caminho CLONAR a referencia e a propria pagina original.
+
+As lentes rodam como subagentes independentes quando o ambiente permite. Quando nao
+permite, a mesma checagem roda em sequencia, uma lente por vez, e o registro diz isso.
+
 Uso:
     python3 scripts/wave.py --projeto <dir> registrar <lente> --nota 8.5 \\
         --veredito aprovado --achados "o que olhou e o que encontrou"
     python3 scripts/wave.py --projeto <dir> gate <nome> --exit 0 --detalhe "..."
     python3 scripts/wave.py --projeto <dir> checar        # o AUDITOR MASTER
+    python3 scripts/wave.py --projeto <dir> --caminho clonar checar   # clone fiel: sem gate de referencias
     python3 scripts/wave.py --projeto <dir> rodada --criticos 0 --altos 4 --pendencias-do-usuario 2 --regressoes 0
 """
 import argparse
@@ -35,8 +44,9 @@ from pathlib import Path
 
 REGISTRO = ".wave-auditoria.json"
 
-# As OITO lentes. Nenhuma e opcional: a que nao se aplica se registra com veredito
-# "nao_aplicavel" e o motivo, e isso aparece no relatorio final.
+# As NOVE lentes. Nenhuma e opcional: a que nao se aplica se registra com veredito
+# "nao_aplicavel" e o motivo, e isso aparece no relatorio final. A exceção é a
+# comparacao-referencias, que sempre se aplica.
 LENTES = {
     "design-critic": "taste e anti-slop: tells visuais de IA, cara de template",
     "assets-auditor": "imagem, mockup e video reais (nao so texto, gradiente e SVG)",
@@ -46,7 +56,9 @@ LENTES = {
     "cro-auditor": "CTA, formulario, oferta, message match, Hook/Story/Offer",
     "a11y-auditor": "foco, label, alt, ARIA, contraste 4.5:1, zero emoji",
     "content-auditor": "dado inventado, claim sem fonte, travessao, consistencia de contato",
+    "comparacao-referencias": "a pagina esta no nivel das referencias printadas no passo b?",
 }
+LENTE_REFERENCIAS = "comparacao-referencias"
 
 # Gates EXECUTAVEIS que precisam estar verdes. Nao dependem de julgamento: rodam e saem 0 ou 1.
 GATES = {
@@ -56,7 +68,16 @@ GATES = {
     "uso-ferramentas": "uso-ferramentas.py (ferramenta viva foi usada)",
     "sem-kicker": "gate-sem-kicker.py (toda pagina sem kicker em caixa alta e sem numero decorativo)",
     "classes-mortas": "gate-classes-mortas.py (classe do codigo que nao existe no CSS gerado)",
+    "referencias": "gate-referencias.py (6 prints reais lidos, 2 de cada tipo)",
 }
+
+# Clone fiel (CLONAR) nao pesquisa referencia: a referencia e a original. Os outros caminhos
+# que produzem ou refazem a pagina exigem o gate de referencias.
+CAMINHOS = ("criar", "clonar", "clonar-elevar", "melhorar", "variante")
+
+
+def gates_exigidos(caminho):
+    return {g: d for g, d in GATES.items() if not (caminho == "clonar" and g == "referencias")}
 
 PISO_NOTA = 7.0
 PISO_MEDIA = 8.0
@@ -90,6 +111,10 @@ def cmd_registrar(args):
     if args.lente not in LENTES:
         print(f"ERRO: lente desconhecida '{args.lente}'. Validas: {', '.join(sorted(LENTES))}",
               file=sys.stderr)
+        return 2
+    if args.lente == LENTE_REFERENCIAS and args.veredito == "nao_aplicavel":
+        print("ERRO: a comparacao com as referencias sempre se aplica. No CLONAR, a referencia e a "
+              "pagina original; nos outros caminhos, os prints do passo b.", file=sys.stderr)
         return 2
     if args.veredito != "nao_aplicavel" and (args.nota is None):
         print("ERRO: lente que rodou precisa de --nota", file=sys.stderr)
@@ -132,6 +157,7 @@ def cmd_checar(args):
     """O AUDITOR MASTER. Nao julga design: julga se o PROCESSO aconteceu inteiro."""
     d = carregar(args.projeto)
     lentes, gates = d["lentes"], d["gates"]
+    exigidos = gates_exigidos(getattr(args, "caminho", "criar"))
 
     faltando = [l for l in LENTES if l not in lentes]
     reprovadas = [l for l, v in lentes.items() if v.get("veredito") == "reprovado"]
@@ -141,7 +167,7 @@ def cmd_checar(args):
     notas = [v["nota"] for v in lentes.values() if v.get("nota") is not None]
     media = sum(notas) / len(notas) if notas else 0.0
 
-    gates_faltando = [g for g in GATES if g not in gates]
+    gates_faltando = [g for g in exigidos if g not in gates]
     gates_vermelhos = [g for g, v in gates.items() if v.get("exit") != 0]
 
     print("\nAUDITOR MASTER: o processo aconteceu inteiro?\n" + "=" * 76)
@@ -155,11 +181,11 @@ def cmd_checar(args):
         marca = {"aprovado": "ok    ", "reprovado": "REPROVA", "nao_aplicavel": "n/a   "}.get(v["veredito"], "?")
         print(f"    [{marca}] {nome:<20} nota {nota:<5} {v['achados'][:52]}")
 
-    print(f"\n  GATES EXECUTAVEIS ({len(gates)}/{len(GATES)} registrados)")
-    for nome in sorted(GATES):
+    print(f"\n  GATES EXECUTAVEIS ({len([g for g in gates if g in exigidos])}/{len(exigidos)} registrados)")
+    for nome in sorted(exigidos):
         v = gates.get(nome)
         if not v:
-            print(f"    [FALTA ] {nome:<18} {GATES[nome]}")
+            print(f"    [FALTA ] {nome:<18} {exigidos[nome]}")
         else:
             print(f"    [{'verde ' if v['exit'] == 0 else 'VERMELHO'}] {nome:<18} {v['detalhe'][:50]}")
 
@@ -332,6 +358,12 @@ def cmd_rodada(args):
         print("  nao pagina pior. O que trava e achado NOVO causado por correcao (--regressoes).")
 
     print("-" * 74)
+    ref = lentes.get(LENTE_REFERENCIAS, {})
+    if ref.get("veredito") == "reprovado":
+        print("  VOLTA PRO PLANO VISUAL (passo c): a lente comparacao-referencias reprovou. A pagina")
+        print("  nao esta no nivel das referencias printadas no passo b, e isso nao se resolve com")
+        print("  nota alta nas outras lentes. Refaca o plano a partir das referencias e reconstrua.\n")
+        return 1
     if args.criticos > 0:
         print(f"  CONTINUA: {args.criticos} critico(s) confirmado(s). Critico nao negocia com media.")
         print("  Corrija os criticos e rode a wave de novo.\n")
@@ -376,6 +408,8 @@ def cmd_rodada(args):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--projeto", default=os.getcwd())
+    ap.add_argument("--caminho", default="criar", choices=CAMINHOS,
+                    help="clonar (clone fiel) dispensa o gate de referencias; os outros exigem")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     r = sub.add_parser("registrar", help="registra o resultado de UMA lente")

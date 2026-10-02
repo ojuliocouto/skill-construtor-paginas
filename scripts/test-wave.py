@@ -64,6 +64,45 @@ class Ciclo(unittest.TestCase):
     def test_sem_gates_nao_entrega(self):
         self.assertNotEqual(self.executar(gates=False), 0)
 
+    # v3: a nona lente compara a página com as referências printadas no passo b.
+    def test_nona_lente_comparacao_com_referencias_existe(self):
+        self.assertIn("comparacao-referencias", wave.LENTES)
+        self.assertEqual(len(wave.LENTES), 9)
+        self.assertIn("referencias", wave.GATES)
+
+    def test_abaixo_das_referencias_volta_pro_plano_mesmo_com_nota_alta(self):
+        wave.salvar(self.projeto, {
+            "lentes": {n: {"nota": 9, "veredito": "aprovado", "achados": "Inspeção da página com evidência de teste"}
+                       for n in wave.LENTES},
+            "gates": {n: {"exit": 0, "detalhe": "Controle positivo"} for n in wave.GATES},
+        })
+        d = wave.carregar(self.projeto)
+        d["lentes"]["comparacao-referencias"]["veredito"] = "reprovado"
+        wave.salvar(self.projeto, d)
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, criticos=0, altos=0,
+                                                      regressoes=0, pendencias_do_usuario=0))
+        self.assertEqual(code, 1)
+        self.assertIn("plano visual", saida.getvalue().lower())
+
+    def test_comparacao_com_referencias_nao_aceita_nao_aplicavel(self):
+        with contextlib.redirect_stderr(io.StringIO()):
+            code = wave.cmd_registrar(argparse.Namespace(projeto=self.projeto, lente="comparacao-referencias",
+                                                         veredito="nao_aplicavel", nota=None,
+                                                         achados="Não comparei porque não tinha referência"))
+        self.assertEqual(code, 2)
+
+    def test_caminho_clonar_nao_exige_gate_de_referencias(self):
+        wave.salvar(self.projeto, {
+            "lentes": {n: {"nota": 9, "veredito": "aprovado", "achados": "Inspeção da página com evidência de teste"}
+                       for n in wave.LENTES},
+            "gates": {n: {"exit": 0, "detalhe": "Controle positivo"} for n in wave.GATES if n != "referencias"},
+        })
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(wave.cmd_checar(argparse.Namespace(projeto=self.projeto, caminho="clonar")), 0)
+            self.assertEqual(wave.cmd_checar(argparse.Namespace(projeto=self.projeto, caminho="criar")), 1)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
