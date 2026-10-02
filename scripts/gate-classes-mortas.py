@@ -36,8 +36,9 @@ USO
     python3 gate-classes-mortas.py [--projeto DIR] [--css DIR] [--fonte DIR]
 
     --projeto  raiz do projeto (padrao: diretorio atual)
-    --css      onde procurar o CSS gerado (padrao: <projeto>/dist)
-    --fonte    onde procurar o codigo (padrao: <projeto>/src mais index.html)
+    --css      onde procurar o CSS gerado (padrao: <projeto>/dist; sem dist/, a raiz do
+               projeto, que e o caso da pagina HTML + Tailwind compilado)
+    --fonte    onde procurar o codigo (padrao: <projeto>/src mais os .html da raiz)
 
 Sai com codigo 1 se achar classe morta.
 """
@@ -92,13 +93,22 @@ def main() -> int:
     args = ap.parse_args()
 
     raiz = pathlib.Path(args.projeto).resolve()
-    dir_css = pathlib.Path(args.css) if args.css else raiz / 'dist'
+    # Pagina HTML + Tailwind compilado (sem Vite) nao tem dist/: o CSS gerado mora na raiz.
+    # Antes disto o gate dizia "nenhum .css em dist" e o aluno so passava lendo o codigo
+    # (teste com aluno, 02/10/2026).
+    if args.css:
+        dir_css = pathlib.Path(args.css)
+    elif (raiz / 'dist').is_dir():
+        dir_css = raiz / 'dist'
+    else:
+        dir_css = raiz
     dir_fonte = pathlib.Path(args.fonte) if args.fonte else raiz / 'src'
 
-    css_arquivos = sorted(dir_css.rglob('*.css'))
+    css_arquivos = sorted(p for p in dir_css.rglob('*.css') if 'node_modules' not in p.parts)
     if not css_arquivos:
         print(f'  ERRO: nenhum .css encontrado em {dir_css}.')
         print('  Rode o build ANTES do gate: o CSS gerado e a fonte da verdade aqui.')
+        print('  Pagina HTML com Tailwind: compile com npx tailwindcss@3 -i _input.css -o tailwind-compiled.css')
         return 1
     css = '\n'.join(p.read_text(encoding='utf-8', errors='replace') for p in css_arquivos)
 

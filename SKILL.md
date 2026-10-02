@@ -1923,7 +1923,13 @@ certo" sem citar o que foi olhado.
 
 ```bash
 python3 <dir-da-skill>/scripts/gate-classes-mortas.py --projeto <dir>
+# e registre o resultado na wave, com o exit REAL:
+python3 <dir-da-skill>/scripts/wave.py --projeto <dir> gate classes-mortas --exit <0|1> --detalhe "<o que o gate imprimiu>"
 ```
+
+Projeto com `dist/` (Vite, Next) le o CSS de la. **Pagina HTML + Tailwind compilado, sem `dist/`:**
+o gate le os `.css` da raiz do projeto sozinho (o `tailwind-compiled.css` do 3.5). So use
+`--css` e `--fonte` quando o CSS ou o codigo morarem em outra pasta.
 
 **Framework de utilitario nao reclama de classe invalida.** Ela fica no HTML, o build sai
 verde, e o navegador ignora. O que sobra e um estilo que voce jura ter aplicado e que

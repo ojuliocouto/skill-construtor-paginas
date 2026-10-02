@@ -54,7 +54,8 @@ GATES = {
     "oclusao": "gate-oclusao.mjs (texto coberto ou cortado)",
     "responsivo": "gate-responsivo.mjs (12 telas)",
     "uso-ferramentas": "uso-ferramentas.py (ferramenta viva foi usada)",
-    "sem-kicker": "gate-sem-kicker.py (pagina do Julio/EA nao leva supratitulo em caixa alta)",
+    "sem-kicker": "gate-sem-kicker.py (toda pagina sem kicker em caixa alta e sem numero decorativo)",
+    "classes-mortas": "gate-classes-mortas.py (classe do codigo que nao existe no CSS gerado)",
 }
 
 PISO_NOTA = 7.0
