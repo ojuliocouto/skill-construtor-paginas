@@ -18,9 +18,10 @@ class Ciclo(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.projeto = self.temp.name
 
-    def executar(self, nota=8, criticos=0, regressoes=0, gates=True, altos=1, pendencias=0):
+    def executar(self, nota=8, criticos=0, regressoes=0, gates=True, altos=1, pendencias=0, origem="subagente"):
         wave.salvar(self.projeto, {
-            "lentes": {n: {"nota": nota, "veredito": "aprovado", "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES},
+            "lentes": {n: {"nota": nota, "veredito": "aprovado", "origem": origem,
+                           "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES},
             "gates": {n: {"exit": 0, "detalhe": "Controle positivo"} for n in wave.GATES} if gates else {},
         })
         with contextlib.redirect_stdout(io.StringIO()):
@@ -72,8 +73,8 @@ class Ciclo(unittest.TestCase):
 
     def test_abaixo_das_referencias_volta_pro_plano_mesmo_com_nota_alta(self):
         wave.salvar(self.projeto, {
-            "lentes": {n: {"nota": 9, "veredito": "aprovado", "achados": "Inspeção da página com evidência de teste"}
-                       for n in wave.LENTES},
+            "lentes": {n: {"nota": 9, "veredito": "aprovado", "origem": "subagente",
+                           "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES},
             "gates": {n: {"exit": 0, "detalhe": "Controle positivo"} for n in wave.GATES},
         })
         d = wave.carregar(self.projeto)
@@ -95,13 +96,46 @@ class Ciclo(unittest.TestCase):
 
     def test_caminho_clonar_nao_exige_gate_de_referencias(self):
         wave.salvar(self.projeto, {
-            "lentes": {n: {"nota": 9, "veredito": "aprovado", "achados": "Inspeção da página com evidência de teste"}
-                       for n in wave.LENTES},
+            "lentes": {n: {"nota": 9, "veredito": "aprovado", "origem": "subagente",
+                           "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES},
             "gates": {n: {"exit": 0, "detalhe": "Controle positivo"} for n in wave.GATES if n != "referencias"},
         })
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(wave.cmd_checar(argparse.Namespace(projeto=self.projeto, caminho="clonar")), 0)
             self.assertEqual(wave.cmd_checar(argparse.Namespace(projeto=self.projeto, caminho="criar")), 1)
+
+    # Auditoria da v3 (02/10/2026): autoavaliação de 9 lentes deu média 7,78 e "tells 0"; o auditor
+    # independente deu 5,5 e achou 5 graves. Nota de quem construiu não libera entrega.
+    def test_autoavaliacao_nao_libera_entrega(self):
+        saida = io.StringIO()
+        wave.salvar(self.projeto, {
+            "lentes": {n: {"nota": 9, "veredito": "aprovado", "origem": "autoavaliacao",
+                           "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES},
+            "gates": {n: {"exit": 0, "detalhe": "Controle positivo"} for n in wave.GATES},
+        })
+        with contextlib.redirect_stdout(saida):
+            code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, criticos=0, altos=0,
+                                                      regressoes=0, pendencias_do_usuario=0))
+        self.assertNotEqual(code, 0)
+        self.assertIn("independente", saida.getvalue().lower())
+
+    def test_lente_sem_origem_conta_como_autoavaliacao(self):
+        self.assertNotEqual(self.executar(nota=9, altos=0, origem=None), 0)
+
+    def test_subagente_independente_libera(self):
+        self.assertEqual(self.executar(nota=9, altos=0, origem="subagente"), 0)
+
+    def test_registrar_grava_a_origem(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            code = wave.cmd_registrar(argparse.Namespace(projeto=self.projeto, lente="design-critic", veredito="aprovado",
+                                                         nota=8.0, origem="subagente",
+                                                         achados="Olhei o print 1440 e contei os tells"))
+        self.assertEqual(code, 0)
+        self.assertEqual(wave.carregar(self.projeto)["lentes"]["design-critic"]["origem"], "subagente")
+
+    def test_gates_novos_da_auditoria_da_v3(self):
+        for g in ("simetria", "texto", "verdade", "publicacao"):
+            self.assertIn(g, wave.GATES, g)
 
 
 if __name__ == "__main__":

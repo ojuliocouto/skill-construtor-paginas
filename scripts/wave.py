@@ -69,7 +69,20 @@ GATES = {
     "sem-kicker": "gate-sem-kicker.py (toda pagina sem kicker em caixa alta e sem numero decorativo)",
     "classes-mortas": "gate-classes-mortas.py (classe do codigo que nao existe no CSS gerado)",
     "referencias": "gate-referencias.py (6 prints reais lidos, 2 de cada tipo)",
+    # Auditoria da v3 (02/10/2026): os quatro desenhos e afirmacoes que passaram por todos os
+    # gates anteriores e derrubaram a pagina para 5,5 viraram medida.
+    "simetria": "gate-simetria.mjs (itens paralelos em caixas iguais, colunas que terminam juntas)",
+    "texto": "gate-texto.mjs (viuva em h1 e h2, item em minuscula, italico colorido repetido)",
+    "verdade": "gate-verdade.py (toda promessa com linha do briefing, inclusive nas metas)",
+    "publicacao": "gate-publicacao.py (dist/ so com o que a pagina usa)",
 }
+
+# Quem auditou. Nota de autoavaliacao (quem construiu olhando o proprio trabalho) NAO libera
+# entrega: na v3 a autoavaliacao das 9 lentes deu media 7,78 e "tells 0", e o auditor
+# independente deu 5,5 com 5 achados graves. Sem subagente no ambiente, a rodada independente
+# roda em outra sessao (ou por outra pessoa) e se registra com --origem sessao-independente.
+ORIGENS_INDEPENDENTES = ("subagente", "sessao-independente", "pessoa")
+ORIGENS = ORIGENS_INDEPENDENTES + ("autoavaliacao",)
 
 # Clone fiel (CLONAR) nao pesquisa referencia: a referencia e a original. Os outros caminhos
 # que produzem ou refazem a pagina exigem o gate de referencias.
@@ -77,7 +90,8 @@ CAMINHOS = ("criar", "clonar", "clonar-elevar", "melhorar", "variante")
 
 
 def gates_exigidos(caminho):
-    return {g: d for g, d in GATES.items() if not (caminho == "clonar" and g == "referencias")}
+    # Clone fiel copia o texto da original: a fonte da verdade e a propria pagina, nao um briefing.
+    return {g: d for g, d in GATES.items() if not (caminho == "clonar" and g in ("referencias", "verdade"))}
 
 PISO_NOTA = 7.0
 PISO_MEDIA = 8.0
@@ -129,9 +143,10 @@ def cmd_registrar(args):
         "veredito": args.veredito,
         "nota": args.nota,
         "achados": args.achados.strip(),
+        "origem": getattr(args, "origem", None) or "autoavaliacao",
     }
     salvar(args.projeto, d)
-    print(f"lente registrada: {args.lente} -> {args.veredito}"
+    print(f"lente registrada: {args.lente} -> {args.veredito} [{d['lentes'][args.lente]['origem']}]"
           + (f" (nota {args.nota})" if args.nota is not None else ""))
     return 0
 
@@ -179,7 +194,8 @@ def cmd_checar(args):
             continue
         nota = f"{v['nota']}" if v.get("nota") is not None else "-"
         marca = {"aprovado": "ok    ", "reprovado": "REPROVA", "nao_aplicavel": "n/a   "}.get(v["veredito"], "?")
-        print(f"    [{marca}] {nome:<20} nota {nota:<5} {v['achados'][:52]}")
+        orig = "auto" if v.get("origem") not in ORIGENS_INDEPENDENTES else "indep"
+        print(f"    [{marca}] {nome:<20} nota {nota:<5} {orig:<5} {v['achados'][:46]}")
 
     print(f"\n  GATES EXECUTAVEIS ({len([g for g in gates if g in exigidos])}/{len(exigidos)} registrados)")
     for nome in sorted(exigidos):
@@ -374,6 +390,16 @@ def cmd_rodada(args):
             print(f"    - {r}")
         print("  Conserte a regressao antes de seguir.\n")
         return 1
+    vai_entregar = ((media >= PISO_MEDIA and all(n >= PISO_NOTA for n in notas)) or secou or convergiu
+                    or len(hist) >= TETO_RODADAS)
+    auto = sorted(l for l, v in lentes.items()
+                  if v.get("veredito") != "nao_aplicavel" and v.get("origem") not in ORIGENS_INDEPENDENTES)
+    if vai_entregar and auto:
+        print(f"  AUDITORIA INDEPENDENTE PENDENTE: {len(auto)} lente(s) registradas como autoavaliacao")
+        print(f"  ({', '.join(auto[:4])}{'...' if len(auto) > 4 else ''}). Nota de quem construiu nao libera entrega.")
+        print("  Rode a rodada com um subagente auditor independente (ou em outra sessao, sem o historico")
+        print("  da construcao) e registre cada lente com --origem subagente ou sessao-independente.\n")
+        return 1
     if media >= PISO_MEDIA and all(n >= PISO_NOTA for n in notas):
         print(f"  ENTREGA: media {media:.2f} no piso e nenhuma lente abaixo de {PISO_NOTA}.\n")
         return 0
@@ -417,6 +443,9 @@ def main():
     r.add_argument("--nota", type=float)
     r.add_argument("--veredito", choices=["aprovado", "reprovado", "nao_aplicavel"], required=True)
     r.add_argument("--achados", required=True, help="o que foi olhado e o que foi encontrado")
+    r.add_argument("--origem", choices=ORIGENS, default="autoavaliacao",
+                   help="quem auditou: subagente independente, outra sessao, outra pessoa ou "
+                        "autoavaliacao (padrao). Autoavaliacao nunca libera entrega")
     r.set_defaults(func=cmd_registrar)
 
     g = sub.add_parser("gate", help="registra o resultado de um gate executavel")
