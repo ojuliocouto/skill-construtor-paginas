@@ -55,6 +55,47 @@ for linha, esperado in [
     checa(f"'{linha.split('- ')[1]}' classifica como {esperado}", got == esperado, got)
 chk.roda = orig
 
+# 21st.dev e Higgsfield sao OPCIONAIS pro aluno (relatorio do aluno, 02/10/2026): quem nao
+# paga nada tem que conseguir fazer a pagina. Critico e so o que a skill nao funciona sem.
+crit = getattr(chk, "CRITICIDADE", {})
+checa("21st.dev e opcional (nunca bloqueia o aluno)", crit.get("21st") is False, str(crit.get("21st")))
+checa("Higgsfield e opcional (nunca bloqueia o aluno)", crit.get("Higgsfield CLI") is False, str(crit.get("Higgsfield CLI")))
+checa("Playwright continua critico", crit.get("Playwright") is True, str(crit.get("Playwright")))
+
+# O teste do 21st tem que fazer CHAMADA REAL com a chave. Lista de MCP nao prova chave.
+import os as _os
+teste21 = getattr(chk, "testar_21st", None)
+checa("existe testar_21st (chamada real)", callable(teste21))
+if callable(teste21):
+    salvo = {k: _os.environ.pop(k) for k in list(_os.environ) if k in chk.CHAVES_21ST}
+    orig_mcp = chk.estado_mcp
+    chk.estado_mcp = lambda n: ("conectado", f"{n}: ✔ Connected")
+    ok21, det21 = teste21()
+    checa("21st sem chave no ambiente NAO passa so por estar na lista", ok21 is False, det21[:70])
+    chamadas = []
+    def falso_401(url, corpo, cab, timeout=20):
+        chamadas.append((url, cab))
+        return 401, {}, '{"error":{"message":"Not authenticated"}}'
+    _os.environ[chk.CHAVES_21ST[0]] = "chave-de-teste"
+    orig_post = chk._post_json
+    chk._post_json = falso_401
+    ok21, det21 = teste21()
+    checa("21st com chave recusada (401) reprova", ok21 is False and "401" in det21, det21[:70])
+    checa("a chamada real manda a chave no cabecalho", any(c[1].get("x-api-key") == "chave-de-teste" for c in chamadas))
+    respostas = iter([
+        (200, {"mcp-session-id": "s1"}, '{"jsonrpc":"2.0","id":1,"result":{"capabilities":{}}}'),
+        (202, {}, ""),
+        (200, {}, 'event: message\ndata: {"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"search","inputSchema":{"type":"object","properties":{"query":{"type":"string"}},"required":["query"]}}]}}'),
+        (200, {}, '{"jsonrpc":"2.0","id":3,"result":{"content":[{"type":"text","text":"Button"}]}}'),
+    ])
+    chk._post_json = lambda url, corpo, cab, timeout=20: next(respostas)
+    ok21, det21 = teste21()
+    checa("21st com chave valida e busca que devolve componente passa", ok21 is True, det21[:70])
+    chk._post_json = orig_post
+    chk.estado_mcp = orig_mcp
+    _os.environ.pop(chk.CHAVES_21ST[0], None)
+    _os.environ.update(salvo)
+
 # So faz sentido se a ferramenta estiver instalada: senao seria testar o ambiente, nao o checador.
 est_magic, det = chk.estado_mcp("magic")
 if est_magic == "ausente":

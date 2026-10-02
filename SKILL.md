@@ -16,6 +16,7 @@ O essencial pra rodar, em poucas linhas. O detalhe de cada item esta nas secoes 
 
 1. **5 caminhos:** CRIAR do zero / CLONAR (URL ou PDF) / **CLONAR + ELEVAR** (clone E melhoria no mesmo pedido) / MELHORAR (pagina que ja existe e vai continuar existindo) / EDITAR (mudanca pontual). **Atencao ao 2B:** rodar CLONAR quando o pedido era CLONAR+ELEVAR entrega uma pagina fiel que o dono reprova de olho, porque fidelidade e o oposto de melhoria. **Rotear ANTES de tudo** (ver "CAMINHOS DE EXECUÇÃO"): cada um tem fluxo e gates proprios. Rodar 6 steps numa troca de headline e tao errado quanto editar no improviso uma pagina nova.
 1b. **ANTES DE TUDO:** rodar `python3 <dir-da-skill>/scripts/checar-ferramentas.py`. Critico sem responder = PARA e conduz a correcao. Ferramenta morta com fallback silencioso ja deixou as duas camadas visuais desligadas por meses.
+1c. **Aluno sem conta paga, sem chave nenhuma:** pode fazer a pagina inteira. 21st.dev e Higgsfield sao OPCIONAIS e nunca bloqueiam: a rota padrao do aluno e componente feito a mao em Tailwind e movimento em CSS. O que bloqueia e so o que e de graca: Playwright, a skill `design-taste-frontend`, o banco de design (`search.py`), a foto real sem chave (Openverse) e o gate de tells.
 2. **Step 0 comeca pela ENTREVISTA DE BRIEFING (0.0):** as seis perguntas da rodada 1 pra todo mundo, rodada 2 so pra quem ja tem cliente. Sem as seis respondidas, nao avanca. Antes disso roda o **0.0-PRE**, que e um GATE: `checar-ferramentas.py` manda cada ferramenta FAZER algo e confere o retorno. Ferramenta CRITICA sem responder **para a skill** ate ser conectada (o agente conduz a instalacao, nao so avisa). Opcional degradado segue, com a degradacao DECLARADA na entrega. Por fim, carregar contexto do projeto.
 3. **Ordem sagrada:** COPY (Step 1) → DESIGN (Step 2) → CODIGO (Step 3). Nunca pixel antes de copy travada.
 4. **Step 1:** se o usuario ja trouxe copy, validar e travar (COPY LOCK); senao gerar (copy-pagina-vendas opcional).
@@ -381,10 +382,12 @@ classifica cada uma como CRITICA ou opcional e que reprova. Se divergirem, o scr
 texto e que esta desatualizado.
 
 **CRITICA = para a skill ate conectar.** Sao as que, faltando, produzem uma pagina pior sem
-ninguem perceber: Playwright (sem prova de entrega voce entrega no escuro), 21st.dev Magic (sem
-ele o layout cai no feito a mao toda vez, que foi exatamente o defeito de 26/08), a skill
-`design-taste-frontend` (sem gate anti-slop a cara de IA passa), o banco de design e a rota de
-foto real. **Opcional = segue, com a degradacao declarada na entrega.**
+ninguem perceber, e todas sao gratuitas: Playwright (sem prova de entrega voce entrega no
+escuro), a skill `design-taste-frontend` (sem gate anti-slop a cara de IA passa), o banco de
+design, a rota de foto real sem chave e o gate de tells. **Opcional = segue, com a degradacao
+declarada na entrega.** 21st.dev e Higgsfield sao opcionais desde o teste com aluno
+(02/10/2026): o verificador dava "tudo OK" porque rodava na maquina do dono, com a chave e a
+conta dele, e um aluno de verdade teria o 21st bloqueando no primeiro comando.
 
 | Dependencia | Como detectar | Papel | Faltando: bloqueia ou degrada? |
 |-------------|---------------|-------|---------|
@@ -393,7 +396,7 @@ foto real. **Opcional = segue, com a degradacao declarada na entrega.**
 | **Higgsfield (CLI)** | `higgsfield account status` (imprime e-mail, plano e creditos) | movimento e b-roll nos blocos (Step 3.2b), **passo esperado, nao enfeite** | conta PAGA para uso comercial. Sem ela: material real do cliente, gravacao de tela, b-roll de acervo aberto ou animacao CSS/Framer Motion, com a pendencia declarada na entrega. Setup completo (inclusive o `higgsfield workspace set <id>`, que trava todo mundo) em `references/higgsfield.md` |
 | **HF_API_KEY_ID + HF_API_KEY_SECRET (env)** | verificar presença da variável sem imprimir o valor | rota por API do `scripts/higgsfield.py` (lote, `--dry-run`) | usar a CLI (rota assistida) ou seguir sem movimento gerado |
 | **Stitch (MCP)** | tools `mcp__stitch__*` | wireframe (Step 2) | auto-instalar (protocolo item 1); ultimo caso: layout direto no codigo |
-| **21st.dev Magic (MCP)** | `checar-ferramentas.py` (estado real, nao presenca na lista) | componentes (Step 3) | **CRITICA: bloqueia.** O fallback "componente a mao" existe, mas era ele que rodava sempre quando o MCP estava morto. Conduza a conexao. |
+| **21st.dev Magic (MCP)** | `checar-ferramentas.py` faz uma CHAMADA REAL (initialize, tools/list e uma busca de componente) com a chave em `TWENTYFIRST_API_KEY` | componentes (Step 3) | **opcional, nunca bloqueia.** Sem ele: componente a mao em Tailwind, declarado na entrega. Com ele vivo, o gate de uso 4.6 cobra o uso (ou dispensa com motivo). |
 | **design-taste-frontend (skill)** | skill listada | gate anti-slop (Step 4 e 4.9) | **CRITICA: bloqueia.** E o unico passo que tira a cara de IA; sem ela o scoring manual 4.0b vira formalidade. |
 | **redesign-existing-projects (skill)** | skill listada | audit-first em clone/redesign (Step 2) | recomendado (protocolo item 4); fallback: auditoria manual das 5 dimensoes |
 | **high-end-visual-design (skill)** | skill listada | acabamento premium (Step 4) | recomendado (protocolo item 4); fallback: segue sem |
@@ -427,13 +430,15 @@ nunca prender o usuario num loop de instalacao.
 2. **Playwright: necessário para a prova visual.** A prova de entrega (screenshot lido)
    e obrigatoria em todos os caminhos, e depende dele. Se faltar, instalar de cara:
    `npm install -g playwright && npx playwright install chromium`.
-3. **Conduzir a configuração do 21st.dev:** ferramenta crítica. Sem resposta utilizável, o Step 0 continua bloqueado. Pexels é opcional.
+3. **Oferecer a configuração do 21st.dev:** opcional. Quem quiser, ganha componente pronto; quem não quiser, segue com componente a mão em Tailwind. Pexels também é opcional.
 4. **Instalar `design-taste-frontend`:** também é crítica. As demais skills de design são opcionais.
-5. **Modo não interativo:** registrar o bloqueio crítico e os comandos de instalação. A ausência de interação não autoriza substituir ferramenta crítica por fallback.
+5. **Modo não interativo:** registrar o bloqueio crítico e os comandos de instalação. A ausência de interação não autoriza substituir ferramenta crítica por fallback. Opcional ausente (21st.dev, Higgsfield, Stitch) segue pela rota sem conta, declarada na entrega.
 
 ```bash
-# --- 21st.dev Magic (componentes) --- precisa de API key gratuita em https://21st.dev
-claude mcp add magic --scope user --env API_KEY=<sua-chave-21st> -- npx -y @21st-dev/magic@latest
+# --- 21st.dev Magic (componentes, OPCIONAL) --- API key gratuita em https://21st.dev/mcp
+claude mcp add --transport http 21st https://21st.dev/api/mcp --scope user --header "x-api-key: <sua-chave-21st>"
+# e a mesma chave no ambiente, pro checar-ferramentas.py fazer a chamada real:
+export TWENTYFIRST_API_KEY="<sua-chave-21st>"
 
 # --- Google Stitch (wireframe) --- binario global stitch-mcp
 npm install -g stitch-mcp && claude mcp add stitch --scope user -- stitch-mcp proxy
@@ -816,7 +821,7 @@ nenhum, porque **fallback silencioso nao reclama**.
 A deteccao antiga era "a tool `mcp__magic__*` aparece na lista?". Aparecia. E estava morta.
 **Estar na lista nao e verificacao.** Verificacao e mandar fazer e conferir o retorno.
 
-**E o teste tem que exercitar a CREDENCIAL, nao so a conexao.** Um MCP passou verde neste
+**E o teste tem que exercitar a CREDENCIAL, nao so a conexao** (o do 21st.dev faz uma busca real de componente com a chave de `TWENTYFIRST_API_KEY`; sem a chave no ambiente ele sai como opcional ausente, nunca como verde). Um MCP passou verde neste
 verificador e devolveu `HTTP 401 (invalid authentication credentials)` na primeira chamada
 real da sessao. O ping alcancava o servidor; o que faltava era a chave, e nada no teste
 usava a chave. Ferramenta que responde ao ping e falha na chamada real e PIOR que
@@ -838,7 +843,7 @@ sempre nao sabe o que e um MCP.
 
 | Ferramenta | Como conduzir |
 |---|---|
-| **21st.dev (magic)** | Abra `https://21st.dev/mcp`, peca a chave, e rode: `claude mcp add --transport http 21st https://21st.dev/api/mcp --scope user --header "x-api-key: SUA_CHAVE"`. Avise que as tools novas so aparecem na proxima sessao. |
+| **21st.dev (magic), opcional** | So se a pessoa quiser. Abra `https://21st.dev/mcp`, peca a chave, e rode: `claude mcp add --transport http 21st https://21st.dev/api/mcp --scope user --header "x-api-key: SUA_CHAVE"` e `export TWENTYFIRST_API_KEY=SUA_CHAVE`. Avise que as tools novas so aparecem na proxima sessao. Sem chave: componente a mao em Tailwind. |
 | **Playwright** | `npm i -g playwright && npx playwright install chromium` (baixa ~265 MB; a versao leve e `--only-shell`, ~94 MB) |
 | **Higgsfield** | Setup completo em `references/higgsfield.md`, secao SETUP (inclui o `workspace set`, que trava todo mundo) |
 | **Stitch** | Proxy local. Timeout costuma ser conflito de porta: confira quem esta na porta antes de reiniciar |
