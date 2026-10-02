@@ -131,5 +131,12 @@ class Docs(unittest.TestCase):
             self.assertIn(lente, readme, lente)
 
 
+    def test_t14_seo_abaixo_de_90_sob_noindex_e_esperado(self):
+        perf = self.secao("**Performance:**", "**Conteudo:**").lower()
+        self.assertRegex(perf, r"(?s)noindex.{0,300}seo|seo.{0,300}noindex")
+        self.assertIn("esperado", perf)
+        self.assertIn("is-crawlable", perf)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
