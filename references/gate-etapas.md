@@ -67,3 +67,22 @@ python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir-do-projeto> checar 
 No dashboard, acrescente `--perfil dash` e comece pela etapa 1. O gate de ferramentas
 continua anterior ao registro. Registrar novamente uma etapa invalida as seguintes.
 Antes de entregar, confira a etapa 4 em páginas e a etapa 6 no dashboard.
+
+## Re-registrar a etapa 3 depois da wave é esperado
+
+Toda correção da wave (Step 4) mexe no `index.html`, que é evidência da etapa 3. Na hora de
+registrar a etapa 4 o gate responde `BLOQUEIA: Etapa 3: evidência mudou (index.html). Revalide
+esta etapa e as seguintes.` Isso é esperado e NÃO quer dizer refazer o Step 3: a página
+mudou de propósito, e o gate só pede que o registro aponte a versão nova.
+
+Faça assim, depois da última rodada da wave:
+
+1. Atualize `evidencias/etapa-3.json` se o `primeiro_bloco` ou o `movimento` mudaram na wave.
+2. Registre a etapa 3 de novo:
+   `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir-do-projeto> registrar 3 --arquivo evidencias/etapa-3.json`
+3. Registre a etapa 4:
+   `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir-do-projeto> registrar 4 --arquivo evidencias/etapa-4.json`
+
+O que NÃO é esperado: evidência das etapas 0, 1 ou 2 mudar depois da wave. Briefing, copy
+travada ou direção visual alterados querem dizer que a wave mudou o que já estava aprovado, e
+aí o caminho é voltar ao step daquela etapa, não só re-registrar.

@@ -148,5 +148,11 @@ class Docs(unittest.TestCase):
         self.assertRegex(inicio, r"rota padr[aã]o")
 
 
+    def test_t18_reregistrar_etapa_3_depois_da_wave_e_esperado(self):
+        g = (RAIZ / "references" / "gate-etapas.md").read_text(encoding="utf-8").lower()
+        self.assertRegex(g, r"(?s)etapa 3.{0,400}wave.{0,400}esperado", "gate-etapas.md nao explica a etapa 3 depois da wave")
+        self.assertIn("evidência mudou", g)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
