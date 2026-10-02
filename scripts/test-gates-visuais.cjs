@@ -39,6 +39,14 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/botao-duas-linhas') corpo = texto.replace('Ver resultado', 'Agendar aula experimental grátis pelo WhatsApp');
   if (rota === '/sem-cta-longo') corpo = texto + longo.repeat(14);
   if (rota === '/cta-fixo') corpo = texto + longo.repeat(14) + '<div style="height:80px"></div><a href="#c" style="position:fixed;left:12px;right:12px;bottom:12px;text-align:center">Agendar agora</a>';
+  // gate-simetria (auditoria da v3): escada de itens soltos, alturas diferentes, passos ao lado
+  // do título e colunas que terminam 200 px uma antes da outra.
+  const caixa = (t, extra = '') => `<article style="background:#eee;padding:16px${extra}"><h3>${t}</h3><p>Descrição curta do item paralelo.</p></article>`;
+  if (rota === '/grade-ok') corpo = texto + '<section><h2>Três itens</h2><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">' + caixa('Um') + caixa('Dois') + caixa('Três com um título bem mais longo que os outros para quebrar') + '</div></section>';
+  if (rota === '/grade-escada') corpo = texto + '<section><h2>Itens soltos</h2><ul style="list-style:none;padding:0"><li style="margin-left:0;width:50%;height:120px">Primeira situação comum</li><li style="margin-left:25%;width:50%;height:90px">Segunda situação comum</li><li style="margin-left:45%;width:50%;height:120px">Terceira situação comum</li></ul></section>';
+  if (rota === '/grade-alturas') corpo = texto + '<section><h2>Três itens</h2><div style="display:flex;gap:16px;align-items:flex-start">' + caixa('Um', ';flex:1') + caixa('Dois', ';flex:1') + caixa('Três com um título bem mais longo que os outros para quebrar em mais linhas no card', ';flex:1') + '</div></section>';
+  if (rota === '/passos-ao-lado') corpo = texto + '<section style="display:grid;grid-template-columns:1fr 1fr;gap:32px"><h2>Como funciona</h2><ol><li style="height:60px">Chame no WhatsApp</li><li style="height:60px">Combine o dia</li><li style="height:60px">Faça a aula</li></ol></section>';
+  if (rota === '/colunas-desbalanceadas') corpo = '<section style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start"><div><h1>Título</h1><p>Texto curto.</p><button>Ver resultado</button></div><div style="height:620px;background:#ccd"></div></section>';
   if (rota.startsWith('/dash')) corpo = '<h1>Painel 2026</h1><div class="kpi__value">' + (rota === '/dash-ok' ? 'R$ 150,00' : '&#8212;') + '</div>';
   res.writeHead(rota === '/erro' ? 500 : 200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end('<!doctype html><html lang="pt-BR"><head><meta name="viewport" content="width=device-width,initial-scale=1">' + (rota === '/sem-identidade' ? '' : head) + style + '</head><body>' + corpo + '</body></html>');
@@ -82,6 +90,12 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['responsivo-botao-duas-linhas', 'gate-responsivo.mjs', ['--url', url + '/botao-duas-linhas'], 1, /quebra em \d linhas/],
     ['responsivo-sem-cta-longo', 'gate-responsivo.mjs', ['--url', url + '/sem-cta-longo'], 1, /sem nenhum bot[aã]o/],
     ['responsivo-cta-fixo', 'gate-responsivo.mjs', ['--url', url + '/cta-fixo'], 0],
+    ['simetria-positiva', 'gate-simetria.mjs', ['--url', url + '/grade-ok'], 0],
+    ['simetria-pagina-simples', 'gate-simetria.mjs', ['--url', url + '/ok'], 0],
+    ['simetria-escada', 'gate-simetria.mjs', ['--url', url + '/grade-escada'], 1, /escada/],
+    ['simetria-alturas', 'gate-simetria.mjs', ['--url', url + '/grade-alturas'], 1, /alturas diferentes/],
+    ['simetria-passos-ao-lado', 'gate-simetria.mjs', ['--url', url + '/passos-ao-lado'], 1, /lista vertical ao lado do t[ií]tulo/],
+    ['simetria-colunas', 'gate-simetria.mjs', ['--url', url + '/colunas-desbalanceadas'], 1, /colunas desbalanceadas/],
     ['video-ausente', 'gate-video.mjs', ['--url', url + '/ok', '--publico', pasta, '--frames', path.join(pasta, 'frames-ausente')], 0],
     ['video-positivo', 'gate-video.mjs', ['--url', url + '/video-ok', '--publico', pasta, '--frames', path.join(pasta, 'frames-positivo')], 0],
     ['video-negativo', 'gate-video.mjs', ['--url', url + '/video', '--publico', pasta, '--frames', path.join(pasta, 'frames-negativo')], 1],
