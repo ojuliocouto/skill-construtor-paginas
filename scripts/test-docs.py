@@ -212,5 +212,15 @@ class Docs(unittest.TestCase):
         self.assertEqual(len(ruins), 0, f"{len(ruins)} palavras sem acento, ex.: {ruins[:8]}")
 
 
+    def test_t5_index_yaml_aponta_para_titulos_reais(self):
+        linhas = SKILL.read_text(encoding="utf-8").splitlines()
+        idx = (RAIZ / "references" / "index.yaml").read_text(encoding="utf-8")
+        self.assertTrue(idx.endswith("\n"), "index.yaml termina no meio de uma linha")
+        entradas = re.findall(r"^  [\w]+: (\d+)$", idx, flags=re.M)
+        self.assertGreater(len(entradas), 50)
+        for n in entradas:
+            self.assertTrue(linhas[int(n) - 1].startswith("#"), f"linha {n} do SKILL.md nao e titulo")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
