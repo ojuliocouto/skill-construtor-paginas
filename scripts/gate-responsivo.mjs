@@ -118,6 +118,30 @@ async function fundoAssentado(page, clip, teto = 2500, tolerancia = 2) {
   return anterior;
 }
 
+/* A CAIXA DO BOTAO PRECISA ASSENTAR ANTES DA FAIXA DE FUNDO SER RECORTADA.
+   Defeito medido em 15/09/2026 na v8 da Operacao Claude Code: o gate reprovava o
+   CTA com 2,41:1 e o pixel provou que 5 das 20 linhas da amostra de "fundo" eram o
+   PROPRIO botao (#f94e03), porque a secao entrava com reveal translateY(14px) e o
+   boundingBox era lido no meio da transicao. Assentado o fundo, a caixa ja tinha
+   subido 14px e o recorte, preso na coordenada velha, invadia o botao. Medida certa
+   no mesmo botao: 3,20:1. Ler a caixa DEPOIS que ela para de se mexer resolve, e
+   vale pra qualquer pagina com animacao de entrada. */
+async function caixaAssentada(el, teto = 2000, tolerancia = 1) {
+  const fim = Date.now() + teto;
+  let anterior = await el.boundingBox();
+  let iguais = 0;
+  while (Date.now() < fim) {
+    await new Promise((r) => setTimeout(r, 100));
+    const atual = await el.boundingBox();
+    if (!atual) return anterior;
+    iguais = (Math.abs(atual.y - anterior.y) <= tolerancia && Math.abs(atual.x - anterior.x) <= tolerancia)
+      ? iguais + 1 : 0;
+    anterior = atual;
+    if (iguais >= 2) break;
+  }
+  return anterior;
+}
+
 const navegador = await chromium.launch();
 
 console.log('\nGATE DE RESPONSIVIDADE  ' + URL_ALVO);
@@ -282,13 +306,24 @@ for (const [nome, w, h, mob] of TELAS) {
     if (!info) continue;
     try {
       await el.scrollIntoViewIfNeeded();
-      const cx = await el.boundingBox();
+      let cx = await caixaAssentada(el);
       if (!cx || cx.y < 30) continue;
       // Nada de prazo chutado aqui: mede ate a propria faixa parar de mudar.
-      const fundo = await fundoAssentado(page, {
-        x: Math.round(cx.x), y: Math.round(cx.y) - 30,
-        width: Math.min(Math.round(cx.width), w - Math.round(cx.x)), height: 20,
-      });
+      // E CONFERE a caixa DEPOIS de medir: se o botao andou enquanto a faixa
+      // assentava, o recorte ficou preso na coordenada velha e pode ter pego o
+      // proprio botao como "fundo". Nesse caso, mede de novo. Sem esta conferencia
+      // a reprovacao aparecia so as vezes, o que e pior que aparecer sempre.
+      let fundo = null;
+      for (let tentativa = 0; tentativa < 3; tentativa++) {
+        fundo = await fundoAssentado(page, {
+          x: Math.round(cx.x), y: Math.round(cx.y) - 30,
+          width: Math.min(Math.round(cx.width), w - Math.round(cx.x)), height: 20,
+        });
+        const depois = await el.boundingBox();
+        if (!depois || (Math.abs(depois.y - cx.y) <= 2 && Math.abs(depois.x - cx.x) <= 2)) break;
+        cx = depois;
+      }
+      if (!fundo) continue;
       const [br, bg, bb] = (info.cor.match(/[\d.]+/g) || [0, 0, 0]).slice(0, 3).map(Number);
       const c = contraste(lum(br, bg, bb), lum(...fundo));
       if (c < 3) r.ctaSemContraste.push(`${info.texto} (${c.toFixed(2)}:1)`);
