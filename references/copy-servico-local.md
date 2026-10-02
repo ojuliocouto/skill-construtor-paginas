@@ -56,6 +56,20 @@ aparecem (ficam como pendência declarada).
    Fórmula: "<A primeira vez é grátis / sem compromisso>" + "Chame no WhatsApp e <ação>."
 ```
 
+## Sem cliente ainda
+
+Quem acabou de abrir o negócio não tem depoimento, e isso não é motivo para inventar nem para
+deixar buraco na página.
+
+- **Mostra:** credencial do profissional (nome e registro no conselho), fotos reais do espaço
+  e do equipamento, endereço com referência, horário, CNPJ, garantia ou condição de
+  inauguração que o cliente confirmou. É isso que substitui a prova social.
+- **Oculta:** o espaço do depoimento futuro fica no HTML como
+  `<section data-reservado="depoimentos" hidden>`, invisível, e entra nas pendências com o que
+  falta para ligar. Na tela, nada de "em breve depoimentos", estrela ou contador de alunos.
+- **Copy:** a seção de mecanismo (campo 5) carrega a confiança; as dúvidas (campo 8) respondem
+  "vocês são novos?" com o que existe (formação, espaço, cuidado), sem prometer resultado.
+
 ## Conferência antes do COPY LOCK
 
 - [ ] Cada frase com número, preço, credencial ou resultado tem a fonte no briefing

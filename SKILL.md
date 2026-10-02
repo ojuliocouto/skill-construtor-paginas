@@ -1760,6 +1760,21 @@ espaco e do equipamento, garantia, condicao de inauguracao, CNPJ e endereco). Re
 `references/scoring-system.md`, dimensao 6. Sem os substitutos, a dimensao volta a pontuar
 normalmente. Depoimento inventado continua PROIBIDO em qualquer cenario.
 
+**SEM CLIENTE AINDA: o que a pagina mostra e o que fica oculto (regra unica).** Quando o
+briefing tem a flag `sem prova social`:
+- **A pagina MOSTRA so substitutos verificaveis**, cada um conferido contra a fonte: credencial
+  do profissional (nome e numero do registro no conselho, quando o cliente informar), fotos
+  reais do espaco e do equipamento, endereco com referencia, horario, CNPJ, garantia real,
+  condicao de inauguracao que o cliente confirmou. Sem nenhum deles confirmado, a pagina sai
+  sem secao de prova e o motivo vai em PENDENCIAS DECLARADAS.
+- **A pagina OCULTA o espaco do depoimento futuro**: ele pode existir no HTML como
+  `<section data-reservado="depoimentos" hidden>` (ou comentario), nunca visivel. Proibido na
+  tela: "em breve depoimentos", estrela, contador de alunos, logo de parceiro que nao existe.
+- **Isto nao fere o "ZERO placeholder" do 4.2:** placeholder e o que o VISITANTE ve. Secao
+  `hidden` reservada nao aparece pra ninguem; ela entra na lista de pendencias com o que falta
+  pra ligar ("3 depoimentos com nome e foto, autorizados").
+- Modelo de copy do mesmo caso em `references/copy-servico-local.md`, secao "Sem cliente ainda".
+
 ---
 
 ### 4.1 AUDITORIA DO ESTRATEGISTA: Hook/Story/Offer
@@ -1823,7 +1838,7 @@ Executar auditoria estrategica completa usando `references/strategist-audit.md`:
 - [ ] CSS minificado
 
 **Conteudo:**
-- [ ] ZERO placeholder/Lorem Ipsum
+- [ ] ZERO placeholder/Lorem Ipsum visivel (secao `hidden` reservada pra depoimento futuro nao conta: ver SEM CLIENTE AINDA, no 4.0b)
 - [ ] ZERO dado inventado (numero, estatistica, "100%", depoimento). Se nao esta na fonte, NAO existe.
 - [ ] **Diff de claims:** listar TODA afirmacao factual/promessa da pagina (urgencia, escassez, garantia, "sem gravacao", "vagas limitadas", bonus) e conferir uma a uma contra o briefing/material do usuario. Claim que nao esta na fonte = REMOVER (nao e polimento, e dado inventado).
 - [ ] **FOTO TAMBEM AFIRMA, e o diff de claims tem que cobri-la.** Caso medido (08/2026): cinco frentes de servico administrativas ilustradas com fotos do proprio cliente, duas delas de procedimento clinico (eletroencefalograma e coleta de sangue). Nenhuma palavra foi inventada, e mesmo assim a pagina passou a sugerir um servico que a fonte nao declara. E a mesma falha que ja tinha custado uma rodada por escrito, num canal que o checklist nao cobria. **Liste o que cada FOTO mostra, contra o titulo ao lado dela.** Se a imagem afirma algo que a fonte nao diz, ela sai do lado daquele titulo (pode viver numa faixa sem titulo colado).

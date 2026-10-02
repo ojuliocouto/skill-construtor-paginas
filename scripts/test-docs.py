@@ -103,5 +103,16 @@ class Docs(unittest.TestCase):
         self.assertRegex(hero.lower(), r"micro-copy.{0,160}(opcional|nunca no hero)")
 
 
+    def test_t17_sem_cliente_ainda_diz_o_que_mostra_e_o_que_oculta(self):
+        s = SKILL.read_text(encoding="utf-8")
+        i = s.find("SEM CLIENTE AINDA")
+        self.assertGreater(i, 0, "paragrafo SEM CLIENTE AINDA ausente no SKILL.md")
+        trecho = s[i:i + 2500].lower()
+        for item in ("mostra", "oculta", "hidden", "credencial", "foto", "cnpj", "placeholder"):
+            self.assertIn(item, trecho, item)
+        modelo = (RAIZ / "references" / "copy-servico-local.md").read_text(encoding="utf-8").lower()
+        self.assertIn("sem cliente ainda", modelo)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
