@@ -6,26 +6,26 @@ Antes de construir do zero, busque templates e paginas ja criadas no GitHub como
 
 ```bash
 # Busca por repositorios (padrao)
-python3 ~/.claude/skills/construtor-paginas/scripts/github-search.py "landing page tailwind"
+python3 <dir-da-skill>/scripts/github-search.py "landing page tailwind"
 
 # Usar preset (queries otimizadas)
-python3 ~/.claude/skills/construtor-paginas/scripts/github-search.py landing-nextjs
+python3 <dir-da-skill>/scripts/github-search.py landing-nextjs
 
 # Filtrar por linguagem
-python3 ~/.claude/skills/construtor-paginas/scripts/github-search.py "saas template" --lang tsx
+python3 <dir-da-skill>/scripts/github-search.py "saas template" --lang tsx
 
 # Minimo de stars (qualidade)
-python3 ~/.claude/skills/construtor-paginas/scripts/github-search.py "portfolio template" --stars 200
+python3 <dir-da-skill>/scripts/github-search.py "portfolio template" --stars 200
 
 # Mais resultados
-python3 ~/.claude/skills/construtor-paginas/scripts/github-search.py dashboard -n 20
+python3 <dir-da-skill>/scripts/github-search.py dashboard -n 20
 
 # Ordenar por mais recente
-python3 ~/.claude/skills/construtor-paginas/scripts/github-search.py "nextjs starter" --sort updated
+python3 <dir-da-skill>/scripts/github-search.py "nextjs starter" --sort updated
 
 # Buscar CODIGO especifico (componentes, secoes)
-python3 ~/.claude/skills/construtor-paginas/scripts/github-search.py "hero section tailwind" --type code --lang tsx
-python3 ~/.claude/skills/construtor-paginas/scripts/github-search.py "pricing table component" --type code --lang tsx
+python3 <dir-da-skill>/scripts/github-search.py "hero section tailwind" --type code --lang tsx
+python3 <dir-da-skill>/scripts/github-search.py "pricing table component" --type code --lang tsx
 ```
 
 ### Presets Disponiveis
@@ -61,27 +61,27 @@ python3 ~/.claude/skills/construtor-paginas/scripts/github-search.py "pricing ta
 
 ```bash
 # Videos de fundo para hero (requer PEXELS_API_KEY gratuita)
-python3 ~/.claude/skills/construtor-paginas/scripts/assets-search.py "dark abstract tech"
-python3 ~/.claude/skills/construtor-paginas/scripts/assets-search.py tech-dark          # preset
-python3 ~/.claude/skills/construtor-paginas/scripts/assets-search.py waves-light        # preset light
+python3 <dir-da-skill>/scripts/assets-search.py "dark abstract tech"
+python3 <dir-da-skill>/scripts/assets-search.py tech-dark          # preset
+python3 <dir-da-skill>/scripts/assets-search.py waves-light        # preset light
 
 # Fotos para hero ou secoes
-python3 ~/.claude/skills/construtor-paginas/scripts/assets-search.py "office modern" --type photo
+python3 <dir-da-skill>/scripts/assets-search.py "office modern" --type photo
 
 # Lottie animations (loading, success, rocket, etc.)
-python3 ~/.claude/skills/construtor-paginas/scripts/assets-search.py "loading" --type lottie
+python3 <dir-da-skill>/scripts/assets-search.py "loading" --type lottie
 
 # Ilustracoes SVG (undraw, storyset)
-python3 ~/.claude/skills/construtor-paginas/scripts/assets-search.py --type illustrations "team work"
+python3 <dir-da-skill>/scripts/assets-search.py --type illustrations "team work"
 
 # Icones animados (LordIcon, Lucide)
-python3 ~/.claude/skills/construtor-paginas/scripts/assets-search.py --type icons
+python3 <dir-da-skill>/scripts/assets-search.py --type icons
 
 # Backgrounds SVG, patterns, noise textures
-python3 ~/.claude/skills/construtor-paginas/scripts/assets-search.py --type backgrounds
+python3 <dir-da-skill>/scripts/assets-search.py --type backgrounds
 
 # Ver todos os presets de video
-python3 ~/.claude/skills/construtor-paginas/scripts/assets-search.py --presets
+python3 <dir-da-skill>/scripts/assets-search.py --presets
 ```
 
 **Setup da API Pexels (gratuita, 20.000 req/mes):**

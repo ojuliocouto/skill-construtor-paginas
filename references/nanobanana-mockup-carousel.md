@@ -23,10 +23,10 @@ Workflow completo: gerar screenshots de app com Nanobanana → inserir em mockup
 
 ```bash
 # Verificar se skill está disponível
-ls ~/.claude/skills/nanobanana/
+ls <pasta-da-skill-nanobanana>/
 
 # Config com GEMINI_API_KEY
-cat ~/.claude/skills/nanobanana/config.json
+cat <pasta-da-skill-nanobanana>/config.json
 ```
 
 ### Script de geração de mockup de app

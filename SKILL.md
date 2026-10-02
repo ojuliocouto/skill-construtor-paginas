@@ -8,6 +8,10 @@ description: "Use quando o usuario quiser criar uma pagina web (landing page, sa
 
 Skill unificada para construir paginas web profissionais, bonitas e de alta conversao. Combina o melhor de 7 skills especializadas em uma unica referencia.
 
+**`<dir-da-skill>`** em todo comando = a pasta onde esta skill foi clonada, a que tem este
+SKILL.md (ex.: `~/minhas-skills/construtor-paginas`). Troque pelo caminho real antes de colar.
+`<dir>` = a pasta do projeto da pagina.
+
 **Glossario (as palavras em ingles que aparecem neste arquivo):**
 - **gate**: portao. Comando ou checagem que REPROVA (sai com codigo 1) e impede avancar.
 - **tell**: sinal que entrega pagina feita por IA (kicker, numero gigante, brilho atras do texto).
@@ -1009,7 +1013,7 @@ Nao apenas extrair, AVALIAR:
 ### 0.5 Puxar Referencias
 Buscar 3 paginas de referencia do nicho como benchmark visual:
 ```bash
-python3 ~/.claude/skills/construtor-paginas/scripts/github-search.py "<tipo-pagina>" --stars 50
+python3 <dir-da-skill>/scripts/github-search.py "<tipo-pagina>" --stars 50
 ```
 Ou buscar manualmente paginas de concorrentes/referencia que o usuario mencionar.
 
@@ -1268,13 +1272,12 @@ Rodar os 3:
 **O banco (CSVs) e indexado em ingles, e o `search.py` traduz os termos comuns em portugues** (pilates, estudio, clinica, consultorio, academia, restaurante, advocacia, saude, beleza, acolhedor, escuro, moderno e outros: lista em `TRADUCOES`, no `scripts/core.py`). A saida mostra a consulta traduzida. Termo fora da lista e 0 resultado? Traduza voce (ex.: "mentoria dark premium" → "dark premium coaching").
 
 ```bash
-SKILL=~/.claude/skills/construtor-paginas
 # Estilo visual (50 estilos: cyberpunk, OLED dark, glassmorphism, brutalism, etc.)
-python3 $SKILL/scripts/search.py "<tone + niche em ingles>" --domain style -n 3
+python3 <dir-da-skill>/scripts/search.py "<tone + niche em ingles>" --domain style -n 3
 # Paleta (21 paletas por tipo de produto, com primary/secondary/CTA/bg/text/border em hex)
-python3 $SKILL/scripts/search.py "<product type em ingles>" --domain color -n 2
+python3 <dir-da-skill>/scripts/search.py "<product type em ingles>" --domain color -n 2
 # Font pairing (50 pares, ja com CSS @import e Tailwind config prontos)
-python3 $SKILL/scripts/search.py "<mood em ingles>" --domain typography -n 2
+python3 <dir-da-skill>/scripts/search.py "<mood em ingles>" --domain typography -n 2
 ```
 
 Tambem disponiveis: `--domain ux` (guidelines), `--domain chart` (data viz), `--domain landing`,

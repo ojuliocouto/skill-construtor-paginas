@@ -30,5 +30,21 @@ class Docs(unittest.TestCase):
         self.assertEqual(ruins, [])
 
 
+    def test_t19_nenhum_caminho_fixo_na_pasta_do_dono(self):
+        # So funcionava porque o dono tem a skill em ~/.claude/skills. Instalacao (git clone,
+        # skills add) e o unico lugar onde o destino aparece por extenso.
+        ruins = []
+        for p, t in textos("SKILL.md", "README.md", "references/*.md"):
+            for n, linha in enumerate(t.splitlines(), 1):
+                if re.search(r"(~|\$HOME)/\.claude/skills/", linha) and not re.search(r"git clone|skills add", linha):
+                    ruins.append(f"{p.name}:{n}: {linha.strip()[:70]}")
+                if re.search(r"^SKILL=", linha):
+                    ruins.append(f"{p.name}:{n}: {linha.strip()[:70]}")
+        self.assertEqual(ruins, [])
+
+    def test_t19_dir_da_skill_explicado(self):
+        self.assertRegex(SKILL.read_text(encoding="utf-8")[:6000], r"<dir-da-skill>.{0,40}(pasta|diret)")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -20,7 +20,7 @@ Aprovado em produção em um site institucional real (março/2026).
 | `wavespeedai/wan-2.1-t2v-480p` | Text→Video | `/v1/models/{model}/predictions` | Hero background, texturas, natureza genérica |
 | `wavespeedai/wan-2.1-i2v-480p` | Image→Video | `/v1/models/{model}/predictions` | Animar fotos reais do produto/local |
 
-**Token:** `~/.claude/skills/criativo-imagem-ia/config.json` → campo `REPLICATE_API_TOKEN`
+**Token:** `<pasta-da-skill-criativo-imagem-ia>/config.json` → campo `REPLICATE_API_TOKEN`
 
 ---
 

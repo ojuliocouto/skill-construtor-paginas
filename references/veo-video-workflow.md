@@ -26,7 +26,7 @@ Workflow completo para gerar vídeos com Veo 2/3 (Gemini), otimizar para web e e
 echo $GEMINI_API_KEY
 
 # Se não estiver disponível, verificar:
-cat ~/.claude/skills/nanobanana/config.json | python3 -c "import json,sys; print(json.load(sys.stdin).get('GEMINI_API_KEY',''))"
+cat <pasta-da-skill-nanobanana>/config.json | python3 -c "import json,sys; print(json.load(sys.stdin).get('GEMINI_API_KEY',''))"
 ```
 
 ---
@@ -499,7 +499,7 @@ No código:
 // Veja: references/efeitos-avancados.md#9-aurora-background
 
 // Ou vídeo stock do Pexels:
-// python3 ~/.claude/skills/construtor-paginas/scripts/assets-search.py "dark tech abstract" --type video
+// python3 <dir-da-skill>/scripts/assets-search.py "dark tech abstract" --type video
 ```
 
 ---

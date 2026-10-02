@@ -132,7 +132,7 @@ A implementacao deve ser:
 - **NUNCA usar placeholders vazios.** Gerar imagens similares com IA (DALL-E, ou buscar em bancos de imagem) para que a pagina fique completa na primeira entrega.
 - Buscar fotos/videos similares nos bancos gratuitos:
   ```bash
-  python3 ~/.claude/skills/construtor-paginas/scripts/assets-search.py "descricao da imagem" --type photo
+  python3 <dir-da-skill>/scripts/assets-search.py "descricao da imagem" --type photo
   ```
 - Se nao encontrar similar, gerar com IA descrevendo o que aparece no PDF.
 - Avisar o usuario quais imagens foram geradas/substituidas, para que ele troque se quiser.
