@@ -163,6 +163,36 @@ async function revelarPagina(page) {
   return passos;
 }
 
+/** Deixa a página PARADA no topo antes do print de página inteira, e prova que deixou.
+ *
+ *  O fullPage pinta elemento `fixed`/`sticky` na posição da rolagem do momento da captura.
+ *  Se a página não está em scrollY 0 (rolagem suave ainda andando, script da página que
+ *  rola sozinho, foco que puxou a rolagem), o cabeçalho e o "Pular para o conteúdo" saem
+ *  NO MEIO do print, por cima do título. Foi o que o dono viu no print da página do aluno
+ *  (02/10/2026); medido no navegador real, o h1 estava livre: era artefato da captura.
+ *
+ *  Tira o foco (o link de pular só aparece com foco), rola instantâneo pro topo e só
+ *  libera depois de três leituras seguidas em 0. Sem conseguir, bloqueia: print com o
+ *  cabeçalho fora do lugar é prova falsa. */
+async function pararNoTopo(page) {
+  const fim = Date.now() + 4000;
+  let seguidas = 0;
+  while (Date.now() < fim) {
+    const y = await page.evaluate(() => {
+      if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+      if (window.scrollY !== 0) window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      return window.scrollY;
+    });
+    seguidas = y === 0 ? seguidas + 1 : 0;
+    if (seguidas >= 3) break;
+    await page.waitForTimeout(150);
+  }
+  const fixos = await page.evaluate(() => [...document.querySelectorAll('body *')]
+    .filter((e) => ['fixed', 'sticky'].includes(getComputedStyle(e).position)).length);
+  if (seguidas < 3) throw new Error('a pagina nao parou em scrollY 0: o print sairia com o cabecalho fixo no meio');
+  return fixos;
+}
+
 async function lerEstado(page, el) {
   const pagina = await page.evaluate(() => ({
     scrollY: Math.round(window.scrollY),
@@ -290,6 +320,8 @@ async function main() {
       }
 
       const file = path.join(outdir, `prova-${vp.name}.png`);
+      const fixos = await pararNoTopo(page);
+      console.log(`  topo             ${vp.name}: scrollY 0 confirmado antes do print (${fixos} elemento(s) fixed/sticky no lugar certo)`);
       await page.screenshot({ path: file, fullPage: true });
       shots.push(file);
 

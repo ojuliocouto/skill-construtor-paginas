@@ -2298,6 +2298,14 @@ interacao principal nunca foi clicada (uma roleta publicada com o popup morto). 
    quadrado, og:title, og:description e og:image.
    Ele sai com erro (exit 1) se a pagina nao carregar, o clique falhar, o PNG vier em branco
    ou faltar item de identidade. Colar o output dele no bloco de entrega.
+   **Cabecalho fixo no meio do print e ARTEFATO, nao defeito (medido em 02/10/2026).** O
+   `fullPage` pinta elemento `fixed`/`sticky` na posicao da rolagem do momento da captura: se a
+   pagina nao estava em scrollY 0, o menu e o "Pular para o conteudo" saem por cima do titulo.
+   O `screenshot-prova.js` tira o foco, para a pagina no topo e confirma scrollY 0 em tres
+   leituras antes do print (imprime a linha `topo ... scrollY 0 confirmado`), e bloqueia se nao
+   conseguir. **Print de pagina inteira sai SEMPRE por ele**, nunca por script proprio: foi um
+   script proprio que gerou o print torto do aluno. Na duvida se e defeito real, abra a pagina em
+   scrollY 0 e pergunte ao navegador quem esta em cima do h1 (`elementFromPoint`).
 2. **LER os PNGs com a tool Read** (olhar com os proprios olhos) e conferir contra o
    checklist: ID visual real, sem tells de IA, sem secao quebrada, popup/resultado da
    interacao visivel no pos-clique.
