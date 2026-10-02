@@ -409,7 +409,7 @@ conta dele, e um aluno de verdade teria o 21st bloqueando no primeiro comando.
 |-------------|---------------|-------|---------|
 | **Playwright** | `node <dir-da-skill>/scripts/screenshot-prova.js --check` | prova de entrega, extrator de identidade, gate de video | **CRITICA: bloqueia.** Prova obrigatoria em todos os caminhos: `npm install -g playwright && npx playwright install chromium` |
 | **ffmpeg / ffprobe** | `ffprobe -version` | gate de video (so em pagina com video) | pular o gate de video |
-| **Higgsfield (CLI)** | `higgsfield account status` (imprime e-mail, plano e creditos) | movimento e b-roll nos blocos (Step 3.2b), **passo esperado, nao enfeite** | conta PAGA para uso comercial. Sem ela: material real do cliente, gravacao de tela, b-roll de acervo aberto ou animacao CSS/Framer Motion, com a pendencia declarada na entrega. Setup completo (inclusive o `higgsfield workspace set <id>`, que trava todo mundo) em `references/higgsfield.md` |
+| **Higgsfield (CLI)** | `higgsfield account status` (imprime e-mail, plano e creditos) | movimento e b-roll nos blocos (Step 3.2b), **OPCIONAL: a rota padrao do aluno e movimento em CSS** | conta PAGA para uso comercial. Sem ela: material real do cliente, gravacao de tela, b-roll de acervo aberto ou animacao CSS/Framer Motion, com a pendencia declarada na entrega. Setup completo (inclusive o `higgsfield workspace set <id>`, que trava todo mundo) em `references/higgsfield.md` |
 | **HF_API_KEY_ID + HF_API_KEY_SECRET (env)** | verificar presença da variável sem imprimir o valor | rota por API do `scripts/higgsfield.py` (lote, `--dry-run`) | usar a CLI (rota assistida) ou seguir sem movimento gerado |
 | **Stitch (MCP)** | tools `mcp__stitch__*` | wireframe (Step 2) | auto-instalar (protocolo item 1); ultimo caso: layout direto no codigo |
 | **21st.dev Magic (MCP)** | `checar-ferramentas.py` faz uma CHAMADA REAL (initialize, tools/list e uma busca de componente) com a chave em `TWENTYFIRST_API_KEY` | componentes (Step 3) | **opcional, nunca bloqueia.** Sem ele: componente a mao em Tailwind, declarado na entrega. Com ele vivo, o gate de uso 4.6 cobra o uso (ou dispensa com motivo). |
@@ -1532,7 +1532,13 @@ antes de construir a proxima secao. Replicar padrao errado e o jeito mais caro d
 Depois de aprovado, o hero vira a REFERENCIA: as demais secoes se conformam a ele, e qualquer
 desvio deliberado (uma secao que quebra o padrao de proposito) se declara na entrega.
 
-### 3.2b MOVIMENTO NOS BLOCOS: o Higgsfield e passo ESPERADO, nao enfeite
+### 3.2b MOVIMENTO NOS BLOCOS: decidir bloco a bloco (rota padrao: CSS; Higgsfield opcional)
+
+**Rota padrao do aluno: movimento em CSS** (entrada do hero, reveal em 2 a 4 secoes-chave, hover
+e microinteracao no botao, um elemento proprio que se mexe, como um fio que balanca). Ela nao
+pede conta nem chave e NAO deixa a pagina pior. **Higgsfield e opcional** (plano pago para uso
+comercial): quem tiver conta ganha b-roll e video gerado nos blocos; quem nao tiver segue em CSS
+sem pendencia de "pagina incompleta".
 
 Pagina inteira parada, com bloco de texto e icone, entrega menos do que merece. **Neste step,
 pergunte SEMPRE quais blocos ganham movimento** e trate isso como parte do build, nao como
@@ -1541,13 +1547,13 @@ sobremesa. Os candidatos tipicos sao os blocos que hoje so tem texto:
 - passo a passo do processo
 - fundo de secao intermediaria, pra quebrar a monotonia entre dobras
 
-Ordem de preferencia (nao muda): **material real do cliente → gravacao de tela → Higgsfield**.
-Cena generica de IA se reconhece; imagem real do negocio ganha dela sempre que existir.
+Ordem de preferencia para VIDEO no bloco (nao muda): **material real do cliente → gravacao de
+tela → Higgsfield**. Cena generica de IA se reconhece; imagem real do negocio ganha dela sempre
+que existir. Sem nenhum dos tres, o bloco ganha movimento em CSS, que e a rota padrao.
 
-**Sem conta Higgsfield:** siga, declare a pendencia na entrega ("os blocos X e Y foram
-entregues estaticos: exigem conta Higgsfield") e ofereca as rotas que nao pedem conta paga
-(animacao CSS/Framer Motion no proprio bloco, ou b-roll do acervo aberto). Falta de conta
-degrada o resultado, nao bloqueia a entrega.
+**Sem conta Higgsfield:** siga pela rota CSS (animacao no proprio bloco) ou b-roll do acervo
+aberto, e diga na entrega, numa linha, que nao houve video gerado. Falta de conta nao bloqueia
+a entrega e nao vira defeito.
 
 **Aluno sem conta nem CLI?** O setup inteiro esta em `references/higgsfield.md`, na secao
 SETUP: criar conta (**plano pago para uso comercial**), `npm i -g @higgsfield/cli`,

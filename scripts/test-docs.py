@@ -138,5 +138,15 @@ class Docs(unittest.TestCase):
         self.assertIn("is-crawlable", perf)
 
 
+    def test_t15_movimento_rota_padrao_css_e_higgsfield_opcional_logo_no_inicio(self):
+        s = SKILL.read_text(encoding="utf-8")
+        self.assertNotRegex(s, r"(?i)higgsfield[^\n]{0,40}passo esperado|passo esperado, nao enfeite")
+        i = s.index("### 3.2b MOVIMENTO")
+        inicio = s[i:i + 700].lower()
+        self.assertIn("css", inicio)
+        self.assertIn("opcional", inicio)
+        self.assertRegex(inicio, r"rota padr[aã]o")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
