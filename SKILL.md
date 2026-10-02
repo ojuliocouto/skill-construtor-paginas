@@ -2060,18 +2060,19 @@ dele. Ninguem mentiu; o processo simplesmente permitia que uma lente sumisse sem
 vale.** Cada lente se registra ao terminar; o master reprova se faltar QUALQUER uma.
 
 ```bash
-W="python3 <dir-da-skill>/scripts/wave.py --projeto <dir>"
+# Comando inteiro em cada linha: guardar o comando numa variavel e chamar a variavel NAO roda no zsh (shell
+# padrao do Mac), que trata a variavel inteira como nome de arquivo e sai com exit 127.
 
 # cada lente, ao terminar
-$W registrar responsive-auditor --veredito aprovado --nota 8.5 \
+python3 <dir-da-skill>/scripts/wave.py --projeto <dir> registrar responsive-auditor --veredito aprovado --nota 8.5 \
    --achados "12 telas medidas; CTA na dobra em todas; 3 alvos de toque corrigidos pra 44px"
 
 # cada gate executavel, com o exit code REAL
-$W gate responsivo --exit 0 --detalhe "12 telas, zero problema"
-$W gate oclusao --exit 0 --detalhe "163 blocos, nenhum coberto"
+python3 <dir-da-skill>/scripts/wave.py --projeto <dir> gate responsivo --exit 0 --detalhe "12 telas, zero problema"
+python3 <dir-da-skill>/scripts/wave.py --projeto <dir> gate oclusao --exit 0 --detalhe "163 blocos, nenhum coberto"
 
 # e o master, por ultimo
-$W checar
+python3 <dir-da-skill>/scripts/wave.py --projeto <dir> checar
 ```
 
 **O que o master bloqueia:** lente que nao rodou, gate sem registro, gate vermelho, registro inválido. Notas e vereditos das lentes alimentam o ciclo 4.2f. Ele **nao julga se a pagina esta bonita**: isso
@@ -2159,8 +2160,7 @@ numero) e diga se existe corte que salva. "Ficou ruim" nao e motivo de descarte.
 ### 4.2f O CICLO: auditar, corrigir, RE-auditar, e saber a hora de parar
 
 ```bash
-W="python3 <dir-da-skill>/scripts/wave.py --projeto <dir>"
-$W rodada --criticos <criticos confirmados> --altos <altos confirmados> --regressoes <achados causados pela rodada anterior>
+python3 <dir-da-skill>/scripts/wave.py --projeto <dir> rodada --criticos <criticos confirmados> --altos <altos confirmados> --regressoes <achados causados pela rodada anterior>
 ```
 
 **Pedido do dono (27/08/2026), depois de duas waves seguidas:**
@@ -2363,20 +2363,20 @@ achado no codigo. Registro cujo artefato sumiu vale como nao registrado (o compo
 Registre conforme for usando, nao no fim de memoria:
 
 ```bash
-U="python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir-do-projeto>"
+# Comando inteiro em cada linha (variavel com comando nao roda no zsh).
 
 # componente que veio mesmo do MCP: o trecho tem que estar no codigo
-$U registrar magic --no-codigo "<classe-ou-nome-do-componente>" --em <dir> --detalhe "hero do 21st.dev"
+python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir-do-projeto> registrar magic --no-codigo "<classe-ou-nome-do-componente>" --em <dir> --detalhe "hero do 21st.dev"
 # artefato no disco
-$U registrar Playwright --arquivo prova/prova-desktop.png --detalhe "prova de tela lida"
-$U registrar "Higgsfield CLI" --arquivo assets/hero-loop.mp4 --detalhe "b-roll do hero"
-$U registrar "skill design-taste-frontend" --arquivo index.html --detalhe "passe de gosto, 3 tells removidos"
+python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir-do-projeto> registrar Playwright --arquivo prova/prova-desktop.png --detalhe "prova de tela lida"
+python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir-do-projeto> registrar "Higgsfield CLI" --arquivo assets/hero-loop.mp4 --detalhe "b-roll do hero"
+python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir-do-projeto> registrar "skill design-taste-frontend" --arquivo index.html --detalhe "passe de gosto, 3 tells removidos"
 ```
 
 **Nao se aplica a esta pagina? DISPENSE, com motivo, e o motivo vai na entrega:**
 
 ```bash
-$U dispensar "ffmpeg/ffprobe" --motivo "esta pagina nao tem video: o gate de video nao se aplica"
+python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir-do-projeto> dispensar "ffmpeg/ffprobe" --motivo "esta pagina nao tem video: o gate de video nao se aplica"
 ```
 
 Dispensa exige motivo de verdade (o script recusa motivo com menos de 15 caracteres e qualquer motivo que contenha "nao usei" ou "não usei", em qualquer caixa) e sai marcada no relatorio e no
