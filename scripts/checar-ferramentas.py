@@ -12,9 +12,18 @@ estavam desligadas.
 A licao: "esta na lista de tools" NAO e verificacao. Verificacao e mandar a ferramenta fazer
 alguma coisa e conferir se voltou.
 
+Versao 3 (02/10/2026): a skill depende de TRES coisas, a skill `frontend-design`, os
+auditores adversariais e a pesquisa de referencias reais. Critico passa a ser so o que essas
+tres precisam pra rodar: python3, node, Playwright com o Chromium baixado (prints das
+referencias e prova de entrega) e a skill `frontend-design` instalada. Todo o resto
+(21st.dev, Stitch, Higgsfield, skills de acabamento, banco de design, Openverse) e OPCIONAL:
+nunca bloqueia e, por padrao, nem e checado, porque checar MCP por `claude mcp list` leva
+ate um minuto e o aluno nao precisa de nada disso.
+
 Uso:
-    python3 scripts/checar-ferramentas.py            # tabela + saida != 0 se faltar critico
-    python3 scripts/checar-ferramentas.py --json     # para consumo por agente
+    python3 scripts/checar-ferramentas.py              # criticos + opcionais locais rapidos
+    python3 scripts/checar-ferramentas.py --opcionais  # tambem MCPs, Higgsfield e rede
+    python3 scripts/checar-ferramentas.py --json       # para consumo por agente
 """
 import json
 import os
@@ -27,25 +36,23 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 
-# QUEM BLOQUEIA. Critico e so o que a skill nao consegue fazer sem: prova de tela, gate
-# anti-slop, banco de design, foto real sem chave e o gate de tells. 21st.dev e Higgsfield
-# sao OPCIONAIS (relatorio do aluno, 02/10/2026): o verificador dava "tudo OK" porque rodava
-# na maquina do dono, com a chave e a conta dele; um aluno de verdade teria o 21st vermelho
-# (bloqueando) e o Higgsfield pedindo plano pago no primeiro comando. Rota padrao do aluno:
-# componente a mao com Tailwind e movimento em CSS. Quem tiver as contas ganha teto maior.
+# QUEM BLOQUEIA (v3). Critico e so o que as tres dependencias da skill precisam: python3 e
+# node rodam os gates, o Playwright com Chromium tira os prints das referencias e a prova de
+# entrega, e a `frontend-design` faz o plano visual. Todo o resto e opcional e nunca bloqueia.
 CRITICIDADE = {
+    "python3": True,
+    "node": True,
     "Playwright": True,
+    "skill frontend-design": True,
     "21st": False,
     "stitch": False,
     "ffmpeg/ffprobe": False,
     "Higgsfield CLI": False,
-    "skill design-taste-frontend": True,
-    "skill frontend-design": False,
+    "skill design-taste-frontend": False,
     "skill high-end-visual-design": False,
     "skill animate": False,
-    "Assets sem chave (Openverse)": True,
-    "Banco de design": True,
-    "gate-sem-kicker.py": True,
+    "Assets sem chave (Openverse)": False,
+    "Banco de design": False,
 }
 
 # Onde o teste do 21st procura a chave para fazer a chamada REAL. Estar em `claude mcp list`
@@ -166,123 +173,111 @@ def skill_existe(nome):
     return False
 
 
-# (rotulo, papel, critico?, funcao_de_teste) -> (ok, detalhe, como_resolver)
-def checagens():
+# (rotulo, papel, critico, ok, detalhe, como_resolver). Item opcional lento e nao checado
+# sai com ok=None: nao e verde nem vermelho, e o uso-ferramentas.py nao o cobra.
+def checagens(opcionais=False):
+    yield ("python3", "roda os gates e o registro dos auditores", CRITICIDADE["python3"],
+           sys.version_info >= (3, 8), sys.version.split()[0], "instale o Python 3.8 ou mais novo")
+
+    ok, saida = roda("node --version")
+    yield ("node", "roda o Playwright, os prints e os gates visuais", CRITICIDADE["node"], ok,
+           saida.splitlines()[0] if saida else "", "instale o Node 18 ou mais novo (https://nodejs.org)")
+
     ok, saida = roda(
         f'NODE_PATH="$HOME/.npm-global/lib/node_modules" node "{RAIZ}/scripts/screenshot-prova.js" --check')
-    yield ("Playwright", "prova de entrega (obrigatoria nos 4 caminhos)", CRITICIDADE["Playwright"], ok,
-           saida.splitlines()[0][:110] if saida else "",
+    yield ("Playwright", "prints das referencias e prova de entrega (Chromium baixado)",
+           CRITICIDADE["Playwright"], ok, saida.splitlines()[0][:110] if saida else "",
            "npm i -g playwright && npx playwright install chromium")
 
-    def _mcp(nome, papel, critico, url_fix):
-        # nome pode ser uma string ou uma tupla de nomes aceitos (o mesmo servidor ja
-        # apareceu com nomes diferentes conforme o transporte). Basta UM responder.
-        nomes = (nome,) if isinstance(nome, str) else tuple(nome)
-        piores = []
-        for n in nomes:
-            est, det = estado_mcp(n)
-            if est == "conectado":
-                return (n, papel, critico, True, f"{est}: {det[:110]}", url_fix)
-            piores.append((n, est, det))
-        n, est, det = piores[0]
-        rotulo = nomes[0] if len(nomes) == 1 else " ou ".join(nomes)
-        return (rotulo, papel, critico, False, f"{est}: {det[:110]}", url_fix)
+    yield ("skill frontend-design", "plano visual antes do codigo (passo c do CRIAR)",
+           CRITICIDADE["skill frontend-design"], skill_existe("frontend-design"), "",
+           "npx -y skills add anthropics/skills --skill frontend-design --agent claude-code")
 
-    # O servidor do 21st.dev ja teve DOIS nomes: "magic" (transporte stdio, via npx) e
-    # "21st" (transporte HTTP). Em 27/08/2026 o "magic" estava com a chave resetada e foi
-    # ESCOPO IMPORTA: adicionar sem --scope user prende o servidor ao projeto do
-    # diretorio atual, e ele SOME quando o cwd muda. Aconteceu em 27/08/2026: o
-    # `claude mcp list` dizia Connected na home e nao listava nada dentro da pasta da
-    # skill (que tem git proprio, entao e outro projeto). Sempre `--scope user`.
-    # REMOVIDO; entrou o "21st" por HTTP. Aceitar os dois nomes evita o proximo falso
-    # negativo: o servidor conectado com nome novo e o verificador reprovando por
-    # procurar o antigo, que e exatamente o que aconteceu hoje.
-    ok21, det21 = testar_21st()
-    yield ("21st", "componentes do 21st.dev (Step 3, opcional)", CRITICIDADE["21st"], ok21, det21[:140],
-           'opcional. Quem quiser: chave gratuita em https://21st.dev/mcp, depois '
-           'claude mcp add --transport http 21st https://21st.dev/api/mcp --scope user --header "x-api-key: SUA_CHAVE" '
-           f'e export {CHAVES_21ST[0]}=SUA_CHAVE (o teste usa a chave numa busca real)')
-    yield _mcp("stitch", "wireframe (Step 2)", CRITICIDADE["stitch"],
-               "opcional. Proxy local: confira quem esta na porta configurada antes de reiniciar (conflito de porta e a causa comum)")
-
+    # ---------------- daqui pra baixo, tudo opcional: nunca bloqueia ----------------
     ok, saida = roda("ffprobe -version")
-    yield ("ffmpeg/ffprobe", "gate de video (so em pagina com video)", False, ok,
+    yield ("ffmpeg/ffprobe", "gate de video (so em pagina com video)", CRITICIDADE["ffmpeg/ffprobe"], ok,
            saida.splitlines()[0] if saida else "", "brew install ffmpeg")
 
-    ok, saida = roda("higgsfield account status")
-    yield ("Higgsfield CLI", "movimento e b-roll (Step 3.2b, opcional: conta paga)", CRITICIDADE["Higgsfield CLI"],
-           ok and "plan" in saida.lower(),
-           saida.splitlines()[0][:110] if saida else "",
-           "opcional (plano pago). Sem conta: movimento em CSS, que e a rota padrao do aluno. "
-           "Com conta: npm i -g @higgsfield/cli && higgsfield auth login && higgsfield workspace set <id>")
-
-    # O comando de instalacao vai LITERAL: quem cai aqui esta com a ferramenta faltando e
-    # precisa copiar e colar. Placeholder do tipo `<fonte>` nao instala nada, so parece que
-    # instrui (era o que estava aqui ate 27/08/2026). As fontes sao as mesmas da SKILL.md.
     TASTE = "npx skills add Leonxlnx/taste-skill"
-    for s, papel, critico, fix in [
-        ("design-taste-frontend", "gate anti-slop e passe de gosto (Step 4.9)", True, TASTE),
-        ("frontend-design", "direcao estetica antes do codigo (Step 2)", False,
-         "npx -y skills add anthropics/skills --skill frontend-design --agent claude-code"),
-        ("high-end-visual-design", "acabamento premium (Step 4)", False, TASTE),
-        ("animate", "movimento e microinteracao (Step 4)", False,
+    for s, papel, fix in [
+        ("design-taste-frontend", "segunda opiniao anti-slop (opcional)", TASTE),
+        ("high-end-visual-design", "acabamento (opcional)", TASTE),
+        ("animate", "movimento em React (opcional)",
          "npx -y skills add https://github.com/delphi-ai/animate-skill --agent claude-code"),
     ]:
-        yield (f"skill {s}", papel, CRITICIDADE.get(f"skill {s}", critico), skill_existe(s), "", fix)
+        yield (f"skill {s}", papel, CRITICIDADE[f"skill {s}"], skill_existe(s), "", fix)
+
+    ok, saida = roda(f'python3 "{RAIZ}/scripts/search.py" "dark premium" --domain style -n 1')
+    yield ("Banco de design", "consulta opcional de estilo, paleta e fonte", CRITICIDADE["Banco de design"],
+           ok and "results" in saida.lower(), "", "conferir data/*.csv no repo")
+
+    if not opcionais:
+        for rotulo, papel in [("21st", "componentes do 21st.dev"), ("stitch", "wireframe no Stitch"),
+                              ("Higgsfield CLI", "video gerado"),
+                              ("Assets sem chave (Openverse)", "busca de foto com licenca aberta")]:
+            yield (rotulo, papel, CRITICIDADE[rotulo], None, "nao checado (rode com --opcionais)", "")
+        return
+
+    ok21, det21 = testar_21st()
+    yield ("21st", "componentes do 21st.dev (opcional)", CRITICIDADE["21st"], ok21, det21[:140],
+           'opcional. Chave gratuita em https://21st.dev/mcp, depois '
+           'claude mcp add --transport http 21st https://21st.dev/api/mcp --scope user --header "x-api-key: SUA_CHAVE" '
+           f'e export {CHAVES_21ST[0]}=SUA_CHAVE (o teste usa a chave numa busca real)')
+
+    est, det = estado_mcp("stitch")
+    yield ("stitch", "wireframe no Stitch (opcional)", CRITICIDADE["stitch"], est == "conectado",
+           f"{est}: {det[:110]}", "opcional. Confira quem esta na porta do proxy antes de reiniciar")
+
+    ok, saida = roda("higgsfield account status")
+    yield ("Higgsfield CLI", "video gerado (opcional, conta paga)", CRITICIDADE["Higgsfield CLI"],
+           ok and "plan" in saida.lower(), saida.splitlines()[0][:110] if saida else "",
+           "opcional. npm i -g @higgsfield/cli && higgsfield auth login && higgsfield workspace set <id>")
 
     ok, saida = roda(
         f'env -u PEXELS_API_KEY python3 "{RAIZ}/scripts/assets-search.py" "office" --type openverse -n 1')
-    yield ("Assets sem chave (Openverse)", "foto real sem API key", CRITICIDADE["Assets sem chave (Openverse)"],
-           ok and ("Imagem:" in saida or "http" in saida), "",
-           "checar rede; a rota nao precisa de chave nenhuma")
-
-    ok, saida = roda(f'python3 "{RAIZ}/scripts/search.py" "dark premium" --domain style -n 1')
-    yield ("Banco de design", "paleta, estilo e tipografia (Step 2)", CRITICIDADE["Banco de design"],
-           ok and "results" in saida.lower(), "", "conferir data/*.csv no repo")
-
-    gate_sk = RAIZ / "scripts" / "gate-sem-kicker.py"
-    existe_gate = gate_sk.exists()
-    yield ("gate-sem-kicker.py", "pre-deploy: toda pagina sem kicker em caixa alta e sem numero decorativo",
-           CRITICIDADE["gate-sem-kicker.py"],
-           existe_gate, "", "o arquivo faz parte da skill: atualize o clone (git pull) em <dir-da-skill>")
+    yield ("Assets sem chave (Openverse)", "busca de foto com licenca aberta (opcional)",
+           CRITICIDADE["Assets sem chave (Openverse)"], ok and ("Imagem:" in saida or "http" in saida), "",
+           "checar rede; a rota nao precisa de chave")
 
 
 def main():
+    opcionais = "--opcionais" in sys.argv
     linhas = []
-    for item in checagens():
-        rotulo, papel, critico, ok, detalhe, fix = item
+    for rotulo, papel, critico, ok, detalhe, fix in checagens(opcionais):
         linhas.append(dict(ferramenta=rotulo, papel=papel, critico=critico,
-                           ok=bool(ok), detalhe=detalhe, como_resolver=fix))
+                           ok=None if ok is None else bool(ok), checado=ok is not None,
+                           detalhe=detalhe, como_resolver=fix))
 
     if "--json" in sys.argv:
         print(json.dumps(linhas, ensure_ascii=False, indent=2))
     else:
         larg = max(len(l["ferramenta"]) for l in linhas) + 2
-        print("\nFERRAMENTAS DO CONSTRUTOR-PAGINAS\n" + "=" * 72)
+        print("\nFERRAMENTAS DO CONSTRUTOR-PAGINAS (v3)\n" + "=" * 72)
         for l in linhas:
-            marca = "OK  " if l["ok"] else ("FALTA" if l["critico"] else "aviso")
+            if not l["checado"]:
+                marca = "  -  "
+            else:
+                marca = "OK  " if l["ok"] else ("FALTA" if l["critico"] else "aviso")
             print(f"  [{marca:5}] {l['ferramenta']:<{larg}} {l['papel']}")
-            if not l["ok"]:
+            if l["checado"] and not l["ok"]:
                 if l["detalhe"]:
                     print(f"            {l['detalhe']}")
                 print(f"            RESOLVER: {l['como_resolver']}")
-        quebrados = [l for l in linhas if not l["ok"]]
-        criticos = [l for l in quebrados if l["critico"]]
+        criticos = [l for l in linhas if l["critico"] and not l["ok"]]
+        avisos = [l for l in linhas if not l["critico"] and l["checado"] and not l["ok"]]
         print("=" * 72)
         if criticos:
-            print(f"  {len(criticos)} ferramenta(s) CRITICA(s) sem responder.")
-            print("  Resolva antes do Step 1: sem elas a pagina nasce pela rota degradada e")
-            print("  ninguem percebe, porque o fallback nao reclama.\n")
-        elif quebrados:
-            print(f"  Tudo critico responde. {len(quebrados)} opcional(is) degradado(s):")
-            print("  siga e DECLARE a degradacao na entrega.")
-            print("  Sem pagar nada: 21st.dev e Higgsfield sao opcionais. A pagina sai com")
-            print("  componente feito a mao em Tailwind e movimento em CSS, e isso e a rota")
-            print("  padrao do aluno, nao uma pagina pior por falta de conta.\n")
+            print(f"  {len(criticos)} ferramenta(s) CRITICA(s) sem responder. Resolva antes de comecar:")
+            print("  sem elas nao ha print de referencia, nem plano visual, nem prova de entrega.\n")
         else:
-            print("  Tudo respondendo. Pode comecar o Step 0.\n")
+            print("  Tudo critico responde. Pode comecar o briefing.")
+            if avisos:
+                print(f"  {len(avisos)} opcional(is) ausente(s): nao bloqueia nada, a skill nao depende deles.")
+            if not opcionais:
+                print("  Opcionais de rede e MCP nao foram checados (rode com --opcionais se quiser usar).")
+            print()
 
-    return 1 if any(not l["ok"] and l["critico"] for l in linhas) else 0
+    return 1 if any(l["critico"] and not l["ok"] for l in linhas) else 0
 
 
 if __name__ == "__main__":

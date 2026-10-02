@@ -62,6 +62,37 @@ checa("21st.dev e opcional (nunca bloqueia o aluno)", crit.get("21st") is False,
 checa("Higgsfield e opcional (nunca bloqueia o aluno)", crit.get("Higgsfield CLI") is False, str(crit.get("Higgsfield CLI")))
 checa("Playwright continua critico", crit.get("Playwright") is True, str(crit.get("Playwright")))
 
+# v3 (02/10/2026): a skill depende de frontend-design, auditores e pesquisa de referencias.
+# Critico e EXATAMENTE python3, node, Playwright e a skill frontend-design. Nada mais bloqueia.
+criticos_v3 = {k for k, v in crit.items() if v}
+checa("criticos da v3 sao so python3, node, Playwright e frontend-design",
+      criticos_v3 == {"python3", "node", "Playwright", "skill frontend-design"}, str(sorted(criticos_v3)))
+for opcional in ("skill design-taste-frontend", "Banco de design", "Assets sem chave (Openverse)", "stitch",
+                 "skill high-end-visual-design", "skill animate"):
+    checa(f"{opcional} e opcional na v3", crit.get(opcional) is False, str(crit.get(opcional)))
+
+# frontend-design ausente tem que reprovar (exit 1); opcional ausente nunca reprova.
+orig_skill = chk.skill_existe
+orig_argv = sys.argv
+import contextlib as _ctx, io as _io
+sys.argv = ["checar-ferramentas.py", "--json"]
+chk.skill_existe = lambda nome: nome != "frontend-design"
+with _ctx.redirect_stdout(_io.StringIO()):
+    saida_sem_fd = chk.main()
+checa("sem a skill frontend-design o verificador sai 1", saida_sem_fd == 1, str(saida_sem_fd))
+chk.skill_existe = lambda nome: nome == "frontend-design"
+with _ctx.redirect_stdout(_io.StringIO()) as buf:
+    saida_so_fd = chk.main()
+linhas_json = __import__("json").loads(buf.getvalue())
+lento = [l for l in linhas_json if l["ferramenta"] == "21st"][0]
+checa("sem nenhuma skill opcional o verificador nao reprova (so falta opcional)",
+      saida_so_fd == 0 or any(l["critico"] and not l["ok"] for l in linhas_json if l["ferramenta"] != "skill frontend-design"),
+      str(saida_so_fd))
+checa("opcional lento sem --opcionais sai como nao checado (nem verde nem vermelho)",
+      lento["checado"] is False and lento["ok"] is None, str(lento))
+chk.skill_existe = orig_skill
+sys.argv = orig_argv
+
 # O teste do 21st tem que fazer CHAMADA REAL com a chave. Lista de MCP nao prova chave.
 import os as _os
 teste21 = getattr(chk, "testar_21st", None)
