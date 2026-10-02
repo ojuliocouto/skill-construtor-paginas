@@ -19,6 +19,7 @@ Ao receber um pedido de pagina, classificar em 4 dimensoes:
 | **institutional** | Sobre nos, programa, escola | NAO: precisa de profissionalismo visual |
 | **checkout-bridge** | Pagina pre-checkout (upsell, order bump) | SIM: curta, direta, foco no CTA |
 | **thank-you** | Pos-compra/inscricao | SIM: informacional, curta |
+| **servico-local** | Servico local / agendamento: estudio (pilates, yoga), clinica, consultorio, academia de bairro, salao. A acao e agendar (aula experimental, avaliacao, consulta) pelo WhatsApp, telefone ou formulario | NAO e carta, mas e CURTA: 6 a 8 secoes |
 
 ### 2. Faixa de Preco
 
@@ -160,6 +161,37 @@ Regras especificas:
 - Navegacao completa (navbar com links)
 ```
 
+### Servico local / agendamento (estudio, clinica, consultorio)
+
+Nasceu do teste com aluno (02/10/2026): um estudio de pilates com aula experimental gratuita
+pelo WhatsApp nao e capture curta nem sales page, e a skill nao tinha o tipo.
+
+```
+STACK DEFINIDA: HTML + Tailwind compilado (npx tailwindcss@3, ver Step 3.5), SEM React.
+  Pagina curta, uma acao (agendar), sem oferta empilhada nem checkout: React + Vite so
+  adiciona build e peso. Movimento em CSS (entrada do hero, reveal em 2 a 4 secoes,
+  hover no botao). Excecao: o projeto do cliente ja roda em React, ai vira rota dele.
+
+Secoes (nesta ordem, 6 a 8):
+1. Hero split: headline com o publico e a dor + subtitulo com cidade/bairro + botao de agendar
+   + foto real do espaco (ou ilustrativa creditada, declarada como pendencia)
+2. "Isso parece com voce": 3 dores na fala do publico
+3. Mecanismo / diferencial: o que acontece de diferente aqui (avaliacao antes, turma pequena,
+   profissional formado) e quem atende, com credencial verificavel (registro no conselho)
+4. Como agendar: 3 passos, do clique ate a primeira aula
+5. Formas de atender: grupo, particular, plano (preco so se o cliente confirmou)
+6. Duvidas: 4 a 6 perguntas reais, com resposta (nunca "pergunte no WhatsApp" em todas)
+7. Chamada final: a acao de novo, com endereco e horario
+8. Rodape: nome, endereco, CNPJ (se houver), creditos de foto
+
+Regras especificas:
+- Todo botao leva ao MESMO destino (WhatsApp com numero e mensagem pronta, telefone ou agenda);
+  sem numero confirmado, o destino entra como pendencia declarada e a pagina nao recebe trafego
+- Sem prova social ainda: ver "Sem cliente ainda" em references/copy-servico-local.md
+- Copy: modelo curto em references/copy-servico-local.md (a copy-pagina-vendas nao serve aqui)
+- Mapa e endereco ajudam mais que numero de seguidor
+```
+
 ---
 
 ## Decision Tree Rapido
@@ -177,6 +209,7 @@ O usuario mandou material para criar pagina?
 │   ├── Challenge → Template Challenge (dark-theme, alta urgencia)
 │   ├── VSL → Template VSL-First
 │   ├── Institutional → Template Institutional
+│   ├── Servico local / agendamento → Template Servico local (HTML + Tailwind, sem React)
 │   └── Outro → Classificar pelo mais proximo
 │
 ├── Qual a faixa de preco?

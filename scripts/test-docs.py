@@ -79,5 +79,17 @@ class Docs(unittest.TestCase):
         self.assertRegex(s.lower(), r"motivo")
 
 
+    def test_t8_tipo_servico_local_com_stack_definida(self):
+        pt = (RAIZ / "references" / "page-types.md").read_text(encoding="utf-8").lower()
+        self.assertIn("servico-local", pt)
+        self.assertRegex(pt, r"(?s)### servi[cç]o local.{0,500}stack definida: html \+ tailwind compilado")
+        s = SKILL.read_text(encoding="utf-8")
+        tabela = self.secao("### DECISAO DE TECH STACK", "**Se o projeto destino")
+        self.assertRegex(tabela.lower(), r"servi[cç]o local.*html \+ tailwind compilado")
+        proibido = self.secao("**PROIBIDO HTML/CSS PURO", "\n\n")
+        self.assertRegex(proibido.lower(), r"servi[cç]o local")
+        self.assertNotIn("Obrigatoria no Step 1", s)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

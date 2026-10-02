@@ -714,7 +714,7 @@ O que a rota expressa NAO dispensa: **as seis respostas da rodada 1 do briefing 
 
 **MCP conectado, PROIBIDO nao usar** (se ausente, fallback do Step 0): construir componente UI do zero sem consultar o 21st.dev; iniciar codigo de pagina nova sem wireframe no Stitch; usar logo de marca sem buscar no `logo_search`. Com o MCP disponivel, pular = visual inferior e retrabalho. Sem o MCP, seguir pelo fallback documentado (componente a mao, layout direto, SVG oficial/vetorial).
 
-**PROIBIDO HTML/CSS PURO para paginas de venda, mentoria ou high-ticket.** HTML puro = pagina feia, sem animacoes, sem componentes profissionais, sem o "tcham" visual. SEMPRE usar React + Vite (ou o framework do projeto existente) para ter acesso a: Framer Motion, shadcn/ui, Magic UI, Tailwind compilado, componentes reutilizaveis. A unica excecao e capture pages simples (2-3 telas, formulario + headline).
+**PROIBIDO HTML/CSS PURO para paginas de venda, mentoria ou high-ticket.** HTML puro = pagina feia, sem animacoes, sem componentes profissionais, sem o "tcham" visual. SEMPRE usar React + Vite (ou o framework do projeto existente) para ter acesso a: Framer Motion, shadcn/ui, Magic UI, Tailwind compilado, componentes reutilizaveis. Excecoes, com stack definida na tabela DECISAO DE TECH STACK: capture pages simples (2-3 telas, formulario + headline) e **servico local / agendamento** (estudio, clinica, consultorio: HTML + Tailwind compilado, sem React, movimento em CSS). "HTML puro" aqui quer dizer sem Tailwind compilado e sem sistema; HTML + Tailwind compilado nao e HTML puro.
 
 **PROIBIDO BUILDAR SEM DIRECAO VISUAL.** Ir direto do PDF pro codigo produz paginas "funcionais mas feias". Antes de escrever a primeira linha de codigo, DEVE existir: paleta definida (10-15 vars), font pairing escolhido, layout de CADA secao desenhado, lista de assets necessarios.
 
@@ -793,13 +793,14 @@ STEP 4 (VERIFICAR & SHIPAR) ─────────────────�
   [ ] NAO → PARA. Corrige antes de entregar. Sem excecoes. Verificacao quebrada = entrega bloqueada, nunca "entrego sem prova".
 ```
 
-### DECISAO DE TECH STACK (Obrigatoria no Step 1)
+### DECISAO DE TECH STACK (decidida no Step 2, item 2.5; o tipo de pagina sai do Step 0, item 0.2)
 
 | Tipo de pagina | Tech Stack | Justificativa |
 |---------------|-----------|---------------|
 | Sales page (mid/high-ticket) | React + Vite + Framer Motion + shadcn/ui + Tailwind | Precisa de animacoes, componentes ricos, visual premium |
 | Challenge / Desafio | React + Vite + Framer Motion + Magic UI + Tailwind | Precisa de energia visual, countdowns, efeitos |
 | Capture page simples (< 3 telas) | HTML + Tailwind compilado | Simples o suficiente, velocidade maxima |
+| Servico local / agendamento (estudio, clinica, consultorio) | HTML + Tailwind compilado, sem React | Uma acao (agendar), sem checkout nem oferta empilhada; movimento em CSS. Template em `references/page-types.md` |
 | Pagina institucional | React + Vite + Framer Motion + shadcn/ui | Profissionalismo visual obrigatorio |
 | Rota em projeto existente (ex.: site que ja roda em React) | Mesmo framework do projeto (React/Vite) | Consistencia, reuso de componentes |
 
@@ -982,7 +983,7 @@ ataca "tenho mais de 50 anos, ainda da tempo?". Nada disso sai de um briefing qu
 Usar a decision tree de `references/page-types.md`:
 
 **Perguntar/detectar:**
-1. **Tipo:** sales-page, capture, challenge, vsl, institutional, checkout-bridge, thank-you
+1. **Tipo:** sales-page, capture, challenge, vsl, institutional, checkout-bridge, thank-you, servico-local (estudio, clinica, consultorio: a acao e agendar)
 2. **Faixa de preco:** free, low-ticket (R$7-97), mid-ticket (R$197-997), high-ticket (R$1.000+)
 3. **Tom:** premium, urgente, educacional, pessoal, energia
 4. **Temperatura:** fria (pagina longa), morna (media), quente (curta)
