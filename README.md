@@ -1,351 +1,160 @@
-# construtor-paginas
+# construtor-paginas (v3)
 
-A Claude Code skill for **building, cloning, and versioning** high-quality web pages, with a strict copy-first workflow, built-in design quality gates, an adversarial multi-agent audit, and anti-AI-slop enforcement.
+A Claude Code skill that builds, clones, improves and edits web pages so they come out at the level of the best real pages in their niche, not just "passing the checks".
 
-Stacks: **React, Next.js, Vue, Svelte, HTML+Tailwind**. Ships with color palettes, design styles, font pairings, Framer Motion / Motion patterns, a MagicUI catalog, a copy-paste effects library, and a mandatory quality-scoring gate before any page is delivered.
+Version 3 depends on **three things, and only three**:
 
-> Fully generic. No client-specific brand, token, asset, or path is baked into the repo. Per-project context lives locally (see [Project memory](#project-memory)).
+1. **The `frontend-design` skill**, actually invoked to write a visual plan before any code.
+2. **Adversarial auditors**: 9 independent lenses that hunt for defects, including one that compares the page against the references.
+3. **Research of real references**: 6 to 10 real pages, opened in a headless browser, screenshotted and read before any visual decision.
 
----
+Everything else (21st.dev, Stitch, Higgsfield, image generators, brand kits, extra design skills, paid MCPs) is optional and never blocks anything.
 
-## Table of contents
-
-- [Why this over a generic prompt](#why-this-over-a-generic-prompt)
-- [When it activates](#when-it-activates-4-mandatory-triggers)
-- [Caminhos de execução](#caminhos-de-execução)
-- [Prerequisites & onboarding](#prerequisites--onboarding-step-0)
-- [Installation](#installation)
-- [The 6-step flow](#the-6-step-flow)
-- [Quality gate](#quality-gate-before-delivery)
-- [Adversarial audit wave](#adversarial-audit-wave-step-4)
-- [Cloning rules](#cloning-rules-live-site-or-pdf)
-- [Effects catalog](#effects-catalog)
-- [Pairs with (skills, MCPs, tools)](#pairs-with-skills-mcps-tools)
-- [Project memory](#project-memory)
-- [Repository layout](#repository-layout)
-- [Reference files](#reference-files)
-- [License](#license)
+> The skill's operating text (`SKILL.md`, `references/`) is written in Brazilian Portuguese. This README is the English overview.
 
 ---
 
-## Why this over a generic prompt
+## What it is
 
-A "generic" page-building skill is usually a single system prompt ("you are an expert web designer, build a beautiful responsive page with Tailwind"). The model reads it and starts coding. No process, no quality gate, no memory. This skill is a **production pipeline with quality control** instead. The differences:
+- A **router** (`SKILL.md`, under 300 lines) that picks one of five paths and sends the agent to the file with that path's flow:
 
-| | Generic prompt | construtor-paginas |
-|---|----------------|--------------------|
-| **Process** | jumps straight to code | gated 6-step flow with forced stops; copy → design → code, copy locked before any markup |
-| **Audit** | same context that built it (biased), or none | adversarial wave of 8 parallel lenses (`design-critic`, `assets-auditor`, `visual-auditor`, `motion-auditor`, `responsive-auditor`, `cro-auditor`, `a11y-auditor`, `content-auditor`, the same list as `scripts/wave.py`) + synthesis; the 4.2f cycle (`wave.py rodada`) **blocks delivery** on any confirmed critical or regression |
-| **Anti-slop** | none (so it produces the "AI look") | explicit 15 visual AI tells + Taste Gate scoring (ship only at avg ≥ 4.0) |
-| **Design source** | invents hex codes and fonts on the fly | queries a real design DB (50 styles, 21 palettes, 50 font pairings) via `search.py` |
-| **Cloning** | "gets inspired", approximate | fidelity: real colors via `getComputedStyle`, real logo download, never invents identity |
-| **Memory** | forgets every session | persists project brand tokens + session learnings locally, resumes where it left off |
-| **Onboarding** | assumes tools exist or fails | checks MCPs/plugins, guides install, bloqueia críticas; declara fallback de opcionais |
-| **Integrations** | text only | Stitch (wireframe), 21st.dev (components), Pexels/Lottie assets, AI image (nanobanana), video (Veo), PDF→page |
-
-### When the generic prompt is actually better
-
-Honesty matters more than selling this. Reach for a plain prompt when:
-
-- The page is trivial or throwaway and you want it **fast** (the 6-step process is overhead).
-- You have **no setup** (o 21st.dev exige configuração própria e bloqueia quando ausente).
-- You want zero opinionation and full manual control.
-
-This skill wins on **consistency, fidelity, and anti-slop** for real client work; it costs **speed and lightness** on trivial pages.
-
----
-
-## When it activates: 4 mandatory triggers
-
-The skill **auto-activates** (and can be enforced by an optional `UserPromptSubmit` hook) whenever you want to:
-
-1. **Create a new page** (landing, sales page, institutional, e-commerce home, dashboard, portfolio)
-2. **Clone an existing page** (from a live URL or a PDF): "clone this page", "copy this site", "replicate this layout"
-3. **Improve a page that already exists and will keep existing**: "improve this page", "optimize it", "raise conversion", "redo", "v2", "redesign"
-4. **Edit something specific on an existing page**: "change the headline", "change the button colour", "fix the price", "add an FAQ section", "fix it on mobile"
-
-Any of the four runs the skill **before any code**. No slash command needed: just describe what you want. To invoke explicitly: `/construtor-paginas`.
-
----
-
-## Caminhos de execução
-
-**The skill routes before it executes** and states the chosen path in its first reply. This matters: running the full 6-step ritual to change one headline is as wrong as improvising a brand new page. Each path has its own flow and its own gate.
-
-| Path | Starts from | Copy | Wireframe (Stitch) | Closing gate |
-|------|-------------|------|--------------------|--------------|
-| **1. CREATE from scratch** | a brief | written fresh (Step 1) | yes | full 6-step flow + adversarial wave (8 lentes) |
-| **2. CLONE** (URL or PDF) | a live URL / PDF | reproduced exactly | no (structure is given) | **fidelity gate**: original and clone side by side |
-| **2B. CLONAR + ELEVAR** | URL/PDF e pedido de melhoria | preservada | nova composição | comparativo, identidade preservada e quatro eixos alterados |
-| **VARIANTE VISUAL** | versão anterior | preservada | nova direção | comparativo e wave completa |
-| **3. IMPROVE** | an existing page | kept/improved | no (structure exists) | **improvement gate**: before and after scored per dimension, nothing may get worse |
-| **4. EDIT** (surgical change) | an existing page | untouched unless asked | no | **regression checklist + proof of the changed spot**. No COPY LOCK, no wireframe, no 8-lens wave |
-
-CREATE, CLONE and IMPROVE share the Step 3 build (21st.dev components) and the Step 4 quality gate with the adversarial audit. EDIT deliberately does not: a one-line change does not re-audit the whole page.
-
----
-
-## Prerequisites & onboarding (Step 0)
-
-On activation the skill runs a **prerequisite check** and tells you what to install before proceeding.
-
-**Dependências críticas bloqueiam o início.** Playwright, 21st.dev, design-taste-frontend, banco de design e busca de fotos precisam passar no verificador. Somente opcionais admitem degradação declarada. Execute `python3 scripts/checar-ferramentas.py` antes do briefing.
-
-### What you need before anything
-
-| Requirement | Why | Required? |
+| Path | File | Use when |
 |---|---|---|
-| **Node.js 18+** | runs the MCPs, the CLI tools and the scripts | **required** |
-| **Python 3.9+** | design bank search, asset search, hooks | **required** |
-| **Playwright** (`npm install -g playwright && npx playwright install chromium`) | delivery proof, identity extraction on clone, video gate. **The skill requires a screenshot of the result on every path**, so without this you cannot close a delivery | **required in practice** |
-| **git** | cloning this repo, versioning your page | **required** |
-| **Chrome or Chromium** | only for the Lighthouse score. If you have none, the skill uses the Chromium that Playwright already downloaded (`export CHROME_PATH="$(node -e "console.log(require('playwright').chromium.executablePath())")"`, then add `--no-sandbox`). If that also fails, Lighthouse becomes a declared pending item and **does not block delivery** | optional |
+| CREATE (`CRIAR`) | `references/caminhos/criar.md` | no page exists yet |
+| CLONE (`CLONAR`) | `references/caminhos/clonar.md` | reproduce a live URL or a PDF faithfully |
+| CLONE + ELEVATE (`CLONAR + ELEVAR`) | `references/caminhos/clonar-elevar.md` | "clone it and make it great": identity kept, composition raised |
+| IMPROVE (`MELHORAR`, includes visual variants) | `references/caminhos/melhorar.md` | the page exists and must get better without regressions |
+| EDIT (`EDITAR`) | `references/caminhos/editar.md` | one specific change, nothing else |
 
-### Dependências críticas e opcionais
+- A **gated CREATE flow** in eight steps, each one blocking the next:
 
-| Dependency | Type | Role | Fallback if missing |
-|------------|------|------|---------------------|
-| **Stitch** | MCP (`mcp__stitch__*`) | wireframe (Step 2) | lay the structure straight in code |
-| **21st.dev Magic** | MCP (`mcp__magic__*`) | UI components (Step 3) | **Crítica: configurar antes de continuar** |
-| **design-taste-frontend** | skill | anti-slop gate (Step 4) | **Crítica: instalar antes de continuar** |
-| **frontend-design** | skill | aesthetic direction before code (Step 2) | run with design-taste-frontend only |
-| **redesign-existing-projects** | skill | audit-first for clone/redesign | manual 5-dimension audit |
-| **high-end-visual-design** | skill | premium finish | optional |
-| **animate** | skill | motion and micro-interaction (Step 4) | animate by hand with Framer Motion |
-| **impeccable** | CLI (`npx`) | UI refinement | optional |
-| **PEXELS_API_KEY** | env | stock video/photo search | **not needed for photos:** `--type photo` falls back to Openverse and returns real CC-licensed photos with no key (crediting the author is mandatory) |
-| **ffmpeg** | CLI | video gate for pages that embed video | skip the video gate |
-| **Higgsfield** | CLI (`npm i -g @higgsfield/cli`) | motion and b-roll on text-only blocks (**Step 3.2b, an expected step, not a garnish**). Needs a **paid** account for commercial use | real client footage, a screen recording, open-license b-roll, or CSS/Framer Motion, with the gap declared in the delivery block |
+| Step | Output | Blocking gate |
+|---|---|---|
+| a. Briefing | what the business sells, to whom, the offer, price, the action, and the real material that exists (photos, logo, testimonials, contact). Anything missing becomes a client to-do, never an invention | `gate-etapas.py registrar 0` |
+| b. Reference research | 6 to 10 real pages (at least 2 from the same kind of business, 2 high-level design references), first fold and a mid-page section screenshotted, each one read on composition, typography, imagery and rhythm, plus the principle to borrow | `gate-referencias.py` (6 real, distinct, non-blank screenshots marked as read) |
+| c. Visual plan | `plano-visual.md` written through the `frontend-design` skill: direction, 4 to 6 named hex colors, type scale, how imagery enters, section rhythm, signature element, and what changed in the self-review pass | `gate-etapas.py registrar 2` |
+| d. Copy | section copy using only facts from the briefing (short local-service model included) | `gate-etapas.py registrar 3` |
+| e. Build | HTML + compiled Tailwind by default (React only when the project truly needs it), hero first and checked against the plan, freely licensed images chosen by what the references taught, license recorded | `gate-etapas.py registrar 4` |
+| f. Mechanical gates | no uppercase kicker or decorative numbers, dead utility classes, 12 real viewports, occluded text, page identity (title, description, square favicon, og tags), tool usage, references | each exit code recorded in `wave.py gate` |
+| g. Auditors | 9 lenses: `design-critic`, `assets-auditor`, `visual-auditor`, `motion-auditor`, `responsive-auditor`, `cro-auditor`, `a11y-auditor`, `content-auditor`, `comparacao-referencias` | `wave.py checar` (every lens and gate ran) and `wave.py rodada` (the review cycle) |
+| h. Proof | desktop 1440 and mobile 390 screenshots read by the agent, main interaction clicked, delivery block | `gate-etapas.py registrar 5` |
 
-Install commands surfaced by the skill:
+- **Auditors run as independent subagents when the environment allows it** (one per lens, in parallel, none seeing the others). When it does not, the same checks run sequentially, one lens at a time, and the record says it was a self-review.
+- **The `comparacao-referencias` lens** puts the page next to the strongest references, axis by axis. If it fails, the cycle refuses to close no matter how high the other scores are, and the agent goes back to the visual plan.
+
+## What it is not
+
+- Not a template pack or a component library. It produces pages from a brief, not from presets.
+- Not a design database that decides for you. The bundled database (`data/*.csv` + `scripts/search.py`) is an optional lookup; it never chooses the palette or the type.
+- Not a copier of other sites. References teach principles; copying another brand's copy, layout, logo, photos or exact palette is forbidden.
+- Not a fact generator. Prices, numbers, credentials and testimonials that are not in the brief never appear on the page.
+- Not a deploy tool. Deploying is optional; without a hosting account the delivery is local and the deploy is a declared pending item.
+
+---
+
+## Prerequisites
+
+| Requirement | Why | Required |
+|---|---|---|
+| **Python 3.8+** | gates, audit registry, reference gate | yes |
+| **Node.js 18+** | Playwright, screenshots, visual gates | yes |
+| **Playwright with Chromium** (`npm i -g playwright && npx playwright install chromium`) | reference screenshots and delivery proof | yes |
+| **`frontend-design` skill** (`npx -y skills add anthropics/skills --skill frontend-design --agent claude-code`) | the visual plan | yes |
+| A web search tool in the agent session | finding the reference pages | yes (any search tool works) |
+| ffmpeg | video gate, only for pages with video | optional |
+| 21st.dev, Stitch, Higgsfield, Pexels key, extra design skills | optional reinforcements | optional |
+
+Check everything with one command. Only the four critical items can fail it:
 
 ```bash
-# 21st.dev Magic (components): free API key at https://21st.dev
-claude mcp add magic --scope user --env API_KEY=<your-21st-key> -- npx -y @21st-dev/magic@latest
-
-# Google Stitch (wireframe): global binary stitch-mcp
-npm install -g stitch-mcp && claude mcp add stitch --scope user -- stitch-mcp proxy
-
-# Taste Skills (anti-slop): from https://www.tasteskill.dev/
-#   design-taste-frontend, redesign-existing-projects, high-end-visual-design
-
-# impeccable (CLI, optional): no install, runs via npx
-npx impeccable --version
-
-# Pexels (assets, optional, free): key at https://www.pexels.com/api/
-echo 'export PEXELS_API_KEY="<your-key>"' >> ~/.zshrc && source ~/.zshrc
+python3 <skill-dir>/scripts/checar-ferramentas.py              # critical + quick local optionals
+python3 <skill-dir>/scripts/checar-ferramentas.py --opcionais  # also MCPs, Higgsfield, network
 ```
-
----
 
 ## Installation
 
 ```bash
 git clone https://github.com/ojuliocouto/skill-construtor-paginas.git ~/.claude/skills/construtor-paginas
+npx -y skills add anthropics/skills --skill frontend-design --agent claude-code
+npm i -g playwright && npx playwright install chromium
+python3 <skill-dir>/scripts/checar-ferramentas.py   # <skill-dir> = where you cloned it
 ```
 
-The skill activates automatically on the next Claude Code session.
-
-### Optional: force the 3 triggers with a hook
-
-`hooks/pagina-skill-inject.py` is a `UserPromptSubmit` hook that detects the create, clone and redesign triggers and injects a forced reminder to run the skill (so it never depends on the model "remembering"). Wire it in `settings.json`:
+The skill activates on the next Claude Code session whenever you ask to create, clone, improve or edit a page. Optional: `hooks/pagina-skill-inject.py` is a `UserPromptSubmit` hook that injects a reminder to run the skill when it detects those intents. Wire it in `settings.json`:
 
 ```json
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      { "hooks": [ { "type": "command", "command": "python3 <caminho-deste-repo>/hooks/pagina-skill-inject.py" } ] }
-    ]
-  }
-}
+{ "hooks": { "UserPromptSubmit": [ { "hooks": [ { "type": "command", "command": "python3 <skill-dir>/hooks/pagina-skill-inject.py" } ] } ] } }
 ```
 
-(Copy `hooks/pagina-skill-inject.py` to `~/.claude/scripts/` or point the command at this repo's path.)
-
 ---
 
-## The 6-step flow
+## Onboarding: the first page
 
-Copy first, design second, code third. Each step has a gate and a forced stop before the next.
-
-| Step | Name | What happens | Tools / skills |
-|------|------|--------------|----------------|
-| 0 | Understand & inventory | **0.0 briefing interview first** (round 1: niche, location, audience, offer, price, action; round 2 only if the person already has clients), then classify page, map sections, audit copy, inventory assets (incl. **lead destination**: form endpoint / checkout URL) | `Read` (PDF), Google Docs/Sheets (requires external local scripts, not bundled), `github-search.py` |
-| 1 | Copy & message | VoC mining, before/after, message hierarchy, **copy lock** | `copy-pagina-vendas` (optional) |
-| 2 | Direct | palette, font pairing, per-section layout, **wireframe** | **Stitch**, `redesign-existing-projects` (clone/v2) |
-| 3 | Build | section by section, real assets, and a **per-block motion decision (3.2b)** | **21st.dev Magic**, `assets-search.py`, nanobanana, Veo, Higgsfield |
-| 4 | Verify & ship | audit wave → QA → **page identity gate (4.2b)** → **taste pass with a mandate to FIX (4.2c)** → deploy → post-deploy QA → delivery proof (4.5) | `design-taste-frontend`, `screenshot-prova.js`, `impeccable`, Workflow |
-| 5 | Measure & iterate | post-launch metrics, iterate against benchmark | analytics |
-
-> For **e-commerce / retail homes** (not high-ticket sales pages), Steps 0/1 collapse: skip copy lock / offer / checkout / per-section video. Focus on real brand identity, product cards with ratings, category & gender nav, brand grid, first-purchase coupon, trust strip.
-
----
-
-## Quality gate (before delivery)
-
-1. **Design Laws** (`references/design-laws.md`): no absolute bans applied unless explicitly requested.
-2. **Taste Gate** (`references/taste-gate.md`): score 6 design dimensions (1-5); deliver at avg ≥ 4.0.
-3. **AI Slop Test**: "Does this look AI-generated? Is there a detail only someone with taste would add?"
-4. **Anti-vibe-coding** (`references/anti-vibe-coding.md`): 5 substance signals **+ 15 visual AI tells**. Footer-legal / broken-checkout failures **block delivery**.
-5. **Taste Skill**: run `design-taste-frontend` on the finished page; clones/redesigns use `redesign-existing-projects` (audit-first) at Step 2; premium finish via `high-end-visual-design`.
-6. **impeccable** (CLI): `npx impeccable detect <url>` / `critique` / `polish`.
-7. **Page identity (Step 4.2b), a gate and not a checklist item:** `<title>`, `<meta name="description">`, a **square PNG favicon** + `apple-touch-icon`, `og:title`, `og:description`, `og:image`. Enforced by `scripts/screenshot-prova.js`, which exits 1 when any of them is missing. With no domain yet, only the **absolute URL** of `og:image` becomes a declared pending item; the tags themselves always block.
-8. **Taste pass (Step 4.2c), the last act before deploy:** load `design-taste-frontend` again, this time with a mandate to **FIX composition**, not to score it. Proof: the list of composition items changed plus the AI-tell count before and after, which has to end at 0.
-
-**Mandatory delivery block.** Every delivery message on the CREATE, CLONE and IMPROVE paths carries four fixed lines: wave verdict (`deploy_liberado` + scores + criticals), page identity (the script output), taste pass (tells before → after), and delivery proof (screenshot files read + click result), plus the declared pending items. A block missing one of them means a gate was skipped. The EDIT path carries a smaller block: regression checklist + proof of the changed spot.
-
-### The 15 visual AI tells (the "AI look" checklist)
-
-Flag and fix before shipping: mono uppercase kicker labels with a square/bar · giant decorative number ("01") · stroke outline word behind content · blurred radial glow blob · animated speed streaks · stats block in the hero · price in mono font · "ENTER" hint in the search box · diffuse colored glow on button hover · mixed languages in copy · single-metaphor "marketing-ese" copy · exaggerated hover rotation on product photos · decorative icon separators · repeated diagonal-clip + gradient sections · tiny logo (<56px).
-
-**Master rule:** when cloning a real store, the reference for "good" is the niche competitor, not Dribbble/SaaS landing pages.
-
----
-
-## Adversarial audit wave (Step 4)
-
-The audit is **never** done by the same context that built the page (builders don't see their own mistakes). Step 4 fans out **8 adversarial subagents in parallel**, each with one independent lens, then a synthesis agent consolidates the gate. Orchestrated via the `Workflow` tool. Full protocol, schema, and skeleton in `references/audit-agents.md`.
-
-| Agent | Lens | Blocks delivery (critical) if |
-|-------|------|-------------------------------|
-| `design-critic` | taste / anti-slop (runs `design-taste-frontend`) | taste < 4.0, **3+ visual AI tells**, broken footer/checkout |
-| `assets-auditor` | real image/mockup/video presence | text+gradient+SVG only, SaaS without a mockup, lead magnet without the material mockup |
-| `visual-auditor` | hierarchy, palette, spacing, desktop grid | letter format, side-by-side collapsed to one column |
-| `motion-auditor` | scroll reveal, hover, hero entrance, counters | static hero, no feedback, dead hover |
-| `responsive-auditor` | 12 telas, inclusive desktop baixo | overflow, corte, toque e CTA |
-| `content-auditor` | conteúdo e fontes | dado inventado, contato divergente |
-| `cro-auditor` | CTAs, form, offer, message match, Hook/Story/Offer | weak CTA, broken form/checkout, no message match |
-| `a11y-auditor` | focus, labels, alt, ARIA, 4.5:1 contrast, no emoji | critical WCAG failure, emoji on page |
-
-**Decisão de entrega:** `wave.py checar` confere o processo; `wave.py rodada` decide o encerramento. Críticos e regressões confirmados bloqueiam. O ciclo admite piso, gravidade esgotada, convergência ou teto, com nota real e pendências declaradas. Sem Workflow, use subagentes disponíveis; sem subagentes, declare a autoavaliação.
-
----
-
-## Cloning rules (live site or PDF)
-
-- **Keep the original identity.** Extract exact brand colors via `getComputedStyle` in the browser; download the **real logo** from the site. Never invent palette/logo unless explicitly asked.
-- **White-background product photos** only go on light/white surfaces (they blend invisibly). On dark surfaces they become "white boxes": a top AI tell.
-- Preserve IA, slugs, nav labels, and analytics events (see the audit-first Redesign Protocol).
-- **PDF clone:** read **every** page first (in 20-page blocks for large PDFs), extract layout, section order, exact copy, and assets before writing any code.
-
----
-
-## Effects catalog
-
-`references/efeitos-avancados.md` has copy-paste effects. Notable:
-
-- **Gradient Border Beam**: variant 4b (auto-rotating, `@property` + conic-gradient + mask ring) and **variant 4c (border glow that follows the cursor)**. One `mousemove` listener powers a whole grid.
-- 3D tilt, text scramble, magnetic cursor, noise texture, blob morph, confetti, aurora, glassmorphism spotlight, parallax, animated counters, floating orbs.
-
-Escolha efeitos pelo conteúdo e pela identidade. Aurora, glow decorativo e floating orbs do catálogo são exemplos proibidos neste fluxo. Confetti e magnetic não são obrigatórios no CTA.
-
----
-
-## Pairs with (skills, MCPs, tools)
-
-| Name | Type | Status | When |
-|------|------|--------|------|
-| **Stitch** | MCP | `claude mcp add` (see onboarding) | wireframe (Step 2) |
-| **21st.dev Magic** | MCP | `claude mcp add` + API key | components (Step 3) |
-| `design-taste-frontend` | skill | [tasteskill.dev](https://www.tasteskill.dev/) | anti-slop gate (Step 4) |
-| `redesign-existing-projects` | skill | tasteskill.dev | audit-first for clone/redesign (Step 2) |
-| `high-end-visual-design` | skill | tasteskill.dev | premium finish (Step 4) |
-| `impeccable` | CLI | `npx impeccable` (no install) | deep refinement (Step 4) |
-| `copy-pagina-vendas` | skill | optional | sales copy before building (Step 1) |
-
----
-
-## Project memory
-
-After each successful session the skill saves context to:
-
-- `references/projects/<slug>.md`: per-project brand tokens, palette, stack, deploy, funnel
-- `references/sessions/<date>-<slug>.md`: what was done, learnings, files changed
-
-On the next session for the same project it reads these and continues where it left off.
-
-> **These folders are local-only (gitignored).** Only the neutral `EXAMPLE.md` templates are tracked. No client data is ever pushed to the repo. Copy `EXAMPLE.md` to start a new project/session record.
-
-To resume: *"Continue working on the [project name] page"*.
+1. Run the checker. Fix any critical item it reports (the fix command is printed).
+2. Ask for the page in plain words ("create a page for my pilates studio in Niterói"). The agent declares the path and asks the six briefing questions.
+3. The agent searches the web for real pages, captures them:
+   ```bash
+   node <skill-dir>/scripts/capturar-referencias.mjs --projeto <page-dir> --tipo mesmo-negocio <url> <url>
+   node <skill-dir>/scripts/capturar-referencias.mjs --projeto <page-dir> --tipo design <url> <url>
+   ```
+   reads every screenshot, writes the reading into `referencias/referencias.json`, and runs `gate-referencias.py`.
+4. It invokes `frontend-design`, writes `plano-visual.md`, then the copy, then builds.
+5. It runs the gates and the 9 lenses, closes the review cycle, and delivers with screenshots it has actually looked at.
 
 ---
 
 ## Repository layout
 
 ```
-construtor-paginas/
-├── SKILL.md                      # the skill (activation, 6 steps, gates, audit wave)
-├── README.md                     # this file
-├── hooks/pagina-skill-inject.py  # optional UserPromptSubmit trigger hook
-├── scripts/
-│   ├── search.py                 # query the design DB (styles, colors, fonts)
-│   ├── github-search.py          # find templates/components on GitHub
-│   ├── assets-search.py          # videos (Pexels), photos, Lottie, illustrations, icons
-│   ├── screenshot-prova.js       # delivery proof + page identity gate (exits 1 on failure)
-│   ├── gate-video.mjs            # 7 executable video checks (launches its own Chromium)
-│   ├── extrai-identidade.mjs     # real palette/logo/CSS vars extraction (CLONE path)
-│   ├── higgsfield.py             # Higgsfield API client (batch, --dry-run, seed manifest)
-│   └── servidor-gzip.py          # serve the local build WITH compression (measuring without gzip flips results)
-├── data/                         # CSVs: 50 styles, 21 palettes, 50 font pairings, UX guidelines
-└── references/                   # specialized guides (auditing, effects, page types, ...)
-    ├── audit-agents.md           # adversarial wave protocol + schema
-    ├── projects/EXAMPLE.md       # per-project template (rest is local/gitignored)
-    └── sessions/EXAMPLE.md       # per-session template (rest is local/gitignored)
+SKILL.md                       router (v3.0.0)
+CHANGELOG.md                   v2 -> v3 migration
+references/
+  caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
+  pesquisa-de-referencias.md   how to find, capture, read and record references
+  auditores.md                 the 9 lenses, verdict schema, cycle rules, taste pass
+  preferencias-de-design.md    taste rules measured on real corrections (generic)
+  anti-vibe-coding.md          the V1 to V15 visual AI tells
+  copy-servico-local.md        short copy model for local services
+  page-types.md                section models per page type
+  assets-sem-chave.md          freely licensed photos and how to credit them
+  gate-etapas.md               evidence fields per step
+  arquivo/                     v2 references, outside the flow (kept for lookup only)
+  projects/EXAMPLE.md          per-project template (real files are local, gitignored)
+  sessions/EXAMPLE.md          per-session template (real files are local, gitignored)
+scripts/                       gates, capture, audit registry, tests
+data/                          optional design database (CSV)
+hooks/pagina-skill-inject.py   optional trigger hook
 ```
 
----
+## Tests
 
-## Reference files
-
-| File | Purpose |
-|------|---------|
-| `references/audit-agents.md` | Adversarial audit wave: 8 lentes + synthesis, schema, Workflow skeleton |
-| `references/design-laws.md` | Color (OKLCH), typography, motion rules |
-| `references/anti-vibe-coding.md` | 5 substance signals + 15 visual AI tells + fixes |
-| `references/taste-gate.md` · `references/scoring-system.md` | Quality scoring rubric |
-| `references/page-types.md` | Page-type decision tree + section templates |
-| `references/efeitos-avancados.md` | Copy-paste effects (incl. border beam 4b/4c) |
-| `references/visual-excellence.md` | Premium gradients, backgrounds, glassmorphism |
-| `references/animacoes-avancadas.md` | Advanced Framer Motion / Motion patterns |
-| `references/magicui-components.md` | MagicUI component catalog |
-| `references/mobile-checklist-detailed.md` · `references/desktop-layout-rules.md` | Responsive + desktop grid rules |
-| `references/strategist-audit.md` · `references/cta-placement-map.md` | Conversion / funnel audit |
-| `data/colors.csv` · `data/styles.csv` · `data/typography.csv` | Palettes, styles, font pairings |
-
----
-
-## License
-
-Proprietary. Exclusive to **Júlio Couto / iAutomate**. All rights reserved. No redistribution, resale, or reuse without express permission.
-
-## Verificação de processo e limites das provas
-
-No fluxo CRIAR, cada Step registra evidências no `scripts/gate-etapas.py`.
-Formato e campos: [gate-etapas.md](references/gate-etapas.md). O script bloqueia
-etapa pulada, campos ausentes e evidência alterada. Não autentica aprovação humana.
-
-O verificador de ferramentas atual mede níveis diferentes: MCP por `claude mcp list`,
-skills por presença local, Playwright por instalação, banco e busca por execução.
-O 21st.dev é a exceção que já faz chamada real: com a chave em `TWENTYFIRST_API_KEY`, o
-verificador roda initialize, tools/list e uma busca de componente; sem a chave ele sai como
-opcional ausente, nunca verde. 21st.dev e Higgsfield são opcionais (o aluno sem conta paga
-faz a página com componente a mão em Tailwind e movimento em CSS). Nos outros MCPs, um OK
-comprova conexão, não uma chamada útil autenticada.
-
-Testes reproduzíveis, executados na raiz:
+Run from the repository root:
 
 ```bash
+python3 scripts/test-checar-ferramentas.py
 python3 scripts/test-uso-ferramentas.py
+python3 scripts/test-gate-referencias.py
 python3 scripts/test-wave.py
 python3 scripts/test-gate-etapas.py
 python3 scripts/test-gate-sem-kicker.py
 python3 scripts/test-classes-mortas.py
 python3 scripts/test-search.py
 python3 scripts/test-docs.py
-python3 scripts/test-checar-ferramentas.py
+node scripts/test-capturar-referencias.cjs
 node scripts/test-gates-visuais.cjs
 node scripts/test-print-cabecalho.cjs
+node --test scripts/extrai-identidade.test.mjs
 ```
 
-O teste visual usa Chromium, ffmpeg e páginas locais sintéticas. Ele não aprova
-design de cliente. A conferência visual dos PNGs continua obrigatória.
+The visual tests use Chromium, ffmpeg and local synthetic pages. They prove that each gate fails on the defect it exists for; they do not approve a client's design. Reading the screenshots stays mandatory.
+
+## Security
+
+- No secret, token, account ID or client data lives in this repository. Optional tools read their keys from the environment (for example `TWENTYFIRST_API_KEY`, `PEXELS_API_KEY`); the checker never prints them.
+- Client material, project memory and session notes (`references/projects/*`, `references/sessions/*`, `evidencias/`, owner-specific preferences) are gitignored.
+- The reference capture never logs in, never clicks cookie or consent banners and never accepts terms.
+- Pages built outside their final domain ship with `noindex`, so a test copy of a real client's page does not compete with the client in search.
+
+## License
+
+Proprietary. Exclusive to **Júlio Couto / iAutomate**. All rights reserved. No redistribution, resale, or reuse without express permission.
