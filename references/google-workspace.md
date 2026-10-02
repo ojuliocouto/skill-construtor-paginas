@@ -1,8 +1,8 @@
 # Google Docs, Sheets & Drive: Acesso Direto
 
 
-> **REQUISITO EXTERNO:** os scripts `~/.claude/scripts/google-api.sh` e `google-oauth-capture.py` NAO acompanham este repo. Sem eles instalados e autenticados na maquina, esta integracao NAO funciona: pular e pedir o conteudo do documento ao usuario (colar texto / exportar PDF).
-Acesso autenticado ao Google Docs, Sheets e Drive do usuario via OAuth2. Usar para ler conteudo de documentos, planilhas, e listar/buscar arquivos no Drive.
+> **REQUISITO EXTERNO:** os scripts `~/.claude/scripts/google-api.sh` e `google-oauth-capture.py` NÃO acompanham este repo. Sem eles instalados e autenticados na máquina, esta integração NÃO funciona: pular e pedir o conteúdo do documento ao usuário (colar texto / exportar PDF).
+Acesso autenticado ao Google Docs, Sheets e Drive do usuário via OAuth2. Usar para ler conteúdo de documentos, planilhas, e listar/buscar arquivos no Drive.
 
 ### Setup
 
@@ -10,9 +10,9 @@ Credenciais e tokens ficam em:
 - `~/.claude/google-credentials.json`: Client ID + Secret
 - `~/.claude/google-tokens.json`: Access token + Refresh token (auto-refresh)
 - `~/.claude/scripts/google-api.sh`: Script helper principal
-- `~/.claude/scripts/google-oauth-capture.py`: Servidor OAuth para reautorizacao
+- `~/.claude/scripts/google-oauth-capture.py`: Servidor OAuth para reautorização
 
-### Comandos Disponiveis
+### Comandos Disponíveis
 
 ```bash
 # Listar 20 arquivos mais recentes do Google Drive
@@ -47,12 +47,12 @@ https://docs.google.com/document/d/SEU_DOC_ID_AQUI/edit
                                     Este e o DOC_ID
 ```
 
-### Workflow: Usuario Pede pra Acessar um Documento
+### Workflow: Usuário Pede pra Acessar um Documento
 
-1. **Se o usuario manda um link**: extrair o ID da URL e usar `google-api.sh doc <ID>` ou `sheet <ID>`
-2. **Se o usuario pede pra listar**: usar `google-api.sh list` ou `google-api.sh list "filtro"`
-3. **Se o usuario pede pra buscar conteudo**: usar `google-api.sh search "termo"`
-4. **Se token expirar (erro 401 persistente)**: rodar reautorizacao:
+1. **Se o usuário manda um link**: extrair o ID da URL e usar `google-api.sh doc <ID>` ou `sheet <ID>`
+2. **Se o usuário pede pra listar**: usar `google-api.sh list` ou `google-api.sh list "filtro"`
+3. **Se o usuário pede pra buscar conteúdo**: usar `google-api.sh search "termo"`
+4. **Se token expirar (erro 401 persistente)**: rodar reautorização:
    ```bash
    lsof -ti:8080 | xargs kill -9 2>/dev/null
    python3 ~/.claude/scripts/google-oauth-capture.py &
@@ -63,10 +63,10 @@ https://docs.google.com/document/d/SEU_DOC_ID_AQUI/edit
 
 ### Casos de Uso na Skill
 
-- **Ler briefing/copy de uma pagina** que o usuario escreveu no Google Docs
-- **Ler planilha de conteudo** (textos, precos, features) pra montar secoes da pagina
-- **Buscar documentos de referencia** no Drive sem o usuario precisar copiar/colar
-- **Importar dados de planilhas** pra popular componentes dinamicos (testimonials, FAQ, etc.)
+- **Ler briefing/copy de uma página** que o usuário escreveu no Google Docs
+- **Ler planilha de conteúdo** (textos, preços, features) pra montar seções da página
+- **Buscar documentos de referência** no Drive sem o usuário precisar copiar/colar
+- **Importar dados de planilhas** pra popular componentes dinâmicos (testimonials, FAQ, etc.)
 
 ### APIs Utilizadas
 
@@ -78,11 +78,11 @@ https://docs.google.com/document/d/SEU_DOC_ID_AQUI/edit
 | Google Sheets v4 | `GET /spreadsheets/{id}/values/{range}` | Ler dados de aba |
 | Google Docs v1 | `GET /documents/{id}` | Ler estrutura do documento (JSON) |
 
-### Notas Tecnicas
+### Notas Técnicas
 
 - **Auto-refresh**: o script detecta HTTP 401 e renova o token automaticamente usando o refresh_token
-- **App publicado em producao**: se o app Google Cloud estiver publicado (nao em modo teste), o refresh_token nao expira. Se receber erro 401 persistente apos refresh, rodar reautorizacao completa (ver workflow acima).
-- **Projeto Google Cloud**: usar o seu proprio projeto Google Cloud (configurar OAuth client)
+- **App publicado em produção**: se o app Google Cloud estiver publicado (não em modo teste), o refresh_token não expira. Se receber erro 401 persistente após refresh, rodar reautorização completa (ver workflow acima).
+- **Projeto Google Cloud**: usar o seu próprio projeto Google Cloud (configurar OAuth client)
 - **Redirect URI cadastrado**: `http://localhost:8080`
 - **Scopes**: `documents.readonly`, `spreadsheets.readonly`, `drive.readonly` (somente leitura)
 

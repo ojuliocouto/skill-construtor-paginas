@@ -1,23 +1,23 @@
-# Magic UI - Animacoes
+# Magic UI - Animações
 
 
-> **ATENCAO (anti-vibe):** varios efeitos deste arquivo (glow em botao, border glow, aurora, floating orbs, gradiente indigo+roxo) sao tells VISUAIS de IA (V1-V15 de `anti-vibe-coding.md`) e REPROVAM na wave do Step 4. Usar apenas quando o usuario pedir explicitamente esse look. Nos exemplos abaixo, trocar as cores hardcoded pela paleta REAL do projeto (CSS vars) e preferir micro-interacao sobria no CTA (mudanca de tom + elevacao sutil).
-Componentes animados para landing pages SaaS. Instalacao: `npx magicui-cli@latest add [componente]`
+> **ATENÇÃO (anti-vibe):** vários efeitos deste arquivo (glow em botão, border glow, aurora, floating orbs, gradiente indigo+roxo) são tells VISUAIS de IA (V1-V15 de `anti-vibe-coding.md`) e REPROVAM na wave do Step 4. Usar apenas quando o usuário pedir explicitamente esse look. Nos exemplos abaixo, trocar as cores hardcoded pela paleta REAL do projeto (CSS vars) e preferir micro-interacao sobria no CTA (mudança de tom + elevação sutil).
+Componentes animados para landing pages SaaS. Instalação: `npx magicui-cli@latest add [componente]`
 
-**Dependencias**: `npm install framer-motion clsx tailwind-merge`
+**Dependências**: `npm install framer-motion clsx tailwind-merge`
 
-### Componentes Disponiveis
+### Componentes Disponíveis
 
 | Categoria | Componentes |
 |-----------|-------------|
 | Texto | number-ticker, typing-animation, word-rotate, flip-text, morphing-text |
-| Botoes | shimmer-button, rainbow-button, pulsating-button, shiny-button |
+| Botões | shimmer-button, rainbow-button, pulsating-button, shiny-button |
 | Patterns | dot-pattern, grid-pattern, retro-grid, particles, meteors |
 | Mockups | iphone-15-pro, safari, android |
 | Layout | bento-grid, marquee, dock, animated-list, file-tree |
 | Efeitos | orbiting-circles, animated-beam, border-beam, confetti, globe |
 
-### Exemplos Rapidos
+### Exemplos Rápidos
 ```tsx
 'use client'
 // Number Ticker (stats animados)

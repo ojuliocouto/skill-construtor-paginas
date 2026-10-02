@@ -476,7 +476,7 @@ Typography with pseudo-elements
 
 ```
 
-## Media Queries
+## Média Queries
 
 Conditional styling based on user preferences and device capabilities.
 

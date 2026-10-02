@@ -1,28 +1,28 @@
 # Desktop Layout Rules: Anti "Formato Carta"
 
-Regras obrigatorias de layout para paginas desktop. Baseado em pesquisa com dados de NN/G, CXL, Stanford Web Credibility Project e analise de paginas de venda brasileiras (Erico Rocha, Thiago Nigro, Pedro Sobral, Leandro Ladeira).
+Regras obrigatórias de layout para páginas desktop. Baseado em pesquisa com dados de NN/G, CXL, Stanford Web Credibility Project e análise de páginas de venda brasileiras (Erico Rocha, Thiago Nigro, Pedro Sobral, Leandro Ladeira).
 
 ---
 
 ## O Problema: Formato Carta
 
-O "formato carta" e uma pagina com:
-- Coluna unica centralizada (~700px)
-- Texto bloco apos bloco
-- Zero conteudo side-by-side
-- Parece um documento Word, nao uma pagina de vendas
+O "formato carta" e uma página com:
+- Coluna única centralizada (~700px)
+- Texto bloco após bloco
+- Zero conteúdo side-by-side
+- Parece um documento Word, não uma página de vendas
 
 **Por que falha em desktop:**
 - Desperdiça 60%+ do viewport em monitores 1920px
-- Sem ancoras visuais para guiar o scanning (F-pattern/Z-pattern)
-- Monotonia visual causa "content blindness" (86% dos usuarios)
-- Comunica produto de R$47-197: nao de R$1.000+
+- Sem âncoras visuais para guiar o scanning (F-pattern/Z-pattern)
+- Monotonia visual causa "content blindness" (86% dos usuários)
+- Comunica produto de R$47-197: não de R$1.000+
 - Stanford: 46.1% julgam credibilidade pelo visual ANTES de ler
 
 **Quando formato carta E valido:**
 - Carta de vendas estilo Gary Halbert (ebook R$47)
-- VSL page (so video + botao)
-- Email renderizado como pagina
+- VSL page (só vídeo + botão)
+- Email renderizado como página
 - Low-ticket impulse buy
 - Mobile (tudo e single column anyway)
 
@@ -30,31 +30,31 @@ O "formato carta" e uma pagina com:
 
 ## 7 Regras Nao-Negociaveis
 
-### Regra 1: Max 2 secoes seguidas com mesmo layout
-Nunca mais de 2 secoes com layout identico em sequencia. Apos 2 blocos centrados, DEVE haver mudanca (side-by-side, grid, full-bleed).
+### Regra 1: Max 2 seções seguidas com mesmo layout
+Nunca mais de 2 seções com layout idêntico em sequência. Após 2 blocos centrados, DEVE haver mudança (side-by-side, grid, full-bleed).
 
-### Regra 2: Alternar direcao do conteudo
-Para cada 3 secoes, ao menos 1 deve ter conteudo side-by-side com visual alternando lados:
-- Secao A: imagem esquerda + texto direita
-- Secao B: texto esquerda + imagem direita
+### Regra 2: Alternar direção do conteúdo
+Para cada 3 seções, ao menos 1 deve ter conteúdo side-by-side com visual alternando lados:
+- Seção A: imagem esquerda + texto direita
+- Seção B: texto esquerda + imagem direita
 
 ### Regra 3: Visual element a cada ~900px
-Usuarios devem encontrar um elemento visual significativo (imagem, grid de icones, video, mudanca de background) a cada 1.5 viewport heights.
+Usuários devem encontrar um elemento visual significativo (imagem, grid de ícones, vídeo, mudança de background) a cada 1.5 viewport heights.
 
 ### Regra 4: Hero DEVE ter elemento visual ao lado
-Hero (above the fold) DEVE conter: headline + subheadline + CTA + elemento visual (foto, video, mockup) em layout side-by-side ou assimetrico. Hero so-texto desperdiça o real estate mais valioso da pagina.
+Hero (above the fold) DEVE conter: headline + subheadline + CTA + elemento visual (foto, vídeo, mockup) em layout side-by-side ou assimétrico. Hero so-texto desperdiça o real estate mais valioso da página.
 
-### Regra 5: Secoes que OBRIGATORIAMENTE sao side-by-side no desktop
-| Secao | Motivo |
+### Regra 5: Seções que OBRIGATORIAMENTE são side-by-side no desktop
+| Seção | Motivo |
 |-------|--------|
-| Mentor/instrutor bio | Foto ao lado do texto cria conexao pessoal |
-| Depoimentos com foto | Face + quote lado a lado e 2-3x mais credivel |
-| Features/modulos | Icone/imagem + descricao melhora scannability |
-| Before/After | Comparacao so funciona em 2 colunas |
+| Mentor/instrutor bio | Foto ao lado do texto cria conexão pessoal |
+| Depoimentos com foto | Face + quote lado a lado e 2-3x mais credível |
+| Features/modulos | Icone/imagem + descrição melhora scannability |
+| Before/After | Comparação só funciona em 2 colunas |
 | Garantia | Badge + texto lado a lado sinaliza legitimidade |
 
-### Regra 6: Alternar backgrounds a cada 3-4 secoes
-Criar "capitulos" visuais com backgrounds diferentes:
+### Regra 6: Alternar backgrounds a cada 3-4 seções
+Criar "capítulos" visuais com backgrounds diferentes:
 - Dark (slate-950, gray-950, navy)
 - Light (white, gray-50, cream)
 - Gradient (indigo→purple, orange→amber)
@@ -65,7 +65,7 @@ Linhas de texto devem ter 50-75 caracteres (~600-700px). Mas o RESTANTE do viewp
 
 ---
 
-## Grid System Padrao
+## Grid System Padrão
 
 ### Container
 ```css
@@ -86,8 +86,8 @@ Linhas de texto devem ter 50-75 caracteres (~600-700px). Mas o RESTANTE do viewp
 |---------|----------|-------------|
 | 50/50 | `grid-template-columns: 1fr 1fr` | Hero, benefits alternados |
 | 60/40 | `grid-template-columns: 3fr 2fr` | Hero (texto pesado), about mentor |
-| 40/60 | `grid-template-columns: 2fr 3fr` | Modulos com mockup |
-| 33/33/33 | `repeat(3, 1fr)` | Cards de beneficio, testimonials, pricing |
+| 40/60 | `grid-template-columns: 2fr 3fr` | Módulos com mockup |
+| 33/33/33 | `repeat(3, 1fr)` | Cards de benefício, testimonials, pricing |
 | 25x4 | `repeat(4, 1fr)` | Stats counter, feature icons |
 | Full | `1fr` | FAQ, garantia, CTA final (OK ser single col) |
 
@@ -112,7 +112,7 @@ Linhas de texto devem ter 50-75 caracteres (~600-700px). Mas o RESTANTE do viewp
 
 ---
 
-## Templates de Layout por Secao
+## Templates de Layout por Seção
 
 ### HERO: Split Screen (60/40)
 ```html
@@ -178,7 +178,7 @@ Linhas de texto devem ter 50-75 caracteres (~600-700px). Mas o RESTANTE do viewp
 </section>
 ```
 
-### SOLUCAO / BENEFICIOS: Zigzag Alternado
+### SOLUÇÃO / BENEFÍCIOS: Zigzag Alternado
 ```html
 <!-- Beneficio 1: imagem esquerda + texto direita -->
 <section style="padding:80px 0;">
@@ -209,7 +209,7 @@ Linhas de texto devem ter 50-75 caracteres (~600-700px). Mas o RESTANTE do viewp
 </section>
 ```
 
-**Regra NN/G para zigzag:** Funciona quando as imagens tem VALOR INFORMACIONAL (screenshots, resultados, diagramas). Falha com imagens decorativas genericas. Max 2-4 rows de zigzag.
+**Regra NN/G para zigzag:** Funciona quando as imagens tem VALOR INFORMACIONAL (screenshots, resultados, diagramas). Falha com imagens decorativas genéricas. Max 2-4 rows de zigzag.
 
 ### O QUE RECEBE: Mockup 40% + Lista 60%
 ```html
@@ -238,7 +238,7 @@ Linhas de texto devem ter 50-75 caracteres (~600-700px). Mas o RESTANTE do viewp
 </section>
 ```
 
-### BONUS: 3-Column Card Grid
+### BÔNUS: 3-Column Card Grid
 ```html
 <section style="padding:80px 0; background:linear-gradient(135deg, #1a0a2e, #0a0a14);">
   <div style="max-width:1200px; margin:0 auto; padding:0 24px;">
@@ -302,7 +302,7 @@ Linhas de texto devem ter 50-75 caracteres (~600-700px). Mas o RESTANTE do viewp
 </section>
 ```
 
-### VALUE STACK: Lista com precos + CTA
+### VALUE STACK: Lista com preços + CTA
 ```html
 <section style="padding:100px 0; background:#0a0a14; color:white;">
   <div style="max-width:900px; margin:0 auto; padding:0 24px; text-align:center;">
@@ -335,7 +335,7 @@ Linhas de texto devem ter 50-75 caracteres (~600-700px). Mas o RESTANTE do viewp
 </section>
 ```
 
-### FAQ: Titulo Left + Accordion Right
+### FAQ: Título Left + Accordion Right
 ```html
 <section style="padding:80px 0; background:#f9fafb;">
   <div style="max-width:1200px; margin:0 auto; padding:0 24px;
@@ -376,23 +376,23 @@ Linhas de texto devem ter 50-75 caracteres (~600-700px). Mas o RESTANTE do viewp
 
 ---
 
-## Fluxo Ideal de Secoes: Pagina de Mentoria/Curso
+## Fluxo Ideal de Seções: Página de Mentoria/Curso
 
 ```
-SECAO           | LAYOUT DESKTOP                | BACKGROUND
+SEÇÃO           | LAYOUT DESKTOP                | BACKGROUND
 ----------------+-------------------------------+------------------
 1. Hero         | Split 60/40 (texto + foto)    | Dark/gradient
 2. Social Proof | 4-stat counter row            | Light (#f8f8f8)
 3. Problema     | 3-col icon cards              | Dark
-4. Solucao      | Split 50/50 (texto + img)     | White
-5. Beneficios   | Zigzag alternado (2-4 rows)   | Alternating bg
+4. Solução      | Split 50/50 (texto + img)     | White
+5. Benefícios   | Zigzag alternado (2-4 rows)   | Alternating bg
 6. O que recebe | Mockup 40% + lista 60%        | Dark
-7. Bonus        | 3-col card grid               | Gradient
+7. Bônus        | 3-col card grid               | Gradient
 8. Depoimentos  | Featured + 3-col grid         | Light
 9. Sobre mentor | Foto 40% + bio 60%            | White
-10. Value Stack | Lista precos centrado (900px)  | Dark
+10. Value Stack | Lista preços centrado (900px)  | Dark
 11. Garantia    | Badge + texto (max 800px)      | White
-12. FAQ         | Titulo left + accordion right  | Light
+12. FAQ         | Título left + accordion right  | Light
 13. CTA Final   | Full-bleed dark + centrado     | Dark (=hero)
 ```
 
@@ -400,15 +400,15 @@ SECAO           | LAYOUT DESKTOP                | BACKGROUND
 
 ## Checklist Desktop Layout
 
-Antes de entregar qualquer pagina, verificar:
+Antes de entregar qualquer página, verificar:
 
-- [ ] Hero tem elemento visual ao lado do texto (nunca so texto)
-- [ ] Nao ha mais de 2 secoes seguidas com layout identico
-- [ ] Secao "Sobre o Mentor" tem foto ao lado do texto
-- [ ] Depoimentos usam grid (nunca lista vertical unica)
-- [ ] Benefits/features alternam direcao (zigzag ou grid)
-- [ ] Backgrounds alternam claro/escuro a cada 3-4 secoes
+- [ ] Hero tem elemento visual ao lado do texto (nunca só texto)
+- [ ] Não há mais de 2 seções seguidas com layout idêntico
+- [ ] Seção "Sobre o Mentor" tem foto ao lado do texto
+- [ ] Depoimentos usam grid (nunca lista vertical única)
+- [ ] Benefits/features alternam direção (zigzag ou grid)
+- [ ] Backgrounds alternam claro/escuro a cada 3-4 seções
 - [ ] Texto nunca ultrapassa 700px de largura em linhas corridas
-- [ ] Container principal e 1200px (nao 700px "carta")
+- [ ] Container principal e 1200px (não 700px "carta")
 - [ ] Mobile colapsa pra single column naturalmente
-- [ ] Nenhuma secao obrigatoria side-by-side esta em coluna unica no desktop
+- [ ] Nenhuma seção obrigatória side-by-side esta em coluna única no desktop

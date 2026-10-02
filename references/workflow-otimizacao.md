@@ -1,37 +1,37 @@
-# Workflow de Otimizacao de Paginas Existentes
+# Workflow de Otimização de Páginas Existentes
 
 
-> **ATENCAO (anti-vibe):** varios efeitos deste arquivo (glow em botao, border glow, aurora, floating orbs, gradiente indigo+roxo) sao tells VISUAIS de IA (V1-V15 de `anti-vibe-coding.md`) e REPROVAM na wave do Step 4. Usar apenas quando o usuario pedir explicitamente esse look. Nos exemplos abaixo, trocar as cores hardcoded pela paleta REAL do projeto (CSS vars) e preferir micro-interacao sobria no CTA (mudanca de tom + elevacao sutil).
-Quando o usuario tem uma pagina ja existente e quer melhorar, reformular ou deixar visual impactante:
+> **ATENÇÃO (anti-vibe):** vários efeitos deste arquivo (glow em botão, border glow, aurora, floating orbs, gradiente indigo+roxo) são tells VISUAIS de IA (V1-V15 de `anti-vibe-coding.md`) e REPROVAM na wave do Step 4. Usar apenas quando o usuário pedir explicitamente esse look. Nos exemplos abaixo, trocar as cores hardcoded pela paleta REAL do projeto (CSS vars) e preferir micro-interacao sobria no CTA (mudança de tom + elevação sutil).
+Quando o usuário tem uma página já existente e quer melhorar, reformular ou deixar visual impactante:
 
 ### Passo 1: Leitura e Auditoria Completa
 
-**SEMPRE ler os arquivos antes de qualquer mudanca:**
+**SEMPRE ler os arquivos antes de qualquer mudança:**
 ```bash
 # Identificar todos os componentes/paginas do projeto
 # Usar Glob e Read para ler todos os arquivos relevantes antes de sugerir qualquer mudanca
 ```
 
-**Auditar 5 dimensoes:**
-1. **Impacto Visual**: A hero section prende atencao em 3 segundos? Ha um elemento visual forte (mockup, video, ilustracao)?
-2. **Hierarquia Tipografica**: Titulos se destacam com peso, tamanho e gradiente? Body e legivel?
-3. **Paleta e Coerencia**: Cores harmônicas? Gradientes consistentes? Dark mode funciona?
-4. **Animacoes**: Ha feedback visual? Elementos entram animados? Cards reagem ao hover?
-5. **Micro-interacoes**: Botoes tem hover elaborado? Links transitam suavemente?
+**Auditar 5 dimensões:**
+1. **Impacto Visual**: A hero section prende atenção em 3 segundos? Há um elemento visual forte (mockup, vídeo, ilustração)?
+2. **Hierarquia Tipográfica**: Títulos se destacam com peso, tamanho e gradiente? Body e legível?
+3. **Paleta e Coerência**: Cores harmônicas? Gradientes consistentes? Dark mode funciona?
+4. **Animações**: Há feedback visual? Elementos entram animados? Cards reagem ao hover?
+5. **Micro-interacoes**: Botões tem hover elaborado? Links transitam suavemente?
 
-### Passo 2: Diagnostico por Severidade
+### Passo 2: Diagnóstico por Severidade
 
 **Alta Prioridade (impacto imediato):**
-- Hero sem animacao de entrada → adicionar fade/slide-up com Framer Motion
+- Hero sem animação de entrada → adicionar fade/slide-up com Framer Motion
 - Fundo plano/branco → substituir por mesh gradient ou gradiente radial
-- Titulos sem hierarquia → aumentar tamanho, peso e adicionar gradient text
-- Botoes genericos → CTA com cor de marca solida + hover de tom + elevacao sutil (ShimmerButton SO se o look foi pedido; glow colorido = tell V9)
+- Títulos sem hierarquia → aumentar tamanho, peso e adicionar gradient text
+- Botões genéricos → CTA com cor de marca sólida + hover de tom + elevação sutil (ShimmerButton SÓ se o look foi pedido; glow colorido = tell V9)
 - Cards sem hover elevation → adicionar hover shadow neutra + translate (sem border glow colorido: tell V9)
 
-**Media Prioridade (polimento visual):**
-- Secoes sem separacao visual → adicionar wave SVG dividers ou gradient fade
+**Média Prioridade (polimento visual):**
+- Seções sem separação visual → adicionar wave SVG dividers ou gradient fade
 - Features sem scroll reveal → envolver em Framer Motion whileInView
-- Stats estaticos → substituir por NumberTicker
+- Stats estáticos → substituir por NumberTicker
 - Logos repetindo → usar Marquee animado
 - Imagens sem tratamento → adicionar blur placeholder + lazy load
 
@@ -94,7 +94,7 @@ const radialGlow = "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(var(--b
 </div>
 ```
 
-**Camada 4, Botoes Upgrade**
+**Camada 4, Botões Upgrade**
 ```tsx
 // CTA principal: ShimmerButton (MagicUI)
 <ShimmerButton shimmerColor="var(--brand-accent)" background="linear-gradient(to right, var(--brand-1), var(--brand-2))" className="px-8 py-4 text-base font-semibold">
@@ -141,17 +141,17 @@ import { motion } from 'framer-motion'
 </motion.div>
 ```
 
-### Checklist de Otimizacao Visual
+### Checklist de Otimização Visual
 
-- [ ] Hero tem animacao de entrada (Framer Motion fade/slide-up)
+- [ ] Hero tem animação de entrada (Framer Motion fade/slide-up)
 - [ ] Fundo tem gradiente mesh, gradiente radial ou pattern
-- [ ] Titulo principal usa gradient text ou decoracao
+- [ ] Título principal usa gradient text ou decoração
 - [ ] CTA tem cor de marca + micro-interacao sobria (sem glow colorido difuso)
 - [ ] Cards tem hover: elevation + translate-y (borda 1px, sem glow)
 - [ ] Features usam scroll reveal whileInView
 - [ ] Stats usam NumberTicker animado
 - [ ] Social proof/logos usam Marquee
-- [ ] Mockup de produto visivel (Safari ou iPhone15Pro)
-- [ ] Separadores entre secoes (wave SVG ou gradient fade)
+- [ ] Mockup de produto visível (Safari ou iPhone15Pro)
+- [ ] Separadores entre seções (wave SVG ou gradient fade)
 
 ---

@@ -153,7 +153,7 @@ export function LineChartDemo() {
 
 --------------------------------
 
-### shadcn/ui Chart Component - Area Chart Example
+### shadcn/ui Chart Component - Área Chart Example
 
 Source: https://ui.shadcn.com/docs/components/chart
 
@@ -301,6 +301,6 @@ yarn add recharts
 ```
 
 Recharts provides the following chart types:
-- Area, Bar, Line, Pie, Composed
+- Área, Bar, Line, Pie, Composed
 - Radar, RadialBar, Scatter
 - Funnel, Treemap

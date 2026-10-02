@@ -24,7 +24,7 @@ conserta. O porquê de cada passo está no SKILL.md, na seção indicada entre p
    `python3 <dir-da-skill>/scripts/search.py "<nicho>" --domain color -n 3`
    `python3 <dir-da-skill>/scripts/search.py "<tom>" --domain typography -n 3`
 9. Passar o resultado pela `frontend-design` e pela `design-taste-frontend`; reprovado, pega o
-   próximo resultado do banco e escreve o motivo (2.0). Stack pela tabela DECISAO DE TECH STACK.
+   próximo resultado do banco e escreve o motivo (2.0). Stack pela tabela DECISÃO DE TECH STACK.
 10. `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 2 --arquivo evidencias/etapa-2.json`
 
 ## Step 3: construir (3.1 a 3.6)
@@ -45,7 +45,7 @@ conserta. O porquê de cada passo está no SKILL.md, na seção indicada entre p
     `node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/prova --click "<seletor do botão>"`
     `python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> checar --caminho criar`
     registro: `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> gate <nome> --exit <0|1> --detalhe "<saída>"`
-    (nomes: sem-kicker, classes-mortas, responsivo, oclusao, identidade, uso-ferramentas)
+    (nomes: sem-kicker, classes-mortas, responsivo, oclusão, identidade, uso-ferramentas)
 17. As 8 lentes (`references/audit-agents.md`), uma por subagente, cada uma registrada:
     `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> registrar <lente> --veredito <aprovado|reprovado> --nota <0-10> --achados "<o que olhou e achou>"`
 18. Auditor master: `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> checar`

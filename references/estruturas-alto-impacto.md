@@ -128,7 +128,7 @@ export default function HeroSaaSDark() {
 </section>
 ```
 
-### Titulos Epicos: Padroes
+### Títulos Épicos: Padrões
 
 ```tsx
 // 1. Gradient text bicolor
@@ -169,7 +169,7 @@ export default function HeroSaaSDark() {
 </div>
 ```
 
-### Botoes de Alto Impacto
+### Botões de Alto Impacto
 
 ```tsx
 // 1. Glow CTA (mais elegante)
@@ -254,7 +254,7 @@ function MagneticButton({ children, className = '' }) {
 </div>
 ```
 
-### Wave Dividers entre Secoes
+### Wave Dividers entre Seções
 
 ```tsx
 // Wave suave
@@ -322,7 +322,7 @@ function WaveDown({ color = "#f9fafb" }: { color?: string }) {
 </section>
 ```
 
-### Stats Section Dramatica
+### Stats Section Dramática
 
 ```tsx
 <section className="relative py-24 overflow-hidden">
@@ -392,6 +392,6 @@ function TestimonialCard({ text, name, role, avatar }) {
 }
 ```
 
-**Referencia completa de padroes:** `references/visual-excellence.md`
+**Referência completa de padrões:** `references/visual-excellence.md`
 
 ---

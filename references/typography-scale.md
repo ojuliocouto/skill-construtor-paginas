@@ -1,30 +1,30 @@
-# Escala Tipografica: Valores Numericos e Regras
+# Escala Tipográfica: Valores Numéricos e Regras
 
-Sistema tipografico para paginas de marketing e vendas. Valores concretos, nao aproximacoes.
+Sistema tipográfico para páginas de marketing e vendas. Valores concretos, não aproximações.
 
 ---
 
 ## Escala de Tamanhos (Desktop / Mobile)
 
-| Nivel | Desktop | Mobile | Peso | Uso |
+| Nível | Desktop | Mobile | Peso | Uso |
 |-------|---------|--------|------|-----|
-| **Display** | 80-96px | 48-56px | 900 | Headline hero impactante, numeros grandes |
-| **H1** | 56-72px | 36-44px | 800 | Headline principal de cada secao |
-| **H2** | 40-52px | 28-36px | 700-800 | Sub-headline ou titulo de secao |
-| **H3** | 28-36px | 22-28px | 600-700 | Titulo de card, item de lista |
-| **H4** | 22-26px | 18-22px | 600 | Label de secao, titulo pequeno |
-| **Body Large** | 18-20px | 16-18px | 400 | Paragrafo principal, subheadlines |
-| **Body** | 16px | 15-16px | 400 | Texto corrido, descricao |
+| **Display** | 80-96px | 48-56px | 900 | Headline hero impactante, números grandes |
+| **H1** | 56-72px | 36-44px | 800 | Headline principal de cada seção |
+| **H2** | 40-52px | 28-36px | 700-800 | Sub-headline ou título de seção |
+| **H3** | 28-36px | 22-28px | 600-700 | Título de card, item de lista |
+| **H4** | 22-26px | 18-22px | 600 | Label de seção, título pequeno |
+| **Body Large** | 18-20px | 16-18px | 400 | Parágrafo principal, subheadlines |
+| **Body** | 16px | 15-16px | 400 | Texto corrido, descrição |
 | **Small** | 14px | 13-14px | 400-500 | Microcopy, labels de input |
-| **Caption** | 12px | 11-12px | 500 | Legendas, notas de rodape |
+| **Caption** | 12px | 11-12px | 500 | Legendas, notas de rodapé |
 
-**Regra fundamental:** Nunca usar texto corrido abaixo de 16px. Causa zoom automatico no iOS (< 16px em input = zoom).
+**Regra fundamental:** Nunca usar texto corrido abaixo de 16px. Causa zoom automático no iOS (< 16px em input = zoom).
 
 ---
 
 ## Ratios de Escala
 
-A razao minima entre niveis adjacentes e **1.25x**. Razao recomendada para impacto: **1.333x** (Perfect Fourth).
+A razão mínima entre níveis adjacentes e **1.25x**. Razão recomendada para impacto: **1.333x** (Perfect Fourth).
 
 ```
 Display:  96px
@@ -38,16 +38,16 @@ Small:    12px
 
 ---
 
-## Line Height por Nivel
+## Line Height por Nível
 
-| Nivel | Line Height | Motivo |
+| Nível | Line Height | Motivo |
 |-------|-------------|--------|
-| Display / H1 | 1.0 - 1.15 | Headlines grandes precisam de pouco espacamento |
-| H2 / H3 | 1.2 - 1.35 | Titulos medios, ainda densos |
-| H4 | 1.3 - 1.5 | Transicao para leitura |
-| Body Large | 1.6 - 1.7 | Leitura confortavel de paragrafos |
-| Body | 1.6 - 1.75 | Maxima legibilidade de texto corrido |
-| Small / Caption | 1.4 - 1.6 | Texto pequeno precisa de respiracao |
+| Display / H1 | 1.0 - 1.15 | Headlines grandes precisam de pouco espaçamento |
+| H2 / H3 | 1.2 - 1.35 | Títulos médios, ainda densos |
+| H4 | 1.3 - 1.5 | Transição para leitura |
+| Body Large | 1.6 - 1.7 | Leitura confortável de parágrafos |
+| Body | 1.6 - 1.75 | Máxima legibilidade de texto corrido |
+| Small / Caption | 1.4 - 1.6 | Texto pequeno precisa de respiração |
 
 ---
 
@@ -58,11 +58,11 @@ Small:    12px
 | 900 (Black) | -0.02em a -0.04em | Headlines impactantes: tracking negativo = poder |
 | 800 (ExtraBold) | -0.02em a -0.03em | H1 de vendas |
 | 700 (Bold) | -0.01em a -0.02em | H2 e H3 |
-| 600 (SemiBold) | 0 a -0.01em | Titulos medios |
+| 600 (SemiBold) | 0 a -0.01em | Títulos médios |
 | 400 (Regular) | 0 a 0.01em | Texto corrido: tracking neutro |
-| 500 em CAPS | 0.08em a 0.15em | Labels em uppercase (SEMPRE tracking positivo em maiusculas) |
+| 500 em CAPS | 0.08em a 0.15em | Labels em uppercase (SEMPRE tracking positivo em maiúsculas) |
 
-**Regra critica:** uppercase + peso alto + sem tracking = ilegível. Todo texto em MAIUSCULAS precisa de `letter-spacing: 0.08em+`.
+**Regra crítica:** uppercase + peso alto + sem tracking = ilegível. Todo texto em MAIÚSCULAS precisa de `letter-spacing: 0.08em+`.
 
 ---
 
@@ -78,7 +78,7 @@ Small:    12px
 --font-body: 'Inter', sans-serif;
 ```
 
-### Energia / Desafio / Lancamento
+### Energia / Desafio / Lançamento
 ```css
 --font-heading: 'Bebas Neue', sans-serif;    /* Display only, impacto maximo */
 --font-body: 'Barlow', sans-serif;           /* 400-600, energia sem agressividade */
@@ -122,23 +122,23 @@ Small:    12px
 
 ## Regras de Peso na Hierarquia
 
-| Situacao | Peso correto |
+| Situação | Peso correto |
 |----------|-------------|
-| Headline do hero | 800-900 (impacto maximo) |
-| Headline de secao | 700-800 |
-| Titulo de card | 600-700 |
-| Body / paragrafo | 400 |
+| Headline do hero | 800-900 (impacto máximo) |
+| Headline de seção | 700-800 |
+| Título de card | 600-700 |
+| Body / parágrafo | 400 |
 | Label uppercase | 500-600 (nunca 400 em caps: muito fino) |
-| Preco principal | 800-900 (numero grande) |
-| Preco riscado | 400-500 |
+| Preço principal | 800-900 (número grande) |
+| Preço riscado | 400-500 |
 | Microcopy abaixo do CTA | 400 |
-| Numeracao de modulo (01, 02) | 800-900 + cor accent |
+| Numeração de módulo (01, 02) | 800-900 + cor accent |
 
-**Regra:** Maximo 3 pesos diferentes na mesma pagina. Mais que isso = visual confuso.
+**Regra:** Máximo 3 pesos diferentes na mesma página. Mais que isso = visual confuso.
 
 ---
 
-## Tailwind CSS: Classes Praticas
+## Tailwind CSS: Classes Práticas
 
 ```tsx
 // Display hero
@@ -183,7 +183,7 @@ className="text-2xl font-normal line-through text-gray-400"
 
 ---
 
-## Checklist Tipografico
+## Checklist Tipográfico
 
 Antes de entregar, verificar:
 
@@ -192,8 +192,8 @@ Antes de entregar, verificar:
 - [ ] Line-height body ≥ 1.6
 - [ ] Letter-spacing negativo nos headings pesados (700+)
 - [ ] Letter-spacing positivo em qualquer texto em UPPERCASE
-- [ ] Maximo 2 familias tipograficas na pagina
-- [ ] Maximo 3 pesos diferentes na pagina
-- [ ] Razao entre niveis adjacentes ≥ 1.25x
-- [ ] Texto de botao: 16-18px, font-weight 600+
-- [ ] Numeros de impacto (stats): `tabular-nums` aplicado
+- [ ] Máximo 2 famílias tipográficas na página
+- [ ] Máximo 3 pesos diferentes na página
+- [ ] Razão entre níveis adjacentes ≥ 1.25x
+- [ ] Texto de botão: 16-18px, font-weight 600+
+- [ ] Números de impacto (stats): `tabular-nums` aplicado

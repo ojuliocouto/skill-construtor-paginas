@@ -1,34 +1,34 @@
 # Auditoria Adversarial por Wave de Subagents (Step 4)
 
-A auditoria de design NUNCA pode ser feita pelo mesmo contexto que construiu a pagina:
-o construtor nao enxerga o proprio erro. Por isso o Step 4 dispara uma **wave de
+A auditoria de design NUNCA pode ser feita pelo mesmo contexto que construiu a página:
+o construtor não enxerga o próprio erro. Por isso o Step 4 dispara uma **wave de
 subagents adversariais paralelos**, cada um com UMA lente independente, sem ver o
-trabalho dos outros. Sao **8 lentes**, as mesmas do `scripts/wave.py` (dicionario `LENTES`):
+trabalho dos outros. São **8 lentes**, as mesmas do `scripts/wave.py` (dicionário `LENTES`):
 design-critic, assets-auditor, visual-auditor, motion-auditor, responsive-auditor,
-cro-auditor, a11y-auditor e content-auditor. Um agente de sintese consolida; quem decide se
-entrega e o ciclo 4.2f (`wave.py rodada`), nao a nota.
+cro-auditor, a11y-auditor e content-auditor. Um agente de síntese consolida; quem decide se
+entrega e o ciclo 4.2f (`wave.py rodada`), não a nota.
 
-Orquestracao via tool `Workflow` (parallel/pipeline). Alinhado com a regra global de
-planejamento (waves de subagents) e com as regras criticas de workflow do usuario.
+Orquestração via tool `Workflow` (parallel/pipeline). Alinhado com a regra global de
+planejamento (waves de subagents) e com as regras críticas de workflow do usuário.
 
 ---
 
 ## Como rodar
 
-1. Compilar a pagina e subir um **preview deploy** (branch, nunca main) OU servir local.
+1. Compilar a página e subir um **preview deploy** (branch, nunca main) OU servir local.
 2. Passar a URL (preview/local) + os arquivos relevantes pra CADA agente.
 
-> **Verificacao visual sem Chrome:** se a MCP claude-in-chrome / Chrome nao estiver
-> disponivel, dirigir o **Microsoft Edge via Playwright** para screenshot de desktop e
+> **Verificação visual sem Chrome:** se a MCP claude-in-chrome / Chrome não estiver
+> disponível, dirigir o **Microsoft Edge via Playwright** para screenshot de desktop e
 > mobile (`chromium.launch({channel:'msedge'})` ou conectar via CDP). O agente DEVE olhar
-> a imagem, nao confiar so no codigo. Validado num projeto real (maquina sem Chrome).
+> a imagem, não confiar só no código. Validado num projeto real (máquina sem Chrome).
 
-3. Disparar as 8 lentes EM PARALELO (uma unica chamada Workflow `parallel`; sem Workflow,
+3. Disparar as 8 lentes EM PARALELO (uma única chamada Workflow `parallel`; sem Workflow,
    um subagente por lente).
 4. Cada lente retorna o schema `VERDICT` abaixo e se registra no `wave.py registrar`.
-5. Agente de sintese consolida. Critico confirmado = **BLOQUEIO**, devolve fixes.
+5. Agente de síntese consolida. Crítico confirmado = **BLOQUEIO**, devolve fixes.
 6. Construtor aplica os fixes e re-roda as lentes que tinham achado (as outras podem manter o
-   registro anterior, desde que a correcao nao tenha mexido no que elas olham). Fecha a rodada
+   registro anterior, desde que a correção não tenha mexido no que elas olham). Fecha a rodada
    com `wave.py rodada` (ciclo 4.2f do SKILL.md).
 
 ---
@@ -48,95 +48,95 @@ planejamento (waves de subagents) e com as regras criticas de workflow do usuari
 ```
 
 - `severidade: critical` em qualquer achado confirmado => bloqueia deploy.
-- **Regua unica do gate = o ciclo 4.2f do SKILL.md** (`wave.py rodada`), nada alem dele:
-  1. zero critico confirmado (inegociavel);
-  2. nenhuma regressao (achado causado por correcao da rodada anterior);
-  3. gravidade secou (zero critico e zero alto; alto que depende de dado do cliente entra em
-     `--pendencias-do-usuario`), OU media >= 8,0 com nenhuma lente abaixo de 7, OU convergencia
+- **Régua única do gate = o ciclo 4.2f do SKILL.md** (`wave.py rodada`), nada além dele:
+  1. zero crítico confirmado (inegociável);
+  2. nenhuma regressão (achado causado por correção da rodada anterior);
+  3. gravidade secou (zero crítico e zero alto; alto que depende de dado do cliente entra em
+     `--pendencias-do-usuario`), OU média >= 8,0 com nenhuma lente abaixo de 7, OU convergência
      (duas rodadas subindo menos de 0,3), OU teto de 4 rodadas.
-  Nota baixa sozinha NAO trava: ela vai DECLARADA na entrega. A sintese nao cria um piso
-  proprio de nota.
-- **`evidencia` e OBRIGATORIA e VERIFICAVEL:** screenshot, medicao (px, ratio de contraste, touch target), trecho de codigo com linha, ou passo de reproducao. Achado sem evidencia concreta = descartado pela sintese, nao conta como critico. Motivo: auditor sem obrigacao de evidencia gera falso-positivo (caso real: 2 de 5 "criticos" refutados com medicao).
-- **`fix` NUNCA pode violar as regras da skill:** proibido sugerir inventar depoimento, criar escassez/urgencia falsa, adicionar dado que nao esta no briefing, ou usar elementos dos tells V1-V15 como "melhoria". A sintese descarta fixes toxicos e registra a ocorrencia.
+  Nota baixa sozinha NÃO trava: ela vai DECLARADA na entrega. A síntese não cria um piso
+  próprio de nota.
+- **`evidencia` e OBRIGATÓRIA e VERIFICÁVEL:** screenshot, medição (px, ratio de contraste, touch target), trecho de código com linha, ou passo de reprodução. Achado sem evidência concreta = descartado pela síntese, não conta como crítico. Motivo: auditor sem obrigação de evidência gera falso-positivo (caso real: 2 de 5 "críticos" refutados com medição).
+- **`fix` NUNCA pode violar as regras da skill:** proibido sugerir inventar depoimento, criar escassez/urgencia falsa, adicionar dado que não está no briefing, ou usar elementos dos tells V1-V15 como "melhoria". A síntese descarta fixes toxicos e registra a ocorrência.
 
 ---
 
 ## As 8 lentes (independentes, as mesmas do `wave.py`)
 
 ### 1. design-critic (taste / anti-slop)
-Roda a skill `design-taste-frontend` sobre a pagina pronta. Avalia as 6 dimensoes de
+Roda a skill `design-taste-frontend` sobre a página pronta. Avalia as 6 dimensões de
 taste (1-5) e aplica o AI Slop Test. Consulta `references/taste-gate.md`,
 `references/anti-vibe-coding.md`, `references/scoring-system.md`.
-Conta os tells visuais V1-V15 presentes na pagina (ver `anti-vibe-coding.md`).
-**Reprova (critical) se:** media de taste < 4.0, OU **3+ tells visuais de IA presentes**
-(limiar do anti-vibe-coding: glow blob, glow no botao, gradient-clip no titulo, indigo+roxo
-sobre dark, icones identicos contam sempre), OU footer-legal / checkout quebrado.
+Conta os tells visuais V1-V15 presentes na página (ver `anti-vibe-coding.md`).
+**Reprova (critical) se:** média de taste < 4.0, OU **3+ tells visuais de IA presentes**
+(limiar do anti-vibe-coding: glow blob, glow no botão, gradient-clip no título, indigo+roxo
+sobre dark, ícones idênticos contam sempre), OU footer-legal / checkout quebrado.
 
-### 1b. assets-auditor (presenca de imagem/midia)
-Verifica que a pagina NAO e so texto + gradiente + icones SVG. A regra da skill (SKILL.md
+### 1b. assets-auditor (presença de imagem/midia)
+Verifica que a página NÃO é só texto + gradiente + ícones SVG. A regra da skill (SKILL.md
 linha "PROIBIDO ENTREGAR SEM ASSETS VISUAIS") exige fotos/mockups/video reais.
-**Reprova (critical) se:** pagina sem nenhuma imagem/mockup/video real (so SVG generico e
+**Reprova (critical) se:** página sem nenhuma imagem/mockup/video real (só SVG genérico e
 fundo), OU produto digital/SaaS sem mockup do produto, OU lead magnet sem mockup do material
-(capa do ebook/guia). Placeholder vazio tambem reprova.
-**Reprova (critical) tambem se a ID foi indicada e NAO foi usada:** logo oficial recriado em
+(capa do ebook/guia). Placeholder vazio também reprova.
+**Reprova (critical) também se a ID foi indicada e NÃO foi usada:** logo oficial recriado em
 texto/SVG aproximado em vez do asset real, paleta ou fonte "parecida" no lugar da indicada.
-Quando ha ID fornecida (pasta/arquivo/link/marca), o logo na pagina TEM que ser o oficial.
+Quando há ID fornecida (pasta/arquivo/link/marca), o logo na página TEM que ser o oficial.
 
 ### 2. visual-auditor (hierarquia / paleta / grid + ENQUADRAMENTO de imagem)
-Hierarquia tipografica, coerencia de paleta, spacing, grid desktop. Consulta
+Hierarquia tipográfica, coerência de paleta, spacing, grid desktop. Consulta
 `references/desktop-layout-rules.md`, `references/typography-scale.md`,
 `references/design-laws.md`.
-**Reprova (critical) se:** formato "carta" em high-ticket, secao obrigatoria side-by-side
-em coluna unica, titulos sem hierarquia, paleta incoerente.
-**ART-DIRECTION DE FOTO (licao de projeto real, jun/2026):** "uniformizar altura do bloco" NAO
-e qualidade. Antes de aprovar qualquer imagem, conferir o RECORTE de verdade:
-- `object-fit:cover` com aspect-ratio errado CORTA conteudo: rosto pela testa, cabeca cortada,
+**Reprova (critical) se:** formato "carta" em high-ticket, seção obrigatória side-by-side
+em coluna única, títulos sem hierarquia, paleta incoerente.
+**ART-DIRECTION DE FOTO (lição de projeto real, jun/2026):** "uniformizar altura do bloco" NÃO
+é qualidade. Antes de aprovar qualquer imagem, conferir o RECORTE de verdade:
+- `object-fit:cover` com aspect-ratio errado CORTA conteúdo: rosto pela testa, cabeça cortada,
   print de conversa fatiado no meio. Reprovar se cover cortar o foco (rosto/mensagem). Casar o
   aspect-ratio com a foto (retrato 4/5 pra foto de pessoa; `contain` pra screenshot/clipping que
   precisa ser lido inteiro) e ajustar `object-position` pro rosto.
-- **Hero em retrato no MOBILE**: foto alta empurra o rosto pra baixo da dobra (so aparece o cabelo).
+- **Hero em retrato no MOBILE**: foto alta empurra o rosto pra baixo da dobra (só aparece o cabelo).
   Conferir o primeiro viewport mobile (390px) e enquadrar (aspect 1/1 + object-position no rosto).
-- **LAZY-LOAD**: imagem com `loading="lazy"` pode NAO ter carregado na hora do screenshot, e card
-  vazio parece "ok". SEMPRE forcar load (scroll + `i.loading='eager';i.src=i.src`) e esperar
+- **LAZY-LOAD**: imagem com `loading="lazy"` pode NÃO ter carregado na hora do screenshot, e card
+  vazio parece "ok". SEMPRE forçar load (scroll + `i.loading='eager';i.src=i.src`) e esperar
   `i.complete && i.naturalWidth>0` ANTES de julgar. Card vazio = re-capturar, nunca aprovar.
 
-### 3. motion-auditor (animacoes)
+### 3. motion-auditor (animações)
 Scroll reveal, hover, counters, hero entrance, micro-interacoes. Consulta
 `references/animation-audit.md`, `references/section-transitions.md`.
-**Reprova (critical) se:** hero sem animacao de entrada, secoes estaticas sem feedback,
-cards sem reacao ao hover.
+**Reprova (critical) se:** hero sem animação de entrada, seções estáticas sem feedback,
+cards sem reação ao hover.
 
 ### 4. responsive-auditor (as 12 telas, celular E desktop)
 Roda `scripts/gate-responsivo.mjs` (12 telas reais, de 320x568 a 1920x1080, inclusive o
 notebook baixo 1366x768) e olha os prints. Hamburger funcional, sem overflow, CTA na dobra.
 Consulta `references/mobile-checklist-detailed.md`.
 **Reprova (critical) se:** overflow horizontal, CTA fora da dobra, alvo de toque < 44px,
-corpo < 14px, texto cortado, hamburger que nao abre.
+corpo < 14px, texto cortado, hamburger que não abre.
 
-### 5. cro-auditor (conversao / funil)
+### 5. cro-auditor (conversão / funil)
 CTAs suficientes e bem posicionados, form funcional, WhatsApp, oferta/value stack,
 message match, Hook/Story/Offer. Consulta `references/strategist-audit.md`,
 `references/cta-placement-map.md`, `references/social-proof-hierarchy.md`,
 `references/urgency-scarcity-patterns.md`.
 **Reprova (critical) se:** CTA insuficiente, form quebrado, checkout errado, sem message
-match com o trafego.
+match com o tráfego.
 
 ### 6. a11y-auditor (acessibilidade)
 Focus states, labels de form, alt text, ARIA, contraste 4.5:1, `prefers-reduced-motion`,
 zero emojis. Consulta `references/trust-signals-placement.md` para selos.
-**Reprova (critical) se:** falha WCAG critica (contraste, label, alt ausente em imagem de
-conteudo), emoji na pagina.
+**Reprova (critical) se:** falha WCAG crítica (contraste, label, alt ausente em imagem de
+conteúdo), emoji na página.
 
-### 7. content-auditor (conteudo e fontes)
-Confere cada afirmacao da pagina contra o briefing: numero, preco, credencial, prazo,
-depoimento, campo do JSON-LD, o que cada FOTO afirma e o comentario que afirma comportamento.
-Roda o sweep de travessao e confere telefone e WhatsApp digito por digito.
-**Reprova (critical) se:** claim que nao esta na fonte, travessao > 0, telefone divergente,
-depoimento ou numero inventado.
+### 7. content-auditor (conteúdo e fontes)
+Confere cada afirmação da página contra o briefing: número, preço, credencial, prazo,
+depoimento, campo do JSON-LD, o que cada FOTO afirma e o comentário que afirma comportamento.
+Roda o sweep de travessão e confere telefone e WhatsApp dígito por dígito.
+**Reprova (critical) se:** claim que não está na fonte, travessão > 0, telefone divergente,
+depoimento ou número inventado.
 
 ---
 
-## Agente de sintese (consolidador)
+## Agente de síntese (consolidador)
 
 Recebe os 8 verdicts. Produz:
 
@@ -152,13 +152,13 @@ Recebe os 8 verdicts. Produz:
 
 Regra do gate (LITERALMENTE a do ciclo 4.2f do SKILL.md, executada pelo `wave.py rodada`):
 - `criticos.length > 0` => `deploy_liberado: false`. PARA. Devolve a lista pro construtor.
-- Regressao confirmada (achado causado pela correcao anterior) => `deploy_liberado: false`.
-- Sem critico e sem regressao, `deploy_liberado` segue o `wave.py rodada`: gravidade secou,
-  piso de media, convergencia ou teto. A nota real vai escrita na entrega, sempre.
+- Regressão confirmada (achado causado pela correção anterior) => `deploy_liberado: false`.
+- Sem crítico e sem regressão, `deploy_liberado` segue o `wave.py rodada`: gravidade secou,
+  piso de média, convergência ou teto. A nota real vai escrita na entrega, sempre.
 
 ---
 
-## Esqueleto Workflow (referencia)
+## Esqueleto Workflow (referência)
 
 ```js
 export const meta = {
@@ -199,5 +199,5 @@ return sintese
 ```
 
 Quem chama o Workflow passa `args: { url, arquivos }`. O retorno governa o gate do Step 4:
-`deploy_liberado:false` => corrigir criticos e re-rodar as lentes que tinham achado; depois,
+`deploy_liberado:false` => corrigir críticos e re-rodar as lentes que tinham achado; depois,
 `wave.py rodada` decide (ciclo 4.2f).

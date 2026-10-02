@@ -84,11 +84,11 @@ class Docs(unittest.TestCase):
         self.assertIn("servico-local", pt)
         self.assertRegex(pt, r"(?s)### servi[cç]o local.{0,500}stack definida: html \+ tailwind compilado")
         s = SKILL.read_text(encoding="utf-8")
-        tabela = self.secao("### DECISAO DE TECH STACK", "**Se o projeto destino")
+        tabela = self.secao("### DECISÃO DE TECH STACK", "**Se o projeto destino")
         self.assertRegex(tabela.lower(), r"servi[cç]o local.*html \+ tailwind compilado")
         proibido = self.secao("**PROIBIDO HTML/CSS PURO", "\n\n")
         self.assertRegex(proibido.lower(), r"servi[cç]o local")
-        self.assertNotIn("Obrigatoria no Step 1", s)
+        self.assertNotRegex(s, r"Obrigat[oó]ria no Step 1")
 
 
     def test_t16_modelo_curto_de_copy_para_servico_local(self):
@@ -132,7 +132,7 @@ class Docs(unittest.TestCase):
 
 
     def test_t14_seo_abaixo_de_90_sob_noindex_e_esperado(self):
-        perf = self.secao("**Performance:**", "**Conteudo:**").lower()
+        perf = self.secao("**Performance:**", "**Conteúdo:**").lower()
         self.assertRegex(perf, r"(?s)noindex.{0,300}seo|seo.{0,300}noindex")
         self.assertIn("esperado", perf)
         self.assertIn("is-crawlable", perf)
@@ -174,6 +174,42 @@ class Docs(unittest.TestCase):
         self.assertLess(s.index("### 4.2f "), s.index("### 4.2g "))
         gate = s[s.index(">>> GATE 4:"):s.index("**ENTREGA SEM DEPLOY")]
         self.assertGreaterEqual(len(re.findall(r"^- ", gate, flags=re.M)), 12, "GATE 4 ainda e paragrafo unico")
+
+
+    def test_t21_acentuacao_no_texto_sem_tocar_em_codigo(self):
+        # Fora de bloco de codigo com linguagem, de `inline`, de URL e de identificador
+        # (palavra colada em - _ / . < > { }), estas palavras so existem com acento.
+        sem = {"nao", "pagina", "paginas", "secao", "secoes", "voce", "tambem", "ja", "ate", "entao", "usuario",
+               "codigo", "numero", "titulo", "botao", "preco", "conteudo", "obrigatorio", "padrao", "decisao",
+               "direcao", "acao", "versao", "sessao", "video", "proprio", "unica", "unico", "visivel", "minimo",
+               "maximo", "ultimo", "critico", "rapido", "publico", "trafego", "referencia", "pendencia", "regressao",
+               "medicao", "composicao", "animacao", "atencao", "comecar", "servico", "estudio", "clinica",
+               "consultorio", "saude", "facil", "possivel", "dificil", "necessario", "horario", "analise"}
+        fence_codigo = re.compile(r"\s*```\s*([\w+-]+)")
+        ruins = []
+        for p, t in textos("SKILL.md", "references/*.md"):
+            if p.name in ("preferencias-dono-ea.md", "desafio-ia-patterns.md"):
+                continue
+            dentro = codigo = False
+            for n, linha in enumerate(t.splitlines(), 1):
+                if linha.strip().startswith("```"):
+                    m = fence_codigo.match(linha)
+                    if not dentro:
+                        dentro, codigo = True, bool(m) and m.group(1).lower() not in ("markdown", "md", "text", "txt")
+                    else:
+                        dentro = False
+                    continue
+                if dentro and codigo:
+                    continue
+                en = len(re.findall(r"\b(the|and|of|to|is|with|for|you|this|your|are|from|that|it|on|be|use)\b", linha, re.I))
+                pt = len(re.findall(r"\b(de|que|nao|não|para|com|uma|um|se|do|da|no|na|os|as|em|por|ou|mais|sem|pagina|página)\b", linha, re.I))
+                if en > pt:
+                    continue
+                limpa = re.sub(r"`[^`]*`|https?://\S+", " ", linha)
+                for m in re.finditer(r"(?<![\w\-/.<{@#$])([A-Za-zÀ-ÿ]+)(?![\w\-/.>}])", limpa):
+                    if m.group(1).lower() in sem:
+                        ruins.append(f"{p.name}:{n}: {m.group(1)}")
+        self.assertEqual(len(ruins), 0, f"{len(ruins)} palavras sem acento, ex.: {ruins[:8]}")
 
 
 if __name__ == "__main__":

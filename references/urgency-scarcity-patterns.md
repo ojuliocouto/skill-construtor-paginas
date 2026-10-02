@@ -1,25 +1,25 @@
-# Padroes de Urgencia e Escassez
+# Padrões de Urgência e Escassez
 
-Urgencia real converte. Urgencia falsa destroi confianca para sempre. Este repositorio cobre os padroes visuais e de copy corretos para cada tipo de urgencia.
+Urgência real converte. Urgência falsa destrói confiança para sempre. Este repositório cobre os padrões visuais e de copy corretos para cada tipo de urgência.
 
 ---
 
-## Regra de Ouro: Urgencia Real vs Urgencia Falsa
+## Regra de Ouro: Urgência Real vs Urgência Falsa
 
 | Urgencia REAL (use) | Urgencia FALSA (nunca use) |
 |--------------------|-----------------------------|
 | Data de encerramento real e fixa | "Oferta por tempo limitado" sem data |
-| Numero real de vagas disponivel | "Vagas limitadas" sem numero |
-| Preco que sobe em data especifica | Countdown que reseta ao recarregar |
-| Turma que fecha (enrollment period) | "Promocao imperdivel" sem contexto |
-| Early bird com data de expiracao | "Ultimas unidades" em produto digital infinito |
-| Bonus que some na data X | "Aproveite agora" sem consequencia |
+| Número real de vagas disponível | "Vagas limitadas" sem número |
+| Preço que sobe em data específica | Countdown que reseta ao recarregar |
+| Turma que fecha (enrollment period) | "Promoção imperdível" sem contexto |
+| Early bird com data de expiração | "Últimas unidades" em produto digital infinito |
+| Bônus que some na data X | "Aproveite agora" sem consequência |
 
 ---
 
-## Padrao 1: Countdown Timer
+## Padrão 1: Countdown Timer
 
-**Quando usar:** Data real de encerramento (lancamento, black friday, turma fechando).
+**Quando usar:** Data real de encerramento (lançamento, black friday, turma fechando).
 
 ```tsx
 'use client'
@@ -75,15 +75,15 @@ function CountdownTimer({ targetDate }: { targetDate: Date }) {
 ```
 
 **Posicionamento ideal:**
-- No hero, abaixo do CTA (visivel sem scroll)
-- No CTA final, acima do botao
-- Em sticky header (aparece quando usuario fica > 30s na pagina)
+- No hero, abaixo do CTA (visível sem scroll)
+- No CTA final, acima do botão
+- Em sticky header (aparece quando usuário fica > 30s na página)
 
 ---
 
-## Padrao 2: Vagas Counter
+## Padrão 2: Vagas Counter
 
-**Quando usar:** Turma ou evento com numero real de vagas.
+**Quando usar:** Turma ou evento com número real de vagas.
 
 ```tsx
 function VagasCounter({ total, available }: { total: number; available: number }) {
@@ -122,9 +122,9 @@ function VagasCounter({ total, available }: { total: number; available: number }
 
 ---
 
-## Padrao 3: Sticky Urgency Bar (Top Banner)
+## Padrão 3: Sticky Urgency Bar (Top Banner)
 
-**Quando usar:** Lancamentos com deadline. Aparece na parte superior da pagina, segue o scroll.
+**Quando usar:** Lançamentos com deadline. Aparece na parte superior da página, segue o scroll.
 
 ```tsx
 function UrgencyBanner({ message, ctaText, ctaHref }: {
@@ -156,9 +156,9 @@ function UrgencyBanner({ message, ctaText, ctaHref }: {
 
 ---
 
-## Padrao 4: Early Bird Badge
+## Padrão 4: Early Bird Badge
 
-**Quando usar:** Preco de early bird com data de expiracao.
+**Quando usar:** Preço de early bird com data de expiração.
 
 ```tsx
 function EarlyBirdBadge({ expiryDate, currentPrice, originalPrice }: {
@@ -180,9 +180,9 @@ function EarlyBirdBadge({ expiryDate, currentPrice, originalPrice }: {
 
 ---
 
-## Padrao 5: Urgency CTA Section
+## Padrão 5: Urgency CTA Section
 
-**Quando usar:** CTA Final com maximo de urgencia. Secao dedicada.
+**Quando usar:** CTA Final com máximo de urgência. Seção dedicada.
 
 ```tsx
 export function UrgencyCTASection({
@@ -224,23 +224,23 @@ export function UrgencyCTASection({
 
 ---
 
-## Copy de Urgencia que Converte (Mercado BR)
+## Copy de Urgência que Converte (Mercado BR)
 
-### Headlines de urgencia por contexto
+### Headlines de urgência por contexto
 
 | Contexto | Copy |
 |----------|------|
-| Lancamento com deadline | "Inscricoes encerram [data]. Sem segunda chance." |
-| Turma limitada | "Apenas [N] vagas nesta turma. [X] ja reservadas." |
-| Early bird | "Valor de lancamento disponivel ate [data]. Depois sobe pra R$[X]." |
-| Bonus expirando | "Os bonus somem quando o contador zerar." |
-| Ultimo dia | "Hoje e o ultimo dia. Sem excecoes." |
-| Evento com data | "O desafio comeca [data]. Quem se inscrever depois perde o dia 1." |
+| Lançamento com deadline | "Inscrições encerram [data]. Sem segunda chance." |
+| Turma limitada | "Apenas [N] vagas nesta turma. [X] já reservadas." |
+| Early bird | "Valor de lançamento disponível até [data]. Depois sobe pra R$[X]." |
+| Bônus expirando | "Os bônus somem quando o contador zerar." |
+| Último dia | "Hoje e o último dia. Sem exceções." |
+| Evento com data | "O desafio começa [data]. Quem se inscrever depois perde o dia 1." |
 
 ### Copy de microcopy abaixo do CTA (pos-urgencia)
 
 ```
-"Garantia de 7 dias. Se nao gostar, devolvo tudo."
+"Garantia de 7 dias. Se não gostar, devolvo tudo."
 "Apenas [N] vagas. Pagamento seguro via Hotmart/Kiwify."
 "Acesso imediato. Comece ainda hoje."
 "Sem fidelidade. Cancele quando quiser."
@@ -248,11 +248,11 @@ export function UrgencyCTASection({
 
 ---
 
-## Checklist de Urgencia
+## Checklist de Urgência
 
-- [ ] Urgencia e real (data, numero, evento especifico)
-- [ ] Countdown nao reseta ao recarregar (usa data fixa, nao `Date.now() + X`)
-- [ ] Copy de urgencia aparece proximo ao CTA principal
-- [ ] Urgencia esta no CTA final
-- [ ] Se tem vagas counter, o numero e plausivel e atualizado
-- [ ] Nao ha mais de 2 elementos de urgencia simultaneos (sobrecarga = descredito)
+- [ ] Urgência e real (data, número, evento específico)
+- [ ] Countdown não reseta ao recarregar (usa data fixa, não `Date.now() + X`)
+- [ ] Copy de urgência aparece próximo ao CTA principal
+- [ ] Urgência esta no CTA final
+- [ ] Se tem vagas counter, o número e plausível e atualizado
+- [ ] Não há mais de 2 elementos de urgência simultâneos (sobrecarga = descrédito)

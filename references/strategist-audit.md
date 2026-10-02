@@ -1,34 +1,34 @@
 # Auditoria do Estrategista Digital
 
-Protocolo de auditoria estrategica de paginas de venda. Baseado nos frameworks de Russell Brunson (Hook-Story-Offer, Value Ladder, Perfect Webinar, Epiphany Bridge), Pedro Adao (5-Day Challenge), e CRO methodology (CXL, Baymard, NN/G).
+Protocolo de auditoria estratégica de páginas de venda. Baseado nos frameworks de Russell Brunson (Hook-Story-Offer, Value Ladder, Perfect Webinar, Epiphany Bridge), Pedro Adao (5-Day Challenge), e CRO methodology (CXL, Baymard, NN/G).
 
-**Quando rodar:** obrigatoriamente no Step 4 (VERIFICAR & SHIPAR), apos a auditoria de design. Pode ser rodado isoladamente quando o usuario pedir uma "analise estrategica" de uma pagina ja existente.
+**Quando rodar:** obrigatoriamente no Step 4 (VERIFICAR & SHIPAR), após a auditoria de design. Pode ser rodado isoladamente quando o usuário pedir uma "análise estratégica" de uma página já existente.
 
-**Output esperado:** relatorio estruturado com nota por dimensao + lista de correccoes prioritarias.
+**Output esperado:** relatório estruturado com nota por dimensão + lista de correccoes prioritárias.
 
 ---
 
 ## PRE-AUDITORIA: 5 Perguntas de Contexto
 
-Antes de avaliar qualquer elemento da pagina, responder:
+Antes de avaliar qualquer elemento da página, responder:
 
 ```
-1. DE ONDE VEM O TRAFEGO?
-   [ ] Anuncio Meta (Facebook/Instagram)
-   [ ] Stories/Reels organico
+1. DE ONDE VEM O TRÁFEGO?
+   [ ] Anúncio Meta (Facebook/Instagram)
+   [ ] Stories/Reels orgânico
    [ ] Google Ads
    [ ] Email marketing
    [ ] WhatsApp broadcast
-   [ ] Busca organica (SEO)
+   [ ] Busca orgânica (SEO)
    → Impacto: define o message match esperado
 
-2. QUAL A TEMPERATURA DA AUDIENCIA?
+2. QUAL A TEMPERATURA DA AUDIÊNCIA?
    [ ] Fria (nunca ouviu falar do produto/mentor)
-   [ ] Morna (conhece, nao comprou)
-   [ ] Quente (segue, consome conteudo)
-   → Impacto: define tamanho ideal da pagina e quantidade de prova social
+   [ ] Morna (conhece, não comprou)
+   [ ] Quente (segue, consome conteúdo)
+   → Impacto: define tamanho ideal da página e quantidade de prova social
 
-3. QUAL O PRODUTO E SEU NIVEL NA VALUE LADDER?
+3. QUAL O PRODUTO E SEU NÍVEL NA VALUE LADDER?
    [ ] Isca/Lead Magnet (R$0)
    [ ] Front-end / Low-ticket (R$7-197)
    [ ] Mid-ticket (R$197-997)
@@ -36,35 +36,35 @@ Antes de avaliar qualquer elemento da pagina, responder:
    [ ] Back-end / Premium (R$5.000+)
    → Impacto: define profundidade de copy, layout visual e densidade de prova
 
-4. QUAL O OBJETIVO DESTA PAGINA NO FUNIL?
+4. QUAL O OBJETIVO DESTA PÁGINA NO FUNIL?
    [ ] Captura de lead (opt-in)
    [ ] Pre-qualificacao
    [ ] Venda direta
    [ ] Bridge (pre-checkout)
    [ ] Upsell/downsell
-   [ ] Obrigado / proximo passo
-   → Impacto: define o CTA principal e o que deve acontecer apos a acao
+   [ ] Obrigado / próximo passo
+   → Impacto: define o CTA principal e o que deve acontecer após a ação
 
-5. EXISTE MESSAGE MATCH COM O TRAFEGO?
-   Copiar a promessa do anuncio/post que leva para esta pagina.
+5. EXISTE MESSAGE MATCH COM O TRÁFEGO?
+   Copiar a promessa do anuncio/post que leva para esta página.
    Comparar com o headline do hero.
-   → Se as promessas nao sao a mesma coisa com palavras diferentes = FALHA CRITICA
+   → Se as promessas não são a mesma coisa com palavras diferentes = FALHA CRÍTICA
 ```
 
 ---
 
-## DIMENSAO 1: Hook: Gancho Inicial
+## DIMENSÃO 1: Hook: Gancho Inicial
 
-**O que avaliar:** Os primeiros 5 segundos determinam se o usuario fica ou vai embora. O gancho deve criar um "pattern interrupt", algo inesperado, especifico, ou que ativa uma dor/desejo imediato.
+**O que avaliar:** Os primeiros 5 segundos determinam se o usuário fica ou vai embora. O gancho deve criar um "pattern interrupt", algo inesperado, específico, ou que ativa uma dor/desejo imediato.
 
 ### Checklist
 
 **Hero Headline:**
-- [ ] Afirma um resultado especifico (nao "aprenda", "descubra", "transforme")
-- [ ] Contem numero, timeframe ou prova de especificidade quando possivel
-- [ ] Usa linguagem do publico (palavras que eles usam, nao jargao academico)
+- [ ] Afirma um resultado específico (não "aprenda", "descubra", "transforme")
+- [ ] Contém número, timeframe ou prova de especificidade quando possível
+- [ ] Usa linguagem do público (palavras que eles usam, não jargão acadêmico)
 - [ ] Cria curiosidade ou ativa dor imediata
-- [ ] Nao e generico ("o melhor curso de", "a maior mentoria de")
+- [ ] Não é genérico ("o melhor curso de", "a maior mentoria de")
 
 **Subheadline:**
 - [ ] Expande o headline sem repeti-lo
@@ -72,121 +72,121 @@ Antes de avaliar qualquer elemento da pagina, responder:
 - [ ] Responde "como" ou "por que" de forma breve
 
 **Hero Visual:**
-- [ ] Mostra o RESULTADO, nao o produto
-- [ ] Pessoa satisfeita com o resultado OU mockup do produto em uso OU numero de impacto
-- [ ] Nao e foto stock generica de "pessoa sorrindo"
+- [ ] Mostra o RESULTADO, não o produto
+- [ ] Pessoa satisfeita com o resultado OU mockup do produto em uso OU número de impacto
+- [ ] Não é foto stock genérica de "pessoa sorrindo"
 
-**Formulas de headline que convertem (BR):**
+**Fórmulas de headline que convertem (BR):**
 ```
-[Resultado especifico] em [timeframe] mesmo que [objecao principal]
-"Fature R$10k/mes com automacao em 90 dias mesmo sem experiencia com tecnologia"
+[Resultado específico] em [timeframe] mesmo que [objeção principal]
+"Fature R$10k/mes com automação em 90 dias mesmo sem experiência com tecnologia"
 
-[Verbo de transformacao] + [resultado] + [prova de especificidade]
+[Verbo de transformação] + [resultado] + [prova de especificidade]
 "Como 847 alunos saíram do zero ao primeiro cliente em menos de 30 dias"
 
 [Pergunta que ativa a dor]
-"Por que voce ainda nao tem R$5k por mes trabalhando so 4h por dia?"
+"Por que você ainda não tem R$5k por mês trabalhando só 4h por dia?"
 
-[Promessa ousada com ancora de credibilidade]
-"O mesmo metodo que usei para faturar R$2M no primeiro ano, agora aberto ao publico"
+[Promessa ousada com âncora de credibilidade]
+"O mesmo método que usei para faturar R$2M no primeiro ano, agora aberto ao público"
 ```
 
 ### Score Hook: /10
 
 ---
 
-## DIMENSAO 2: Story: Narrativa e Conexao
+## DIMENSÃO 2: Story: Narrativa e Conexão
 
-**O que avaliar:** A historia cria empatia, credibilidade e "epiphany bridge", o momento em que o usuario percebe que o mentor JA esteve no lugar dele.
+**O que avaliar:** A história cria empatia, credibilidade e "epiphany bridge", o momento em que o usuário percebe que o mentor JÁ esteve no lugar dele.
 
 ### Checklist
 
 **Epiphany Bridge (Russell Brunson):**
-- [ ] Mentor compartilha o momento "antes" (mesma dor do publico)
+- [ ] Mentor compartilha o momento "antes" (mesma dor do público)
 - [ ] Describe a virada / descoberta do mecanismo
 - [ ] Conecta a descoberta com o produto ofertado
-- [ ] Linguagem pessoal, nao corporativa
+- [ ] Linguagem pessoal, não corporativa
 
-**Identificacao com o Publico:**
-- [ ] Pagina deixa claro para QUEM e (perfil especifico, nao "todo mundo")
-- [ ] Menciona a dor especifica que o publico sente
-- [ ] Evita excluir publico desnecessariamente
-- [ ] "Para voce que..." aparece em algum momento
+**Identificação com o Público:**
+- [ ] Página deixa claro para QUEM e (perfil específico, não "todo mundo")
+- [ ] Menciona a dor específica que o público sente
+- [ ] Evita excluir público desnecessariamente
+- [ ] "Para você que..." aparece em algum momento
 
 **Credenciais do Mentor:**
-- [ ] Numeros concretos (faturamento, alunos, resultados)
-- [ ] Prova de autoridade (midia, premios, reconhecimento)
-- [ ] Historia de origem relatavel (nao so "eu ja era rico")
+- [ ] Números concretos (faturamento, alunos, resultados)
+- [ ] Prova de autoridade (mídia, prêmios, reconhecimento)
+- [ ] História de origem relatavel (não só "eu já era rico")
 - [ ] Foto profissional mas humanizada
 
 ### Score Story: /10
 
 ---
 
-## DIMENSAO 3: Offer: A Oferta
+## DIMENSÃO 3: Offer: A Oferta
 
-**O que avaliar:** A oferta deve ser tao boa que o usuario pensa "mas vai mesmo? e isso mesmo?". Value Stack bem construido, ancoragem de preco correta, bonuses com valor percebido real.
+**O que avaliar:** A oferta deve ser tão boa que o usuário pensa "mas vai mesmo? e isso mesmo?". Value Stack bem construído, ancoragem de preço correta, bonuses com valor percebido real.
 
 ### Checklist
 
-**Clareza da Transformacao:**
-- [ ] O resultado final e especifico e mensuravel
+**Clareza da Transformação:**
+- [ ] O resultado final e específico e mensurável
 - [ ] Timeframe realista mas aspiracional
-- [ ] Resultado e unico / diferenciado do que a concorrencia oferece
+- [ ] Resultado e único / diferenciado do que a concorrência oferece
 
 **Value Stack:**
 - [ ] Produto principal com valor de mercado declarado
-- [ ] Cada bonus tem valor individual declarado
-- [ ] Soma dos valores e visualmente contrastada com o preco real
-- [ ] Pelo menos 3 itens no stack (nao so o produto principal)
-- [ ] Bonuses resolvem objecoes especificas (nao sao "extras aleatorios")
+- [ ] Cada bônus tem valor individual declarado
+- [ ] Soma dos valores e visualmente contrastada com o preço real
+- [ ] Pelo menos 3 itens no stack (não só o produto principal)
+- [ ] Bonuses resolvem objeções específicas (não são "extras aleatórios")
 
-**Ancoragem de Preco:**
-- [ ] Preco original (riscado) visivel ao lado do preco real
-- [ ] Preco real e apresentado como oportunidade temporal ("so durante X")
-- [ ] Opcoes de parcelamento claras ("12x de R$XX")
+**Ancoragem de Preço:**
+- [ ] Preço original (riscado) visível ao lado do preço real
+- [ ] Preço real e apresentado como oportunidade temporal ("só durante X")
+- [ ] Opções de parcelamento claras ("12x de R$XX")
 - [ ] Calculo de custo/dia se relevante ("menos de R$3/dia")
 
 **Garantia:**
-- [ ] Badge visual de garantia (nao so texto)
+- [ ] Badge visual de garantia (não só texto)
 - [ ] Prazo claro (7, 14, 30 dias)
 - [ ] Linguagem "sem perguntas" ou "100% do investimento"
-- [ ] Posicionada ANTES do CTA final (remove objecao de risco)
+- [ ] Posicionada ANTES do CTA final (remove objeção de risco)
 
 ### Score Offer: /10
 
 ---
 
-## DIMENSAO 4: Sequencia Psicologica
+## DIMENSÃO 4: Sequência Psicológica
 
-**O que avaliar:** A pagina deve seguir a sequencia AIDA expandida. Cada secao deve preparar o usuario para a proxima. Uma secao fora de ordem destroi a logica narrativa.
+**O que avaliar:** A página deve seguir a sequência AIDA expandida. Cada seção deve preparar o usuário para a próxima. Uma seção fora de ordem destrói a lógica narrativa.
 
-### Sequencia Ideal
+### Sequência Ideal
 
 ```
-CONSCIENCIA (AWARENESS)
+CONSCIÊNCIA (AWARENESS)
 └── Hero: Pattern interrupt. "Tem algo novo/diferente aqui"
 
-ATENCAO CAPTURADA
+ATENÇÃO CAPTURADA
 └── Social Proof Bar: "Outras pessoas fizeram isso. Parece real."
 
 DOR AMPLIFICADA
 └── Problema: "Eles entendem exatamente o que eu sinto"
 
-ESPERANCA / SOLUCAO
-└── Solucao: "Existe uma saida. Ela e especifica."
+ESPERANÇA / SOLUÇÃO
+└── Solução: "Existe uma saída. Ela é específica."
 
 DESEJO
-└── Beneficios / Zigzag: "Eu quero isso. Consigo visualizar minha vida com isso."
+└── Benefícios / Zigzag: "Eu quero isso. Consigo visualizar minha vida com isso."
 
-VALIDACAO
-└── O que recebe / Modulos: "E muito mais do que eu imaginava"
+VALIDAÇÃO
+└── O que recebe / Módulos: "E muito mais do que eu imaginava"
 
 RECIPROCIDADE
-└── Bonuses: "Eles estao me dando ainda mais"
+└── Bonuses: "Eles estão me dando ainda mais"
 
 PROVA SOCIAL
-└── Depoimentos: "Pessoas como eu ja fizeram isso e funcionou"
+└── Depoimentos: "Pessoas como eu já fizeram isso é funcionou"
 
 AUTORIDADE
 └── Sobre o Mentor: "Esse cara sabe o que esta fazendo"
@@ -194,111 +194,111 @@ AUTORIDADE
 ANCORAGEM
 └── Value Stack: "Quanto custaria se eu tivesse que comprar tudo separado?"
 
-REMOCAO DE RISCO
-└── Garantia: "Se nao funcionar, eu nao perco nada"
+REMOÇÃO DE RISCO
+└── Garantia: "Se não funcionar, eu não perco nada"
 
 OBJECCOES RESPONDIDAS
-└── FAQ: "Todas as minhas duvidas foram respondidas"
+└── FAQ: "Todas as minhas dúvidas foram respondidas"
 
-URGENCIA / DECISAO
+URGÊNCIA / DECISÃO
 └── CTA Final: "Devo agir agora"
 ```
 
-### Checklist de Sequencia
+### Checklist de Sequência
 
-- [ ] Hero aparece antes de qualquer secao de venda
-- [ ] Problema aparece ANTES da solucao (nao pular direto para "o que voce recebe")
-- [ ] Prova social aparece apos a apresentacao do produto (nao antes da solucao)
-- [ ] Value Stack aparece APOS os depoimentos (prova social valida antes do preco)
-- [ ] Garantia aparece ANTES do CTA final (nao depois)
-- [ ] FAQ aparece apos a oferta (responde objeccoes pos-desejo)
+- [ ] Hero aparece antes de qualquer seção de venda
+- [ ] Problema aparece ANTES da solução (não pular direto para "o que você recebe")
+- [ ] Prova social aparece após a apresentação do produto (não antes da solução)
+- [ ] Value Stack aparece APÓS os depoimentos (prova social valida antes do preço)
+- [ ] Garantia aparece ANTES do CTA final (não depois)
+- [ ] FAQ aparece após a oferta (responde objeccoes pos-desejo)
 - [ ] CTA aparece em PELO MENOS 3 momentos de pico emocional:
-  - Apos o hero (desejo inicial)
-  - Apos depoimentos (validacao social)
-  - CTA final (maxima urgencia)
+  - Após o hero (desejo inicial)
+  - Após depoimentos (validação social)
+  - CTA final (máxima urgência)
 
-### Score Sequencia: /10
+### Score Sequência: /10
 
 ---
 
-## DIMENSAO 5: Prova Social
+## DIMENSÃO 5: Prova Social
 
-**Avaliacao por hierarquia (maior poder no topo):**
+**Avaliação por hierarquia (maior poder no topo):**
 
 | Tipo | Poder | Presente? | Qualidade |
 |------|-------|-----------|-----------|
-| Video testimonial | 10/10 | [ ] |: |
-| Foto + quote + resultado especifico | 9/10 | [ ] |: |
+| Vídeo testimonial | 10/10 | [ ] |: |
+| Foto + quote + resultado específico | 9/10 | [ ] |: |
 | Screenshot de WhatsApp/DM real | 8/10 | [ ] |: |
-| Before/After com numeros | 8/10 | [ ] |: |
-| Foto + quote sem resultado especifico | 6/10 | [ ] |: |
+| Before/After com números | 8/10 | [ ] |: |
+| Foto + quote sem resultado específico | 6/10 | [ ] |: |
 | Texto + nome + contexto | 5/10 | [ ] |: |
-| Numeros (X alunos, X% satisfacao) | 4/10 | [ ] |: |
+| Números (X alunos, X% satisfação) | 4/10 | [ ] |: |
 | Logos de clientes/midia | 3/10 | [ ] |: |
 
 ### Checklist de Qualidade
 
-- [ ] Depoimentos mencionam resultado especifico (numeros, tempo, transformacao)
+- [ ] Depoimentos mencionam resultado específico (números, tempo, transformação)
 - [ ] Depoimentos tem diversidade de perfil (sexo, idade, contexto)
-- [ ] Pelo menos 1 depoimento resolve a objecao principal
-- [ ] Depoimentos distribuidos na pagina (nao so numa secao)
-- [ ] Screenshots de WhatsApp parecem reais (nao editados demais)
-- [ ] Fotos sao reais (nao stock)
-- [ ] Numeros de alunos / resultados sao plausíveis para o estagio do produto
+- [ ] Pelo menos 1 depoimento resolve a objeção principal
+- [ ] Depoimentos distribuídos na página (não só numa seção)
+- [ ] Screenshots de WhatsApp parecem reais (não editados demais)
+- [ ] Fotos são reais (não stock)
+- [ ] Números de alunos / resultados são plausíveis para o estágio do produto
 
 ### Score Prova Social: /10
 
 ---
 
-## DIMENSAO 6: Urgencia e Escassez
+## DIMENSÃO 6: Urgência e Escassez
 
-**O que avaliar:** Urgencia real e crivel = conversao. Urgencia falsa = perda de confianca.
+**O que avaliar:** Urgência real e crível = conversão. Urgência falsa = perda de confiança.
 
-### Tipos de Urgencia
+### Tipos de Urgência
 
-| Tipo | Crivel? | Como implementar |
+| Tipo | Crível? | Como implementar |
 |------|---------|-----------------|
 | **Deadline temporal** | Alta (se real) | Countdown timer com data real |
 | **Vagas limitadas** | Media-alta | Contador de vagas (ex: "12/50 vagas") |
-| **Preco que sobe** | Media | "Preco sobe [data]": so se real |
-| **Turma fechando** | Alta | "Proxima turma so em [mes]" |
-| **Bonus expirando** | Media | "Bonus X disponivel so ate [data]" |
+| **Preço que sobe** | Média | "Preço sobe [data]": só se real |
+| **Turma fechando** | Alta | "Próxima turma só em [mês]" |
+| **Bônus expirando** | Média | "Bônus X disponível só até [data]" |
 | **Early bird** | Alta | Badge + contador |
-| **Edicao limitada** | Alta | "Ultima edicao deste formato" |
+| **Edição limitada** | Alta | "Última edição deste formato" |
 
 ### Checklist
 
-- [ ] Existe pelo menos 1 elemento de urgencia na pagina
-- [ ] A urgencia e crivel e verificavel (nao "oferta por tempo limitado" sem contexto)
-- [ ] Urgencia aparece nos CTAs (nao so numa secao isolada)
-- [ ] Countdown timer funciona corretamente (nao reseta ao recarregar)
-- [ ] Copy de urgencia no CTA final ("Garanta sua vaga agora" vs "Clique aqui")
+- [ ] Existe pelo menos 1 elemento de urgência na página
+- [ ] A urgência e crível e verificável (não "oferta por tempo limitado" sem contexto)
+- [ ] Urgência aparece nos CTAs (não só numa seção isolada)
+- [ ] Countdown timer funciona corretamente (não reseta ao recarregar)
+- [ ] Copy de urgência no CTA final ("Garanta sua vaga agora" vs "Clique aqui")
 
-### Score Urgencia: /10
+### Score Urgência: /10
 
 ---
 
-## DIMENSAO 7: Message Match com o Trafego
+## DIMENSÃO 7: Message Match com o Tráfego
 
-**O que avaliar:** O usuario que clicou no anuncio veio com uma expectativa. A pagina DEVE confirmar essa expectativa nos primeiros 3 segundos. Se nao confirmar = alta taxa de rejeicao.
+**O que avaliar:** O usuário que clicou no anúncio veio com uma expectativa. A página DEVE confirmar essa expectativa nos primeiros 3 segundos. Se não confirmar = alta taxa de rejeição.
 
 ### Como Verificar
 
 ```
-ANUNCIO diz: "Aprenda a faturar R$10k/mes com automacao"
+ANÚNCIO diz: "Aprenda a faturar R$10k/mes com automação"
 HERO deve dizer algo como:
-  ✅ "Fature R$10k/mes automatizando o que voce ja sabe fazer"
-  ✅ "O metodo de automacao que gerou R$10k/mes para +2.400 alunos"
+  ✅ "Fature R$10k/mes automatizando o que você já sabe fazer"
+  ✅ "O método de automação que gerou R$10k/mes para +2.400 alunos"
   ❌ "Bem-vindo ao maior programa de marketing digital do Brasil"
   ❌ "Transforme sua vida financeira com nossa mentoria exclusiva"
 ```
 
 ### Checklist
 
-- [ ] Headline da pagina repete ou amplia a promessa do anuncio
-- [ ] Tom visual da pagina e consistente com o tom do anuncio
-- [ ] A "isca" que motivou o clique e visivel no hero (bonus, pdf, resultado especifico)
-- [ ] Nao ha dissonancia de posicionamento (anuncio "gratuito", pagina cobra)
+- [ ] Headline da página repete ou amplia a promessa do anúncio
+- [ ] Tom visual da página e consistente com o tom do anúncio
+- [ ] A "isca" que motivou o clique e visível no hero (bônus, pdf, resultado específico)
+- [ ] Não há dissonância de posicionamento (anúncio "gratuito", página cobra)
 
 ### Score Message Match: /10
 
@@ -310,44 +310,44 @@ HERO deve dizer algo como:
 ## AUDITORIA ESTRATEGISTA, [Nome do Projeto]
 Data: [data]
 Tipo: [sales-page / capture / challenge / vsl / institutional]
-Produto: [nome], [faixa de preco]
-Trafego: [origem], Temperatura: [fria/morna/quente]
+Produto: [nome], [faixa de preço]
+Tráfego: [origem], Temperatura: [fria/morna/quente]
 
-| Dimensao                  | Nota | Status |
+| Dimensão                  | Nota | Status |
 |---------------------------|------|--------|
 | Hook (Gancho)             | /10  | ✅/⚠️/🚫 |
 | Story (Narrativa)         | /10  | ✅/⚠️/🚫 |
 | Offer (Oferta)            | /10  | ✅/⚠️/🚫 |
-| Sequencia Psicologica     | /10  | ✅/⚠️/🚫 |
+| Sequência Psicológica     | /10  | ✅/⚠️/🚫 |
 | Prova Social              | /10  | ✅/⚠️/🚫 |
-| Urgencia & Escassez       | /10  | ✅/⚠️/🚫 |
+| Urgência & Escassez       | /10  | ✅/⚠️/🚫 |
 | Message Match             | /10  | ✅/⚠️/🚫 |
 
-**MEDIA: X.X/10**
+**MÉDIA: X.X/10**
 
-VEREDICTO ESTRATEGICO:
-[ ] PRONTO PARA CONVERTER, pagina estrategicamente solida
-[ ] AJUSTES LEVES, converter bem mas perde conversoes desnecessarias
-[ ] REFATORACAO NECESSARIA, estrutura estrategica comprometida
+VEREDICTO ESTRATÉGICO:
+[ ] PRONTO PARA CONVERTER, página estrategicamente sólida
+[ ] AJUSTES LEVES, converter bem mas perde conversões desnecessárias
+[ ] REFATORACAO NECESSÁRIA, estrutura estratégica comprometida
 
-TOP 3 CORRECCOES PRIORITARIAS:
+TOP 3 CORRECCOES PRIORITÁRIAS:
 1. [item com maior impacto estimado]
 2. [item com segundo maior impacto]
 3. [item com terceiro maior impacto]
 
-ESTIMATIVA DE CONVERSAO ESPERADA:
-- Tipo da pagina: [landing / venda]
+ESTIMATIVA DE CONVERSÃO ESPERADA:
+- Tipo da página: [landing / venda]
 - Temperatura: [fria/morna/quente]
-- Benchmark de conversao: [X-Y%]
-- Estimativa com a pagina atual: [X%]
+- Benchmark de conversão: [X-Y%]
+- Estimativa com a página atual: [X%]
 - Estimativa pos-correccoes: [X%]
 ```
 
 ---
 
-## Benchmarks de Conversao (Mercado BR: Infoprodutos)
+## Benchmarks de Conversão (Mercado BR: Infoprodutos)
 
-| Tipo de Pagina | Temperatura | Poor | Average | Good | Great |
+| Tipo de Página | Temperatura | Poor | Average | Good | Great |
 |----------------|-------------|------|---------|------|-------|
 | Capture page | Fria | <10% | 15-25% | 30-40% | >50% |
 | Capture page | Morna/Quente | <20% | 35-50% | 55-65% | >70% |
@@ -359,28 +359,28 @@ ESTIMATIVA DE CONVERSAO ESPERADA:
 
 ---
 
-## Diagnostico por Sintoma
+## Diagnóstico por Sintoma
 
-| Sintoma | Causa Provavel | Correccao |
+| Sintoma | Causa Provável | Correccao |
 |---------|---------------|-----------|
-| Alta taxa de rejeicao (>70%) | Message match falhou | Alinhar headline com promessa do anuncio |
-| Tempo na pagina <30s | Hook fraco | Reescrever hero headline com especificidade |
-| Scroll ate metade e abandono | Prova social fraca | Adicionar depoimentos logo apos hero |
-| CTA nunca clicado | CTA com copy fraca ou pouco visivel | Trocar copy + aumentar contraste visual |
-| Muita visita, pouca venda | Oferta nao convincente | Revisar value stack + garantia |
-| Conversao boa no desktop, ruim no mobile | Pagina nao otimizada para mobile | Audit mobile completo |
-| Boa conversao no inicio, cai rapido | Urgencia falsa ou expirada | Urgencia real com data valida |
+| Alta taxa de rejeição (>70%) | Message match falhou | Alinhar headline com promessa do anúncio |
+| Tempo na página <30s | Hook fraco | Reescrever hero headline com especificidade |
+| Scroll até metade e abandono | Prova social fraca | Adicionar depoimentos logo após hero |
+| CTA nunca clicado | CTA com copy fraca ou pouco visível | Trocar copy + aumentar contraste visual |
+| Muita visita, pouca venda | Oferta não convincente | Revisar value stack + garantia |
+| Conversão boa no desktop, ruim no mobile | Página não otimizada para mobile | Audit mobile completo |
+| Boa conversão no início, cai rápido | Urgência falsa ou expirada | Urgência real com data valida |
 
 ---
 
-## Integracao com Skill Construtor-Paginas
+## Integração com Skill Construtor-Paginas
 
-Esta auditoria roda no **Step 4: VERIFICAR & SHIPAR**, apos:
-1. QA de design (checklist tecnico)
+Esta auditoria roda no **Step 4: VERIFICAR & SHIPAR**, após:
+1. QA de design (checklist técnico)
 2. Auditoria de designer (scoring-system.md)
-3. **Esta auditoria: perspectiva estrategica**
+3. **Esta auditoria: perspectiva estratégica**
 
 O output desta auditoria alimenta:
-- Correcoes de copy no Step 1 se identificadas tardiamente
-- Correcoes de layout no Step 3 se secoes estiverem fora de ordem
+- Correções de copy no Step 1 se identificadas tardiamente
+- Correções de layout no Step 3 se seções estiverem fora de ordem
 - Ajustes de urgencia/CTA antes do deploy

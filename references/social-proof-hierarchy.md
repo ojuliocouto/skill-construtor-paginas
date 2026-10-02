@@ -1,29 +1,29 @@
 # Hierarquia de Prova Social
 
-Nem toda prova social tem o mesmo poder. A ordem abaixo e baseada em pesquisa de conversao (CXL, NN/G, Baymard Institute) e especificidades do mercado brasileiro de infoprodutos.
+Nem toda prova social tem o mesmo poder. A ordem abaixo e baseada em pesquisa de conversão (CXL, NN/G, Baymard Institute) e especificidades do mercado brasileiro de infoprodutos.
 
 ---
 
-## Ranking por Poder de Conversao
+## Ranking por Poder de Conversão
 
-### Nivel 10: Video Testimonial
-**Poder:** Maximo
-**Por que:** Autenticidade inegavel. Voz, expressao, linguagem corporal, tudo contribui para credibilidade.
-**Quando usar:** Depoimento principal em destaque, apos secao de beneficios ou antes do valor stack.
-**Design:** Player de video com thumbnail que mostra o resultado (ex: "R$15k no primeiro mes"). Caption com nome + resultado.
+### Nível 10: Vídeo Testimonial
+**Poder:** Máximo
+**Por que:** Autenticidade inegável. Voz, expressão, linguagem corporal, tudo contribui para credibilidade.
+**Quando usar:** Depoimento principal em destaque, após seção de benefícios ou antes do valor stack.
+**Design:** Player de vídeo com thumbnail que mostra o resultado (ex: "R$15k no primeiro mês"). Caption com nome + resultado.
 
 ---
 
-### Nivel 9: Foto Real + Quote + Resultado Especifico + Nome Completo
+### Nível 9: Foto Real + Quote + Resultado Específico + Nome Completo
 **Poder:** Muito alto
-**Por que:** Foto real = pessoa real. Resultado especifico = provavel. Nome completo = responsabilidade.
-**Quando usar:** Depoimento destaque (maior, em posicao de destaque na secao).
+**Por que:** Foto real = pessoa real. Resultado específico = provável. Nome completo = responsabilidade.
+**Quando usar:** Depoimento destaque (maior, em posição de destaque na seção).
 **Design:** Foto portrait 3:4, quote em destaque, resultado em bold ou cor accent, nome + contexto ("Maria, 42 anos, SP").
 
-**O que torna o resultado "especifico":**
+**O que torna o resultado "específico":**
 ```
 ✅ "Consegui meu primeiro cliente em 11 dias"
-✅ "Faturei R$4.800 no primeiro mes usando o metodo"
+✅ "Faturei R$4.800 no primeiro mês usando o método"
 ✅ "Saí do emprego em 3 meses"
 ❌ "Mudou minha vida"
 ❌ "Aprendi muito"
@@ -32,86 +32,86 @@ Nem toda prova social tem o mesmo poder. A ordem abaixo e baseada em pesquisa de
 
 ---
 
-### Nivel 8: Screenshot de Mensagem (WhatsApp/DM/Email)
+### Nível 8: Screenshot de Mensagem (WhatsApp/DM/Email)
 **Poder:** Alto (especialmente no mercado BR)
-**Por que:** Mensagem privada capturada = percepcao de autenticidade. Nao parece "produzida".
+**Por que:** Mensagem privada capturada = percepção de autenticidade. Não parece "produzida".
 **Quando usar:** Grid de prints, mix com outros depoimentos, "prova social no calor do momento".
 **Design:** Screenshot real, levemente polido (borda arredondada, sombra suave). Grid de 3 colunas. Pode ter destaque em amarelo no trecho mais impactante.
 
-**Atencao:**
-- Prints muito editados (cortados, texto alterado) destroem confianca
-- Mostrar a interface real (bolhas verdes do WhatsApp = familiar e crivel)
-- Nao colocar so prints de "obrigado, otimo curso": precisam ter resultado
+**Atenção:**
+- Prints muito editados (cortados, texto alterado) destroem confiança
+- Mostrar a interface real (bolhas verdes do WhatsApp = familiar e crível)
+- Não colocar só prints de "obrigado, ótimo curso": precisam ter resultado
 
 ---
 
-### Nivel 8: Before/After com Numeros e Timeframe
+### Nível 8: Before/After com Números e Timeframe
 **Poder:** Alto
-**Por que:** Comparacao visual concreta. "Antes: X / Depois: Y em Z semanas"
-**Quando usar:** Transformacoes mensuráveis (financeiro, saude, skills).
-**Design:** 2 colunas (ANTES / DEPOIS), cor cinza/vermelho para antes, verde/accent para depois, numero grande em destaque.
+**Por que:** Comparação visual concreta. "Antes: X / Depois: Y em Z semanas"
+**Quando usar:** Transformações mensuráveis (financeiro, saúde, skills).
+**Design:** 2 colunas (ANTES / DEPOIS), cor cinza/vermelho para antes, verde/accent para depois, número grande em destaque.
 
 ---
 
-### Nivel 7: Foto Real + Quote Generica + Nome
+### Nível 7: Foto Real + Quote Genérica + Nome
 **Poder:** Medio-alto
-**Por que:** Foto valida a pessoa mas sem resultado especifico perde poder persuasivo.
-**Quando usar:** Volume de depoimentos (grid de varios).
-**Design:** Card padrao com foto pequena (40-48px circulo) + quote + nome.
+**Por que:** Foto valida a pessoa mas sem resultado específico perde poder persuasivo.
+**Quando usar:** Volume de depoimentos (grid de vários).
+**Design:** Card padrão com foto pequena (40-48px círculo) + quote + nome.
 
 ---
 
-### Nivel 6: Texto + Nome + Contexto (sem foto)
-**Poder:** Medio
+### Nível 6: Texto + Nome + Contexto (sem foto)
+**Poder:** Médio
 **Por que:** Sem foto reduz credibilidade 40-60% (Baymard). Contexto salva um pouco.
-**Quando usar:** Quando nao tem foto disponivel mas o depoimento e especifico e crivel.
+**Quando usar:** Quando não tem foto disponível mas o depoimento e específico e crível.
 **Design:** Avatar placeholder personalizado (iniciais + cor), quote, nome, contexto.
 
 ---
 
-### Nivel 5: Numeros de Impacto (Stats)
-**Poder:** Medio (alto se os numeros sao especificos e verificaveis)
-**Por que:** Numeros grandes impressionam, mas nao criam identificacao pessoal.
+### Nível 5: Números de Impacto (Stats)
+**Poder:** Médio (alto se os números são específicos e verificáveis)
+**Por que:** Números grandes impressionam, mas não criam identificação pessoal.
 **Quando usar:** Social Proof Bar (stats section), sempre acompanhado de contexto.
-**Design:** NumberTicker animado, numero grande, label claro abaixo.
+**Design:** NumberTicker animado, número grande, label claro abaixo.
 
 ```
 ✅ "2.400 alunos formados"
 ✅ "R$50M+ faturados pelos alunos"
-✅ "98% de satisfacao em pesquisa interna"
-❌ "Mais de 2000 clientes" (sem contexto do que e ser cliente)
+✅ "98% de satisfação em pesquisa interna"
+❌ "Mais de 2000 clientes" (sem contexto do que é ser cliente)
 ```
 
 ---
 
-### Nivel 4: Mencoes em Midia / Imprensa
-**Poder:** Medio (mas com alto impacto em segmentos formais)
+### Nível 4: Menções em Mídia / Imprensa
+**Poder:** Médio (mas com alto impacto em segmentos formais)
 **Por que:** Autoridade externa. Terceiros validaram.
-**Quando usar:** "Como visto em..." ou secao de midia.
-**Design:** Logos de veiculos em grayscale, hover tira o grayscale. Tamanho uniforme.
+**Quando usar:** "Como visto em..." ou seção de mídia.
+**Design:** Logos de veículos em grayscale, hover tira o grayscale. Tamanho uniforme.
 
 ---
 
-### Nivel 3: Logos de Clientes / Parceiros
+### Nível 3: Logos de Clientes / Parceiros
 **Poder:** Baixo-medio
-**Por que:** Logos sozinhos nao contam historia. Util para credibilidade corporativa.
-**Quando usar:** Paginas B2B, institucionais. Evitar em infoprodutos sem contexto.
+**Por que:** Logos sozinhos não contam história. Útil para credibilidade corporativa.
+**Quando usar:** Páginas B2B, institucionais. Evitar em infoprodutos sem contexto.
 **Design:** Logo wall com Marquee, grayscale, hover colorido.
 
 ---
 
-## Regras de Distribuicao na Pagina
+## Regras de Distribuição na Página
 
-A prova social nao deve estar APENAS na secao de depoimentos. Deve estar distribuida:
+A prova social não deve estar APENAS na seção de depoimentos. Deve estar distribuída:
 
 ```
-POSICAO             | TIPO RECOMENDADO
+POSIÇÃO             | TIPO RECOMENDADO
 --------------------|------------------------------------------
 Hero (abaixo CTA)   | Avatar stack + "X alunos" OU logo bar pequena
-Social Proof Bar    | Numeros (stats)
-Apos solucao        | 1-2 depoimentos rapidos (nivel 7-8)
-Secao depoimentos   | Featured (nivel 9-10) + grid (nivel 6-8)
-Value Stack         | 1 print de resultado especifico
+Social Proof Bar    | Números (stats)
+Após solução        | 1-2 depoimentos rápidos (nível 7-8)
+Seção depoimentos   | Featured (nível 9-10) + grid (nível 6-8)
+Value Stack         | 1 print de resultado específico
 CTA Final           | Mini quote + nome + resultado
 ```
 
@@ -123,9 +123,9 @@ CTA Final           | Mini quote + nome + resultado
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                   │
 │  [FOTO portrait 3:4]     "Depoimento completo aqui, com          │
-│  300x400px               resultado especifico incluido.          │
-│                          Minimo 2-3 frases para parecer          │
-│                          real e espontaneo."                     │
+│  300x400px               resultado específico incluído.          │
+│                          Mínimo 2-3 frases para parecer          │
+│                          real e espontâneo."                     │
 │                                                                   │
 │                          ★★★★★                                   │
 │                          **Nome Completo**, Cargo/Contexto       │
@@ -136,27 +136,27 @@ CTA Final           | Mini quote + nome + resultado
 
 ---
 
-## Grid de Depoimentos: Variedade Obrigatoria
+## Grid de Depoimentos: Variedade Obrigatória
 
-Para ser crivel, o grid precisa de diversidade:
+Para ser crível, o grid precisa de diversidade:
 
-| Criterio | Recomendacao |
+| Critério | Recomendação |
 |----------|-------------|
-| Genero | Mix homem/mulher |
-| Faixa etaria | Representar o publico real (nao so jovens) |
-| Nivel de experiencia | Iniciante + intermediario + avancado |
+| Gênero | Mix homem/mulher |
+| Faixa etária | Representar o público real (não só jovens) |
+| Nível de experiência | Iniciante + intermediário + avançado |
 | Resultado | Variado (financeiro, tempo, qualidade de vida, carreira) |
-| Tom | Entusiasmado + neutro + analitico (parece mais real) |
+| Tom | Entusiasmado + neutro + analítico (parece mais real) |
 
 ---
 
 ## Anti-Patterns de Prova Social
 
-| Anti-pattern | Por que prejudica | Solucao |
+| Anti-pattern | Por que prejudica | Solução |
 |-------------|-------------------|---------|
-| Todos os depoimentos com o mesmo tom exuberado | Parece fabricado | Incluir depoimentos mais neutros e analiticos |
-| Depoimentos muito curtos ("Otimo! Recomendo!") | Sem conteudo util | Pedir depoimentos estruturados (antes/depois + resultado) |
-| Fotos de alta producao em todos | Parece campanha publicitaria | Mix: fotos profissionais + selfies reais |
-| So depoimentos de pessoas novas/jovens | Exclui parte do publico | Diversidade de faixa etaria |
-| Numeros suspeitos ("100.000 alunos" para produto lancado ha 3 meses) | Destroi credibilidade | Numeros plausíveis e atualizados |
-| Depoimentos sem nome ou so com inicial | Gera desconfianca | Sempre nome completo (ou pelo menos nome + sobrenome inicial) |
+| Todos os depoimentos com o mesmo tom exuberado | Parece fabricado | Incluir depoimentos mais neutros e analíticos |
+| Depoimentos muito curtos ("Ótimo! Recomendo!") | Sem conteúdo útil | Pedir depoimentos estruturados (antes/depois + resultado) |
+| Fotos de alta produção em todos | Parece campanha publicitária | Mix: fotos profissionais + selfies reais |
+| Só depoimentos de pessoas novas/jovens | Exclui parte do público | Diversidade de faixa etária |
+| Números suspeitos ("100.000 alunos" para produto lançado há 3 meses) | Destrói credibilidade | Números plausíveis e atualizados |
+| Depoimentos sem nome ou só com inicial | Gera desconfiança | Sempre nome completo (ou pelo menos nome + sobrenome inicial) |

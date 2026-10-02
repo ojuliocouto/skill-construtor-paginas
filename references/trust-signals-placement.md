@@ -1,29 +1,29 @@
-# Sinais de Confianca: Placement e Implementacao
+# Sinais de Confiança: Placement e Implementação
 
-Trust signals removem objecoes silenciosas. Um usuario pode gostar da oferta mas nao comprar porque sente inseguranca. Trust signals eliminam esse atrito sem que o usuario precise pedir.
+Trust signals removem objeções silenciosas. Um usuário pode gostar da oferta mas não comprar porque sente insegurança. Trust signals eliminam esse atrito sem que o usuário precise pedir.
 
 ---
 
 ## Os 8 Tipos de Trust Signals
 
-| Tipo | Poder de Conversao | Quando usar |
+| Tipo | Poder de Conversão | Quando usar |
 |------|---------------------|-------------|
-| Badge de garantia (visual) | Alto | Toda pagina de venda |
-| Logos de pagamento | Alto | Proxima ao preco/checkout |
-| Selos de seguranca (SSL, etc) | Medio-alto | Paginas com formulario ou checkout |
-| Mencoes em midia/imprensa | Alto | Quando disponivel |
-| Premios e certificacoes | Medio | Segmentos formais (saude, financas) |
-| Logos de clientes / parceiros | Medio | Paginas B2B ou alta credibilidade |
-| CNPJ / Razao Social | Medio | Mercado BR: gera confianca |
-| Numero de alunos/clientes | Medio (varia) | Quando plausivel e especifico |
+| Badge de garantia (visual) | Alto | Toda página de venda |
+| Logos de pagamento | Alto | Próxima ao preco/checkout |
+| Selos de segurança (SSL, etc) | Medio-alto | Páginas com formulário ou checkout |
+| Menções em midia/imprensa | Alto | Quando disponível |
+| Prêmios e certificações | Médio | Segmentos formais (saúde, finanças) |
+| Logos de clientes / parceiros | Médio | Páginas B2B ou alta credibilidade |
+| CNPJ / Razão Social | Médio | Mercado BR: gera confiança |
+| Número de alunos/clientes | Médio (varia) | Quando plausível e específico |
 
 ---
 
-## Mapa de Placement por Posicao na Pagina
+## Mapa de Placement por Posição na Página
 
 ### 1. Hero (Logo abaixo do CTA)
 
-**O que colocar:** Avatar stack + numero de alunos OU logos de midia pequenos
+**O que colocar:** Avatar stack + número de alunos OU logos de mídia pequenos
 
 ```tsx
 // Avatar stack + contador
@@ -51,7 +51,7 @@ Trust signals removem objecoes silenciosas. Um usuario pode gostar da oferta mas
 
 ### 2. Social Proof Bar (Stats)
 
-**O que colocar:** Numeros de impacto, nao "logos" aqui, mas metricas reais
+**O que colocar:** Números de impacto, não "logos" aqui, mas métricas reais
 
 ```tsx
 // 4 stats com NumberTicker
@@ -63,9 +63,9 @@ Trust signals removem objecoes silenciosas. Um usuario pode gostar da oferta mas
 
 ---
 
-### 3. Proxima ao Preco (CRITICO)
+### 3. Próxima ao Preço (CRÍTICO)
 
-**O que colocar:** Logos de pagamento + badge de seguranca
+**O que colocar:** Logos de pagamento + badge de segurança
 
 ```tsx
 // Logo abaixo do preco ou do botao de CTA
@@ -87,9 +87,9 @@ Trust signals removem objecoes silenciosas. Um usuario pode gostar da oferta mas
 
 ---
 
-### 4. Garantia (POSICAO CRITICA: ANTES do CTA Final)
+### 4. Garantia (POSIÇÃO CRÍTICA: ANTES do CTA Final)
 
-A garantia DEVE aparecer antes do botao de compra mais importante (CTA 7 ou 8). Nunca no footer, nunca pos-compra.
+A garantia DEVE aparecer antes do botão de compra mais importante (CTA 7 ou 8). Nunca no footer, nunca pos-compra.
 
 ```tsx
 function GuaranteeBadge({ days = 7 }: { days?: number }) {
@@ -117,19 +117,19 @@ function GuaranteeBadge({ days = 7 }: { days?: number }) {
 
 **Placement correto:**
 ```
-[Value Stack com preco]
+[Value Stack com preço]
 [Garantia Badge]          ← AQUI
-[CTA Botao Principal]
+[CTA Botão Principal]
 [Logos de pagamento]
 ```
 
 ---
 
-### 5. Midia / "Como Visto Em" (Se disponivel)
+### 5. Mídia / "Como Visto Em" (Se disponível)
 
-**Posicionamento:** Duas opcoes validas:
+**Posicionamento:** Duas opções válidas:
 - Logo abaixo do hero (antes do primeiro scroll) - impacto imediato
-- Dentro da secao "Sobre o Mentor" - valida credibilidade pessoal
+- Dentro da seção "Sobre o Mentor" - valida credibilidade pessoal
 
 ```tsx
 function MediaMentions({ logos }: { logos: Array<{src: string; name: string}> }) {
@@ -192,24 +192,24 @@ function MediaMentions({ logos }: { logos: Array<{src: string; name: string}> })
 
 Antes de entregar, verificar:
 
-- [ ] Badge de garantia visivel e posicionado ANTES do CTA principal de compra
-- [ ] Logos de pagamento presentes proximos ao preco/CTA
-- [ ] Se tem formulario: microcopy de privacidade ("seus dados estao protegidos")
-- [ ] Se tem numero de alunos: numero plausivel e contextualizado
-- [ ] Footer tem CNPJ/empresa (obrigatorio no mercado BR)
-- [ ] Footer tem links de privacidade e termos (obrigatorio LGPD)
-- [ ] Se tem midia/imprensa: presente de forma visivel (nao enterrado no footer)
+- [ ] Badge de garantia visível e posicionado ANTES do CTA principal de compra
+- [ ] Logos de pagamento presentes próximos ao preco/CTA
+- [ ] Se tem formulário: microcopy de privacidade ("seus dados estão protegidos")
+- [ ] Se tem número de alunos: número plausível e contextualizado
+- [ ] Footer tem CNPJ/empresa (obrigatório no mercado BR)
+- [ ] Footer tem links de privacidade e termos (obrigatório LGPD)
+- [ ] Se tem midia/imprensa: presente de forma visível (não enterrado no footer)
 - [ ] Logos de pagamento incluem PIX (muito comum no mercado BR)
-- [ ] Plataforma de pagamento identificada (Hotmart, Kiwify, etc.): familiaridade gera confianca
+- [ ] Plataforma de pagamento identificada (Hotmart, Kiwify, etc.): familiaridade gera confiança
 
 ---
 
 ## Erros Comuns de Trust Signals
 
-| Erro | Impacto | Correcao |
+| Erro | Impacto | Correção |
 |------|---------|----------|
-| Garantia so como texto (sem badge visual) | Passa despercebida | Sempre badge visual com numero de dias em destaque |
-| Logos de pagamento no footer | Longe do momento de decisao | Mover para logo abaixo do botao de compra |
-| CNPJ faltando | Desconfianca em compras BR (especialmente alto ticket) | Sempre incluir no footer |
-| Numero de alunos implausivel | Destroi credibilidade de todos os outros sinais | Ser conservador e especifico ("847 alunos na ultima turma") |
-| Sem microcopy de seguranca no formulario | Abandono de form por medo de spam | Adicionar "Seus dados estao protegidos e nao serao compartilhados" |
+| Garantia só como texto (sem badge visual) | Passa despercebida | Sempre badge visual com número de dias em destaque |
+| Logos de pagamento no footer | Longe do momento de decisão | Mover para logo abaixo do botão de compra |
+| CNPJ faltando | Desconfiança em compras BR (especialmente alto ticket) | Sempre incluir no footer |
+| Número de alunos implausível | Destrói credibilidade de todos os outros sinais | Ser conservador e específico ("847 alunos na última turma") |
+| Sem microcopy de segurança no formulário | Abandono de form por medo de spam | Adicionar "Seus dados estão protegidos e não serão compartilhados" |

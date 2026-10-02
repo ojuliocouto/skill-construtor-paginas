@@ -1,21 +1,21 @@
-# Sessao: {Nome do Projeto}: {AAAA-MM-DD}
+# Sessão: {Nome do Projeto}: {AAAA-MM-DD}
 
-> Template. Ao concluir uma sessao, salve um log em
+> Template. Ao concluir uma sessão, salve um log em
 > `references/sessions/{AAAA-MM-DD}-{slug}.md`. Arquivos LOCAIS (gitignored):
-> servem para continuidade entre sessoes do mesmo projeto.
+> servem para continuidade entre sessões do mesmo projeto.
 
 ## O que foi pedido
-(resumo do brief desta sessao)
+(resumo do brief desta sessão)
 
 ## O que foi entregue
 - (paginas/secoes/componentes criados ou alterados)
 
-## Aprendizados e Padroes Novos
+## Aprendizados e Padrões Novos
 ### {Titulo do aprendizado}
 (o que foi descoberto e como aplicar de novo)
 
 ## Arquivos alterados
 - `caminho/arquivo`: o que mudou
 
-## Referencia do projeto
+## Referência do projeto
 - Link para `references/projects/{slug}.md`

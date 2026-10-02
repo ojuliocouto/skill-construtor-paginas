@@ -42,7 +42,7 @@
 </div>
 ```
 
-### Transicoes e Animacoes
+### Transições e Animações
 ```html
 <button class="bg-blue-500 hover:bg-blue-700 transition duration-300">Hover</button>
 <div class="hover:-translate-y-1 hover:shadow-xl transition-all">Lift</div>

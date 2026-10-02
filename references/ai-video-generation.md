@@ -1,4 +1,4 @@
-# AI Video Generation para Landing Pages
+# AI Vídeo Generation para Landing Pages
 
 > **Duas rotas, e elas não competem.** Este arquivo cobre a rota Replicate
 > (WAN 2.1), que é a barata e roda por script próprio. Para a conta assinada do
@@ -17,8 +17,8 @@ Aprovado em produção em um site institucional real (março/2026).
 
 | Modelo | Tipo | Endpoint | Uso |
 |--------|------|----------|-----|
-| `wavespeedai/wan-2.1-t2v-480p` | Text→Video | `/v1/models/{model}/predictions` | Hero background, texturas, natureza genérica |
-| `wavespeedai/wan-2.1-i2v-480p` | Image→Video | `/v1/models/{model}/predictions` | Animar fotos reais do produto/local |
+| `wavespeedai/wan-2.1-t2v-480p` | Text→Vídeo | `/v1/models/{model}/predictions` | Hero background, texturas, natureza genérica |
+| `wavespeedai/wan-2.1-i2v-480p` | Image→Vídeo | `/v1/models/{model}/predictions` | Animar fotos reais do produto/local |
 
 **Token:** `<pasta-da-skill-criativo-imagem-ia>/config.json` → campo `REPLICATE_API_TOKEN`
 
@@ -202,7 +202,7 @@ done
 # Hero forest (t2v)
 Lush green pine forest in Southern Brazil, tall Pinus elliottii trees,
 golden morning sunlight filtering through branches, gentle wind moving
-treetops, peaceful atmosphere, cinematic wide shot, smooth camera
+treetops, peaceful atmosphere, cinematic wide shot, smooth câmera
 movement, 4K, photorealistic
 
 # Animating product image (i2v)
@@ -249,7 +249,7 @@ bokeh background, appetizing and inviting, slow smooth camera
 
 ### Negative prompts universais (reutilizar)
 ```
-people, text, logo, watermark, blurry, low quality, shaking camera,
+people, text, logo, watermark, blurry, low quality, shaking câmera,
 ugly, distorted, pixelated, noise artifacts
 ```
 
@@ -264,11 +264,11 @@ ugly, distorted, pixelated, noise artifacts
 - [ ] Escrever prompts específicos para o nicho
 
 ### Pós-geração
-- [ ] Otimizar com FFmpeg (H.264 + WebM + poster)
+- [ ] Otimizar com FFmpeg (H.264 + WebM + pôster)
 - [ ] Verificar tamanhos: hero-bg < 2MB, outros < 1MB cada
 - [ ] Copiar arquivos para a pasta da landing page
 - [ ] Embedar HTML com `preload="none"` (abaixo do fold) ou `preload="auto"` (hero)
-- [ ] Testar em mobile: deve mostrar apenas o poster (vídeo oculto)
+- [ ] Testar em mobile: deve mostrar apenas o pôster (vídeo oculto)
 - [ ] Testar `prefers-reduced-motion`: vídeo deve ser oculto
 - [ ] Verificar que conteúdo sobre o vídeo está com `z-index` correto
 
@@ -292,7 +292,7 @@ ugly, distorted, pixelated, noise artifacts
 ## Anti-patterns
 
 - **NUNCA `Prefer: wait` no header**: provoca timeout em 30s; usar polling assíncrono
-- **NUNCA vídeo sem poster**: flash preto/branco arruína a first impression
+- **NUNCA vídeo sem pôster**: flash preto/branco arruína a first impression
 - **NUNCA autoplay sem muted**: browsers bloqueiam autoplay com som
 - **NUNCA `preload="auto"` em todos os vídeos**: carrega tudo de uma vez, LCP piora
 - **NUNCA vídeo em mobile sem esconder**: consome dados, quebra experience em 3G/4G
@@ -330,7 +330,7 @@ ffmpeg -i clip-a.mp4 -i clip-b.mp4 \
 
 ## Vídeos de fundo para seções sólidas
 
-Para seções com `background: cor-sólida` (ex: verde, preto), adicionar video background com `opacity: 0.07`.
+Para seções com `background: cor-sólida` (ex: verde, preto), adicionar vídeo background com `opacity: 0.07`.
 
 ```html
 <!-- Dentro da section, ANTES do conteúdo -->

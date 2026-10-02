@@ -1,19 +1,19 @@
-# Visual Excellence: Referencia Completa
+# Visual Excellence: Referência Completa
 
-Backgrounds epicos, Navbar premium, Pricing, FAQ, CTA sections, Noise textures, Aurora gradients.
+Backgrounds épicos, Navbar premium, Pricing, FAQ, CTA sections, Noise textures, Aurora gradients.
 
 ---
 
-## Gradient Text: Regras Criticas
+## Gradient Text: Regras Críticas
 
-### background-clip: text com fonte italica: BUG DE CORTE
+### background-clip: text com fonte itálica: BUG DE CORTE
 
 **Problema:** `background-clip: text` pinta o gradiente EXATAMENTE nos limites do bounding box do span.
-Texto italico inclina as letras para a direita, fazendo a ultima letra vazar alem da borda direita e ser cortada.
+Texto itálico inclina as letras para a direita, fazendo a última letra vazar além da borda direita e ser cortada.
 
-**Sintoma:** ultima letra do span parece "cortada" no lado direito (ex: "o" de "tudo" com metade visivel).
+**Sintoma:** última letra do span parece "cortada" no lado direito (ex: "o" de "tudo" com metade visível).
 
-**Fix obrigatorio:** sempre adicionar `padding-right: 0.15em` no span com gradiente italico:
+**Fix obrigatório:** sempre adicionar `padding-right: 0.15em` no span com gradiente itálico:
 
 ```html
 <!-- ERRADO, ultimo caractere cortado em italico -->
@@ -114,7 +114,7 @@ Texto italico inclina as letras para a direita, fazendo a ultima letra vazar ale
 
 ## Navbar Premium
 
-### Floating Navbar (nao cola no topo)
+### Floating Navbar (não cola no topo)
 
 ```tsx
 'use client'
@@ -614,9 +614,9 @@ const features = [
 
 ---
 
-## Decisao: Qual Padrao Usar?
+## Decisão: Qual Padrão Usar?
 
-| Situacao | Padrao Recomendado |
+| Situação | Padrão Recomendado |
 |----------|-------------------|
 | Hero SaaS dark | Aurora + DotPattern + Mockup Safari |
 | Hero produto light | Radial glow + GridPattern + Imagem |

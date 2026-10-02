@@ -16,7 +16,7 @@ Leia antes de construir qualquer página. Estas regras têm precedência sobre p
 - Modal-first thinking: não resolver problema de espaço com modal por padrão
 
 ### Do huashu-design (anti-AI slop)
-- Gradiente roxo radical como "cara de tecnologia/IA": é a formula mais batida de 2022-2024
+- Gradiente roxo radical como "cara de tecnologia/IA": é a fórmula mais batida de 2022-2024
 - Emoji como ícones de interface: sinal de falta de sistema de design
 - Rounded card + left border accent colorido: combo mais genérico do Tailwind/Material
 - SVG desenhado à mão substituindo imagens reais de pessoas ou produtos

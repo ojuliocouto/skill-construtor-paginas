@@ -1,13 +1,13 @@
 # Design System & UI/UX Intelligence
 
-### Principios de Design
+### Princípios de Design
 
-1. **Hierarquia Visual**: Acao primaria bold e alto contraste, secundaria sutil, terciaria minima
-2. **Sistema de Espacamento (8px grid)**: xs=4px, sm=8px, md=16px, lg=24px, xl=32px, 2xl=48px
-3. **Tipografia**: Maximo 3-4 tamanhos de fonte por pagina, maximo 2 familias
+1. **Hierarquia Visual**: Ação primária bold e alto contraste, secundária sutil, terciaria mínima
+2. **Sistema de Espaçamento (8px grid)**: xs=4px, sm=8px, md=16px, lg=24px, xl=32px, 2xl=48px
+3. **Tipografia**: Máximo 3-4 tamanhos de fonte por página, máximo 2 famílias
 4. **Cores**: Paleta limitada (2-3 cores max), usar design tokens
 
-### Escala Tipografica
+### Escala Tipográfica
 ```typescript
 const typography = {
   hero: 'text-4xl md:text-5xl font-bold tracking-tight',
@@ -18,7 +18,7 @@ const typography = {
 };
 ```
 
-### Cores Semanticas
+### Cores Semânticas
 ```typescript
 const colors = {
   primary: 'bg-blue-600 hover:bg-blue-700',
@@ -45,36 +45,36 @@ const heroGradient = "bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600"
 const radialGlow = "bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-200/40 via-transparent to-transparent";
 ```
 
-### Regras Obrigatorias de UI Profissional
+### Regras Obrigatórias de UI Profissional
 
-| Regra | Fazer | Nao Fazer |
+| Regra | Fazer | Não Fazer |
 |-------|-------|-----------|
-| Icones | Hugeicons (landing pages premium) ou Lucide (UI/dashboards) | Emojis como icones de UI |
+| Ícones | Hugeicons (landing pages premium) ou Lucide (UI/dashboards) | Emojis como ícones de UI |
 | Hover | Color/opacity transitions | Scale que desloca layout |
 | Logos | SVG oficial (Simple Icons) | Chutar paths de logo |
-| Cursor | `cursor-pointer` em tudo clicavel | Cursor padrao em elementos interativos |
-| Transicoes | `transition-colors duration-200` | Mudancas instantaneas ou >500ms |
+| Cursor | `cursor-pointer` em tudo clicável | Cursor padrão em elementos interativos |
+| Transições | `transition-colors duration-200` | Mudanças instantâneas ou >500ms |
 | Glass light mode | `bg-white/80` ou mais | `bg-white/10` (transparente demais) |
 | Texto light | `#0F172A` (slate-900) | `#94A3B8` (slate-400) |
 | Navbar flutuante | `top-4 left-4 right-4` | `top-0 left-0 right-0` colado |
 
-### Principios UX (Nielsen)
+### Princípios UX (Nielsen)
 1. Visibilidade do estado do sistema
-2. Correspondencia com o mundo real
-3. Controle e liberdade do usuario
-4. Consistencia e padroes
-5. Prevencao de erros
-6. Reconhecer ao inves de lembrar
-7. Flexibilidade e eficiencia
-8. Design estetico e minimalista
-9. Ajudar usuarios a reconhecer e recuperar de erros
-10. Ajuda e documentacao
+2. Correspondência com o mundo real
+3. Controle e liberdade do usuário
+4. Consistência e padrões
+5. Prevenção de erros
+6. Reconhecer ao invés de lembrar
+7. Flexibilidade e eficiência
+8. Design estético e minimalista
+9. Ajudar usuários a reconhecer e recuperar de erros
+10. Ajuda e documentação
 
-### Animacoes
-- **Com proposito**: animacao transmite mudanca de estado
-- **Rapida**: 200-500ms
-- **Natural**: curvas de easing simulando fisica
-- **Moderada**: evitar excesso de animacao
+### Animações
+- **Com propósito**: animação transmite mudança de estado
+- **Rápida**: 200-500ms
+- **Natural**: curvas de easing simulando física
+- **Moderada**: evitar excesso de animação
 - Respeitar `prefers-reduced-motion`
 
 ---

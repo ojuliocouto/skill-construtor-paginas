@@ -196,23 +196,23 @@ permitido.
 5. Rodou `file` em cada arquivo e confirmou formato e dimensão úteis.
 6. Hero abaixo de 200KB, demais imagens abaixo de 100KB, de preferência WebP.
 
-## Licenca: o que a busca ja garante e o que continua sendo seu trabalho
+## Licença: o que a busca já garante e o que continua sendo seu trabalho
 
-A busca da Openverse filtra por **uso comercial E permissao de modificacao**. Isso importa
-porque pagina de cliente SEMPRE corta, redimensiona e sobrepoe texto, o que cria obra derivada.
-So filtrar por "uso comercial" deixava passar licenca **ND (NoDerivatives)**, que proibe
-exatamente isso: o aluno colocaria a foto na pagina do cliente violando a licenca sem saber.
+A busca da Openverse filtra por **uso comercial E permissão de modificação**. Isso importa
+porque página de cliente SEMPRE corta, redimensiona e sobrepõe texto, o que cria obra derivada.
+Só filtrar por "uso comercial" deixava passar licença **ND (NoDerivatives)**, que proíbe
+exatamente isso: o aluno colocaria a foto na página do cliente violando a licença sem saber.
 
-O que ainda depende de voce olhar, porque nenhum filtro resolve:
+O que ainda depende de você olhar, porque nenhum filtro resolve:
 
 - **Marca e produto de terceiro.** A busca pode devolver foto que mostra logo, embalagem ou
-  produto de outra empresa. A licenca da FOTO nao te da direito sobre a MARCA que aparece nela.
-  Nunca use numa pagina que vende produto concorrente ou que sugira endosso.
-- **Pessoa identificavel.** Licenca de foto nao e autorizacao de uso de imagem. Para peca
-  publicitaria com rosto reconhecivel, use foto de banco com direito de modelo, ou foto do
-  proprio cliente.
-- **Credito obrigatorio.** CC BY e CC BY-SA exigem creditar autor, fonte e licenca. O credito
-  ja sai pronto na saida da busca: cole no rodape da pagina, nao apague.
+  produto de outra empresa. A licença da FOTO não te da direito sobre a MARCA que aparece nela.
+  Nunca use numa página que vende produto concorrente ou que sugira endosso.
+- **Pessoa identificável.** Licença de foto não é autorização de uso de imagem. Para peça
+  publicitária com rosto reconhecível, use foto de banco com direito de modelo, ou foto do
+  próprio cliente.
+- **Crédito obrigatório.** CC BY e CC BY-SA exigem creditar autor, fonte e licença. O crédito
+  já sai pronto na saída da busca: cole no rodapé da página, não apague.
 
-Regra pratica: se a foto tem marca visivel ou rosto em primeiro plano, troque. Foto de contexto
-(ambiente, objeto, mao, textura) quase nunca tem esse problema.
+Regra prática: se a foto tem marca visível ou rosto em primeiro plano, troque. Foto de contexto
+(ambiente, objeto, mão, textura) quase nunca tem esse problema.

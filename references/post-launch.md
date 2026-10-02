@@ -1,12 +1,12 @@
 # Post-Launch: Medir & Iterar
 
-Sistema de medicao, benchmarks e iteracao apos deploy. A pagina NAO esta "pronta" quando vai ao ar, esta pronta quando CONVERTE.
+Sistema de medição, benchmarks e iteração após deploy. A página NÃO está "pronta" quando vai ao ar, esta pronta quando CONVERTE.
 
 ---
 
-## Setup de Medicao (Fazer no Deploy)
+## Setup de Medição (Fazer no Deploy)
 
-### Microsoft Clarity (Gratis: Obrigatorio)
+### Microsoft Clarity (Grátis: Obrigatório)
 ```html
 <!-- Adicionar no <head> de TODA pagina -->
 <script type="text/javascript">
@@ -18,25 +18,25 @@ Sistema de medicao, benchmarks e iteracao apos deploy. A pagina NAO esta "pronta
 </script>
 ```
 
-**O que o Clarity entrega gratis:**
+**O que o Clarity entrega grátis:**
 - Heatmaps (onde clicam, onde scrollam)
-- Session recordings (ver exatamente o que o usuario faz)
+- Session recordings (ver exatamente o que o usuário faz)
 - Rage clicks (onde clicam frustrados)
-- Dead clicks (clicam em algo que nao e clicavel)
-- Scroll depth (% da pagina que veem)
+- Dead clicks (clicam em algo que não é clicável)
+- Scroll depth (% da página que veem)
 - Quick exits (saem em < 10s)
 
 ### GTM Events (se o projeto usar GTM)
 Garantir que estes eventos estejam disparando:
-- `page_view`: visualizacao
+- `page_view`: visualização
 - `scroll_depth`: 25%, 50%, 75%, 90%
 - `cta_click`: clique em qualquer CTA
-- `form_submit`: envio de formulario
+- `form_submit`: envio de formulário
 - `video_play`: play no VSL (se houver)
-- `checkout_click`: clique no botao de checkout
+- `checkout_click`: clique no botão de checkout
 
 ### Google Analytics 4 (via GTM)
-Metricas automaticas:
+Métricas automáticas:
 - Bounce rate
 - Session duration
 - Pages per session
@@ -44,11 +44,11 @@ Metricas automaticas:
 
 ---
 
-## Benchmarks por Tipo de Pagina
+## Benchmarks por Tipo de Página
 
-### Conversao (% de visitantes que completam a acao desejada)
+### Conversão (% de visitantes que completam a ação desejada)
 
-| Tipo de Pagina | Ruim | OK | Bom | Excelente |
+| Tipo de Página | Ruim | OK | Bom | Excelente |
 |----------------|------|-----|------|-----------|
 | **Sales page** (mid-ticket) | < 1% | 1-2% | 2-5% | > 5% |
 | **Sales page** (high-ticket) | < 0.5% | 0.5-1% | 1-3% | > 3% |
@@ -59,7 +59,7 @@ Metricas automaticas:
 
 ### Bounce Rate
 
-| Tipo | Aceitavel | Preocupante |
+| Tipo | Aceitável | Preocupante |
 |------|-----------|-------------|
 | Sales page | < 60% | > 75% |
 | Capture page | < 50% | > 65% |
@@ -67,15 +67,15 @@ Metricas automaticas:
 
 ### Scroll Depth
 
-| Metrica | Saudavel | Problema |
+| Métrica | Saudável | Problema |
 |---------|----------|----------|
-| Chegam ate 50% da pagina | > 40% | < 25% |
-| Chegam ate 75% da pagina | > 25% | < 15% |
-| Chegam ate CTA final | > 15% | < 8% |
+| Chegam até 50% da página | > 40% | < 25% |
+| Chegam até 75% da página | > 25% | < 15% |
+| Chegam até CTA final | > 15% | < 8% |
 
 ### Core Web Vitals (Performance)
 
-| Metrica | Bom | Precisa Melhorar | Ruim |
+| Métrica | Bom | Precisa Melhorar | Ruim |
 |---------|-----|------------------|------|
 | LCP | < 2.5s | 2.5-4.0s | > 4.0s |
 | INP | < 200ms | 200-500ms | > 500ms |
@@ -85,93 +85,93 @@ Metricas automaticas:
 
 ## Primeiro Check: 48 Horas
 
-Apos 48h com trafego, revisar:
+Após 48h com tráfego, revisar:
 
 ### 1. Scroll Depth
 **Onde as pessoas param de scrollar?**
-- Se param antes da oferta → secoes anteriores nao engajam
-- Se param na oferta → copy/preco nao convence
-- Se passam da oferta sem clicar → CTA nao esta claro/visivel
+- Se param antes da oferta → seções anteriores não engajam
+- Se param na oferta → copy/preco não convence
+- Se passam da oferta sem clicar → CTA não está claro/visivel
 
 ### 2. Heatmap de Cliques
-**Onde clicam (e onde NAO clicam)?**
-- Clicam em algo que nao e link → adicionar link/CTA ali
-- Nao clicam no CTA → CTA nao esta visivel/atrativo
-- Rage clicks → algo parece clicavel mas nao e
+**Onde clicam (e onde NÃO clicam)?**
+- Clicam em algo que não é link → adicionar link/CTA ali
+- Não clicam no CTA → CTA não está visivel/atrativo
+- Rage clicks → algo parece clicável mas não é
 
-### 3. Session Recordings (assistir 10 sessoes)
+### 3. Session Recordings (assistir 10 sessões)
 **O que as pessoas fazem?**
-- Scrollam rapido sem ler → copy nao prende
-- Voltam pra cima → procurando algo que nao acharam
-- Hesitam no CTA → objecao nao respondida
-- Saem na secao X → secao X e o problema
+- Scrollam rápido sem ler → copy não prende
+- Voltam pra cima → procurando algo que não acharam
+- Hesitam no CTA → objeção não respondida
+- Saem na seção X → seção X e o problema
 
 ### 4. Comparar com Benchmark
-Se metricas estao ABAIXO do benchmark → ativar ciclo de iteracao.
+Se métricas estão ABAIXO do benchmark → ativar ciclo de iteração.
 
 ---
 
-## Ciclo de Iteracao
+## Ciclo de Iteração
 
-### Diagnostico por Metrica
+### Diagnóstico por Métrica
 
-| Sintoma | Causa Provavel | Acao |
+| Sintoma | Causa Provável | Ação |
 |---------|----------------|------|
-| Bounce > 70% | Hero nao prende / pagina lenta | Testar headline + melhorar LCP |
-| Scroll depth < 25% | Secoes iniciais fracas | Reescrever secao pos-hero |
-| CTA click < 1% | CTA invisivel ou copy fraca | Aumentar CTA, mudar texto, adicionar urgencia |
-| Checkout drop > 80% | Preco alto sem justificativa | Melhorar value stack, adicionar garantia |
-| Session < 30s | Pagina nao relevante pro trafego | Message match com o anuncio |
-| Rage clicks | UI confusa | Corrigir elementos que parecem clicaveis |
+| Bounce > 70% | Hero não prende / página lenta | Testar headline + melhorar LCP |
+| Scroll depth < 25% | Seções iniciais fracas | Reescrever seção pos-hero |
+| CTA click < 1% | CTA invisível ou copy fraca | Aumentar CTA, mudar texto, adicionar urgência |
+| Checkout drop > 80% | Preço alto sem justificativa | Melhorar value stack, adicionar garantia |
+| Session < 30s | Página não relevante pro tráfego | Message match com o anúncio |
+| Rage clicks | UI confusa | Corrigir elementos que parecem clicáveis |
 
 ### Prioridade de Teste (Maior Impacto Primeiro)
 
 1. **Headline**: maior impacto em bounce e engagement
-2. **CTA texto e posicao**: impacto direto na conversao
-3. **Hero section** (imagem/video): primeira impressao
-4. **Social proof** (posicao e tipo): influencia na decisao
-5. **Oferta/preco** (framing): impacto na conversao final
+2. **CTA texto e posição**: impacto direto na conversão
+3. **Hero section** (imagem/video): primeira impressão
+4. **Social proof** (posição e tipo): influencia na decisão
+5. **Oferta/preco** (framing): impacto na conversão final
 6. **Design** (cores, layout): menor impacto, mas polimento
 
 ### Como Iterar
 
 ```
-1. Identificar a METRICA mais fraca
-2. Identificar a SECAO responsavel (via scroll depth + heatmap)
-3. Formular hipotese: "Se eu mudar X, espero que Y melhore porque Z"
-4. Fazer a mudanca CIRURGICA (nao reformar a pagina toda)
+1. Identificar a MÉTRICA mais fraca
+2. Identificar a SEÇÃO responsável (via scroll depth + heatmap)
+3. Formular hipótese: "Se eu mudar X, espero que Y melhore porque Z"
+4. Fazer a mudança CIRÚRGICA (não reformar a página toda)
 5. Deploy imediato
-6. Esperar 48-72h com trafego
+6. Esperar 48-72h com tráfego
 7. Comparar: melhorou? piorou? neutro?
 8. Se melhorou → documentar como pattern
 9. Se piorou → reverter
-10. Repetir com proxima metrica mais fraca
+10. Repetir com próxima métrica mais fraca
 ```
 
 ---
 
 ## Pattern Library Pessoal
 
-Apos cada pagina que funciona bem, documentar:
+Após cada página que funciona bem, documentar:
 
 ```markdown
-## [Nome da Pagina], [Data]
+## [Nome da Página], [Data]
 - **Tipo:** sales page / capture / challenge
-- **Preco:** R$X
-- **Conversao:** X%
+- **Preço:** R$X
+- **Conversão:** X%
 - **LCP:** X.Xs
 - **O que funcionou:**
   - Hero: [descrever layout e resultado]
-  - CTA: [texto, cor, posicao]
-  - Social proof: [tipo e posicao]
-  - Secao mais engajada: [qual]
-- **O que NAO funcionou:**
+  - CTA: [texto, cor, posição]
+  - Social proof: [tipo e posição]
+  - Seção mais engajada: [qual]
+- **O que NÃO funcionou:**
   - [descrever e por que]
 - **Aprendizado:**
   - [insight principal]
 ```
 
-Com o tempo, isso cria um banco de patterns TESTADOS que acelera cada proxima pagina.
+Com o tempo, isso cria um banco de patterns TESTADOS que acelera cada próxima página.
 
 ---
 
@@ -180,9 +180,9 @@ Com o tempo, isso cria um banco de patterns TESTADOS que acelera cada proxima pa
 | Ferramenta | O que faz | URL |
 |------------|-----------|-----|
 | Microsoft Clarity | Heatmaps + recordings + rage clicks | clarity.microsoft.com |
-| Google PageSpeed Insights | Core Web Vitals + sugestoes | pagespeed.web.dev |
+| Google PageSpeed Insights | Core Web Vitals + sugestões | pagespeed.web.dev |
 | GTmetrix | Performance detalhada | gtmetrix.com |
 | Lighthouse (Chrome DevTools) | Audit completo local | F12 → Lighthouse |
-| Google Analytics 4 | Metricas de trafego e conversao | analytics.google.com |
+| Google Analytics 4 | Métricas de tráfego e conversão | analytics.google.com |
 | Meta Pixel Helper | Verifica pixel Meta | Chrome extension |
 | Tag Assistant | Verifica GTM | Chrome extension |

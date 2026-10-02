@@ -1,14 +1,14 @@
-# Biblioteca de Transicoes Entre Secoes
+# Biblioteca de Transições Entre Seções
 
-A transicao entre secoes e invisivel quando correta e irritante quando errada. Cada transicao deve criar continuidade visual ou marcar uma mudanca de capitulo deliberada.
+A transição entre seções e invisível quando correta e irritante quando errada. Cada transição deve criar continuidade visual ou marcar uma mudança de capítulo deliberada.
 
 ---
 
-## Os 7 Padroes de Transicao
+## Os 7 Padrões de Transição
 
 ### 1. Contraste de Fundo Direto (Sharp Contrast)
-**Quando usar:** Mudar de "capitulo" visual (dark para light ou vice-versa). Mais comum.
-**Sensacao:** Limpeza, clareza, separacao de assuntos.
+**Quando usar:** Mudar de "capítulo" visual (dark para light ou vice-versa). Mais comum.
+**Sensação:** Limpeza, clareza, separação de assuntos.
 
 ```css
 /* Nao ha transicao, a mudanca e abrupta e intencional */
@@ -17,13 +17,13 @@ A transicao entre secoes e invisivel quando correta e irritante quando errada. C
 /* Resultado: linha horizontal clara entre as secoes */
 ```
 
-**Regra:** Funciona quando os backgrounds tem constraste alto. Cinza sobre cinza = nao funciona.
+**Regra:** Funciona quando os backgrounds tem constraste alto. Cinza sobre cinza = não funciona.
 
 ---
 
 ### 2. Wave Divider SVG
 **Quando usar:** Transicao suave entre secoes, especialmente dark-to-light ou light-to-dark. Premium.
-**Sensacao:** Fluido, organico, movimento.
+**Sensação:** Fluido, orgânico, movimento.
 
 ```tsx
 // Componente reutilizavel
@@ -56,14 +56,14 @@ function WaveDivider({ fromColor, toColor, flip = false }: { fromColor: string; 
 Suave (premium):    "M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z"
 Agressiva (energia): "M0,0 C480,80 960,0 1440,80 L1440,80 L0,80 Z"
 Dupla (luxo):        2 paths com opacidade diferente
-Assimetrica:         "M0,60 C400,20 800,80 1440,30 L1440,80 L0,80 Z"
+Assimétrica:         "M0,60 C400,20 800,80 1440,30 L1440,80 L0,80 Z"
 ```
 
 ---
 
 ### 3. Corte Angular (Diagonal Cut)
-**Quando usar:** Paginas de energia, desafio, lancamento. Visual dinamico.
-**Sensacao:** Momentum, velocidade, acao.
+**Quando usar:** Páginas de energia, desafio, lançamento. Visual dinâmico.
+**Sensação:** Momentum, velocidade, ação.
 
 ```css
 .section-diagonal-bottom {
@@ -84,13 +84,13 @@ Assimetrica:         "M0,60 C400,20 800,80 1440,30 L1440,80 L0,80 Z"
 }
 ```
 
-**Regra:** Nao usar em mais de 2-3 secoes. Cortes demais = pagina de lanches, nao high-ticket.
+**Regra:** Não usar em mais de 2-3 seções. Cortes demais = página de lanches, não high-ticket.
 
 ---
 
 ### 4. Gradient Fade de Continuidade
-**Quando usar:** Secoes complementares que devem parecer um so "bloco". Ex: Hero → Social Proof.
-**Sensacao:** Fluido, conectado, sem interrupcao.
+**Quando usar:** Seções complementares que devem parecer um só "bloco". Ex: Hero → Social Proof.
+**Sensação:** Fluido, conectado, sem interrupção.
 
 ```tsx
 // A secao inferior começa com a cor da secao superior (transparente → opaco)
@@ -103,9 +103,9 @@ Assimetrica:         "M0,60 C400,20 800,80 1440,30 L1440,80 L0,80 Z"
 
 ---
 
-### 5. Card Overlap (Sobreposicao de Cards)
-**Quando usar:** Uma secao tem cards/elementos que "voam" para dentro da proxima.
-**Sensacao:** Profundidade, dinamismo, interacao entre secoes.
+### 5. Card Overlap (Sobreposição de Cards)
+**Quando usar:** Uma seção tem cards/elementos que "voam" para dentro da próxima.
+**Sensação:** Profundidade, dinamismo, interação entre seções.
 
 ```tsx
 // O card fica "suspenso" entre duas secoes via margin-top negativa
@@ -129,8 +129,8 @@ Assimetrica:         "M0,60 C400,20 800,80 1440,30 L1440,80 L0,80 Z"
 ---
 
 ### 6. Separador Decorativo (Icon + Linha)
-**Quando usar:** Separar sub-secoes dentro de uma secao de mesmo fundo. Nao entre secoes de cores diferentes.
-**Sensacao:** Editorial, elegante, organizado.
+**Quando usar:** Separar sub-secoes dentro de uma seção de mesmo fundo. Não entre seções de cores diferentes.
+**Sensação:** Editorial, elegante, organizado.
 
 ```tsx
 // Linha horizontal com icone central
@@ -152,9 +152,9 @@ Assimetrica:         "M0,60 C400,20 800,80 1440,30 L1440,80 L0,80 Z"
 
 ---
 
-### 7. Gradient de Borda de Secao
-**Quando usar:** Secoes premium com gradiente que "sangra" para a proxima.
-**Sensacao:** Luxo, sem fronteiras, continuidade de marca.
+### 7. Gradient de Borda de Seção
+**Quando usar:** Seções premium com gradiente que "sangra" para a próxima.
+**Sensação:** Luxo, sem fronteiras, continuidade de marca.
 
 ```tsx
 // Secao com gradiente vertical que faz a transicao
@@ -178,28 +178,28 @@ Assimetrica:         "M0,60 C400,20 800,80 1440,30 L1440,80 L0,80 Z"
 
 ---
 
-## Matriz de Decisao: Qual Transicao Usar?
+## Matriz de Decisão: Qual Transição Usar?
 
-| De | Para | Transicao Recomendada |
+| De | Para | Transição Recomendada |
 |----|------|-----------------------|
 | Dark hero | Light social proof | Sharp contrast OU Wave |
 | Light social proof | Dark problema | Sharp contrast |
-| Dark problema | Light solucao | Wave suave OU Gradient fade |
-| Light secao | Light secao (mesma area visual) | Separador decorativo |
-| Dark secao | Dark secao seguinte | Gradient de borda |
-| Qualquer | Cards flutuando para proxima | Card overlap |
+| Dark problema | Light solução | Wave suave OU Gradient fade |
+| Light seção | Light seção (mesma área visual) | Separador decorativo |
+| Dark seção | Dark seção seguinte | Gradient de borda |
+| Qualquer | Cards flutuando para próxima | Card overlap |
 | Light | Diagonal de energia | Corte angular |
 
 ---
 
-## Regras Criticas
+## Regras Críticas
 
-**NUNCA:** Mesma cor de fundo em 3+ secoes seguidas sem nenhuma transicao visual.
+**NUNCA:** Mesma cor de fundo em 3+ seções seguidas sem nenhuma transição visual.
 
-**NUNCA:** Wave em paginas de energia/desafio, parece premium-suave, nao dinamico.
+**NUNCA:** Wave em páginas de energia/desafio, parece premium-suave, não dinâmico.
 
-**NUNCA:** Corte angular em paginas premium/high-ticket, parece landing page de produto barato.
+**NUNCA:** Corte angular em páginas premium/high-ticket, parece landing page de produto barato.
 
-**SEMPRE:** Verificar que o SVG da wave tem a cor exata da secao de destino (nao "aproximada").
+**SEMPRE:** Verificar que o SVG da wave tem a cor exata da seção de destino (não "aproximada").
 
-**MAXIMO:** 2 tipos diferentes de transicao por pagina. Consistencia > variedade.
+**MÁXIMO:** 2 tipos diferentes de transição por página. Consistência > variedade.

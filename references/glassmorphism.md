@@ -26,6 +26,6 @@ const GlassCard = ({ children, className = '' }) => (
 
 ### Quando Usar/Nao Usar
 - **Usar**: Hero com imagem, cards flutuantes, modais, navbar sutil
-- **Nao usar**: Todo card (mata o efeito), areas com muito texto, formularios, tabelas
+- **Não usar**: Todo card (mata o efeito), áreas com muito texto, formulários, tabelas
 
 ---

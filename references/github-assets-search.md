@@ -1,6 +1,6 @@
-# Busca no GitHub - Templates & Inspiracao
+# Busca no GitHub - Templates & Inspiração
 
-Antes de construir do zero, busque templates e paginas ja criadas no GitHub como referencia ou ponto de partida.
+Antes de construir do zero, busque templates e páginas já criadas no GitHub como referência ou ponto de partida.
 
 ### Como Usar
 
@@ -28,7 +28,7 @@ python3 <dir-da-skill>/scripts/github-search.py "hero section tailwind" --type c
 python3 <dir-da-skill>/scripts/github-search.py "pricing table component" --type code --lang tsx
 ```
 
-### Presets Disponiveis
+### Presets Disponíveis
 
 | Preset | Busca |
 |--------|-------|
@@ -38,8 +38,8 @@ python3 <dir-da-skill>/scripts/github-search.py "pricing table component" --type
 | `landing-react` | landing page react template |
 | `saas` | saas template website |
 | `saas-nextjs` | saas nextjs starter template |
-| `portfolio` | portfolio template developer |
-| `portfolio-nextjs` | portfolio nextjs template |
+| `portfolio` | portfólio template developer |
+| `portfolio-nextjs` | portfólio nextjs template |
 | `dashboard` | dashboard template admin panel |
 | `dashboard-nextjs` | dashboard nextjs shadcn |
 | `ecommerce` | ecommerce template storefront |
@@ -57,7 +57,7 @@ python3 <dir-da-skill>/scripts/github-search.py "pricing table component" --type
 | `agency` | agency website template |
 | `minimal` | minimal website template clean |
 
-### Busca de Assets Visuais (videos, fotos, lottie, ilustracoes)
+### Busca de Assets Visuais (vídeos, fotos, lottie, ilustrações)
 
 ```bash
 # Videos de fundo para hero (requer PEXELS_API_KEY gratuita)
@@ -92,22 +92,22 @@ export PEXELS_API_KEY="sua-chave-aqui"
 # Para persistir: echo 'export PEXELS_API_KEY="sua-chave"' >> ~/.zshrc
 ```
 
-**Presets de video disponiveis:**
+**Presets de vídeo disponíveis:**
 `tech-dark`, `tech-blue`, `tech-purple`, `particles`, `waves-dark`, `neon`, `space`, `circuit`, `minimal-white`, `waves-light`, `liquid`, `nature`, `ocean`, `city`, `office`, `hero-dark`, `hero-gradient` e mais.
 
-**Referencia completa de integracao:** `references/visual-assets.md`
+**Referência completa de integração:** `references/visual-assets.md`
 
 ---
 
 ### Workflow Recomendado com GitHub
 
-1. **Buscar inspiracao**: `python3 .../github-search.py landing-nextjs --stars 100`
+1. **Buscar inspiração**: `python3 .../github-search.py landing-nextjs --stars 100`
 2. **Clonar template**: `gh repo clone <repo>`
 3. **Estudar estrutura**: Ler os arquivos do template clonado
 4. **Adaptar**: Usar como base e customizar com as guidelines desta skill
 5. **Buscar componentes**: `python3 .../github-search.py "pricing section" --type code --lang tsx`
 
-### Apos Encontrar um Repo
+### Após Encontrar um Repo
 
 ```bash
 # Ver detalhes do repo

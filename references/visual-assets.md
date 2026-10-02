@@ -1,12 +1,12 @@
-# Visual Assets: Integracao Completa
+# Visual Assets: Integração Completa
 
-Videos de fundo, Lottie, Ilustracoes, Icones animados, Backgrounds.
+Vídeos de fundo, Lottie, Ilustrações, Ícones animados, Backgrounds.
 
 ---
 
-## Videos de Fundo: Integracao
+## Vídeos de Fundo: Integração
 
-### Video Background Basico
+### Vídeo Background Básico
 
 ```tsx
 // Hero com video de fundo (padrao mais impactante)
@@ -43,7 +43,7 @@ export function VideoHero() {
 }
 ```
 
-### Video Hero com Gradiente (mais elegante que overlay solido)
+### Vídeo Hero com Gradiente (mais elegante que overlay sólido)
 
 ```tsx
 <section className="relative h-screen overflow-hidden">
@@ -66,7 +66,7 @@ export function VideoHero() {
 </section>
 ```
 
-### Video em Secao (nao fullscreen)
+### Vídeo em Seção (não fullscreen)
 
 ```tsx
 {/* Video em card/mockup */}
@@ -90,7 +90,7 @@ export function VideoHero() {
 </div>
 ```
 
-### Parar video quando fora da viewport (performance)
+### Parar vídeo quando fora da viewport (performance)
 
 ```tsx
 'use client'
@@ -122,7 +122,7 @@ function LazyVideo({ src, className = '' }) {
 }
 ```
 
-### Otimizacao de Video
+### Otimização de Vídeo
 
 ```bash
 # Comprimir com ffmpeg (instalar: brew install ffmpeg)
@@ -227,9 +227,9 @@ import animationData from '@/public/animations/success.json'
 />
 ```
 
-### Casos de Uso por Secao
+### Casos de Uso por Seção
 
-| Secao | Lottie Ideal | Query no LottieFiles |
+| Seção | Lottie Ideal | Query no LottieFiles |
 |-------|-------------|---------------------|
 | Hero | Rocket, launch, abstract wave | "rocket launch", "abstract wave" |
 | Features | Ícone animado por feature | "security shield", "speed fast", "cloud" |
@@ -241,7 +241,7 @@ import animationData from '@/public/animations/success.json'
 
 ---
 
-## Ilustracoes SVG
+## Ilustrações SVG
 
 ### unDraw (gratuito, open source)
 
@@ -298,7 +298,7 @@ const illustration = "team-work"
 />
 ```
 
-### Ilustracao em Hero (lado a lado)
+### Ilustração em Hero (lado a lado)
 
 ```tsx
 <section className="min-h-screen flex items-center py-24">
@@ -331,7 +331,7 @@ const illustration = "team-work"
 
 ---
 
-## Icones Animados
+## Ícones Animados
 
 ### LordIcon (Lottie icons, free tier generoso)
 
@@ -363,7 +363,7 @@ declare global {
 }
 ```
 
-### Feature Cards com Icone Animado
+### Feature Cards com Ícone Animado
 
 ```tsx
 {features.map(f => (
@@ -382,7 +382,7 @@ declare global {
 ))}
 ```
 
-### Lucide com Hover Animation (sem dependencia extra)
+### Lucide com Hover Animation (sem dependência extra)
 
 ```tsx
 // Icone que gira no hover
@@ -412,7 +412,7 @@ declare global {
 
 ## Backgrounds SVG e Patterns
 
-### SVG Background Inline (zero dependencia, zero HTTP request)
+### SVG Background Inline (zero dependência, zero HTTP request)
 
 ```tsx
 // Dots pattern customizavel
@@ -519,40 +519,40 @@ body::after {
 
 ---
 
-## Workflow Completo: Assets para Uma Pagina
+## Workflow Completo: Assets para Uma Página
 
-### Ordem de decisao
+### Ordem de decisão
 
 ```
-1. VIDEO ou IMAGEM no hero?
-   ├── Video: python3 assets-search.py "tech dark abstract"
+1. VÍDEO ou IMAGEM no hero?
+   ├── Vídeo: python3 assets-search.py "tech dark abstract"
    └── Imagem: python3 assets-search.py "hero dark minimal" --type photo
 
-2. ILUSTRACAO ou MOCKUP na secao de produto?
+2. ILUSTRAÇÃO ou MOCKUP na seção de produto?
    ├── App/SaaS: Safari ou iPhone15Pro mockup (MagicUI) com screenshot real
-   └── Servico/conceito: Ilustracao unDraw em /illustrations/
+   └── Servico/conceito: Ilustração unDraw em /illustrations/
 
-3. ICONES das features?
-   ├── Simples: Lucide (ja instalado com shadcn)
+3. ÍCONES das features?
+   ├── Simples: Lucide (já instalado com shadcn)
    └── Animados: LordIcon (hover trigger no card)
 
-4. BACKGROUND das secoes secundarias?
+4. BACKGROUND das seções secundárias?
    ├── Hero: aurora gradient (CSS puro, zero HTTP)
    ├── Features: DotPattern ou GridPattern (MagicUI)
    └── Stats/CTA: RetroGrid ou gradient colorido
 
-5. ANIMACOES de transicao?
+5. ANIMAÇÕES de transição?
    ├── Loading/success: Lottie de LottieFiles
-   └── Icones: LordIcon ou Lucide com CSS transition
+   └── Ícones: LordIcon ou Lucide com CSS transition
 ```
 
 ### Checklist de Assets
 
-- [ ] Video/imagem hero baixado e otimizado (< 5MB video, < 200KB imagem)
-- [ ] Poster image do video gerado (previne flash branco)
-- [ ] Ilustracao SVG em public/illustrations/ se necessario
-- [ ] Lottie .json em public/animations/ se necessario
+- [ ] Video/imagem hero baixado e otimizado (< 5MB vídeo, < 200KB imagem)
+- [ ] Pôster image do vídeo gerado (previne flash branco)
+- [ ] Ilustração SVG em public/illustrations/ se necessário
+- [ ] Lottie .json em public/animations/ se necessário
 - [ ] Noise texture em public/textures/noise.png
 - [ ] Todos os assets com lazy loading
 - [ ] alt text em todas as imagens decorativas (pode ser "")
-- [ ] Video com autoPlay muted playsInline (obrigatorio para autoplay mobile)
+- [ ] Vídeo com autoPlay muted playsInline (obrigatório para autoplay mobile)

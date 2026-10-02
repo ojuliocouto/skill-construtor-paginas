@@ -633,7 +633,7 @@ Resolution: portrait 1080x1920.
 ```
 SaaS analytics dashboard screenshot, dark mode desktop interface. Shows:
 - Left sidebar: navigation with icons, purple active state
-- Main area: line chart showing revenue growth (upward trend), key metrics row
+- Main área: line chart showing revenue growth (upward trend), key metrics row
   (users, revenue, conversion rate), recent activity list
 - Top header: search bar, notification bell, user avatar
 Color scheme: dark (#0f0f1a) with purple (#7F41F9) accents, white text.
@@ -702,7 +702,7 @@ Geração:
 Otimização:
 [ ] Convertida para WebP (cwebp -q 88)
 [ ] Cada imagem < 300KB (mobile) ou < 500KB (desktop)
-[ ] Poster WebP para lazy loading
+[ ] Pôster WebP para lazy loading
 
 Mockup:
 [ ] Usando componente Magic UI (iPhone15Pro ou Safari), não SVG manual

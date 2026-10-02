@@ -11,7 +11,7 @@ npx shadcn@latest init
 npx shadcn@latest add button input form card dialog select sheet table toast chart menubar
 ```
 
-### Dependencias
+### Dependências
 ```bash
 npm install tailwindcss-animate class-variance-authority clsx tailwind-merge lucide-react
 npm install @hookform/resolvers zod react-hook-form
@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 // Tamanhos: size="default" | "sm" | "lg" | "icon"
 ```
 
-**Form com validacao Zod**:
+**Form com validação Zod**:
 ```tsx
 "use client"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -83,7 +83,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 **Dialog, Sheet, Select, Table, Toast, Charts**: Ver `references/` para API completa.
 
-### Configuracao CSS Variables (globals.css)
+### Configuração CSS Variables (globals.css)
 ```css
 @tailwind base;
 @tailwind components;

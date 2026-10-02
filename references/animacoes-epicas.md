@@ -1,12 +1,12 @@
-# Animacoes Epicas & Scroll Effects
+# Animações Epicas & Scroll Effects
 
 
-> **ATENCAO (anti-vibe):** varios efeitos deste arquivo (glow em botao, border glow, aurora, floating orbs, gradiente indigo+roxo) sao tells VISUAIS de IA (V1-V15 de `anti-vibe-coding.md`) e REPROVAM na wave do Step 4. Usar apenas quando o usuario pedir explicitamente esse look. Nos exemplos abaixo, trocar as cores hardcoded pela paleta REAL do projeto (CSS vars) e preferir micro-interacao sobria no CTA (mudanca de tom + elevacao sutil).
+> **ATENÇÃO (anti-vibe):** vários efeitos deste arquivo (glow em botão, border glow, aurora, floating orbs, gradiente indigo+roxo) são tells VISUAIS de IA (V1-V15 de `anti-vibe-coding.md`) e REPROVAM na wave do Step 4. Usar apenas quando o usuário pedir explicitamente esse look. Nos exemplos abaixo, trocar as cores hardcoded pela paleta REAL do projeto (CSS vars) e preferir micro-interacao sobria no CTA (mudança de tom + elevação sutil).
 Setup: `npm install framer-motion`
 
-### Scroll Reveal: Padrao Universal
+### Scroll Reveal: Padrão Universal
 
-**Aplicar em TODAS as secoes e cards. Nunca deixar nada estatico.**
+**Aplicar em TODAS as seções e cards. Nunca deixar nada estático.**
 
 ```tsx
 'use client'
@@ -77,7 +77,7 @@ const itemVariants = {
 </motion.div>
 ```
 
-### Titulos com Blur Reveal (entrada premium)
+### Títulos com Blur Reveal (entrada premium)
 
 ```tsx
 'use client'
@@ -243,6 +243,6 @@ function ParallaxSection({ children, speed = 0.3 }) {
 }
 ```
 
-**Referencia completa:** `references/animacoes-avancadas.md`
+**Referência completa:** `references/animacoes-avancadas.md`
 
 ---

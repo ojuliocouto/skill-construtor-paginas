@@ -1,4 +1,4 @@
-# Animacoes Avancadas: Referencia Completa
+# Animações Avançadas: Referência Completa
 
 Framer Motion, CSS Animations, Scroll Effects, Parallax, Spring Physics.
 
@@ -12,7 +12,7 @@ npm install framer-motion
 
 ## Framer Motion: Fundamentos
 
-### Variants (reutilizaveis)
+### Variants (reutilizáveis)
 
 ```tsx
 // Copiar e reutilizar em qualquer projeto
@@ -42,7 +42,7 @@ export const variants = {
 }
 ```
 
-### Scroll Reveal: Uso Basico
+### Scroll Reveal: Uso Básico
 
 ```tsx
 'use client'
@@ -80,7 +80,7 @@ import { motion } from 'framer-motion'
 </motion.div>
 ```
 
-### Sequencia de Entrada do Hero
+### Sequência de Entrada do Hero
 
 ```tsx
 // Cada elemento entra apos o anterior com delay crescente
@@ -110,7 +110,7 @@ const HeroSection = () => (
 
 ---
 
-## Split Text: Animacao Letra por Letra
+## Split Text: Animação Letra por Letra
 
 ```tsx
 'use client'
@@ -412,7 +412,7 @@ function CountUp({ end, duration = 1800, prefix = '', suffix = '', decimals = 0 
 
 ---
 
-## CSS Animations Avancadas
+## CSS Animations Avançadas
 
 ```css
 /* globals.css, adicionar antes do :root */

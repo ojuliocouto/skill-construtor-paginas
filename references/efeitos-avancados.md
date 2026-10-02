@@ -1,7 +1,7 @@
 # Efeitos Avançados: Catálogo de Código Copy-Paste
 
 
-> **ATENCAO (anti-vibe):** varios efeitos deste arquivo (glow em botao, border glow, aurora, floating orbs, gradiente indigo+roxo) sao tells VISUAIS de IA (V1-V15 de `anti-vibe-coding.md`) e REPROVAM na wave do Step 4. Usar apenas quando o usuario pedir explicitamente esse look. Nos exemplos abaixo, trocar as cores hardcoded pela paleta REAL do projeto (CSS vars) e preferir micro-interacao sobria no CTA (mudanca de tom + elevacao sutil).
+> **ATENÇÃO (anti-vibe):** vários efeitos deste arquivo (glow em botão, border glow, aurora, floating orbs, gradiente indigo+roxo) são tells VISUAIS de IA (V1-V15 de `anti-vibe-coding.md`) e REPROVAM na wave do Step 4. Usar apenas quando o usuário pedir explicitamente esse look. Nos exemplos abaixo, trocar as cores hardcoded pela paleta REAL do projeto (CSS vars) e preferir micro-interacao sobria no CTA (mudança de tom + elevação sutil).
 Efeitos que transformam páginas funcionais em páginas **fodas**. Todos testados, todos copy-paste ready.
 
 ---
@@ -1285,7 +1285,7 @@ export function ParallaxHero() {
 
 ## 13. Hover Reveal
 
-**Quando usar:** Cards de portfolio, antes/depois de produto, carrosséis de case study.
+**Quando usar:** Cards de portfólio, antes/depois de produto, carrosséis de case study.
 **Dependência:** nenhuma ou `framer-motion`
 
 ```tsx
@@ -1574,7 +1574,7 @@ Counter + NoiseTexture no background + ScrollTimeline fade-in
 GradientBorder no plano destaque + GlassSpotlightCard + ConfettiButton no CTA
 ```
 
-### Portfolio / Casos de Uso
+### Portfólio / Casos de Uso
 ```
 HoverRevealCard + ParallaxLayer para imagens decorativas
 ```

@@ -1,20 +1,20 @@
 # MCPs PREFERENCIAIS: 21st.dev Magic + Google Stitch
 
-**REGRA (reconciliada com o Step 0):** estes MCPs sao OBRIGATORIOS **quando conectados**.
-Se nao estiverem disponiveis na sessao (ver checagem de pre-requisitos no Step 0), usar o
-fallback documentado, nunca travar. O proibido e ter o MCP conectado e NAO usar.
+**REGRA (reconciliada com o Step 0):** estes MCPs são OBRIGATÓRIOS **quando conectados**.
+Se não estiverem disponíveis na sessão (ver checagem de pre-requisitos no Step 0), usar o
+fallback documentado, nunca travar. O proibido e ter o MCP conectado e NÃO usar.
 
 **Quando o MCP ESTA conectado:**
 - **PROIBIDO** construir componente de UI do zero sem antes consultar o 21st.dev.
-- **PROIBIDO** comecar a codar pagina nova sem gerar wireframe no Stitch.
+- **PROIBIDO** começar a codar página nova sem gerar wireframe no Stitch.
 - **PROIBIDO** usar logo de empresa hardcoded sem antes buscar no `logo_search`.
 
-**Quando o MCP NAO esta conectado (fallback do Step 0):**
-- Sem Stitch → pular wireframe, ir direto pro layout no codigo (Step 2 define o layout por secao mesmo assim).
-- Sem 21st.dev → escrever componentes a mao com shadcn/ui + Tailwind + os padroes deste arquivo.
+**Quando o MCP NÃO está conectado (fallback do Step 0):**
+- Sem Stitch → pular wireframe, ir direto pro layout no código (Step 2 define o layout por seção mesmo assim).
+- Sem 21st.dev → escrever componentes a mão com shadcn/ui + Tailwind + os padrões deste arquivo.
 - Sem logo_search → buscar o SVG oficial (Simple Icons) ou recriar vetorial; nunca chutar paths.
 
-Violar a regra (ter o MCP e nao usar) resulta em: mais tempo de build, visual inferior, retrabalho.
+Violar a regra (ter o MCP e não usar) resulta em: mais tempo de build, visual inferior, retrabalho.
 
 ---
 

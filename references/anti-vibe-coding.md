@@ -49,24 +49,24 @@ Itens **1, 2 e 5** são **YELLOW**: corrigir se presentes, mas não bloqueiam so
 
 ### Limiar de bloqueio dos tells VISUAIS (V1-V15)
 
-Os tells visuais abaixo nao bloqueavam sozinhos. Agora bloqueiam por acumulo:
+Os tells visuais abaixo não bloqueavam sozinhos. Agora bloqueiam por acúmulo:
 
 ```
-0-2 tells visuais presentes → YELLOW (corrigir, mas nao bloqueia)
-3+ tells visuais presentes  → CRITICO. NAO entregar. "Cara de IA" acumulada = reprovacao.
+0-2 tells visuais presentes → YELLOW (corrigir, mas não bloqueia)
+3+ tells visuais presentes  → CRÍTICO. NÃO entregar. "Cara de IA" acumulada = reprovação.
 ```
 
 Tells universais (valem em qualquer nicho, contam sempre): V4 (glow blob), V9 (glow difuso
-no hover do botao), gradient-clip no titulo principal, paleta indigo+roxo sobre dark, icones
-identicos em quadrado-gradiente. Tells calibrados pra e-commerce/clone de loja (V1 kicker mono,
-V2/V6 numero/stats no hero): pesam menos numa landing de SaaS, onde a estetica e nativa do genero.
-Usar julgamento: o teste e "um cliente bate o olho e diz cara de IA?", nao um checkbox cego.
+no hover do botão), gradient-clip no título principal, paleta indigo+roxo sobre dark, ícones
+idênticos em quadrado-gradiente. Tells calibrados pra e-commerce/clone de loja (V1 kicker mono,
+V2/V6 numero/stats no hero): pesam menos numa landing de SaaS, onde a estética e nativa do gênero.
+Usar julgamento: o teste e "um cliente bate o olho e diz cara de IA?", não um checkbox cego.
 
 ---
 
 ## Tells VISUAIS de IA / template genérico (checklist de aparência)
 
-- **Badge-pill de status acima do H1** (check + uppercase espaçado + verde-neon fora da paleta, tipo "INSCRIÇÃO CONFIRMADA"): kit padrão de gerador. Pior quando REPETE informação que a página já dá (stepper com check, hero com "Parabéns"). Feedback real de cliente numa pagina VIP (10/08/2026): "puta cara de ia isso". Antes de criar badge, conferir se a informação já existe na hierarquia; se precisar de rótulo, usar o padrão visual que a página já tem.
+- **Badge-pill de status acima do H1** (check + uppercase espaçado + verde-neon fora da paleta, tipo "INSCRIÇÃO CONFIRMADA"): kit padrão de gerador. Pior quando REPETE informação que a página já dá (stepper com check, hero com "Parabéns"). Feedback real de cliente numa página VIP (10/08/2026): "puta cara de ia isso". Antes de criar badge, conferir se a informação já existe na hierarquia; se precisar de rótulo, usar o padrão visual que a página já tem.
 
 Os 5 sinais acima são sobre **substância**. Esta lista é sobre **aparência**: padrões que fazem o
 cliente bater o olho e dizer "cara de IA / vibecoding / template". Validada num clone real (jun/2026),

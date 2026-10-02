@@ -1,4 +1,4 @@
-# Veo Video Workflow: Geração + Compressão + Embed
+# Veo Vídeo Workflow: Geração + Compressão + Embed
 
 Workflow completo para gerar vídeos com Veo 2/3 (Gemini), otimizar para web e embedar em páginas de alta performance.
 
@@ -12,10 +12,10 @@ Workflow completo para gerar vídeos com Veo 2/3 (Gemini), otimizar para web e e
 | Hero background (light page) | ⚠️ Seletivo: olhar LCP | Gradiente animado |
 | Feature showcase | ✅ SIM: melhor que screenshot | Safari mockup estático |
 | Seção de CTA | ✅ SIM: vídeo curto de produto | Imagem estática |
-| Mobile | ❌ NUNCA: custo de dados | Poster WebP estático |
+| Mobile | ❌ NUNCA: custo de dados | Pôster WebP estático |
 | Background de texto longo | ❌: prejudica leitura | Noise texture |
 
-**Regra de ouro:** Vídeo no hero = LCP em risco. Medir sempre com `preload="none"` + poster rápido.
+**Regra de ouro:** Vídeo no hero = LCP em risco. Medir sempre com `preload="none"` + pôster rápido.
 
 ---
 
@@ -463,20 +463,20 @@ Antes de gerar:
 [ ] Prompt com: tema + cores + atmosfera + "no faces, no text, loopable, 4K"
 
 Após gerar:
-[ ] Rodar optimize-veo.sh, MP4 + WebM + Poster
+[ ] Rodar optimize-veo.sh, MP4 + WebM + Pôster
 [ ] MP4 < 2MB por vídeo (máx 3MB se necessário)
 [ ] WebM ~30-40% menor que MP4
-[ ] Poster WebP < 80KB
+[ ] Pôster WebP < 80KB
 
 No código:
 [ ] preload="none" NO HTML (não bloqueia LCP)
-[ ] poster= aponta para WebP do frame
+[ ] pôster= aponta para WebP do frame
 [ ] muted + autoplay + loop + playsinline, todos 4 obrigatórios
 [ ] aria-hidden="true" (vídeo decorativo, não informativo)
-[ ] display:none no mobile (CSS media query)
+[ ] display:none no mobile (CSS média query)
 [ ] Overlay de gradiente/blur sobre o vídeo (texto precisa ser legível)
 [ ] Fallback visual (background color/gradient quando vídeo não carrega)
-[ ] Testar LCP com video, deve ser < 2.5s
+[ ] Testar LCP com vídeo, deve ser < 2.5s
 ```
 
 ---
@@ -487,7 +487,7 @@ No código:
 |---------|--------|-----------------|
 | MP4 hero (16:9, 5s) | < 1.5MB | 3MB |
 | WebM hero | < 1MB | 2MB |
-| Poster WebP | < 80KB | 150KB |
+| Pôster WebP | < 80KB | 150KB |
 | MP4 feature (looping curto) | < 500KB | 1MB |
 
 ---

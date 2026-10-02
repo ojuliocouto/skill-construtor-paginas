@@ -22,7 +22,7 @@ Curadoria de páginas reais, organizadas por tipo. Usar no **Step 1 (DIRECIONAR)
 
 ---
 
-## VSL Pages (Video Sales Letter)
+## VSL Pages (Vídeo Sales Letter)
 
 > Regra: vídeo É o herói. Tudo ao redor serve o vídeo. Dark background, vídeo centralizado, CTA aparece após o pitch. Mínimo de distrações.
 
@@ -89,7 +89,7 @@ Curadoria de páginas reais, organizadas por tipo. Usar no **Step 1 (DIRECIONAR)
 | 4 | https://resend.com | **Glassmorphism REAL**: backdrop-blur(25px) + gradient + texture. Não overdone. |
 | 5 | https://attio.com | **Bento grid 12-col** + scroll light→dark: melhor implementação de bento grid |
 | 6 | https://clerk.com | Particle/meteor effects, circuit SVG illustrations, dual theme |
-| 7 | https://huly.io | Video backgrounds, infinite carousels, gradient text |
+| 7 | https://huly.io | Vídeo backgrounds, infinite carousels, gradient text |
 
 ---
 

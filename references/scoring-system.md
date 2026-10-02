@@ -1,184 +1,184 @@
 # Sistema de Scoring: Auditoria Pre-Entrega
 
-Toda pagina entregue DEVE ser pontuada neste scorecard antes do deploy. Nota minima por dimensao: **8/10**. Qualquer dimensao abaixo de 7 = BLOQUEIO. Corrigir antes de entregar.
+Toda página entregue DEVE ser pontuada neste scorecard antes do deploy. Nota mínima por dimensão: **8/10**. Qualquer dimensão abaixo de 7 = BLOQUEIO. Corrigir antes de entregar.
 
 ---
 
-## Scorecard Completo (10 dimensoes)
+## Scorecard Completo (10 dimensões)
 
-### DIMENSAO 1: Hierarquia Visual: /10
+### DIMENSÃO 1: Hierarquia Visual: /10
 
-| Nota | Criterio |
+| Nota | Critério |
 |------|----------|
-| 10 | Olho navega naturalmente: hero → problema → solucao → prova → oferta. F-pattern ou Z-pattern implicito. Sem pontos de confusao. |
-| 8-9 | Hierarquia clara na maioria das secoes. 1-2 secoes menos obvias mas funcionais. |
-| 6-7 | Hierarquia perceptivel mas inconsistente. Algumas secoes "brigam" por atencao. |
-| 4-5 | Elementos de mesmo peso visual competindo. Olho nao sabe onde ir. |
+| 10 | Olho navega naturalmente: hero → problema → solução → prova → oferta. F-pattern ou Z-pattern implícito. Sem pontos de confusão. |
+| 8-9 | Hierarquia clara na maioria das seções. 1-2 seções menos óbvias mas funcionais. |
+| 6-7 | Hierarquia perceptível mas inconsistente. Algumas seções "brigam" por atenção. |
+| 4-5 | Elementos de mesmo peso visual competindo. Olho não sabe onde ir. |
 | 0-3 | Sem hierarquia. Tudo parece igual. Caos visual. |
 
-**Como verificar:** cubra os olhos, abra a pagina, espere 3 segundos. Onde seu olho foi primeiro? Era para la que devia ir?
+**Como verificar:** cubra os olhos, abra a página, espere 3 segundos. Onde seu olho foi primeiro? Era para la que devia ir?
 
 ---
 
-### DIMENSAO 2: Tipografia: /10
+### DIMENSÃO 2: Tipografia: /10
 
-| Nota | Criterio |
+| Nota | Critério |
 |------|----------|
-| 10 | Escala consistente (D/H1/H2/H3/body/small). Razao minima 1.25x entre niveis. Line-height 1.4-1.7 no body. Letter-spacing correto por peso. Zero fontes conflitantes. |
-| 8-9 | Escala quase perfeita. 1-2 valores ligeiramente fora mas sem impacto visual notavel. |
-| 6-7 | Hierarquia tipografica presente mas com inconsistencias (H2 muito proximo do H3, body muito pequeno ou grande). |
-| 4-5 | Fontes misturadas sem logica. Tamanhos aleatorios. Line-height sufocado. |
-| 0-3 | Tipografia completamente inconsistente. Parece montagem aleatoria. |
+| 10 | Escala consistente (D/H1/H2/H3/body/small). Razão mínima 1.25x entre níveis. Line-height 1.4-1.7 no body. Letter-spacing correto por peso. Zero fontes conflitantes. |
+| 8-9 | Escala quase perfeita. 1-2 valores ligeiramente fora mas sem impacto visual notável. |
+| 6-7 | Hierarquia tipográfica presente mas com inconsistências (H2 muito próximo do H3, body muito pequeno ou grande). |
+| 4-5 | Fontes misturadas sem lógica. Tamanhos aleatórios. Line-height sufocado. |
+| 0-3 | Tipografia completamente inconsistente. Parece montagem aleatória. |
 
-**Checklist rapido:**
+**Checklist rápido:**
 - [ ] H1 ≥ 48px desktop / ≥ 32px mobile
 - [ ] Body ≥ 16px (nunca 14px no body corrido)
 - [ ] Line-height body: 1.5-1.7
-- [ ] Max 2 familias tipograficas na pagina
-- [ ] Pesos usados: maximo 3 (regular, semibold, bold/black)
+- [ ] Max 2 famílias tipográficas na página
+- [ ] Pesos usados: máximo 3 (regular, semibold, bold/black)
 
 ---
 
-### DIMENSAO 3: Animacoes: /10
+### DIMENSÃO 3: Animações: /10
 
-| Nota | Criterio |
+| Nota | Critério |
 |------|----------|
-| 10 | 100% das secoes tem scroll reveal. Todos os elementos interativos tem hover state. Timing 0.3-0.6s. Easing suave (ease-out ou spring). Animacoes servem o conteudo: nao distraem. |
-| 8-9 | Animacoes em todas as secoes principais. 1-2 hover states faltando em elementos menores. |
-| 6-7 | Scroll reveal presente mas inconsistente. Alguns hovers faltando em botoes secundarios. |
-| 4-5 | Animacoes so no hero. Resto estatico. |
-| 0-3 | Pagina completamente estatica ou animacoes excessivas que distraem. |
+| 10 | 100% das seções tem scroll reveal. Todos os elementos interativos tem hover state. Timing 0.3-0.6s. Easing suave (ease-out ou spring). Animações servem o conteúdo: não distraem. |
+| 8-9 | Animações em todas as seções principais. 1-2 hover states faltando em elementos menores. |
+| 6-7 | Scroll reveal presente mas inconsistente. Alguns hovers faltando em botões secundários. |
+| 4-5 | Animações só no hero. Resto estático. |
+| 0-3 | Página completamente estática ou animações excessivas que distraem. |
 
 **Ver:** `references/animation-audit.md` para checklist detalhado.
 
 ---
 
-### DIMENSAO 4: Grid e Layout: /10
+### DIMENSÃO 4: Grid e Layout: /10
 
-| Nota | Criterio |
+| Nota | Critério |
 |------|----------|
-| 10 | ZERO formato carta no desktop. Hero split. Zigzag em beneficios. Backgrounds alternando a cada 3-4 secoes. Container 1200px. Texto nunca mais que 700px de largura. |
-| 8-9 | Layout rico na maioria. 1 secao poderia ser mais rica mas nao quebra a experiencia. |
-| 6-7 | Maioria side-by-side mas 2-3 secoes em coluna unica desnecessariamente. |
-| 4-5 | Metade da pagina em formato carta. Visual monotono. |
+| 10 | ZERO formato carta no desktop. Hero split. Zigzag em benefícios. Backgrounds alternando a cada 3-4 seções. Container 1200px. Texto nunca mais que 700px de largura. |
+| 8-9 | Layout rico na maioria. 1 seção poderia ser mais rica mas não quebra a experiência. |
+| 6-7 | Maioria side-by-side mas 2-3 seções em coluna única desnecessariamente. |
+| 4-5 | Metade da página em formato carta. Visual monótono. |
 | 0-3 | Formato carta completo. Parece documento Word. |
 
 ---
 
-### DIMENSAO 5: CTAs: /10
+### DIMENSÃO 5: CTAs: /10
 
-| Nota | Criterio |
+| Nota | Critério |
 |------|----------|
-| 10 | ≥8 CTAs distribuidos. Variedade de copy (nao identicos). Peso visual decrescente/crescente estrategico. CTA acima do fold. CTA final com maxima urgencia. Cores com contraste minimo 4.5:1. |
-| 8-9 | 6-8 CTAs. Copy variada. Pode ter 1-2 com copy igual mas em posicoes muito diferentes. |
-| 6-7 | 4-5 CTAs. Alguma repeticao de copy. Distribuicao irregular (muito no final, pouco no meio). |
-| 4-5 | 2-3 CTAs. Nao ha CTA acima do fold ou no meio da pagina. |
-| 0-3 | 1 CTA no final. Pagina inteira sem chamada para acao intermediaria. |
+| 10 | ≥8 CTAs distribuídos. Variedade de copy (não idênticos). Peso visual decrescente/crescente estratégico. CTA acima do fold. CTA final com máxima urgência. Cores com contraste mínimo 4.5:1. |
+| 8-9 | 6-8 CTAs. Copy variada. Pode ter 1-2 com copy igual mas em posições muito diferentes. |
+| 6-7 | 4-5 CTAs. Alguma repetição de copy. Distribuição irregular (muito no final, pouco no meio). |
+| 4-5 | 2-3 CTAs. Não há CTA acima do fold ou no meio da página. |
+| 0-3 | 1 CTA no final. Página inteira sem chamada para ação intermediária. |
 
-**Ver:** `references/cta-placement-map.md` para posicoes especificas.
+**Ver:** `references/cta-placement-map.md` para posições específicas.
 
 ---
 
-### DIMENSAO 6: Prova Social: /10
+### DIMENSÃO 6: Prova Social: /10
 
-| Nota | Criterio |
+| Nota | Critério |
 |------|----------|
-| 10 | Video testimonial OU foto+quote+resultado especifico. Diversidade de perfis. Distribuida na pagina (nao so numa secao). Numeros reais. Screenshots de mensagens. |
-| 8-9 | Fotos + quotes com resultados. Boa diversidade. 1-2 sem resultado especifico mas com nome/contexto real. |
-| 6-7 | Depoimentos presentes mas sem fotos ou so texto. Resultados vagos. |
-| 4-5 | Numeros sem contexto ou 1-2 depoimentos genericos. |
-| 0-3 | Sem prova social real. Ou so logos sem contexto. |
+| 10 | Vídeo testimonial OU foto+quote+resultado específico. Diversidade de perfis. Distribuída na página (não só numa seção). Números reais. Screenshots de mensagens. |
+| 8-9 | Fotos + quotes com resultados. Boa diversidade. 1-2 sem resultado específico mas com nome/contexto real. |
+| 6-7 | Depoimentos presentes mas sem fotos ou só texto. Resultados vagos. |
+| 4-5 | Números sem contexto ou 1-2 depoimentos genéricos. |
+| 0-3 | Sem prova social real. Ou só logos sem contexto. |
 
-**N/A: negocio que ainda NAO tem cliente.** Quando o briefing (Step 0.0) registrou a flag
-`sem prova social`, esta dimensao sai da conta em vez de reprovar a pagina: recalcular a media
-**sem** a dimensao 6 e declarar `Prova Social: N/A (sem cliente ainda)` no bloco de entrega.
+**N/A: negócio que ainda NÃO tem cliente.** Quando o briefing (Step 0.0) registrou a flag
+`sem prova social`, esta dimensão sai da conta em vez de reprovar a página: recalcular a média
+**sem** a dimensão 6 e declarar `Prova Social: N/A (sem cliente ainda)` no bloco de entrega.
 
-A troca nao e de graca. Pra usar o N/A a pagina TEM que trazer substitutos reais e
-verificaveis, e a wave confere um a um:
-- credencial, formacao ou registro profissional de quem atende
-- fotos do espaco, do equipamento ou do processo (reais, do negocio)
+A troca não é de graça. Pra usar o N/A a página TEM que trazer substitutos reais e
+verificáveis, e a wave confere um a um:
+- credencial, formação ou registro profissional de quem atende
+- fotos do espaço, do equipamento ou do processo (reais, do negócio)
 - garantia clara e escrita
-- condicao de inauguracao/primeira turma, quando existir de verdade
-- CNPJ e endereco no footer
+- condição de inauguracao/primeira turma, quando existir de verdade
+- CNPJ e endereço no footer
 
-Faltando os substitutos, a dimensao VOLTA a valer e pontua normalmente (provavelmente 0-3).
-**Inventar depoimento, numero de alunos ou resultado continua PROIBIDO:** e exatamente por
-isso que a excecao existe.
+Faltando os substitutos, a dimensão VOLTA a valer e pontua normalmente (provavelmente 0-3).
+**Inventar depoimento, número de alunos ou resultado continua PROIBIDO:** e exatamente por
+isso que a exceção existe.
 
 **Ver:** `references/social-proof-hierarchy.md` para hierarquia e placement.
 
 ---
 
-### DIMENSAO 7: Mobile: /10
+### DIMENSÃO 7: Mobile: /10
 
-| Nota | Criterio |
+| Nota | Critério |
 |------|----------|
-| 10 | CTA acima do fold no mobile (375px). H1 ≥32px. Touch targets ≥44px. Formulario funcional. Sem scroll horizontal. Hamburger funcional. LCP mobile <2.5s. |
-| 8-9 | Quase perfeito. 1-2 ajustes menores de spacing ou tamanho de fonte que nao prejudicam uso. |
-| 6-7 | Funcional mas nao otimizado. CTA talvez nao acima do fold. Alguns espacamentos apertados. |
-| 4-5 | Pagina "cabe" no mobile mas experiencia ruim. Texto pequeno, botoes dificeis de tocar. |
-| 0-3 | Pagina quebrada no mobile. Scroll horizontal. Layout colapsado. |
+| 10 | CTA acima do fold no mobile (375px). H1 ≥32px. Touch targets ≥44px. Formulário funcional. Sem scroll horizontal. Hamburger funcional. LCP mobile <2.5s. |
+| 8-9 | Quase perfeito. 1-2 ajustes menores de spacing ou tamanho de fonte que não prejudicam uso. |
+| 6-7 | Funcional mas não otimizado. CTA talvez não acima do fold. Alguns espaçamentos apertados. |
+| 4-5 | Página "cabe" no mobile mas experiência ruim. Texto pequeno, botões difíceis de tocar. |
+| 0-3 | Página quebrada no mobile. Scroll horizontal. Layout colapsado. |
 
 **Ver:** `references/mobile-checklist-detailed.md` para checklist completo.
 
 ---
 
-### DIMENSAO 8: Performance Visual: /10
+### DIMENSÃO 8: Performance Visual: /10
 
-| Nota | Criterio |
+| Nota | Critério |
 |------|----------|
-| 10 | Imagens WebP + lazy load. Videos com poster. Fontes com font-display: swap. Sem layout shift visivel. Animacoes so apos elemento estar visivel. LCP desktop <2.5s. |
-| 8-9 | Maioria otimizada. Pode ter 1-2 imagens JPG/PNG mas sem impacto perceptivel no LCP. |
-| 6-7 | Algumas imagens sem lazy load ou sem WebP. LCP aceitavel mas poderia melhorar. |
-| 4-5 | Imagens pesadas sem otimizacao. Videos sem poster. LCP lento. |
-| 0-3 | Pagina claramente lenta. Imagens bloqueando render. Sem otimizacao alguma. |
+| 10 | Imagens WebP + lazy load. Vídeos com pôster. Fontes com font-display: swap. Sem layout shift visível. Animações só após elemento estar visível. LCP desktop <2.5s. |
+| 8-9 | Maioria otimizada. Pode ter 1-2 imagens JPG/PNG mas sem impacto perceptível no LCP. |
+| 6-7 | Algumas imagens sem lazy load ou sem WebP. LCP aceitável mas poderia melhorar. |
+| 4-5 | Imagens pesadas sem otimização. Vídeos sem pôster. LCP lento. |
+| 0-3 | Página claramente lenta. Imagens bloqueando render. Sem otimização alguma. |
 
 ---
 
-### DIMENSAO 9: Sinais de Confianca: /10
+### DIMENSÃO 9: Sinais de Confiança: /10
 
-| Nota | Criterio |
+| Nota | Critério |
 |------|----------|
-| 10 | Badge de garantia visivel proximo ao preco. Logos de pagamento acima do CTA de checkout. Selos de seguranca se houver dados sensiveis. Midia/imprensa se disponivel. CNPJ/empresa no footer. |
-| 8-9 | Garantia presente e bem posicionada. Logos de pagamento presentes. 1-2 outros sinais faltando mas nao criticos. |
-| 6-7 | Garantia presente mas pouco visivel. Logos de pagamento no footer (longe do CTA). |
-| 4-5 | So texto de garantia, sem badge visual. Sem logos de pagamento. |
-| 0-3 | Sem sinais de confianca. Pagina parece sem seriedade. |
+| 10 | Badge de garantia visível próximo ao preço. Logos de pagamento acima do CTA de checkout. Selos de segurança se houver dados sensíveis. Midia/imprensa se disponível. CNPJ/empresa no footer. |
+| 8-9 | Garantia presente e bem posicionada. Logos de pagamento presentes. 1-2 outros sinais faltando mas não críticos. |
+| 6-7 | Garantia presente mas pouco visível. Logos de pagamento no footer (longe do CTA). |
+| 4-5 | Só texto de garantia, sem badge visual. Sem logos de pagamento. |
+| 0-3 | Sem sinais de confiança. Página parece sem seriedade. |
 
-**Ver:** `references/trust-signals-placement.md` para posicoes especificas.
+**Ver:** `references/trust-signals-placement.md` para posições específicas.
 
 ---
 
-### DIMENSAO 10: Fit Estrategico: /10
+### DIMENSÃO 10: Fit Estratégico: /10
 
 Avaliado pela auditoria do estrategista (ver `references/strategist-audit.md`).
 
-| Nota | Criterio |
+| Nota | Critério |
 |------|----------|
-| 10 | Message match perfeito com o trafego. Temperatura da pagina correta. Hook claro. Sequencia psicologica AIDA completa. Oferta bem ancorada. Urgencia real e crivel. |
-| 8-9 | Fit estrategico solido. 1-2 ajustes pontuais (hook poderia ser mais forte, urgencia pouco visivel). |
-| 6-7 | Pagina funcional mas sem diferencial estrategico. Message match parcial. Urgencia fraca. |
-| 4-5 | Pagina genérica. Poderia ser de qualquer produto/nicho. Sem identidade estrategica. |
-| 0-3 | Pagina completamente desconectada da estrategia de funil. Hero nao fala com o trafego. |
+| 10 | Message match perfeito com o tráfego. Temperatura da página correta. Hook claro. Sequência psicológica AIDA completa. Oferta bem ancorada. Urgência real e crível. |
+| 8-9 | Fit estratégico sólido. 1-2 ajustes pontuais (hook poderia ser mais forte, urgência pouco visível). |
+| 6-7 | Página funcional mas sem diferencial estratégico. Message match parcial. Urgência fraca. |
+| 4-5 | Página genérica. Poderia ser de qualquer produto/nicho. Sem identidade estratégica. |
+| 0-3 | Página completamente desconectada da estratégia de funil. Hero não fala com o tráfego. |
 
 ---
 
 ## Como Aplicar o Scoring
 
-### Passo 1: Pontuar cada dimensao
-Abrir a pagina no navegador. Para cada dimensao, atribuir nota de 0-10 com base nos criterios acima.
+### Passo 1: Pontuar cada dimensão
+Abrir a página no navegador. Para cada dimensão, atribuir nota de 0-10 com base nos critérios acima.
 
 ### Passo 2: Identificar bloqueios
 ```
-BLOQUEIO CRITICO (nota < 7): PAGINA NAO PODE SER ENTREGUE
-ALERTA (nota 7): Corrigir se possivel antes de entregar, registrar se nao for possivel
-APROVADO (nota ≥ 8): Dimensao passou
+BLOQUEIO CRÍTICO (nota < 7): PÁGINA NÃO PODE SER ENTREGUE
+ALERTA (nota 7): Corrigir se possível antes de entregar, registrar se não for possível
+APROVADO (nota ≥ 8): Dimensão passou
 ```
 
-### Passo 3: Calcular media
+### Passo 3: Calcular média
 ```
-Media = soma de todas as dimensoes / 10
-Media minima para entregar: 8.0
+Média = soma de todas as dimensões / 10
+Média mínima para entregar: 8.0
 ```
 
 ### Formato de Output do Scoring
@@ -186,24 +186,24 @@ Media minima para entregar: 8.0
 ```
 ## SCORECARD, [Nome do Projeto]
 
-| Dimensao              | Nota | Status |
+| Dimensão              | Nota | Status |
 |-----------------------|------|--------|
 | Hierarquia Visual     | X/10 | ✅/⚠️/🚫 |
 | Tipografia            | X/10 | ✅/⚠️/🚫 |
-| Animacoes             | X/10 | ✅/⚠️/🚫 |
+| Animações             | X/10 | ✅/⚠️/🚫 |
 | Grid & Layout         | X/10 | ✅/⚠️/🚫 |
 | CTAs                  | X/10 | ✅/⚠️/🚫 |
 | Prova Social          | X/10 | ✅/⚠️/🚫 |
 | Mobile                | X/10 | ✅/⚠️/🚫 |
 | Performance Visual    | X/10 | ✅/⚠️/🚫 |
-| Sinais de Confianca   | X/10 | ✅/⚠️/🚫 |
-| Fit Estrategico       | X/10 | ✅/⚠️/🚫 |
+| Sinais de Confiança   | X/10 | ✅/⚠️/🚫 |
+| Fit Estratégico       | X/10 | ✅/⚠️/🚫 |
 
-**MEDIA: X.X/10**
+**MÉDIA: X.X/10**
 
 VEREDICTO: [SHIP ✅ / AJUSTES MENORES ⚠️ / BLOQUEADO 🚫]
 
-Pendencias:
+Pendências:
 - [lista de itens a corrigir se houver]
 ```
 
@@ -211,8 +211,8 @@ Pendencias:
 
 ## Legenda de Status
 
-| Icone | Criterio |
+| Ícone | Critério |
 |-------|----------|
 | ✅ | Nota ≥ 8: aprovado |
-| ⚠️ | Nota 7: alerta, corrigir se possivel |
+| ⚠️ | Nota 7: alerta, corrigir se possível |
 | 🚫 | Nota < 7: BLOQUEIO, corrigir antes de entregar |
