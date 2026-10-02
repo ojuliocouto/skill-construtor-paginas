@@ -46,5 +46,25 @@ class Docs(unittest.TestCase):
         self.assertRegex(SKILL.read_text(encoding="utf-8")[:6000], r"<dir-da-skill>.{0,40}(pasta|diret)")
 
 
+    def test_t6_preferencias_genericas_existem_e_nao_citam_pessoa(self):
+        pref = RAIZ / "references" / "preferencias-de-design.md"
+        self.assertTrue(pref.exists(), "references/preferencias-de-design.md nao existe")
+        texto = pref.read_text(encoding="utf-8")
+        for nome in ("Júlio", "Julio", "Thales", "MaestrIA", "AutonomIA", "EA", "Operação Claude Code", "Laude"):
+            self.assertNotRegex(texto, rf"\b{re.escape(nome)}\b", nome)
+        for regra in ("kicker", "01/02/03", "número gigante", "inteira", "pricing", "lado a lado", "vermelho"):
+            self.assertIn(regra.lower(), texto.lower(), regra)
+
+    def test_t6_skill_e_scripts_falam_de_toda_pagina(self):
+        ruins = []
+        for p, t in textos("SKILL.md", "references/index.yaml", "scripts/*.py", "scripts/*.js", "scripts/*.mjs", "hooks/*.py"):
+            if p.name.startswith("test-"):
+                continue
+            for n, linha in enumerate(t.splitlines(), 1):
+                if re.search(r"J[uú]lio|MaestrIA|preferencias-dono-ea|\(ex: EA\)", linha):
+                    ruins.append(f"{p.name}:{n}: {linha.strip()[:70]}")
+        self.assertEqual(ruins, [])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

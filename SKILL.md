@@ -609,7 +609,7 @@ Carregar da pasta `references/` APENAS quando o caso pedir:
 
 | Arquivo | Quando carregar |
 |---------|-----------------|
-| `references/preferencias-dono-ea.md` | OBRIGATORIO em pagina do Julio/EA: gosto do dono medido em correcoes reais (sem kicker, sem numeracao em card, foto inteira em mockup com identidade, pricing limpa, botoes rolam pra pricing). Carregar ANTES do Step 2 |
+| `references/preferencias-de-design.md` | OBRIGATORIO em toda pagina: gosto medido em correcoes reais (sem kicker em caixa alta, sem numeracao 01/02/03 nem numero gigante em card, foto de pessoa inteira e em moldura com identidade, imagem que casa com a secao, pricing limpa, botoes rolam pra oferta, comparacao lado a lado e assimetrica, bom em cor viva e ruim sem vermelho parado). Carregar ANTES do Step 2 |
 | `references/mcp-workflow.md` | Workflow detalhado 21st.dev Magic + Google Stitch (prompts, exemplos, regras de uso) |
 | `references/github-assets-search.md` | Busca de templates no GitHub e assets visuais (comandos completos, presets, setup Pexels) |
 | `references/assets-sem-chave.md` | Assets SEM nenhuma API key: Openverse (foto real com licenca CC), undraw, picsum, e como creditar o autor corretamente |
@@ -739,7 +739,7 @@ O que a rota expressa NAO dispensa: **as seis respostas da rodada 1 do briefing 
 | Clonar e inventar identidade nova | Cliente quer a marca dele; paleta/logo inventados = retrabalho garantido | Ao CLONAR site real: manter identidade original. Extrair cores exatas via `getComputedStyle` no navegador, baixar o LOGO REAL do site (nunca recriar). Só reinventar se pedido explicito |
 | Foto de produto (fundo branco) sobre superficie escura/colorida | Vira "caixa branca" recortada = cara de IA na hora | Foto com fundo branco SÓ em card/superficie branca ou clara (encaixa invisivel). Em dark, precisa de remocao de fundo real, nunca colar por cima |
 | Tells visuais de IA (mono kicker, "01" gigante, blob glow, stats no hero, preco mono, ENTER na busca) | "Cara de vibecoding/template SaaS" | Rodar o checklist `anti-vibe-coding.md` secao "Tells VISUAIS de IA" ANTES de entregar. Referencia de bonito = concorrente do nicho, nao Dribbble |
-| Kicker uppercase abrindo secao, numeracao 01/02/03 decorativa em card, figcaption-pilula sobre foto | Dono real (Julio/EA) reprovou os tres como "cara de IA", com retrabalho na MaestrIA (31/08/2026) | Secao abre no titulo; card sem numero; foto sem pilula. Detalhe em `references/preferencias-dono-ea.md` |
+| Kicker uppercase abrindo secao, numeracao 01/02/03 ou numero gigante decorativo em card, figcaption-pilula sobre foto | Reprovados em correcao real como "cara de IA", com retrabalho de pagina inteira (31/08/2026 e 02/10/2026) | Secao abre no titulo; card sem numero; foto sem pilula. Vale pra toda pagina: `references/preferencias-de-design.md`; o `gate-sem-kicker.py` cobra os tres primeiros |
 | Foto/banner com crop que decapita a pessoa ou esconde a cena | "Ficou estranho pra caralho": o crop valia pelo arquivo, nao pela janela | Conferir TODO crop pela janela renderizada; preferir split com foto inteira a banner cortado |
 | Conectar 21st.dev / Stitch e nao usar | Burla a regra "PROIBIDO componente sem 21st" so registrando o MCP | Usar de fato: 21st builder/inspiration por componente; Stitch as vezes so devolve design system (tela trava): nesse caso documentar e usar os tokens |
 | Tratar e-commerce/varejo home como sales page | Copy lock, oferta, value stack, checkout, video por secao nao se aplicam a vitrine de loja | E-commerce home = identidade real + cards com estrelas/avaliacao + nav por categoria/genero + grid de marcas + cupom 1a compra + trust strip. Pular Steps de copy/oferta de high-ticket |
@@ -785,7 +785,7 @@ STEP 4 (VERIFICAR & SHIPAR) ─────────────────�
           ciclo 4.2f aprovado) + QA checklist 100% (Lighthouse 90+ quando houver navegador; sem ele,
           pendencia declarada) + consistencia de contato conferida digito por digito + diff de
           claims feito + IDENTIDADE DA PAGINA (4.2b, conferida pelo script) + PASSE DE GOSTO
-          rodado (4.2c) + **gate-sem-kicker.py passou** (pagina do Julio/EA nao leva supratitulo em caixa alta;
+          rodado (4.2c) + **gate-sem-kicker.py passou** (toda pagina sai sem kicker em caixa alta e sem numero decorativo;
           roda `python3 <dir-da-skill>/scripts/gate-sem-kicker.py <arquivo.html|dist/>`) + deploy funcionando
           (ou, na entrega SEM deploy, servidor local com o deploy declarado como pendencia) + PROVA DE ENTREGA 4.5
           (screenshots desktop/mobile LIDOS + interacao principal testada)?
@@ -801,7 +801,7 @@ STEP 4 (VERIFICAR & SHIPAR) ─────────────────�
 | Challenge / Desafio | React + Vite + Framer Motion + Magic UI + Tailwind | Precisa de energia visual, countdowns, efeitos |
 | Capture page simples (< 3 telas) | HTML + Tailwind compilado | Simples o suficiente, velocidade maxima |
 | Pagina institucional | React + Vite + Framer Motion + shadcn/ui | Profissionalismo visual obrigatorio |
-| Rota em projeto existente (ex: EA) | Mesmo framework do projeto (React/Vite) | Consistencia, reuso de componentes |
+| Rota em projeto existente (ex.: site que ja roda em React) | Mesmo framework do projeto (React/Vite) | Consistencia, reuso de componentes |
 
 **Se o projeto destino JA usa React, a nova pagina DEVE ser uma rota React, nao um HTML avulso.**
 

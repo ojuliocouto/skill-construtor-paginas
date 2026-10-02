@@ -16,3 +16,7 @@ _gate-frames/
 # Evidências de cliente ficam fora do repositório público.
 .etapas-verificadas.json
 evidencias/
+
+# Preferências com nome de pessoa, cliente e marca ficam locais. O que sobe pro aluno é o
+# genérico references/preferencias-de-design.md.
+references/preferencias-dono-ea.md
