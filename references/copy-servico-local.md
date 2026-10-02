@@ -4,8 +4,8 @@ Para estúdio (pilates, yoga), clínica, consultório, academia de bairro, salã
 UMA ação, agendar (aula experimental, avaliação, consulta), e nenhuma oferta empilhada.
 A `copy-pagina-vendas` não serve aqui (o modo Clássico é para venda acima de R$ 297 e o modo
 Desafio é para evento). Este modelo cabe numa página de 6 a 8 seções (template em
-`references/page-types.md`, tipo `servico-local`) e passa pelo checklist 1.5 e pelo COPY LOCK
-1.6 como qualquer copy.
+`references/page-types.md`, tipo `servico-local`) e passa pela conferência do fim deste arquivo
+antes da aprovação da copy (passo d do CRIAR).
 
 Regra de ouro: só entra na página o que veio do briefing (0.0) ou do cliente. Preço, número
 de alunos, anos de experiência, resultado, horário e depoimento são FATO: sem confirmação, não

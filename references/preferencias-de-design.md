@@ -1,4 +1,4 @@
-# Preferências de design: valem para TODA página (carregar ANTES do Step 2)
+# Preferências de design: valem para TODA página (carregar ANTES do plano visual)
 
 Regras de gosto medidas em correções reais, repetidas, de quem aprova as páginas desta skill.
 Cada item foi cobrança explícita depois de uma entrega. Elas valem para qualquer página, de

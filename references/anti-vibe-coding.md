@@ -1,13 +1,13 @@
 # Anti-Vibe-Coding: Checklist de Sinais de Construção Sem Qualidade
 
 Checklist final pra garantir que a página não tenha "cara de vibe-coding" (site bonito por fora,
-quebrado por dentro). Roda no GATE DE QUALIDADE, depois do AI Slop Test.
+quebrado por dentro). A lente design-critic dos auditores (`references/auditores.md`) usa esta lista.
 
 Base: dissecação frame a frame do reel de Patrick Minardi (@patrickwithprospectflo) "how to spot a
 vibe-coded website", analisando o que ele **aponta na tela** (SaaS "LaunchLand"), não só o que fala.
 
-Complementa, não substitui: `taste-gate.md` (gosto), `design-laws.md` (bans absolutos),
-`animation-audit.md` (animação). Aqui o foco é **funcionalidade e substância**, não estética.
+Complementa `references/preferencias-de-design.md` (gosto medido em correção real). Aqui o foco é
+**funcionalidade e substância**, e depois **aparência** (os tells V1 a V15).
 
 ---
 
@@ -16,7 +16,7 @@ Complementa, não substitui: `taste-gate.md` (gosto), `design-laws.md` (bans abs
 | # | Sinal | Como detectar | Correção |
 |---|-------|---------------|----------|
 | 1 | **Badge/selo decorativo** | Selo "● online", "● live feed", "X verified" pulsante no hero sem dado real por trás. Enfeite que a IA cospe por padrão. | Remover, OU plugar dado real (contador que atualiza de verdade, status que reflete um sistema). |
-| 2 | **Scroll-reveal em excesso** | TODO elemento entra com fade/slide ao rolar. Cada card, cada parágrafo animando. Cansa e atrasa. | Animar só o que tem hierarquia (hero, transição de seção). Resto entra estático. Ver `animation-audit.md`. |
+| 2 | **Scroll-reveal em excesso** | TODO elemento entra com fade/slide ao rolar. Cada card, cada parágrafo animando. Cansa e atrasa. | Animar só o que tem hierarquia (hero, transição de seção). Resto entra estático. |
 | 3 | **Footer sem páginas legais** | Rodapé vazio: sem Termos de Uso, sem Política de Privacidade, sem contato/identificação. (Tell clássico: tem "Privacy" no meio do texto mas rodapé pelado.) | Footer com links reais para Termos e Privacidade + contato (e-mail, CNPJ ou responsável). |
 | 4 | **CTA/checkout que não dispara** | Botão de compra/"comece agora"/"assine" que ao clicar não faz nada. Placeholder esquecido. | Plugar o destino real (checkout, link de pagamento, form) e **testar por clique**. |
 | 5 | **Casca animada sobre produto quebrado** | Hero com partículas/aurora/gradiente animado lindo, mas a página é só fachada (links mortos, seções vazias, funcionalidade ausente). | Substância antes de casca: garantir que a página funciona inteira ANTES de polir o visual. |
@@ -70,7 +70,7 @@ Usar julgamento: o teste e "um cliente bate o olho e diz cara de IA?", não um c
 
 Os 5 sinais acima são sobre **substância**. Esta lista é sobre **aparência**: padrões que fazem o
 cliente bater o olho e dizer "cara de IA / vibecoding / template". Validada num clone real (jun/2026),
-onde o cliente apontou cada um destes em prints. Rodar no GATE DE QUALIDADE, junto do AI Slop Test.
+onde o cliente apontou cada um destes em prints. A lente design-critic conta estes tells.
 
 | # | Tell visual | Por que delata | Correção |
 |---|-------------|----------------|----------|

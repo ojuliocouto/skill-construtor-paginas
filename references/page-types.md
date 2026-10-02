@@ -167,7 +167,7 @@ Nasceu do teste com aluno (02/10/2026): um estúdio de pilates com aula experime
 pelo WhatsApp não é capture curta nem sales page, e a skill não tinha o tipo.
 
 ```
-STACK DEFINIDA: HTML + Tailwind compilado (npx tailwindcss@3, ver Step 3.5), SEM React.
+STACK DEFINIDA: HTML + Tailwind compilado (npx tailwindcss@3, passo e do CRIAR), SEM React.
   Página curta, uma ação (agendar), sem oferta empilhada nem checkout: React + Vite só
   adiciona build e peso. Movimento em CSS (entrada do hero, reveal em 2 a 4 seções,
   hover no botão). Exceção: o projeto do cliente já roda em React, ai vira rota dele.
@@ -200,7 +200,7 @@ Regras específicas:
 O usuário mandou material para criar página?
 │
 ├── E um PDF/Doc com copy completa?
-│   ├── SIM → Step 0: Classificar tipo + extrair + avaliar
+│   ├── SIM → Briefing (passo a do CRIAR): classificar tipo + extrair + avaliar
 │   └── NÃO → Pedir material ou criar copy primeiro
 │
 ├── Qual o tipo?
