@@ -8,6 +8,8 @@ Version 3 depends on **three things, and only three**:
 2. **Adversarial auditors**: 9 independent lenses that hunt for defects, including one that compares the page against the references.
 3. **Research of real references**: 6 to 10 real pages, opened in a headless browser, screenshotted and read before any visual decision.
 
+Since v3.4, the CREATE path also has a mandatory **PLAN step** (`references/plano.md`): before any code, the student gets a single `PLANO.md` with the references to mark, 3 clearly different visual directions rendered as real first-fold PNGs, a menu of section formats with thumbnails, the copy with the briefing line behind each sentence, pixel and analytics setup, and the publishing plan, and approves it item by item.
+
 Everything else (21st.dev, Stitch, Higgsfield, image generators, brand kits, extra design skills, paid MCPs) is optional and never blocks anything.
 
 > The skill's operating text (`SKILL.md`, `references/`) is written in Brazilian Portuguese. This README is the English overview.
@@ -26,16 +28,17 @@ Everything else (21st.dev, Stitch, Higgsfield, image generators, brand kits, ext
 | IMPROVE (`MELHORAR`, includes visual variants) | `references/caminhos/melhorar.md` | the page exists and must get better without regressions |
 | EDIT (`EDITAR`) | `references/caminhos/editar.md` | one specific change, nothing else |
 
-- A **gated CREATE flow** in eight steps, each one blocking the next:
+- A **gated CREATE flow** in eight steps plus the PLAN, each one blocking the next:
 
 | Step | Output | Blocking gate |
 |---|---|---|
 | a. Briefing | what the business sells, to whom, the offer, price, the action, and the real material that exists (photos, logo, testimonials, contact). Anything missing becomes a client to-do, never an invention | `gate-etapas.py registrar 0` |
 | b. Reference research | 6 to 10 real pages (at least 2 from the same kind of business, 2 high-level design references), first fold and a mid-page section screenshotted, each one read on composition, typography, imagery and rhythm, plus the principle to borrow | `gate-referencias.py` (6 real, distinct, non-blank screenshots marked as read) |
+| b2. PLAN | `PLANO.md` approved by the student, in 7 sections: a. references (each with what it does well, the ones the student likes marked), b. 3 visual directions made with `frontend-design`, each changing type, palette, imagery and rhythm at once, rendered at 1440 and 390 by `previa-direcoes.mjs` into `plano/direcoes.png` side by side, c. section menu (`references/secoes/`: 18 formats across 8 goals, each with when to use, structure, pitfall and a minimal HTML example turned into a thumbnail) and the order the student picks, d. copy table (sentence -> briefing line), e. Meta Pixel, GA4 and 5 events (`references/rastreamento.md`, no real ID anywhere), f. stack, hosting, domain and what changes on the final domain, g. approval checkboxes | `gate-plano.py` (no building without every box checked) |
 | c. Visual plan | `plano-visual.md` written through the `frontend-design` skill: direction, 4 to 6 named hex colors, type scale, how imagery enters, section rhythm, signature element, and what changed in the self-review pass | `gate-etapas.py registrar 2` |
 | d. Copy | section copy using only facts from the briefing (short local-service model included) | `gate-etapas.py registrar 3` |
-| e. Build | HTML + compiled Tailwind by default (React only when the project truly needs it), hero first and checked against the plan, freely licensed images chosen by what the references taught, license recorded | `gate-etapas.py registrar 4` |
-| f. Mechanical gates | no uppercase kicker or decorative numbers, dead utility classes, 12 real viewports (including one-line buttons up to 768 px and a button within 2 screens on phones), occluded text, symmetry of parallel items and columns (`gate-simetria.mjs`), on-screen text (widows, lowercase starts, repeated colored italics: `gate-texto.mjs`), every promise backed by a briefing line (`gate-verdade.py`), a publish folder with nothing but the page, no internal code comments and site icons generated from the current identity (`montar-dist.py` + `gate-publicacao.py` + `gerar-icones.mjs`), composition (no repeated section skeleton, no wireframe-looking drawings, a timeline that ends at its last marker, a person in the first screen when the audience is people, accent strokes at 3:1: `gate-composicao.mjs`), motion seen on a real visit (nothing finishes animating before it enters the screen at 300 px/s, no smooth scroll under reduced motion: `gate-movimento.mjs`), page identity, tool usage, references | each exit code recorded in `wave.py gate` |
+| e. Build | in the order approved in the PLAN, with the tracking snippet when the PLAN asked for it; HTML + compiled Tailwind by default (React only when the project truly needs it), hero first and checked against the plan, freely licensed images chosen by what the references taught, license recorded | `gate-etapas.py registrar 4` |
+| f. Mechanical gates | no uppercase kicker or decorative numbers, dead utility classes, 12 real viewports (including one-line buttons up to 768 px and a button within 2 screens on phones), occluded text, symmetry of parallel items and columns (`gate-simetria.mjs`), on-screen text (widows, lowercase starts, repeated colored italics: `gate-texto.mjs`), every promise backed by a briefing line (`gate-verdade.py`), a publish folder with nothing but the page, no internal code comments and site icons generated from the current identity (`montar-dist.py` + `gate-publicacao.py` + `gerar-icones.mjs`), composition (no repeated section skeleton, no wireframe-looking drawings, a timeline that ends at its last marker, a person in the first screen when the audience is people, accent strokes at 3:1: `gate-composicao.mjs`), the pixel and the 5 events the PLAN asked for, bound by `data-evento` (`gate-rastreamento.py`), motion seen on a real visit (nothing finishes animating before it enters the screen at 300 px/s, no smooth scroll under reduced motion: `gate-movimento.mjs`), page identity, tool usage, references | each exit code recorded in `wave.py gate` |
 | g. Auditors | 9 lenses: `design-critic`, `assets-auditor`, `visual-auditor`, `motion-auditor`, `responsive-auditor`, `cro-auditor`, `a11y-auditor`, `content-auditor`, `comparacao-referencias`, run by an independent auditor subagent when the environment allows. The reference lens also answers, with `--gosto bonito|correto`, whether the page is beautiful or merely correct; "correct" sends it back to the visual plan. A self-review score never releases delivery | `wave.py checar` (every lens and gate ran) and `wave.py rodada` (the review cycle, which answers AUDITORIA INDEPENDENTE PENDENTE while any lens is `--origem autoavaliacao`) |
 | h. Proof | desktop 1440 and mobile 390 screenshots read by the agent, main interaction clicked, delivery block | `gate-etapas.py registrar 5` |
 
@@ -106,11 +109,14 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.3.0)
+SKILL.md                       router (v3.4.0)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
   pesquisa-de-referencias.md   how to find, capture, read and record references
+  plano.md                     the PLAN step, the PLANO.md template and what its gate checks
+  secoes/                      section format menu: one .md and one minimal .html per format
+  rastreamento.md              Meta Pixel and GA4 snippet (IDs as variables) and the 5 events
   auditores.md                 the 9 lenses, verdict schema, cycle rules, taste pass
   preferencias-de-design.md    taste rules measured on real corrections (generic)
   anti-vibe-coding.md          the V1 to V15 visual AI tells
@@ -145,6 +151,9 @@ python3 scripts/test-publicacao.py
 python3 scripts/test-gate-verdade.py
 python3 scripts/test-imagens.py
 python3 scripts/test-relatorio.py
+python3 scripts/test-gate-plano.py
+python3 scripts/test-secoes.py
+node scripts/test-previa-direcoes.cjs
 node scripts/test-capturar-referencias.cjs
 node scripts/test-gates-visuais.cjs
 node scripts/test-print-cabecalho.cjs
