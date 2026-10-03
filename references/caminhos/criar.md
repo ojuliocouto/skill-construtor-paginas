@@ -163,7 +163,9 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    caixa tem o próprio SVG animado; FAQ e fecho também têm movimento.
    **Texto:** `text-wrap: balance` em h1 e h2, `text-wrap: pretty` em parágrafo e pergunta.
    **Botão no celular:** rótulo que cabe numa linha em 320 px e, abaixo de 768 px, barra fixa
-   inferior depois do hero (ou botão repetido a cada 2 telas).
+   inferior depois do hero (ou botão repetido a cada 2 telas). A barra escondida leva
+   `visibility: hidden` além do `translate`: só deslocada, ela aparece no print de página
+   inteira logo abaixo da primeira tela, por cima da foto (medido na v4).
    **Peso:** fonte só nos pesos e estilos usados (itálico de 144 KiB para 3 palavras foi achado
    da v3); CSS em linha na publicação (`montar-dist.py --css-em-linha`).
 4. **Identidade da página** (bloqueia, com ou sem deploy): `<title>` próprio, meta description,
