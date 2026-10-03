@@ -28,7 +28,12 @@ Reprova (exit 1) se:
   4. promessa sustentada só por "interpretação";
   5. alguma frase da página casa um padrão de "Não afirmar";
   6. o briefing tem mais frases PENDENTE do que padrões em "Não afirmar" (cada pendência
-     precisa dizer o que a página não pode insinuar).
+     precisa dizer o que a página não pode insinuar);
+  7. (auditoria da v5, 03/10/2026) o briefing nomeia quem é o dono ou a profissional do
+     negócio (linha "Dono:", "Dona do negócio:", "Responsável:", "Profissional citada no
+     briefing:" ou "Fundadora:") e o nome só aparece no rodapé, ou em lugar nenhum: quem cuida
+     é argumento de venda de serviço e vai no corpo da página. A v5 citava a fisioterapeuta
+     Carla Mendes só no rodapé.
 
 Uso: python3 scripts/gate-verdade.py --projeto <dir> [--html index.html]
 """
@@ -144,6 +149,17 @@ def sentencas_do_briefing(texto):
     return out
 
 
+DONO = re.compile(r"(?im)^\s*[-*]?\s*(?:dono|dona|respons[aá]vel|profissional|fundador|fundadora|propriet[aá]ri[ao])"
+                  r"[^:\n]{0,40}:\s*([A-ZÀ-Ý][\wÀ-ÿ']+(?:\s+(?:d[aeo]s?\s+)?[A-ZÀ-Ý][\wÀ-ÿ']+)+)")
+
+
+def texto_do_corpo(pagina):
+    """Texto visível fora do <head>, do <footer> e do que não é texto (script, style, svg)."""
+    t = re.sub(r"(?is)<(head|footer|script|style|svg|noscript|template)\b.*?</\1>", " ", pagina)
+    t = re.sub(r"(?is)<[^>]*\bhidden\b[^>]*>.*?</(section|div|p)>", " ", t)
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", t))
+
+
 def checar(projeto, html_nome="index.html"):
     r = Path(projeto)
     problemas = []
@@ -210,6 +226,14 @@ def checar(projeto, html_nome="index.html"):
         for origem, frase in [("texto", f) for f in visiveis] + metas:
             if rx.search(frase):
                 problemas.append(f"afirma o que está pendente (`{p}`) em {origem}: \"{frase}\"")
+
+    pagina = (r / html_nome).read_text(encoding="utf-8")
+    corpo_n = norm(texto_do_corpo(pagina))
+    for nome in dict.fromkeys(m.group(1).strip() for m in DONO.finditer(briefing)):
+        if norm(nome) not in corpo_n:
+            onde = "só no rodapé" if norm(nome) in norm(re.sub(r"<[^>]+>", " ", pagina)) else "em lugar nenhum da página"
+            problemas.append(f"o briefing nomeia {nome} e a página o cita {onde}: quem é o dono ou a profissional "
+                             "aparece no corpo, com o que o briefing permite dizer (sem inventar credencial)")
 
     pendentes = [s for s in sent_brief if "PENDENTE" in s.upper()]
     if len(padroes) < len(pendentes):

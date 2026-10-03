@@ -116,6 +116,31 @@ class Verdade(unittest.TestCase):
         code, out = self.montar(tabela="# vazio\n")
         self.assertEqual(code, 1)
 
+    # Auditoria da v5 (03/10/2026): o briefing diz que o estúdio é da fisioterapeuta Carla
+    # Mendes, e a página só citava o nome no rodapé ("Fisioterapeuta: Carla Mendes.").
+    def montar_dono(self, corpo):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        r = pathlib.Path(self.tmp.name)
+        (r / "evidencias").mkdir()
+        (r / "evidencias" / "briefing.md").write_text(BRIEFING + "\nProfissional citada no briefing: Carla Mendes, fisioterapeuta.\n", encoding="utf-8")
+        (r / "evidencias" / "sustentacao.md").write_text(TABELA_OK + NAO_AFIRMAR, encoding="utf-8")
+        (r / "index.html").write_text(html(corpo), encoding="utf-8")
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            code = gate.main(["--projeto", str(r)])
+        return code, saida.getvalue()
+
+    def test_dono_citado_so_no_rodape_reprova(self):
+        code, out = self.montar_dono(CORPO_OK + "<footer><p>Fisioterapeuta: Carla Mendes.</p></footer>")
+        self.assertEqual(code, 1, out)
+        self.assertIn("Carla Mendes", out)
+        self.assertIn("rodapé", out)
+
+    def test_dono_no_corpo_da_pagina_passa(self):
+        code, out = self.montar_dono(CORPO_OK + "<section><p>O Studio é da fisioterapeuta Carla Mendes.</p></section><footer><p>Fisioterapeuta: Carla Mendes.</p></footer>")
+        self.assertEqual(code, 0, out)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
