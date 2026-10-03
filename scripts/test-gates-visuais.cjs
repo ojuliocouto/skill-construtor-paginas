@@ -53,7 +53,15 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/viuva') corpo = curta + '<h2 style="width:9ch;font:32px/1.2 monospace">aaaa bbbb c</h2>';
   if (rota === '/minuscula') corpo = curta.replace('Até 4 pessoas', 'até 4 pessoas');
   if (rota === '/italicos') corpo = curta + '<h2>Outro <em style="color:#24525A">título</em></h2><h2>Mais <em style="color:#24525A">um</em></h2>';
-  if (rota.startsWith('/dash')) corpo = '<h1>Painel 2026</h1><div class="kpi__value">' + (rota === '/dash-ok' ? 'R$ 150,00' : '&#8212;') + '</div>';
+  // gate-movimento (auditoria da v4): um setTimeout de 3 s revelava todas as seções com a página
+  // parada no topo; a visita que lê o topo por 8 s chegava em seções já reveladas e paradas.
+  const secoesMov = (extra, comMovimento = true) => '<style>.js .revela{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}.js .revela.visivel{opacity:1;transform:none}.alta{min-height:1000px}</style><script>document.documentElement.classList.add("js")</script>'
+    + texto + [1, 2, 3].map((i) => `<section class="alta"><h2 class="${comMovimento ? 'revela' : ''}">Seção ${i}</h2><p class="${comMovimento ? 'revela' : ''}">Texto da seção ${i} que entra ao rolar a página.</p></section>`).join('')
+    + '<script>var els=document.querySelectorAll(".revela");var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("visivel");io.unobserve(e.target)}})});els.forEach(function(e){io.observe(e)});' + extra + '</script>';
+  if (rota === '/movimento-ok') corpo = secoesMov('');
+  if (rota === '/movimento-temporizador') corpo = secoesMov('setTimeout(function(){els.forEach(function(e){e.classList.add("visivel")})},3000);');
+  if (rota === '/movimento-parado') corpo = secoesMov('', false);
+  if (rota.startsWith('/dash')) corpo ='<h1>Painel 2026</h1><div class="kpi__value">' + (rota === '/dash-ok' ? 'R$ 150,00' : '&#8212;') + '</div>';
   res.writeHead(rota === '/erro' ? 500 : 200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end('<!doctype html><html lang="pt-BR"><head><meta name="viewport" content="width=device-width,initial-scale=1">' + (rota === '/sem-identidade' ? '' : head) + style + '</head><body>' + corpo + '</body></html>');
 });
@@ -106,7 +114,10 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['texto-viuva', 'gate-texto.mjs', ['--url', url + '/viuva'], 1, /vi[uú]va/],
     ['texto-minuscula', 'gate-texto.mjs', ['--url', url + '/minuscula'], 1, /min[uú]scula: <dd> "at[eé] 4/],
     ['texto-italicos', 'gate-texto.mjs', ['--url', url + '/italicos'], 1, /it[aá]lico colorido/],
-    ['identidade-360', 'screenshot-prova.js', [url + '/ok', path.join(pasta, 'identidade-360'), '--com-360'], 0, /topo +mobile360: scrollY 0/],
+    ['movimento-positivo', 'gate-movimento.mjs', ['--url', url + '/movimento-ok'], 0],
+    ['movimento-temporizador', 'gate-movimento.mjs', ['--url', url + '/movimento-temporizador'], 1, /fora da tela/],
+    ['movimento-parado', 'gate-movimento.mjs', ['--url', url + '/movimento-parado'], 1, /animam ao chegar/],
+    ['identidade-360','screenshot-prova.js', [url + '/ok', path.join(pasta, 'identidade-360'), '--com-360'], 0, /topo +mobile360: scrollY 0/],
     ['video-ausente', 'gate-video.mjs', ['--url', url + '/ok', '--publico', pasta, '--frames', path.join(pasta, 'frames-ausente')], 0],
     ['video-positivo', 'gate-video.mjs', ['--url', url + '/video-ok', '--publico', pasta, '--frames', path.join(pasta, 'frames-positivo')], 0],
     ['video-negativo', 'gate-video.mjs', ['--url', url + '/video', '--publico', pasta, '--frames', path.join(pasta, 'frames-negativo')], 1],

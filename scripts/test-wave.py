@@ -137,6 +137,10 @@ class Ciclo(unittest.TestCase):
         for g in ("simetria", "texto", "verdade", "publicacao"):
             self.assertIn(g, wave.GATES, g)
 
+    def test_gates_novos_da_auditoria_da_v4(self):
+        for g in ("movimento",):
+            self.assertIn(g, wave.GATES, g)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

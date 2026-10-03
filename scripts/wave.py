@@ -75,6 +75,9 @@ GATES = {
     "texto": "gate-texto.mjs (viuva em h1 e h2, item em minuscula, italico colorido repetido)",
     "verdade": "gate-verdade.py (toda promessa com linha do briefing, inclusive nas metas)",
     "publicacao": "gate-publicacao.py (dist/ so com o que a pagina usa)",
+    # Auditoria da v4 (02/10/2026, nota 6,5): defeitos que so aparecem na visita real ou fora
+    # das telas e dos elementos que os gates mediam.
+    "movimento": "gate-movimento.mjs (visita de 8 s parada no topo: nada anima fora da tela)",
 }
 
 # Quem auditou. Nota de autoavaliacao (quem construiu olhando o proprio trabalho) NAO libera

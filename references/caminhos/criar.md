@@ -159,7 +159,10 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    ilustrativa" fica colada na foto que ela descreve, dentro do mesmo card.
 3. **Movimento em CSS:** entrada do hero, 2 a 4 revelações nas seções-chave (no máximo uma por
    seção), hover e microinteração no botão, `prefers-reduced-motion` respeitado. Conteúdo
-   nunca depende de animação para aparecer. Grade de itens paralelos entra escalonada e cada
+   nunca depende de animação para aparecer. **Revele só o que entra na tela:** nada de
+   `setTimeout` que marca tudo como visível (na v4, 3 s depois da carga as 6 seções já estavam
+   reveladas com a página parada no topo, e a visita chegava em tudo parado); o
+   `gate-movimento.mjs` simula a visita e reprova. Grade de itens paralelos entra escalonada e cada
    caixa tem o próprio SVG animado; FAQ e fecho também têm movimento.
    **Texto:** `text-wrap: balance` em h1 e h2, `text-wrap: pretty` em parágrafo e pergunta.
    **Botão no celular:** rótulo que cabe numa linha em 320 px e, abaixo de 768 px, barra fixa
@@ -192,6 +195,7 @@ Rode cada gate e registre o exit REAL na wave:
 `node <dir-da-skill>/scripts/gate-oclusao.mjs --url http://localhost:8765/` (texto coberto ou cortado)
 `node <dir-da-skill>/scripts/gate-simetria.mjs --url http://localhost:8765/` (itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas)
 `node <dir-da-skill>/scripts/gate-texto.mjs --url http://localhost:8765/` (viúva em h1 e h2, item em minúscula, itálico colorido repetido)
+`node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, e pelo menos 2 seções animam ao chegar)
 `python3 <dir-da-skill>/scripts/gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas)
 `python3 <dir-da-skill>/scripts/montar-dist.py --projeto <dir> --css-em-linha` e `python3 <dir-da-skill>/scripts/gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar)
 `node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/prova --click "<seletor do botão>"` (identidade, scrollY 0, clique)
@@ -199,7 +203,7 @@ Rode cada gate e registre o exit REAL na wave:
 `python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> checar --caminho criar`
 `python3 <dir-da-skill>/scripts/gate-referencias.py --projeto <dir>`
 `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> gate <nome> --exit <0|1> --detalhe "<o que o gate imprimiu>"`
-(nomes: `sem-kicker`, `classes-mortas`, `responsivo`, `oclusao`, `identidade`, `uso-ferramentas`, `referencias`, `simetria`, `texto`, `verdade`, `publicacao`)
+(nomes: `sem-kicker`, `classes-mortas`, `responsivo`, `oclusao`, `identidade`, `uso-ferramentas`, `referencias`, `simetria`, `texto`, `verdade`, `publicacao`, `movimento`)
 
 O `gate-responsivo.mjs` também reprova botão em mais de uma linha até 768 px e trecho de mais de
 2 telas sem botão no celular. Rode os gates de tela contra a `dist/` servida (é o que vai para o ar).
