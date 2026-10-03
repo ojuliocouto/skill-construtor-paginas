@@ -14,13 +14,27 @@ Reprova (exit 1) se a pasta:
     package.json, _input.css) ou arquivo começando com "_" (exceto _headers, _redirects e
     _routes.json, que a hospedagem lê);
   - tem QUALQUER arquivo que a página não referencia (é assim que print de terceiro, foto de
-    origem e folha de contato aparecem, com qualquer nome).
+    origem e folha de contato aparecem, com qualquer nome);
+  - (auditoria da v5, 03/10/2026) tem comentário interno no HTML publicado: <!-- -->, // ou
+    /* */ dentro de <script> e /* */ dentro de <style>. Só o aviso de licença /*! ... */ passa.
+    A v5 publicou "na v4, um setTimeout de 3 s..." e o nome do gate num comentário do script;
+  - (auditoria da v5) com plano-visual.md ao lado da dist/, favicon e ícone de tela inicial que
+    não saíram do SVG da identidade atual: o plano declara "Ícone do site: <motivo>", o
+    `icones/icone.svg` tem o mesmo data-motivo, a página desenha esse motivo (algum
+    data-desenho o cita) e o `icones/icones.json` gravado por scripts/gerar-icones.mjs tem o
+    sha256 do SVG atual e dos PNG publicados. A v5 publicou o prumo da v3 (md5 igual) numa
+    página que já desenhava a coluna vertebral.
 
 Uso: python3 scripts/gate-publicacao.py --dist <dir-do-projeto>/dist
 """
 import argparse
+import hashlib
+import html as html_mod
 import importlib.util
+import json
+import re
 import sys
+import unicodedata
 from pathlib import Path
 
 PASTAS_DE_TRABALHO = {"referencias", "evidencias", "prova", "prova-hero", "gates", "relatorios",
@@ -35,6 +49,67 @@ def coletor():
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     return m
+
+
+def _norm(t):
+    t = unicodedata.normalize("NFKD", str(t or "").lower())
+    return " ".join("".join(c for c in t if not unicodedata.combining(c)).split())
+
+
+def comentarios_internos(pagina):
+    """Comentários que vão para o ar no HTML: <!-- -->, e // ou /* */ em <script> e <style>."""
+    achados = []
+    for m in re.finditer(r"<!--(.*?)-->", pagina, re.S):
+        achados.append(("HTML", m.group(1)))
+    for tag, miolo in re.findall(r"(?is)<(script|style)\b[^>]*>(.*?)</\1>", pagina):
+        for m in re.finditer(r"/\*(?!!)(.*?)\*/", miolo, re.S):
+            achados.append((tag, m.group(1)))
+        if tag.lower() == "script":
+            sem_textos = re.sub(r"(['\"`])(?:\\.|(?!\1).)*\1", "''", miolo)
+            for m in re.finditer(r"(?m)(?:^|[\s;{}()])//(.*)$", sem_textos):
+                achados.append(("script", m.group(1)))
+    return [f"comentário interno no {onde} publicado: \"{' '.join(t.split())[:90]}\" (página pública não expõe a casa; tire do arquivo que vai para o ar)"
+            for onde, t in achados if t.strip()]
+
+
+def icones_coerentes(dist, pagina):
+    """Favicon e ícone de tela inicial gerados do SVG da identidade atual (só com plano ao lado)."""
+    projeto = dist.parent
+    plano = projeto / "plano-visual.md"
+    if not plano.is_file():
+        return []
+    m = re.search(r"(?im)^\W*[ií]cone do site\W*:\s*(.+)$", plano.read_text(encoding="utf-8"))
+    if not m:
+        return ["plano-visual.md não declara \"Ícone do site: <motivo>\": o favicon é a identidade em 32 px e precisa ser decidido no plano"]
+    motivo = m.group(1).strip().strip("*`. ")
+    problemas = []
+    svg = projeto / "icones" / "icone.svg"
+    reg_arq = projeto / "icones" / "icones.json"
+    if not svg.is_file() or not reg_arq.is_file():
+        return [f"favicon sem origem na identidade atual: falta icones/icone.svg ou icones/icones.json; desenhe o motivo \"{motivo}\" em icones/icone.svg e gere os PNG com scripts/gerar-icones.mjs"]
+    try:
+        reg = json.loads(reg_arq.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return ["icones/icones.json ilegível: gere de novo com scripts/gerar-icones.mjs"]
+    mm = re.search(r'data-motivo="([^"]+)"', svg.read_text(encoding="utf-8"))
+    if not mm or _norm(mm.group(1)) != _norm(motivo):
+        problemas.append(f"icones/icone.svg sem data-motivo=\"{motivo}\" (o motivo que o plano declara)")
+    if _norm(reg.get("motivo")) != _norm(motivo):
+        problemas.append(f"icones/icones.json gerado para \"{reg.get('motivo')}\", o plano declara \"{motivo}\": gere de novo")
+    if reg.get("svg_sha256") != hashlib.sha256(svg.read_bytes()).hexdigest():
+        problemas.append("icones/icone.svg mudou depois de gerar os PNG: rode scripts/gerar-icones.mjs de novo")
+    desenhos = " | ".join(_norm(html_mod.unescape(d)) for d in re.findall(r'data-desenho="([^"]+)"', pagina))
+    if _norm(motivo) not in desenhos:
+        problemas.append(f"o ícone do site desenha \"{motivo}\", que a página não desenha em nenhum data-desenho: o favicon tem de ser a identidade atual, não a de uma versão anterior")
+    for nome, sha in (reg.get("arquivos") or {}).items():
+        alvo = dist / nome
+        if alvo.is_file() and hashlib.sha256(alvo.read_bytes()).hexdigest() != sha:
+            problemas.append(f"{nome} publicado não é o que scripts/gerar-icones.mjs gerou do icone.svg atual (cópia de outra versão?)")
+    for ref in re.findall(r'<link[^>]+rel="(?:icon|apple-touch-icon)"[^>]*href="([^"]+)"', pagina):
+        nome = ref.split("?")[0].lstrip("/")
+        if nome not in (reg.get("arquivos") or {}):
+            problemas.append(f"{nome} referenciado na página sem registro em icones/icones.json")
+    return problemas
 
 
 def checar(dist):
@@ -73,6 +148,9 @@ def checar(dist):
             motivo = "a página não usa este arquivo (print, origem, folha de contato ou sobra)"
         if motivo:
             problemas.append(f"{rel}: {motivo}")
+    pagina = (dist / "index.html").read_text(encoding="utf-8")
+    problemas += comentarios_internos(pagina)
+    problemas += icones_coerentes(dist, pagina)
     return problemas
 
 

@@ -117,5 +117,101 @@ class Publicacao(unittest.TestCase):
         self.assertEqual(code, 0, out)
 
 
+class ComentarioInterno(unittest.TestCase):
+    """Auditoria da v5 (03/10/2026): o HTML publicado levava "na v4, um setTimeout de 3 s..." e
+    "gate-movimento.mjs" num comentário do script. Página pública não expõe a casa."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.proj = projeto(self.tmp.name)
+
+    def montar_com(self, html):
+        (self.proj / "index.html").write_text(html, encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()):
+            montar.main(["--projeto", str(self.proj)])
+        return rodar_gate(self.proj / "dist")
+
+    def test_comentario_html_reprova(self):
+        code, out = self.montar_com(HTML.replace("<body>", "<body><!-- versão do aluno, revisar com a cliente -->"))
+        self.assertEqual(code, 1, out)
+        self.assertIn("comentário interno", out)
+
+    def test_comentario_no_script_reprova(self):
+        code, out = self.montar_com(HTML.replace("</body>", "<script>\n  // na v4, um setTimeout de 3 s revelava tudo (gate-movimento.mjs)\n  var a = 1;\n</script></body>"))
+        self.assertEqual(code, 1, out)
+        self.assertIn("gate-movimento.mjs", out)
+
+    def test_aviso_de_licenca_do_css_e_url_no_script_passam(self):
+        code, out = self.montar_com(HTML.replace("</head>", "<style>/*! tailwindcss v3 | MIT License */body{margin:0}</style></head>")
+                                     .replace("</body>", "<script>var u = 'https://wa.me/?text=oi';</script></body>"))
+        self.assertEqual(code, 0, out)
+
+
+class IconesDoSite(unittest.TestCase):
+    """Auditoria da v5: favicon e ícone de tela inicial eram os arquivos da v3 (md5 igual), com o
+    prumo sobre grade que a página tinha abandonado. Com plano-visual.md ao lado da dist/, o
+    ícone precisa sair do SVG da identidade atual, gerado por scripts/gerar-icones.mjs."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.proj = projeto(self.tmp.name)
+        html = HTML.replace("<body>", '<body><svg data-desenho="coluna vertebral em curva natural"><path d="M1 1"/></svg>')
+        html = html.replace("</head>", '<link rel="apple-touch-icon" href="apple-touch-icon.png"></head>')
+        (self.proj / "index.html").write_text(html, encoding="utf-8")
+        (self.proj / "apple-touch-icon.png").write_bytes(b"apple-novo")
+        (self.proj / "favicon.png").write_bytes(b"favicon-novo")
+        (self.proj / "plano-visual.md").write_text("# Plano\n\nÍcone do site: coluna vertebral\n", encoding="utf-8")
+        (self.proj / "icones").mkdir()
+        (self.proj / "icones" / "icone.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg" data-motivo="coluna vertebral"></svg>', encoding="utf-8")
+
+    def registrar(self, **troca):
+        import hashlib
+        import json
+        sha = lambda p: hashlib.sha256((self.proj / p).read_bytes()).hexdigest()
+        reg = {"motivo": "coluna vertebral", "svg_sha256": sha("icones/icone.svg"),
+               "arquivos": {"favicon.png": sha("favicon.png"), "apple-touch-icon.png": sha("apple-touch-icon.png")}}
+        reg.update(troca)
+        (self.proj / "icones" / "icones.json").write_text(json.dumps(reg), encoding="utf-8")
+
+    def gate(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            montar.main(["--projeto", str(self.proj)])
+        return rodar_gate(self.proj / "dist")
+
+    def test_positivo_icone_gerado_do_svg_da_identidade(self):
+        self.registrar()
+        code, out = self.gate()
+        self.assertEqual(code, 0, out)
+
+    def test_sem_registro_reprova(self):
+        code, out = self.gate()
+        self.assertEqual(code, 1, out)
+        self.assertIn("gerar-icones.mjs", out)
+
+    def test_favicon_copiado_de_outra_versao_reprova(self):
+        self.registrar()
+        (self.proj / "favicon.png").write_bytes(b"favicon-da-v3")
+        code, out = self.gate()
+        self.assertEqual(code, 1, out)
+        self.assertIn("favicon.png", out)
+
+    def test_motivo_que_a_pagina_nao_desenha_reprova(self):
+        (self.proj / "plano-visual.md").write_text("Ícone do site: prumo sobre grade\n", encoding="utf-8")
+        (self.proj / "icones" / "icone.svg").write_text('<svg data-motivo="prumo sobre grade"></svg>', encoding="utf-8")
+        self.registrar(motivo="prumo sobre grade")
+        code, out = self.gate()
+        self.assertEqual(code, 1, out)
+        self.assertIn("prumo sobre grade", out)
+
+    def test_svg_alterado_depois_de_gerar_reprova(self):
+        self.registrar()
+        (self.proj / "icones" / "icone.svg").write_text('<svg data-motivo="coluna vertebral"><path d="M2 2"/></svg>', encoding="utf-8")
+        code, out = self.gate()
+        self.assertEqual(code, 1, out)
+        self.assertIn("icone.svg", out)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
