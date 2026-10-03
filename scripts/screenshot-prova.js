@@ -6,7 +6,7 @@
 // quadrado, og:title, og:description, og:image) e sai com exit 1 se faltar item.
 // Uso:
 //   export NODE_PATH="$HOME/.npm-global/lib/node_modules"
-//   node screenshot-prova.js <url> <outdir> [--click "<seletor css>"] [--sem-identidade]
+//   node screenshot-prova.js <url> <outdir> [--click "<seletor css>"] [--sem-identidade] [--com-360]
 // Sai com exit 1 e mensagem clara em QUALQUER falha: sem screenshot nao ha entrega.
 // Nada de stack trace do node na cara de quem roda: TODA chamada de navegador
 // mora dentro do try, e o erro sai traduzido em uma linha acionável.
@@ -296,6 +296,9 @@ async function main() {
       { name: 'desktop', width: 1440, height: 900, movel: false, dpr: 1 },
       { name: 'mobile', width: 390, height: 844, movel: true, dpr: 2 },
     ];
+    // --com-360: o Android de 360 px é o celular mais comum do Brasil, e foi nele que o botão
+    // principal da v3 quebrou em duas linhas (auditoria de 02/10/2026). Mesmo print e mesmo clique.
+    if (args.includes('--com-360')) viewports.push({ name: 'mobile360', width: 360, height: 740, movel: true, dpr: 2 });
     for (const vp of viewports) {
       const page = await browser.newPage({
         viewport: { width: vp.width, height: vp.height },
