@@ -20,12 +20,27 @@
  *     (balão, calendário, check, boneco de palito, estrela, coração, lâmpada, foguete...) reprova;
  *     o mesmo desenho (mesmo traçado) em dois lugares reprova.
  *
+ *  3. (auditoria da v5, 03/10/2026) DESENHO QUE LÊ COMO WIREFRAME: SVG com data-desenho em que
+ *     80% ou mais dos traços são retas alinhadas e retângulos (as "plantas baixas" de "Duas
+ *     formas" e a "mesa" das situações). Desenhe a cena: pessoa, aparelho com volume, gesto.
+ *  4. (auditoria da v5) LINHA DO TEMPO QUE PASSA DO ÚLTIMO MARCO (mais de 16 px), em 1440 e
+ *     390: a da v5 seguia 311 px depois do 3o passo.
+ *  5. (auditoria da v5) PÚBLICO DE PESSOAS SEM NINGUÉM NA PRIMEIRA TELA: com --publico (ou
+ *     --projeto, que lê o público do briefing) falando de pessoas, a primeira tela em 1440 e em
+ *     390 mostra uma figura humana: foto com alt que diz quem aparece, ou SVG próprio com
+ *     data-figura="pessoa" de pelo menos 8 formas (um retângulo não é gente). A v5 tinha uma
+ *     sala vazia e 7 desenhos de objeto para "mulheres de 35 a 60 com dor nas costas".
+ *  6. (auditoria da v5) DESTAQUE ABAIXO DE 3:1: traço fino (até 3,5 px na tela) ou elemento
+ *     .acento / [data-acento] de um data-desenho com contraste menor que 3:1 contra o que está
+ *     embaixo dele. O amarelo que dava sentido aos desenhos estava a 2,07:1 no palco.
+ *
  * Exceções declaradas: `data-composicao-ok="motivo"` na seção e `data-icone-repetido-ok` no SVG.
  *
- * Uso: node scripts/gate-composicao.mjs --url <url>
+ * Uso: node scripts/gate-composicao.mjs --url <url> [--publico "<público do briefing>" | --projeto <dir>]
  */
 import { createRequire } from 'node:module';
 import { execSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
@@ -43,9 +58,81 @@ if (!URL_ALVO || URL_ALVO.startsWith('--')) {
   console.error('uso: node gate-composicao.mjs --url <url>');
   process.exit(2);
 }
+const valor = (nome) => { const i = args.indexOf(nome); return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : null; };
+let PUBLICO = valor('--publico');
+const PROJETO = valor('--projeto');
+if (!PUBLICO && PROJETO) {
+  try { PUBLICO = JSON.parse(fs.readFileSync(path.join(PROJETO, 'evidencias', 'etapa-0.json'), 'utf8')).briefing.publico; }
+  catch {
+    try { PUBLICO = (fs.readFileSync(path.join(PROJETO, 'evidencias', 'briefing.md'), 'utf8').match(/Para quem:\s*(.+)/i) || [])[1] || null; } catch { PUBLICO = null; }
+  }
+}
+const PESSOAS = /mulher|homem|homens|pessoa|m[aã]es|pais\b|crian[cç]a|alun[oa]|paciente|cliente|idos[oa]|jovens|adult|fam[ií]lia|gestante|atleta|estudante|profission|donos?\b|donas?\b|empreendedor|moradores|p[uú]blico feminino|p[uú]blico masculino/i;
 const MAXIMO_SEGUIDAS = 2;
 // Metáforas de biblioteca de ícone. O problema não é o ícone, é o genérico: desenhe o assunto.
 const GENERICOS = String.raw`bal[aã]o|chat|calend[aá]rio|agenda|check|sinal de visto|boneco|palito|estrela|cora[cç][aã]o|l[aâ]mpada|foguete|alvo|engrenagem|cadeado|escudo|trof[eé]u|medalha|sino|lupa|envelope|telefone|rel[oó]gio|raio|polegar|joinha|aperto de m[aã]o|gr[aá]fico subindo`;
+
+
+const AJUDA = () => {
+  const H = {};
+  H.visivel = (el) => {
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+    const c = el.getBoundingClientRect();
+    return c.width > 1 && c.height > 1;
+  };
+  H.fundoCss = (el) => {
+    for (let n = el; n; n = n.parentElement) {
+      const b = getComputedStyle(n).backgroundColor;
+      if (b && b !== 'rgba(0, 0, 0, 0)' && b !== 'transparent') return b;
+    }
+    return 'rgb(255, 255, 255)';
+  };
+  H.rgb = (c) => { const m = (c || '').match(/[\d.]+/g); return m ? m.slice(0, 4).map(Number) : null; };
+  H.mistura = (cima, alfa, baixo) => cima.slice(0, 3).map((v, i) => v * alfa + baixo[i] * (1 - alfa));
+  H.lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+  H.contraste = (a, b) => { const x = H.lum(a), y = H.lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  H.FORMAS = 'path, circle, rect, line, polyline, polygon, ellipse';
+  // Traço reto e alinhado aos eixos: rect, line/polyline/polygon/path só com H, V e L horizontal ou vertical.
+  H.alinhado = (n) => {
+    const t = n.tagName.toLowerCase();
+    if (t === 'rect') return true;
+    if (t === 'circle' || t === 'ellipse') return false;
+    const nums = (txt) => (txt.match(/-?\d*\.?\d+(?:e-?\d+)?/gi) || []).map(Number);
+    if (t === 'line') { const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map((a) => Number(n.getAttribute(a) || 0)); return x1 === x2 || y1 === y2; }
+    if (t === 'polyline' || t === 'polygon') {
+      const v = nums(n.getAttribute('points') || '');
+      for (let i = 2; i + 1 < v.length; i += 2) if (v[i] !== v[i - 2] && v[i + 1] !== v[i - 1]) return false;
+      return true;
+    }
+    const d = n.getAttribute('d') || '';
+    if (/[CcSsQqTtAa]/.test(d)) return false;
+    const re = /([MmLlHhVvZz])([^MmLlHhVvZz]*)/g; let m, x = 0, y = 0;
+    while ((m = re.exec(d))) {
+      const c = m[1], v = nums(m[2]);
+      if (c === 'H') x = v[v.length - 1] ?? x; else if (c === 'h') x += v.reduce((a, b) => a + b, 0);
+      else if (c === 'V') y = v[v.length - 1] ?? y; else if (c === 'v') y += v.reduce((a, b) => a + b, 0);
+      else if (c === 'M' || c === 'L' || c === 'm' || c === 'l') {
+        for (let i = 0; i + 1 < v.length; i += 2) {
+          const rel = c === 'm' || c === 'l';
+          const nx = rel ? x + v[i] : v[i], ny = rel ? y + v[i + 1] : v[i + 1];
+          const desenha = c === 'L' || c === 'l' || i > 0;
+          if (desenha && nx !== x && ny !== y) return false;
+          x = nx; y = ny;
+        }
+      }
+    }
+    return true;
+  };
+  H.formasDe = (svg) => [...svg.querySelectorAll(H.FORMAS)].filter((f) => !f.closest('defs, clipPath, mask'));
+  H.wireframe = (svg) => {
+    const f = H.formasDe(svg);
+    if (f.length < 2) return null;
+    const retas = f.filter(H.alinhado).length;
+    return retas / f.length >= 0.8 ? { retas, total: f.length } : null;
+  };
+  return H;
+};
 
 const navegador = await chromium.launch();
 const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 } });
@@ -61,7 +148,9 @@ await page.waitForTimeout(1500);
 await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
 await page.waitForTimeout(200);
 
+await page.evaluate(`window.__H = (${AJUDA.toString()})()`);
 const r = await page.evaluate((genericos) => {
+  const H = window.__H;
   const visivel = (el) => {
     const cs = getComputedStyle(el);
     if (cs.display === 'none' || cs.visibility === 'hidden') return false;
@@ -144,8 +233,129 @@ const r = await page.evaluate((genericos) => {
     lista.push(d || onde); tracados.set(chave, lista);
   }
   const repetidos = [...tracados.values()].filter((l) => l.length > 1).map((l) => `${l.length}x: ${l.map((x) => `"${x}"`).join(', ')}`);
-  return { assinaturas, semDesenho, genericosAchados, repetidos, nSvgs: svgs.length };
+
+  // 3. Desenho que lê como wireframe. 6. Destaque abaixo de 3:1 contra o que está embaixo.
+  const wireframes = [], fracos = [];
+  let menorContraste = null;
+  for (const v of svgs) {
+    const d = (v.getAttribute('data-desenho') || (v.closest('[data-desenho]') || { getAttribute: () => '' }).getAttribute('data-desenho') || '').trim();
+    if (!d) continue;
+    const w = H.wireframe(v);
+    if (w) wireframes.push(`"${d}" lê como wireframe: ${w.retas} de ${w.total} traços são retas alinhadas e retângulos`);
+    const formas = H.formasDe(v);
+    const base = H.rgb(H.fundoCss(v));
+    const escala = (n) => { const m = n.getScreenCTM(); return m ? Math.hypot(m.a, m.b) : 1; };
+    for (let i = 0; i < formas.length; i++) {
+      const n = formas[i];
+      const cs = getComputedStyle(n);
+      const acento = n.matches('.acento, [data-acento]') || !!n.closest('.acento, [data-acento]');
+      const larg = parseFloat(cs.strokeWidth) * escala(n);
+      const temTraco = cs.stroke && cs.stroke !== 'none' && !cs.stroke.startsWith('url') && larg > 0;
+      let cor = null, alfa = 1;
+      if (temTraco && (larg <= 3.5 || acento)) { cor = H.rgb(cs.stroke); alfa = parseFloat(cs.strokeOpacity); }
+      else if (acento && cs.fill && cs.fill !== 'none' && !cs.fill.startsWith('url')) { cor = H.rgb(cs.fill); alfa = parseFloat(cs.fillOpacity); }
+      if (!cor) continue;
+      alfa *= (cor[3] !== undefined && cor.length === 4 ? cor[3] : 1);
+      for (let e = n; e && e !== v.parentElement; e = e.parentElement) alfa *= parseFloat(getComputedStyle(e).opacity);
+      if (alfa < 0.05) continue;
+      // Ponto do meio do traço, em coordenadas da tela.
+      let px, py;
+      try {
+        const L = n.getTotalLength();
+        const pt = n.getPointAtLength(L / 2);
+        const sp = new DOMPoint(pt.x, pt.y).matrixTransform(n.getScreenCTM());
+        px = sp.x; py = sp.y;
+      } catch { const c = n.getBoundingClientRect(); px = c.left + c.width / 2; py = c.top + c.height / 2; }
+      // O que está embaixo: a última forma preenchida ANTES desta que contém o ponto, senão o fundo CSS.
+      let baixo = base;
+      for (let j = i - 1; j >= 0; j--) {
+        const f = formas[j];
+        const fs = getComputedStyle(f);
+        if (!fs.fill || fs.fill === 'none' || fs.fill.startsWith('url') || parseFloat(fs.fillOpacity) === 0) continue;
+        try {
+          const loc = new DOMPoint(px, py).matrixTransform(f.getScreenCTM().inverse());
+          if (f.isPointInFill(loc)) { baixo = H.mistura(H.rgb(fs.fill), parseFloat(fs.fillOpacity), base); break; }
+        } catch { /* forma sem geometria */ }
+      }
+      const visto = H.mistura(cor, alfa, baixo);
+      const k = H.contraste(visto, baixo);
+      menorContraste = menorContraste === null ? k : Math.min(menorContraste, k);
+      if (k < 3) fracos.push(`${acento ? 'destaque' : 'traço fino'} ${cs.stroke !== 'none' && temTraco ? cs.stroke : cs.fill} a ${k.toFixed(2)}:1 contra o fundo em "${d}" (mínimo 3:1 para o que carrega informação)`);
+    }
+  }
+  return { assinaturas, semDesenho, genericosAchados, repetidos, nSvgs: svgs.length, wireframes, fracos: [...new Set(fracos)], menorContraste };
 }, GENERICOS);
+
+/** Linha do tempo e pessoa na primeira tela: medidas que valem em 1440 e em 390. */
+async function medirTela(pg, publico) {
+  return pg.evaluate(({ publico, PESSOAS_SRC }) => {
+    const H = window.__H;
+    const out = { linhas: [], pessoa: null, maiorPassagem: 0 };
+    // 4. Linha do tempo: o fio de um ol (::before ou ::after) contra o marco do último passo.
+    for (const ol of document.querySelectorAll('ol')) {
+      if (!H.visivel(ol) || getComputedStyle(ol).position === 'static') continue;
+      const lis = [...ol.children].filter(H.visivel);
+      const marcos = lis.map((li) => [...li.querySelectorAll('*')].find((m) => {
+        const c = m.getBoundingClientRect();
+        return H.visivel(m) && c.width >= 8 && c.width <= 48 && c.height >= 8 && c.height <= 48 && Math.abs(c.width - c.height) <= 4;
+      })).filter(Boolean);
+      if (marcos.length < 2) continue;
+      const or = ol.getBoundingClientRect();
+      const ocs = getComputedStyle(ol);
+      for (const pseudo of ['::before', '::after']) {
+        const ps = getComputedStyle(ol, pseudo);
+        if (ps.content === 'none' || ps.position !== 'absolute' || ps.display === 'none') continue;
+        const w = parseFloat(ps.width), h = parseFloat(ps.height);
+        if (!(w > 0 && h > 0) || Math.min(w, h) > 4 || Math.max(w, h) < 60) continue;
+        const x0 = or.left + parseFloat(ocs.borderLeftWidth) + (parseFloat(ps.left) || 0);
+        const y0 = or.top + parseFloat(ocs.borderTopWidth) + (parseFloat(ps.top) || 0);
+        const centros = marcos.map((m) => { const c = m.getBoundingClientRect(); return { x: c.left + c.width / 2, y: c.top + c.height / 2 }; });
+        const horizontal = w > h;
+        const fim = horizontal ? x0 + w : y0 + h;
+        const ultimo = horizontal ? Math.max(...centros.map((c) => c.x)) : Math.max(...centros.map((c) => c.y));
+        const passa = Math.round(fim - ultimo);
+        out.maiorPassagem = Math.max(out.maiorPassagem, passa);
+        if (passa > 16) out.linhas.push(`a linha do tempo passa do último marco em ${passa} px (${horizontal ? 'horizontal' : 'vertical'}, "${(lis[lis.length - 1].innerText || '').replace(/\s+/g, ' ').trim().slice(0, 30)}")`);
+      }
+    }
+    // 5. Pessoa na primeira tela (scrollY 0).
+    if (publico) {
+      const pessoas = new RegExp(PESSOAS_SRC, 'i');
+      const PALAVRAS = /mulher|homem|pessoa|alun[oa]|fisioterapeuta|instrutor|instrutora|professor|professora|crian[cç]a|idos[oa]|paciente|senhora|senhor|menin[oa]|m[eé]dic[oa]|atendente|dona|dono/i;
+      const vistoNaTela = (el) => { const c = el.getBoundingClientRect(); return Math.max(0, Math.min(c.bottom, window.innerHeight) - Math.max(c.top, 0)); };
+      const candidatos = [];
+      for (const img of document.querySelectorAll('img')) {
+        if (H.visivel(img) && PALAVRAS.test(img.alt || '') && Math.max(img.getBoundingClientRect().width, img.getBoundingClientRect().height) >= 120) candidatos.push({ el: img, nome: `foto "${(img.alt || '').slice(0, 40)}"` });
+      }
+      for (const svg of document.querySelectorAll('svg')) {
+        if (!H.visivel(svg)) continue;
+        const dono = svg.closest('[data-figura], [data-desenho]') || svg;
+        const fig = (dono.getAttribute('data-figura') || '') === 'pessoa' || PALAVRAS.test(dono.getAttribute('data-desenho') || '');
+        if (!fig) continue;
+        const c = svg.getBoundingClientRect();
+        if (Math.max(c.width, c.height) < 120 || H.formasDe(svg).length < 8 || H.wireframe(svg)) continue;
+        candidatos.push({ el: svg, nome: `desenho "${(dono.getAttribute('data-desenho') || 'pessoa').slice(0, 50)}"` });
+      }
+      const naTela = candidatos.map((c) => ({ ...c, px: Math.round(vistoNaTela(c.el)) })).filter((c) => c.px >= 100).sort((a, b) => b.px - a.px);
+      out.pessoa = { publicoDePessoas: pessoas.test(publico), naTela: naTela.slice(0, 2).map((c) => `${c.nome} (${c.px} px à vista)`), total: candidatos.length };
+    }
+    return out;
+  }, { publico, PESSOAS_SRC: PESSOAS.source });
+}
+const telasMedidas = [];
+await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+await page.waitForTimeout(300);
+telasMedidas.push(['desktop 1440', await medirTela(page, PUBLICO)]);
+{
+  const ctxM = await navegador.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const pm = await ctxM.newPage();
+  try { await pm.goto(URL_ALVO, { waitUntil: 'networkidle', timeout: 45000 }); }
+  catch { await pm.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
+  await pm.waitForTimeout(1500);
+  await pm.evaluate(`window.__H = (${AJUDA.toString()})()`);
+  telasMedidas.push(['celular 390', await medirTela(pm, PUBLICO)]);
+  await ctxM.close();
+}
 await navegador.close();
 
 const falhas = [];
@@ -163,7 +373,18 @@ for (let i = 1; i <= r.assinaturas.length; i++) {
 r.semDesenho.forEach((s) => falhas.push(`desenho sem data-desenho (declare o que ele desenha, ligado ao conteúdo): ${s}`));
 r.genericosAchados.forEach((s) => falhas.push(`ícone genérico de biblioteca: ${s}; desenhe o assunto da seção`));
 r.repetidos.forEach((s) => falhas.push(`desenho repetido com o mesmo traçado ${s}`));
-console.log(`Desenhos SVG medidos: ${r.nSvgs}`);
+r.wireframes.forEach((x) => falhas.push(`desenho ${x}: ninguém do público lê um retângulo; desenhe a cena (pessoa, aparelho com volume, gesto)`));
+r.fracos.forEach((x) => falhas.push(x));
+for (const [tela, m] of telasMedidas) {
+  m.linhas.forEach((x) => falhas.push(`${tela}: ${x}; termine a linha no centro do último marco`));
+  if (m.pessoa && m.pessoa.publicoDePessoas && !m.pessoa.naTela.length) {
+    falhas.push(`${tela}: nenhuma figura humana na primeira tela para um público de pessoas ("${PUBLICO}"): foto real com autorização ou ilustração própria com data-figura="pessoa" (${m.pessoa.total} figura(s) na página inteira)`);
+  }
+}
+console.log(`Desenhos SVG medidos: ${r.nSvgs}; menor contraste de traço fino ou destaque: ${r.menorContraste === null ? 'nenhum medido' : r.menorContraste.toFixed(2) + ':1'}`);
+for (const [tela, m] of telasMedidas) {
+  console.log(`${tela}: linha do tempo passa do último marco em até ${m.maiorPassagem} px; pessoa na primeira tela: ${m.pessoa ? (m.pessoa.naTela.join('; ') || 'nenhuma') : 'não conferido (sem --publico nem --projeto)'}`);
+}
 console.log('='.repeat(88));
 if (falhas.length) {
   falhas.forEach((f) => console.log('  FALHA: ' + f));

@@ -222,7 +222,7 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['movimento-por-grupo', 'gate-movimento.mjs', ['--url', url + '/movimento-grupo', '--espera', '1000'], 1, /chega(m)? parad[oa]s? .*300 px\/s/],
     ['movimento-rolagem-suave', 'gate-movimento.mjs', ['--url', url + '/rolagem-suave', '--espera', '1000'], 1, /movimento reduzido/],
     ['movimento-rolagem-suave-ok', 'gate-movimento.mjs', ['--url', url + '/rolagem-suave-ok', '--espera', '1000'], 0],
-    ['composicao-wireframe', 'gate-composicao.mjs', ['--url', url + '/desenho-wireframe'], 1, /wireframe/],
+    ['composicao-wireframe', 'gate-composicao.mjs', ['--url', url + '/desenho-wireframe'], 1, /l[eê] como wireframe/],
     ['composicao-linha-tempo-passa', 'gate-composicao.mjs', ['--url', url + '/linha-tempo-passa'], 1, /passa do [uú]ltimo marco/],
     ['composicao-linha-tempo-ok', 'gate-composicao.mjs', ['--url', url + '/linha-tempo-ok'], 0],
     ['composicao-sem-pessoa', 'gate-composicao.mjs', ['--url', url + '/sem-pessoa', '--publico', 'mulheres de 35 a 60 anos com dor nas costas'], 1, /nenhuma figura humana/],
