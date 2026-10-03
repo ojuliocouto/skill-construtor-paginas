@@ -100,6 +100,41 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/movimento-ok') corpo = secoesMov('');
   if (rota === '/movimento-temporizador') corpo = secoesMov('setTimeout(function(){els.forEach(function(e){e.classList.add("visivel")})},3000);');
   if (rota === '/movimento-parado') corpo = secoesMov('', false);
+  // ===== Auditoria da v5 (03/10/2026, nota 7,0: "correta, mas vazia") =====
+  // gate-texto: o texto das situações era Newsreader de 22 px (a fonte do título) e ficava com
+  // "depois." sozinho em 768; e o 1o passo, "experimental." sozinho em 360 e 320.
+  const serifa = '<style>h1,.serifa{font-family:Georgia,serif}</style>';
+  if (rota === '/viuva-paragrafo-serifa') corpo = serifa + curta + '<p class="serifa" style="width:11ch;font-size:22px;line-height:1.3">Aaaa bbbb cccc d</p>';
+  const cardTexto = (t) => `<li style="background:#eee;padding:12px"><p style="font:18px/1.4 monospace;width:10ch">${t}</p></li>`;
+  if (rota === '/viuva-paragrafo-card') corpo = curta + '<ul style="list-style:none;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:16px">' + cardTexto('Aaaa bbbb c') + cardTexto('Aaaa bbbb') + cardTexto('Aaaa bbbb') + '</ul>';
+  if (rota === '/paragrafo-corrido-ok') corpo = curta + '<p style="width:11ch">Aaaa bbbb cccc d</p>';
+  // gate-simetria: 3 caixas iguais com o texto em 5, 3 e 4 linhas (768) passavam; e os passos
+  // viraram linha do tempo sem caixa, contra a regra 15 (passos também em caixas).
+  const cardLinhas = (n) => `<li style="background:#eee;padding:12px"><p style="font:18px/1.4 monospace;width:10ch">${'Aaaa bbbb '.repeat(n).trim()}</p></li>`;
+  if (rota === '/grade-linhas-diferentes') corpo = texto + '<section><h2>Situações</h2><ul style="list-style:none;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:16px">' + cardLinhas(5) + cardLinhas(2) + cardLinhas(4) + '</ul></section>';
+  const passo = (t, caixa) => `<li style="${caixa ? 'background:#eee;padding:16px;' : ''}"><h3>${t}</h3><p>Descrição curta do passo.</p></li>`;
+  if (rota === '/passos-sem-caixa') corpo = texto + '<section><h2>Como marcar</h2><ol style="list-style:none;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:24px">' + passo('Chame', false) + passo('Combine', false) + passo('Faça', false) + '</ol></section>';
+  if (rota === '/passos-em-caixas') corpo = texto + '<section><h2>Como marcar</h2><ol style="list-style:none;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:24px">' + passo('Chame', true) + passo('Combine', true) + passo('Faça', true) + '</ol></section>';
+  // gate-movimento: revelação por GRUPO; a 300 px/s no celular, a 3a caixa chegava parada.
+  if (rota === '/movimento-grupo') corpo = '<style>.js .grupo>*{opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s}.js .grupo.visivel>*{opacity:1;transform:none}.js .grupo.visivel>*:nth-child(2){transition-delay:.1s}.js .grupo.visivel>*:nth-child(3){transition-delay:.2s}.js .grupo.visivel>*:nth-child(4){transition-delay:.3s}.alta{min-height:1000px}.item{height:420px;background:#eee;margin:16px 0}</style><script>document.documentElement.classList.add("js")</script>'
+    + texto + '<section class="alta"><h2>Antes</h2></section><section><h2>Grupo</h2><div class="grupo"><div class="item">Um</div><div class="item">Dois</div><div class="item">Três</div><div class="item">Quatro</div></div></section><section class="alta"><h2>Depois</h2></section>'
+    + '<script>var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("visivel");io.unobserve(e.target)}})});document.querySelectorAll(".grupo").forEach(function(e){io.observe(e)})</script>';
+  // movimento reduzido: a v5 mantinha html{scroll-behavior:smooth} para quem pediu menos movimento.
+  if (rota === '/rolagem-suave') corpo = '<style>html{scroll-behavior:smooth}</style>' + secoesMov('');
+  if (rota === '/rolagem-suave-ok') corpo = '<style>html{scroll-behavior:smooth}@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}</style>' + secoesMov('');
+  // gate-composicao: plantas baixas que liam como retângulo de wireframe, linha do tempo que
+  // passava 311 px do último marco, nenhuma pessoa na página e acento amarelo a 2,07:1.
+  if (rota === '/desenho-wireframe') corpo = texto + '<section><h2>Duas formas</h2><svg data-desenho="planta baixa de uma sala com quatro aparelhos" width="200" height="130" viewBox="0 0 200 130" fill="none" stroke="#24525A" stroke-width="2"><path d="M6 6h188v118H6z"/><path d="M20 22h72v20H20zM108 22h72v20h-72z"/><rect x="20" y="88" width="72" height="20"/><path d="M30 26h20v12H30z"/></svg></section>';
+  const linhaTempo = (largura) => '<style>.lt{position:relative;list-style:none;padding:44px 0 0;margin:0;display:grid;grid-template-columns:repeat(3,1fr)}.lt::before{content:"";position:absolute;left:10px;top:9px;height:2px;background:#111;' + largura + '}.lt li{position:relative}.lt .marco{position:absolute;left:0;top:-44px;width:20px;height:20px;border-radius:50%;border:2px solid #111;box-sizing:border-box;background:#fff}</style><section><h2>Como marcar</h2><ol class="lt">' + ['Chame', 'Combine', 'Faça'].map((t) => `<li><span class="marco" aria-hidden="true"></span><h3>${t}</h3><p>Descrição do passo.</p></li>`).join('') + '</ol></section>';
+  if (rota === '/linha-tempo-passa') corpo = texto + linhaTempo('right:10px');
+  if (rota === '/linha-tempo-ok') corpo = texto + linhaTempo('width:66.666%');
+  const pessoa = '<svg data-desenho="mulher de perfil em pé, com a fisioterapeuta ao lado" data-figura="pessoa" width="320" height="320" viewBox="0 0 320 320"><circle cx="160" cy="60" r="28" fill="#8D5A3B"/><path d="M130 50c10-30 50-30 60 0" fill="#555"/><rect x="150" y="86" width="20" height="14" fill="#8D5A3B"/><path d="M120 100h80l-10 110h-60z" fill="#24525A"/><path d="M125 110l-30 80" stroke="#8D5A3B" stroke-width="12" stroke-linecap="round"/><path d="M195 110l30 80" stroke="#8D5A3B" stroke-width="12" stroke-linecap="round"/><path d="M140 210l-6 90" stroke="#1D2A2E" stroke-width="16" stroke-linecap="round"/><path d="M180 210l6 90" stroke="#1D2A2E" stroke-width="16" stroke-linecap="round"/><ellipse cx="130" cy="304" rx="14" ry="6" fill="#1D2A2E"/></svg>';
+  if (rota === '/sem-pessoa') corpo = texto;
+  if (rota === '/com-pessoa') corpo = '<section><h1>Controle da página</h1>' + pessoa + '<button>Ver resultado</button></section>';
+  if (rota === '/pessoa-placeholder') corpo = '<section><h1>Controle da página</h1><svg data-desenho="mulher" data-figura="pessoa" width="320" height="320" viewBox="0 0 320 320"><rect x="10" y="10" width="300" height="300" fill="#ccd"/></svg><button>Ver resultado</button></section>';
+  const situacao = (cor) => `<section><h2>Situações</h2><div style="background:#E2E8E0;padding:20px;display:inline-block"><svg data-desenho="costas de perfil com a lombar marcada" width="112" height="112" viewBox="0 0 96 96" fill="none" stroke="#24525A" stroke-width="2.2"><path d="M52 8C44 20 38 30 41 44C44 57 33 65 35 80"/><path class="acento" stroke="${cor}" d="M27 52c-5 4-5 10 0 14"/></svg></div></section>`;
+  if (rota === '/acento-fraco') corpo = texto + situacao('#C99A1E');
+  if (rota === '/acento-ok') corpo = texto + situacao('#7A5C0E');
   if (rota.startsWith('/dash')) corpo ='<h1>Painel 2026</h1><div class="kpi__value">' + (rota === '/dash-ok' ? 'R$ 150,00' : '&#8212;') + '</div>';
   res.writeHead(rota === '/erro' ? 500 : 200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end('<!doctype html><html lang="pt-BR"><head><meta name="viewport" content="width=device-width,initial-scale=1">' + (rota === '/sem-identidade' ? '' : head) + style + '</head><body>' + corpo + '</body></html>');
@@ -177,6 +212,24 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['identidade-360','screenshot-prova.js', [url + '/ok', path.join(pasta, 'identidade-360'), '--com-360'], 0, /topo +mobile360: scrollY 0/],
     ['video-ausente', 'gate-video.mjs', ['--url', url + '/ok', '--publico', pasta, '--frames', path.join(pasta, 'frames-ausente')], 0],
     ['video-positivo', 'gate-video.mjs', ['--url', url + '/video-ok', '--publico', pasta, '--frames', path.join(pasta, 'frames-positivo')], 0],
+    // Auditoria da v5 (03/10/2026)
+    ['texto-viuva-paragrafo-serifa', 'gate-texto.mjs', ['--url', url + '/viuva-paragrafo-serifa'], 1, /vi[uú]va: p .*fonte do t[ií]tulo/],
+    ['texto-viuva-paragrafo-card', 'gate-texto.mjs', ['--url', url + '/viuva-paragrafo-card'], 1, /vi[uú]va: p .*caixa/],
+    ['texto-paragrafo-corrido-ok', 'gate-texto.mjs', ['--url', url + '/paragrafo-corrido-ok'], 0],
+    ['simetria-linhas-diferentes', 'gate-simetria.mjs', ['--url', url + '/grade-linhas-diferentes'], 1, /faixa de linhas/],
+    ['simetria-passos-sem-caixa', 'gate-simetria.mjs', ['--url', url + '/passos-sem-caixa'], 1, /passos sem caixa/],
+    ['simetria-passos-em-caixas', 'gate-simetria.mjs', ['--url', url + '/passos-em-caixas'], 0],
+    ['movimento-por-grupo', 'gate-movimento.mjs', ['--url', url + '/movimento-grupo', '--espera', '1000'], 1, /chega(m)? parad[oa]s? .*300 px\/s/],
+    ['movimento-rolagem-suave', 'gate-movimento.mjs', ['--url', url + '/rolagem-suave', '--espera', '1000'], 1, /movimento reduzido/],
+    ['movimento-rolagem-suave-ok', 'gate-movimento.mjs', ['--url', url + '/rolagem-suave-ok', '--espera', '1000'], 0],
+    ['composicao-wireframe', 'gate-composicao.mjs', ['--url', url + '/desenho-wireframe'], 1, /wireframe/],
+    ['composicao-linha-tempo-passa', 'gate-composicao.mjs', ['--url', url + '/linha-tempo-passa'], 1, /passa do [uú]ltimo marco/],
+    ['composicao-linha-tempo-ok', 'gate-composicao.mjs', ['--url', url + '/linha-tempo-ok'], 0],
+    ['composicao-sem-pessoa', 'gate-composicao.mjs', ['--url', url + '/sem-pessoa', '--publico', 'mulheres de 35 a 60 anos com dor nas costas'], 1, /nenhuma figura humana/],
+    ['composicao-com-pessoa', 'gate-composicao.mjs', ['--url', url + '/com-pessoa', '--publico', 'mulheres de 35 a 60 anos com dor nas costas'], 0],
+    ['composicao-pessoa-placeholder', 'gate-composicao.mjs', ['--url', url + '/pessoa-placeholder', '--publico', 'mulheres de 35 a 60 anos com dor nas costas'], 1, /nenhuma figura humana/],
+    ['composicao-acento-fraco', 'gate-composicao.mjs', ['--url', url + '/acento-fraco'], 1, /3:1/],
+    ['composicao-acento-ok', 'gate-composicao.mjs', ['--url', url + '/acento-ok'], 0],
     ['video-negativo', 'gate-video.mjs', ['--url', url + '/video', '--publico', pasta, '--frames', path.join(pasta, 'frames-negativo')], 1],
   ];
   const dash = process.argv[2];
