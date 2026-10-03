@@ -174,13 +174,28 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    marca de fabricante legível, nome na roupa): amplie a foto 4x num recorte, procure, e
    retoque ou troque; o retoque vai escrito em `imagens/LICENCAS.md`. A legenda "imagem
    ilustrativa" fica colada na foto que ela descreve, dentro do mesmo card.
+   **O crédito usa o título REAL da fonte** (o do endereço do Unsplash ou da Wikimedia) ou
+   nenhum título entre aspas: a v5 publicou um título inventado (`gate-imagens.py`).
+   **Público de pessoas se vê na página:** na primeira tela, em 1440 e em 390, aparece uma
+   figura humana do público: foto real com autorização das retratadas ou ilustração própria
+   (SVG desenhado para a página, no traço da identidade, com `data-figura="pessoa"`, mostrando
+   o público nas situações reais da página). Imagem gerada por IA de pessoa fotorrealista não
+   resolve. A v5 tinha só uma sala vazia e 7 desenhos de objeto para "mulheres de 35 a 60 com
+   dor nas costas", e o auditor perguntou "cadê as pessoas?" (`gate-composicao.mjs --projeto`).
+   **Desenho lê de primeira, sem o texto:** retângulos e retas alinhadas (planta baixa, mesa
+   de linhas) leem como wireframe e reprovam; traço fino e destaque com pelo menos 3:1 contra
+   o que está embaixo deles (o amarelo da v5 estava a 2,07:1).
 3. **Movimento em CSS:** entrada do hero, 2 a 4 revelações nas seções-chave (no máximo uma por
    seção), hover e microinteração no botão, `prefers-reduced-motion` respeitado. Conteúdo
    nunca depende de animação para aparecer. **Revele só o que entra na tela:** nada de
    `setTimeout` que marca tudo como visível (na v4, 3 s depois da carga as 6 seções já estavam
    reveladas com a página parada no topo, e a visita chegava em tudo parado); o
    `gate-movimento.mjs` simula a visita e reprova. Grade de itens paralelos entra escalonada e cada
-   caixa tem o próprio SVG animado; FAQ e fecho também têm movimento.
+   caixa tem o próprio SVG animado; FAQ e fecho também têm movimento. **Revele por ITEM, não por
+   grupo:** cada caixa, passo e pergunta revela quando ela mesma entra na tela; na v5, a 300 px/s
+   no celular, a 3a situação, o 3o passo e duas perguntas chegavam já paradas. **Movimento
+   reduzido desliga a rolagem suave** (`scroll-behavior: auto` dentro de
+   `@media (prefers-reduced-motion: reduce)`).
    **Texto:** `text-wrap: balance` em h1, h2, h3 e título de card (na v4, os h3 dos passos ficaram com palavra sozinha em 768 e o h2 do fecho em 320), `text-wrap: pretty` em parágrafo e pergunta.
    **Botão no celular:** rótulo que cabe numa linha em 320 px e, abaixo de 768 px, barra fixa
    inferior depois do hero (ou botão repetido a cada 2 telas). **Ou botão no cabeçalho ou barra
@@ -195,12 +210,21 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    da v3); CSS em linha na publicação (`montar-dist.py --css-em-linha`).
 4. **Identidade da página** (bloqueia, com ou sem deploy): `<title>` próprio, meta description,
    favicon PNG quadrado e `apple-touch-icon`, `og:title`, `og:description` e `og:image`.
-   Favicon: recorte quadrado primeiro, depois redimensione.
+   Favicon: recorte quadrado primeiro, depois redimensione. **O ícone é a identidade ATUAL:** o
+   plano declara `Ícone do site: <motivo>`, o motivo é desenhado em `icones/icone.svg` (com o
+   mesmo `data-motivo`, e a página desenha esse motivo em algum `data-desenho`) e os PNG saem de
+   `node <dir-da-skill>/scripts/gerar-icones.mjs --projeto <dir>`. A v5 publicou o favicon da v3
+   (md5 igual), com um motivo que a página já tinha abandonado.
 5. **Fora do domínio final, a página nasce `noindex`:** `<meta name="robots" content="noindex,
    nofollow">`, `robots.txt` com `Disallow: /`, sem sitemap, `canonical` apontando para o site
    do cliente quando existir.
 6. **Rodapé com identificação** (nome, contato e o que o cliente confirmou) e todo botão com
    destino real. WhatsApp sem número é pendência declarada, e a página não recebe tráfego.
+   **Quem é o dono ou a profissional aparece no corpo**, quando o briefing nomeia (com o que o
+   briefing permite dizer, sem inventar credencial); na v5 a fisioterapeuta só estava no rodapé.
+7. **Nenhum comentário interno no HTML publicado** (`<!-- -->`, `//` e `/* */` em script e
+   style; só o aviso de licença `/*! */` passa): a v5 publicou o histórico da construção num
+   comentário do script.
 
 Grave `evidencias/etapa-4.json` e registre: `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 4 --arquivo evidencias/etapa-4.json`
 
@@ -215,13 +239,13 @@ Rode cada gate e registre o exit REAL na wave:
 `python3 <dir-da-skill>/scripts/gate-classes-mortas.py --projeto <dir>` (classe que não existe no CSS)
 `node <dir-da-skill>/scripts/gate-responsivo.mjs --url http://localhost:8765/` (12 telas)
 `node <dir-da-skill>/scripts/gate-oclusao.mjs --url http://localhost:8765/` (texto coberto ou cortado)
-`node <dir-da-skill>/scripts/gate-simetria.mjs --url http://localhost:8765/` (itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos com 4 px de folga e conteúdo interno sem buraco)
-`node <dir-da-skill>/scripts/gate-texto.mjs --url http://localhost:8765/` (viúva em título e subtítulo, de h1 a h4, dt e summary, em 7 telas de 320 a 1440; item em minúscula; itálico colorido repetido)
-`node <dir-da-skill>/scripts/gate-composicao.mjs --url http://localhost:8765/` (mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido)
-`node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, e pelo menos 2 seções animam ao chegar)
-`python3 <dir-da-skill>/scripts/gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas)
-`python3 <dir-da-skill>/scripts/gate-imagens.py --projeto <dir>` (licença com versão e link, pessoa identificável sem autorização, crédito no HTML, aviso no og-image)
-`python3 <dir-da-skill>/scripts/montar-dist.py --projeto <dir> --css-em-linha` e `python3 <dir-da-skill>/scripts/gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar)
+`node <dir-da-skill>/scripts/gate-simetria.mjs --url http://localhost:8765/` (itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos com 4 px de folga, conteúdo interno sem buraco, texto das caixas na mesma faixa de linhas e passos em caixas)
+`node <dir-da-skill>/scripts/gate-texto.mjs --url http://localhost:8765/` (viúva em título e subtítulo, de h1 a h4, dt e summary, e em parágrafo na fonte do título ou dentro de caixa, em 7 telas de 320 a 1440; item em minúscula; itálico colorido repetido)
+`node <dir-da-skill>/scripts/gate-composicao.mjs --url http://localhost:8765/ --projeto <dir>` (mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, desenho que lê como wireframe, linha do tempo que passa do último marco, nenhuma pessoa na primeira tela para público de pessoas, destaque abaixo de 3:1)
+`node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, pelo menos 2 seções animam ao chegar, nenhum item chega parado numa rolagem de 300 px/s em 1440, 390 e 320, e rolagem sem animação com movimento reduzido)
+`python3 <dir-da-skill>/scripts/gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas, e o dono nomeado no briefing no corpo da página)
+`python3 <dir-da-skill>/scripts/gate-imagens.py --projeto <dir>` (licença com versão e link, pessoa identificável sem autorização, crédito no HTML com o título real da fonte, aviso no og-image)
+`python3 <dir-da-skill>/scripts/montar-dist.py --projeto <dir> --css-em-linha` e `python3 <dir-da-skill>/scripts/gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar, sem comentário interno, e ícones gerados do `icones/icone.svg` do motivo do plano)
 `node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/prova --click "<seletor do botão>"` (identidade, scrollY 0, clique)
 `python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> registrar Playwright --arquivo prova/prova-desktop.png --detalhe "prova de tela lida"`
 `python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> checar --caminho criar`
@@ -261,6 +285,9 @@ responde AUDITORIA INDEPENDENTE PENDENTE até uma rodada de outra sessão (sem o
 deu média 7,78 e "tells 0"; o auditor independente deu 5,5 e cinco achados graves.
 
 `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> registrar <lente> --veredito <aprovado|reprovado> --nota <0-10> --origem <subagente|sessao-independente|pessoa|autoavaliacao> --achados "<o que olhou e achou>"`
+A `comparacao-referencias` responde também, com `--gosto bonito|correto`, a pergunta do dono
+depois da SobrAI (9,05 nas lentes e "que página FEIA"): **isso é bonito ou só está correto?**
+"correto" não aprova e a rodada volta ao plano visual; sem resposta, a rodada também volta.
 `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> checar`
 `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`
 

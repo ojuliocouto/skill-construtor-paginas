@@ -83,7 +83,9 @@ licença (está em `imagens/LICENCAS.md`?), se casa com o título ao lado, se o 
 (não no arquivo) mostra o que importa, se há legenda de imagem ilustrativa quando a foto não é
 do cliente, colada na foto. Confere a tabela público -> foto -> por quê do plano visual
 contra a foto aberta (idade, perfil, roupa), procura logo de terceiro num recorte ampliado 4x
-e confirma que nenhum elemento gráfico atravessa rosto ou corpo de pessoa.
+e confirma que nenhum elemento gráfico atravessa rosto ou corpo de pessoa. Público de pessoas
+pede gente na primeira tela (foto autorizada ou ilustração própria); cada desenho se lê sem o
+texto ao lado (planta baixa de retângulos e "mesa" de retas não se leem).
 **Reprova (crítico) se:** nenhuma imagem real, foto que contradiz o público, logo de terceiro
 legível na cena, linha ou forma por cima de pessoa, imagem sem licença registrada, foto que sugere
 ser do cliente (o espaço, a profissional) sem ser, ou logo indicado pelo cliente trocado por
@@ -140,7 +142,13 @@ python3 <dir-da-skill>/scripts/lado-a-lado.py <dir>/referencias/<ref>-dobra.png 
 Olhe a imagem e responda por escrito, eixo por eixo (composição, tipografia, imagem, ritmo,
 acabamento): **no nível** ou **abaixo**, com o porquê. Depois a pergunta que decide: **um
 designer exigente colocaria esta página na mesma pasta das referências?**
-**Reprova se:** a resposta honesta é não, ou se dois ou mais eixos ficaram abaixo. Reprovada,
+Por fim, por escrito e registrada com `--gosto`: **isso é bonito ou só está correto?** (a régua
+do dono depois de uma página com 9,05 nas lentes que ele chamou de FEIA; a v5 do estúdio ficou
+em 7,0 como "correta, mas vazia"). Perguntas que ajudam a responder: há gente do público na
+página? Alguém de fora diz o que cada desenho é sem ler o texto? Existe um momento que
+surpreende? A ordem das seções é a de qualquer landing ou a das referências?
+**Reprova se:** a resposta honesta é não, se dois ou mais eixos ficaram abaixo, ou se a página
+é só correta (`--gosto correto`). Reprovada,
 não se corrige na lente: volta ao plano visual (passo c), com o que faltou escrito. No caminho
 CLONAR a referência é a página original. Esta lente não aceita "não aplicável".
 

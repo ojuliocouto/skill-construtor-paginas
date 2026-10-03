@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.2.0
+version: 3.3.0
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -215,17 +215,18 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `gate-classes-mortas.py` | classe do código que não existe no CSS gerado | f |
 | `gate-responsivo.mjs` | 12 telas: rolagem lateral, CTA na dobra, toque 44px, corpo 14px, botão em uma linha, botão a 2 telas no celular; no celular, fixo somado até 15%, 1 botão por tela, nenhum botão sob a barra e foto do herói com 35% da 1a tela | f |
 | `gate-oclusao.mjs` | texto coberto por camada ou cortado pela caixa | f |
-| `gate-simetria.mjs` | itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos (4 px) e sem buraco interno | f |
-| `gate-texto.mjs` | viúva em título e subtítulo (h1 a h4, dt, summary) de 320 a 1440, item em minúscula, itálico colorido repetido | f |
-| `gate-composicao.mjs` | cara de template: mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido | f |
-| `gate-movimento.mjs` | visita real: 8 s parada no topo, depois rola; reprova animação que roda fora da tela e página que não anima ao chegar | f |
-| `gate-verdade.py` | toda promessa (e a meta description) com linha do briefing que sustente | d, f |
-| `gate-imagens.py` | licença completa (nome, versão, link), pessoa identificável sem autorização, crédito no HTML e "imagem ilustrativa" também no og-image | e, f |
-| `montar-dist.py` + `gate-publicacao.py` | `dist/` só com o que a página usa, e o gate que reprova a casa na publicação | f, h |
+| `gate-simetria.mjs` | itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos (4 px), sem buraco interno, texto das caixas na mesma faixa de linhas e passos em caixas | f |
+| `gate-texto.mjs` | viúva em título e subtítulo (h1 a h4, dt, summary) e em parágrafo na fonte do título ou de caixa, de 320 a 1440, item em minúscula, itálico colorido repetido | f |
+| `gate-composicao.mjs` | cara de template: mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, desenho que lê como wireframe, linha do tempo além do último marco, público de pessoas sem ninguém na primeira tela, destaque abaixo de 3:1 | f |
+| `gate-movimento.mjs` | visita real: 8 s parada no topo, depois rola; reprova animação que roda fora da tela, página que não anima ao chegar, item que chega parado a 300 px/s e rolagem suave com movimento reduzido | f |
+| `gate-verdade.py` | toda promessa (e a meta description) com linha do briefing que sustente; dono nomeado no briefing aparece no corpo | d, f |
+| `gate-imagens.py` | licença completa (nome, versão, link), pessoa identificável sem autorização, crédito no HTML com o título real da fonte e "imagem ilustrativa" também no og-image | e, f |
+| `gerar-icones.mjs` | favicon e ícone de tela inicial gerados do `icones/icone.svg` do motivo do plano, com registro | e |
+| `montar-dist.py` + `gate-publicacao.py` | `dist/` só com o que a página usa, e o gate que reprova a casa na publicação, comentário interno e ícone de outra identidade | f, h |
 | `gate-relatorio.py` | o relatório final só afirma medida que um gate gravou: cada número cita o arquivo e está nele, nada anterior à `dist/` | h |
 | `gate-video.mjs` | as 7 checagens de vídeo (só em página com vídeo) | f |
 | `uso-ferramentas.py` | Playwright e `frontend-design` foram usados de verdade | f |
-| `wave.py` | registro das 9 lentes, auditor master e ciclo de rodadas | f, g |
+| `wave.py` | registro das 9 lentes (a de referências responde "bonito ou só correto?"), auditor master e ciclo de rodadas | f, g |
 | `lado-a-lado.py` | duas imagens lado a lado na mesma escala | g, CLONAR, MELHORAR |
 | `extrai-identidade.mjs` | paleta real, variáveis CSS, h1, CTA e imagens de uma URL | CLONAR |
 

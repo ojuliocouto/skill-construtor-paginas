@@ -119,6 +119,11 @@ originou; `scripts/test-preferencias.py` reprova se uma correção nova ficar se
   selo, forma da assinatura). A assinatura mora ao lado da foto, nunca por cima de gente.
 - **Foto com logo de terceiro na cena reprova** (outro estúdio na parede, marca de fabricante
   legível, nome de academia na roupa). Retoque o logo ou troque a foto, e registre o retoque.
+- **[gate `gate-composicao.mjs`] Público de pessoas se vê na página**, na primeira tela: foto
+  real autorizada ou ilustração própria no traço da identidade, nas situações reais da página.
+  Página "correta e vazia", só com objeto, ficou em 7,0 (auditoria da v5).
+- **[gate `gate-composicao.mjs`] Desenho lê de primeira.** Retângulo dentro de retângulo é
+  wireframe; desenho de situação mostra corpo e gesto. Traço fino e destaque a 3:1 do fundo.
 
 ## Lições operacionais
 

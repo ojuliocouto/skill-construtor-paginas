@@ -1,5 +1,32 @@
 # Changelog
 
+## 3.3.0 (03/10/2026): "correta, mas vazia", os buracos que a auditoria da v5 achou
+
+Um auditor independente deu 7,0 à v5 da página do estúdio, com todos os gates verdes: nenhuma
+pessoa na página, desenhos que liam como wireframe, revelação por grupo no celular, ícone da v3
+e o dono só no rodapé. Cada buraco virou medida, com teste vermelho antes e verde depois.
+
+### Adicionado
+- `scripts/gerar-icones.mjs`: favicon e apple-touch-icon gerados de `icones/icone.svg`
+  (`data-motivo` = "Ícone do site" do plano), com registro em `icones/icones.json`.
+
+### Mudado
+- `gate-composicao.mjs`: desenho que lê como wireframe (80% ou mais de retas alinhadas e
+  retângulos), linha do tempo que passa do último marco (1440 e 390), público de pessoas sem
+  figura humana na primeira tela (`--publico` ou `--projeto`) e traço fino ou destaque abaixo
+  de 3:1 contra o que está embaixo dele.
+- `gate-movimento.mjs`: item que termina de animar antes de entrar na tela numa rolagem de
+  300 px/s (1440, 390 e 320) e `scroll-behavior: smooth` com movimento reduzido reprovam.
+- `gate-simetria.mjs`: texto das caixas da mesma linha com mais de 1 linha de diferença
+  (regra 20) e passos lado a lado sem caixa (regra 15).
+- `gate-texto.mjs`: viúva em parágrafo na fonte do título e em texto de caixa.
+- `gate-publicacao.py`: comentário interno no HTML publicado e, com o plano ao lado da `dist/`,
+  ícone que não saiu do SVG da identidade atual.
+- `gate-imagens.py`: o título do crédito é o da fonte; ilustração própria não pede licença.
+- `gate-verdade.py`: o dono ou a profissional que o briefing nomeia aparece no corpo.
+- `wave.py`: a `comparacao-referencias` responde `--gosto bonito|correto`; "correto" ou sem
+  resposta volta ao plano visual.
+
 ## 3.2.0 (02/10/2026): os buracos de gate que a auditoria independente da v4 achou
 
 Um auditor independente deu 6,5 à v4 da página do estúdio com todos os gates verdes. Cada
