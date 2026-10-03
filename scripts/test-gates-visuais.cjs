@@ -65,6 +65,8 @@ const servidor = http.createServer((req, res) => {
   // v5: coluna só com uma ilustração aria-hidden (decorativa para leitor de tela, mas visível)
   // contava como coluna vazia e terminava no topo, e o gate acusava 354 px que não existiam.
   if (rota === '/ilustracao-ao-lado') corpo = '<section><div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center"><figure style="margin:0"><svg aria-hidden="true" width="200" height="400" viewBox="0 0 200 400"><rect x="10" y="10" width="180" height="380" fill="none" stroke="#111"/></svg></figure><div><h2>Antes da primeira aula</h2><p>Texto ao lado da ilustração grande.</p><div style="height:250px;background:#eee"></div></div></div></section>';
+  const colunaSemCaixa = (miolo) => `<div style="display:flex;flex-direction:column;align-items:center;text-align:center">${miolo}</div>`;
+  if (rota === '/colunas-titulo-desalinhado') corpo = texto + '<section><h2>Duas formas</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' + colunaSemCaixa('<div style="height:200px;width:200px;background:#ccd"></div><h3>Em grupo</h3><p>Até quatro pessoas.</p>') + colunaSemCaixa('<div style="height:120px;width:200px;background:#ccd"></div><h3>Particular</h3><p>Aula individual.</p>') + '</div></section>';
   if (rota === '/cards-ok') corpo = par('<div style="height:200px;background:#ccd"></div><h3>Em grupo</h3><p>Até quatro pessoas por turma.</p>', '<div style="height:200px;background:#ccd"></div><h3>Particular</h3><p>Aula individual.</p>');
   if (rota === '/cards-titulo-desalinhado') corpo = par('<div style="height:260px;background:#ccd"></div><h3>Em grupo</h3><p>Até quatro pessoas por turma.</p>', '<div style="height:80px;width:80px;margin:auto auto 0;background:#ccd"></div><h3>Particular</h3><p>Aula individual.</p><p style="margin-top:auto">O valor vem pelo WhatsApp.</p>');
   if (rota === '/cards-buraco') corpo = par('<h3>Em grupo</h3><p>Até quatro pessoas por turma.</p><div style="height:220px;background:#ccd"></div>', '<h3>Particular</h3><p>Aula individual.</p><p style="margin-top:auto">O valor de cada forma vem pelo WhatsApp.</p>');
@@ -153,7 +155,8 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['simetria-passos-ao-lado', 'gate-simetria.mjs', ['--url', url + '/passos-ao-lado'], 1, /lista vertical ao lado do t[ií]tulo/],
     ['simetria-colunas', 'gate-simetria.mjs', ['--url', url + '/colunas-desbalanceadas'], 1, /colunas desbalanceadas/],
     ['simetria-ilustracao-ao-lado', 'gate-simetria.mjs', ['--url', url + '/ilustracao-ao-lado'], 0],
-    ['simetria-cards-ok', 'gate-simetria.mjs', ['--url', url + '/cards-ok'], 0],
+    ['simetria-colunas-titulo', 'gate-simetria.mjs', ['--url', url + '/colunas-titulo-desalinhado'], 1, /t[ií]tulos de cards vizinhos desalinhados/],
+    ['simetria-cards-ok', 'gate-simetria.mjs', ['--url', url + '/cards-ok'], 0, /medido: maior diferen[cç]a entre t[ií]tulos vizinhos 0 px/],
     ['simetria-cards-titulo', 'gate-simetria.mjs', ['--url', url + '/cards-titulo-desalinhado'], 1, /t[ií]tulos de cards vizinhos desalinhados/],
     ['simetria-cards-buraco', 'gate-simetria.mjs', ['--url', url + '/cards-buraco'], 1, /buraco interno/],
     ['composicao-variada', 'gate-composicao.mjs', ['--url', url + '/composicao-variada'], 0],

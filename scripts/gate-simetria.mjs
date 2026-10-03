@@ -92,7 +92,7 @@ for (const [nome, w, h] of TELAS) {
   await assentar(page);
 
   const r = await page.evaluate(({ limite, desktop, TOL_TITULO, BURACO, BURACO_MIN }) => {
-    const out = { grupos: [], ladoTitulo: [], colunas: [], titulos: [], buracos: [], excecoes: [] };
+    const out = { grupos: [], ladoTitulo: [], colunas: [], titulos: [], buracos: [], excecoes: [], maiorTitulo: 0 };
     const visivel = (el) => {
       const cs = getComputedStyle(el);
       if (cs.display === 'none' || cs.visibility === 'hidden') return false;
@@ -213,12 +213,14 @@ for (const [nome, w, h] of TELAS) {
           if (d > limite) out.colunas.push(`"${rotulo(filhos[i])}" e "${rotulo(filhos[j])}" terminam com ${Math.round(d)} px de diferença`);
           // 4 (auditoria da v4): DENTRO dos cards vizinhos. Caixa igual não basta: o título de um
           // card ficava 147 px acima do título do vizinho, e um card tinha um buraco no meio.
+          // Título com título vale para coluna com ou sem caixa (v5: duas colunas sem caixa).
+          const ta = tituloDe(filhos[i]), tb = tituloDe(filhos[j]);
+          if (ta && tb && a.height >= 80 && b.height >= 80) {
+            const dt = Math.abs(ta.getBoundingClientRect().top - tb.getBoundingClientRect().top);
+            out.maiorTitulo = Math.max(out.maiorTitulo, dt);
+            if (dt > TOL_TITULO) out.titulos.push(`"${rotulo(ta)}" e "${rotulo(tb)}" com ${Math.round(dt)} px de diferença no topo (máximo ${TOL_TITULO})`);
+          }
           if (temCaixa(filhos[i]) && temCaixa(filhos[j]) && a.height >= 80 && b.height >= 80) {
-            const ta = tituloDe(filhos[i]), tb = tituloDe(filhos[j]);
-            if (ta && tb) {
-              const dt = Math.abs(ta.getBoundingClientRect().top - tb.getBoundingClientRect().top);
-              if (dt > TOL_TITULO) out.titulos.push(`"${rotulo(ta)}" e "${rotulo(tb)}" com ${Math.round(dt)} px de diferença no topo (máximo ${TOL_TITULO})`);
-            }
             const ga = maiorBuraco(filhos[i]), gb = maiorBuraco(filhos[j]);
             if (Math.abs(ga - gb) > BURACO && Math.max(ga, gb) > BURACO_MIN) {
               const [cheio, oco] = ga > gb ? [filhos[j], filhos[i]] : [filhos[i], filhos[j]];
@@ -239,6 +241,7 @@ for (const [nome, w, h] of TELAS) {
     .concat([...new Set(r.buracos)].map((x) => `buraco interno: ${x}`));
   r.excecoes.forEach((e) => excecoes.add(e));
   console.log(`${onde.padEnd(32)} ${todas.length ? 'FALHA (' + todas.length + ')' : 'ok'}`);
+  console.log(`  medido: maior diferença entre títulos vizinhos ${Math.round(r.maiorTitulo)} px`);
   for (const t of todas) falhas.push(`${onde}: ${t}`);
   await ctx.close();
 }
