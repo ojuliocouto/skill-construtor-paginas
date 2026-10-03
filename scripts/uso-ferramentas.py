@@ -30,6 +30,7 @@ Uso:
 """
 import argparse
 import datetime
+import hashlib
 import json
 import os
 import subprocess
@@ -146,6 +147,12 @@ def evidencia_vale(ev, projeto):
             return False, "a evidência precisa ser um arquivo, não uma pasta"
         if alvo.stat().st_size == 0:
             return False, f"arquivo vazio: {valor}"
+        # Auditoria da v4: o plano da v3 foi revisado sem reacionar a frontend-design e o
+        # registro antigo continuava valendo. O hash gravado no registro amarra o uso ao
+        # arquivo daquela hora; arquivo mudado pede a ferramenta de novo e um registro novo.
+        esperado = ev.get("sha256")
+        if esperado and hashlib.sha256(alvo.read_bytes()).hexdigest() != esperado:
+            return False, f"o arquivo mudou depois do registro ({valor}): acione a ferramenta de novo na versão revisada e registre"
         return True, f"arquivo presente ({valor})"
     if tipo == "codigo":
         base = Path(ev.get("em") or projeto)
@@ -188,6 +195,9 @@ def cmd_registrar(args):
     dados = carregar(projeto)
     if args.arquivo:
         ev = {"tipo": "arquivo", "valor": args.arquivo}
+        alvo = Path(args.arquivo) if Path(args.arquivo).is_absolute() else Path(projeto) / args.arquivo
+        if alvo.is_file():
+            ev["sha256"] = hashlib.sha256(alvo.read_bytes()).hexdigest()
     elif args.no_codigo:
         ev = {"tipo": "codigo", "valor": args.no_codigo, "em": args.em or projeto}
     elif args.sem_artefato:
