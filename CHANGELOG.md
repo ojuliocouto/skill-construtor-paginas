@@ -1,5 +1,35 @@
 # Changelog
 
+## 3.2.0 (02/10/2026): os buracos de gate que a auditoria independente da v4 achou
+
+Um auditor independente deu 6,5 à v4 da página do estúdio com todos os gates verdes. Cada
+defeito que passou virou medida, com teste vermelho antes e verde depois.
+
+### Adicionado
+- `scripts/gate-movimento.mjs`: visita real (8 s parada no topo, depois rolagem); animação que
+  roda com a seção fora da tela reprova, e menos de 2 seções animando ao chegar reprova. Pegou o
+  `setTimeout` de 3 s da v4.
+- `scripts/gate-composicao.mjs`: mais de 2 seções seguidas com o mesmo esqueleto (posição do
+  título + corpo) reprova; SVG sem `data-desenho`, metáfora de biblioteca e traçado repetido
+  reprovam. Tell V17 "esqueleto repetido".
+- `scripts/gate-imagens.py`: tabela fixa em `imagens/LICENCAS.md`; licença com versão e link,
+  pessoa identificável sem autorização, crédito completo no HTML (CC BY-SA alterada diz "mesma
+  licença") e "imagem ilustrativa" no og-image.
+- `scripts/gate-relatorio.py`: número de medida no relatório cita o arquivo de texto do gate e
+  está nele; medida anterior à `dist/` reprova.
+- `screenshot-prova.js --com-320`.
+
+### Mudado
+- `gate-texto.mjs`: 320 px e subtítulos (h3, h4, dt, summary, `[data-titulo]`).
+- `gate-simetria.mjs`: título com título nos cards vizinhos (4 px), buraco interno, e
+  ilustração `aria-hidden` em fluxo conta como conteúdo da coluna.
+- `gate-responsivo.mjs` no celular: fixo somado até 15%, 1 botão de ação por tela, nenhum botão
+  a menos de 8 px da barra de baixo, foto do herói com 35% da 1a tela.
+- `gate-etapas.py`: etapa 2 exige `secoes` ({secao, tratamento, referencia}, nunca o mesmo em 3
+  seguidas) e valida `icones`.
+- `uso-ferramentas.py`: registro guarda o sha256; plano alterado depois do registro reprova.
+- `wave.py`: gates `movimento`, `composicao` e `imagens` no master.
+
 ## 3.1.0 (02/10/2026): o que a auditoria independente da v3 achou vira gate
 
 Um auditor independente deu 5,5 à página do estúdio feita pela v3, que a autoavaliação tinha

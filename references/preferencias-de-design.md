@@ -143,3 +143,15 @@ originou; `scripts/test-preferencias.py` reprova se uma correção nova ficar se
 - **Só sobe para o ar o que é página.** O deploy sai de `dist/`, montada pelo
   `scripts/montar-dist.py` e conferida pelo `scripts/gate-publicacao.py`: prints de terceiros,
   briefing, evidências e JSON de auditoria nunca vão junto.
+- **Cada seção com um tratamento próprio.** O mesmo título à esquerda com grade de caixas em
+  seção após seção lê como template mesmo com caixas perfeitas (auditoria da v4: 4 seções
+  seguidas, 14 caixas). Grade de caixas onde há itens paralelos; nas outras, linha do tempo,
+  lista editorial, split com imagem, faixa cheia. `scripts/gate-composicao.mjs` reprova 3
+  seguidas iguais e ícone de biblioteca.
+- **Animação acontece na visita, não no print.** Revelação só do que entra na tela;
+  temporizador que revela tudo reprova no `scripts/gate-movimento.mjs`.
+- **Celular: ou botão no cabeçalho, ou barra fixa.** O que é fixo soma até 15% da tela, 1 botão
+  de ação por tela, nenhum botão sob a barra, e a foto do herói aparece na primeira tela.
+- **Sem autorização de imagem, sem pessoa identificável.** A licença do fotógrafo não cobre a
+  imagem de quem aparece; o espaço, o aparelho ou um desenho próprio resolvem, com "imagem
+  ilustrativa" também no og-image (`scripts/gate-imagens.py`).

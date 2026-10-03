@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.1.0
+version: 3.2.0
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -167,7 +167,7 @@ AUDITORES: <subagente independente | sessão independente | autoavaliação (nã
 REFERÊNCIAS: <N> páginas lidas | comparacao-referencias: <aprovado | reprovado> e por quê
 IDENTIDADE DA PÁGINA: title / description / favicon PNG quadrado / og:title / og:description / og:image (saída do screenshot-prova.js)
 PASSE DE GOSTO: tells antes -> depois (o depois é 0) + o que foi inspecionado
-PROVA: arquivos de print LIDOS + resultado do clique da interação principal
+PROVA: arquivos de print LIDOS (1440, 390, 360 e 320) + resultado do clique da interação principal; cada número do relatório cita o arquivo do gate (gate-relatorio.py)
 PENDÊNCIAS DECLARADAS: o que só o cliente tem, o que rodou degradado, deploy e og:image absoluta sem domínio
 ```
 
