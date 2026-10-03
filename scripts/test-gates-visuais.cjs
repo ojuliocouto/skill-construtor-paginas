@@ -38,7 +38,18 @@ const servidor = http.createServer((req, res) => {
   const longo = '<p>' + 'Texto corrido de seção para ocupar a tela do celular sem nenhum botão no meio. '.repeat(6) + '</p>';
   if (rota === '/botao-duas-linhas') corpo = texto.replace('Ver resultado', 'Agendar aula experimental grátis pelo WhatsApp');
   if (rota === '/sem-cta-longo') corpo = texto + longo.repeat(14);
-  if (rota === '/cta-fixo') corpo = texto + longo.repeat(14) + '<div style="height:80px"></div><a href="#c" style="position:fixed;left:12px;right:12px;bottom:12px;text-align:center">Agendar agora</a>';
+  // A barra fixa só aparece quando o botão do herói sai da tela (auditoria da v4: barra sempre
+  // visível somava 3 botões na mesma tela e cobria o botão da página).
+  const barra = '<div style="height:80px"></div><a id="barra" href="#c" style="position:fixed;left:12px;right:12px;bottom:12px;text-align:center;visibility:hidden">Agendar agora</a><script>var b=document.getElementById("barra"),h=document.querySelector("section button, section a");addEventListener("scroll",function(){b.style.visibility=h.getBoundingClientRect().bottom<0?"visible":"hidden"},{passive:true})</script>';
+  if (rota === '/cta-fixo') corpo = texto + longo.repeat(14) + barra;
+  // Auditoria da v4 no celular: cabeçalho fixo com botão + barra fixa = 152 px (18% da tela em
+  // 390, 28,3% em 320), 3 botões na mesma tela, barra cobrindo botão e foto fora da 1a tela.
+  if (rota === '/fixos-demais') corpo = '<header style="position:sticky;top:0;height:100px;background:#ddd">Marca</header>' + texto + longo.repeat(14) + '<div style="position:fixed;left:0;right:0;bottom:0;height:90px;background:#222"></div>';
+  if (rota === '/dois-botoes') corpo = texto.replace('</button>', '</button> <a href="#c">Agendar</a>');
+  if (rota === '/botao-coberto') corpo = texto + (longo.repeat(2) + '<a href="#c">Agendar no meio</a>').repeat(6) + '<a href="#c" style="position:fixed;left:0;right:0;bottom:0;text-align:center">Agendar agora</a>';
+  const foto = '<img src="/poster.png" width="320" height="180" alt="Foto de controle" style="display:block;width:100%;height:40vh;object-fit:cover">';
+  if (rota === '/hero-foto-ok') corpo = '<section><h1>Controle da página</h1>' + foto + '<button>Ver resultado</button><p>Esta página permite verificar o resultado do gate.</p></section>' + longo;
+  if (rota === '/hero-foto-baixa') corpo = '<section><h1>Controle da página</h1><p>' + 'Texto longo antes da foto do herói, que empurra a imagem para baixo da dobra. '.repeat(5) + '</p><button>Ver resultado</button>' + foto + '</section>' + longo;
   // gate-simetria (auditoria da v3): escada de itens soltos, alturas diferentes, passos ao lado
   // do título e colunas que terminam 200 px uma antes da outra.
   const caixa = (t, extra = '') => `<article style="background:#eee;padding:16px${extra}"><h3>${t}</h3><p>Descrição curta do item paralelo.</p></article>`;
@@ -115,6 +126,11 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['responsivo-botao-duas-linhas', 'gate-responsivo.mjs', ['--url', url + '/botao-duas-linhas'], 1, /quebra em \d linhas/],
     ['responsivo-sem-cta-longo', 'gate-responsivo.mjs', ['--url', url + '/sem-cta-longo'], 1, /sem nenhum bot[aã]o/],
     ['responsivo-cta-fixo', 'gate-responsivo.mjs', ['--url', url + '/cta-fixo'], 0],
+    ['responsivo-fixos-demais', 'gate-responsivo.mjs', ['--url', url + '/fixos-demais'], 1, /espa[cç]o fixo/],
+    ['responsivo-dois-botoes', 'gate-responsivo.mjs', ['--url', url + '/dois-botoes'], 1, /bot[oõ]es de a[cç][aã]o na mesma tela/],
+    ['responsivo-botao-coberto', 'gate-responsivo.mjs', ['--url', url + '/botao-coberto'], 1, /coberto ou encostado/],
+    ['responsivo-hero-foto-ok', 'gate-responsivo.mjs', ['--url', url + '/hero-foto-ok'], 0],
+    ['responsivo-hero-foto-baixa', 'gate-responsivo.mjs', ['--url', url + '/hero-foto-baixa'], 1, /foto do her[oó]i/],
     ['simetria-positiva', 'gate-simetria.mjs', ['--url', url + '/grade-ok'], 0],
     ['simetria-pagina-simples', 'gate-simetria.mjs', ['--url', url + '/ok'], 0],
     ['simetria-escada', 'gate-simetria.mjs', ['--url', url + '/grade-escada'], 1, /escada/],

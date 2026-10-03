@@ -212,7 +212,7 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `servidor-gzip.py` | serve o build local com compressão | f |
 | `gate-sem-kicker.py` | kicker, 01/02/03 e número gigante, em HTML, Tailwind e `.css` | f |
 | `gate-classes-mortas.py` | classe do código que não existe no CSS gerado | f |
-| `gate-responsivo.mjs` | 12 telas: rolagem lateral, CTA na dobra, toque 44px, corpo 14px, botão em uma linha, botão a 2 telas no celular | f |
+| `gate-responsivo.mjs` | 12 telas: rolagem lateral, CTA na dobra, toque 44px, corpo 14px, botão em uma linha, botão a 2 telas no celular; no celular, fixo somado até 15%, 1 botão por tela, nenhum botão sob a barra e foto do herói com 35% da 1a tela | f |
 | `gate-oclusao.mjs` | texto coberto por camada ou cortado pela caixa | f |
 | `gate-simetria.mjs` | itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos (4 px) e sem buraco interno | f |
 | `gate-texto.mjs` | viúva em título e subtítulo (h1 a h4, dt, summary) de 320 a 1440, item em minúscula, itálico colorido repetido | f |

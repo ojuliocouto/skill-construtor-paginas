@@ -166,7 +166,12 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    caixa tem o próprio SVG animado; FAQ e fecho também têm movimento.
    **Texto:** `text-wrap: balance` em h1, h2, h3 e título de card (na v4, os h3 dos passos ficaram com palavra sozinha em 768 e o h2 do fecho em 320), `text-wrap: pretty` em parágrafo e pergunta.
    **Botão no celular:** rótulo que cabe numa linha em 320 px e, abaixo de 768 px, barra fixa
-   inferior depois do hero (ou botão repetido a cada 2 telas). A barra escondida leva
+   inferior depois do hero (ou botão repetido a cada 2 telas). **Ou botão no cabeçalho ou barra
+   fixa, nunca os dois:** o que é fixo soma até 15% da tela em 390 e 320; no máximo 1 botão de
+   ação visível por tela (a barra some quando há botão da página à vista) e nenhum botão encostado
+   ou coberto pela barra. Na v4 eram 152 px fixos (18% em 390, 28% em 320), 3 botões na mesma tela
+   e a barra cobrindo o botão de "Duas formas". **Foto do herói na primeira tela do celular** com
+   pelo menos 35% da altura (na v4: 134 px em 390 e nenhum em 320, com o rosto cortado na dobra). A barra escondida leva
    `visibility: hidden` além do `translate`: só deslocada, ela aparece no print de página
    inteira logo abaixo da primeira tela, por cima da foto (medido na v4).
    **Peso:** fonte só nos pesos e estilos usados (itálico de 144 KiB para 3 palavras foi achado

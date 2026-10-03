@@ -24,6 +24,9 @@
  *     quebrava em 2 linhas em 360 e 320px, com 68px de altura, e este gate dava PASSA)
  *   - celular: botao a no maximo 2 telas em qualquer ponto da rolagem (a mesma v3 tinha 6 telas
  *     sem botao nenhum entre o hero e o fecho; barra fixa ou botao repetido resolvem)
+ *   - celular (auditoria da v4): cabecalho fixo + barra fixa somados ate 15% da tela; no maximo
+ *     1 botao de acao visivel por tela; nenhum botao coberto ou a menos de 8 px da barra fixa;
+ *     foto do heroi na primeira tela com pelo menos 35% da altura
  *
  * Uso: node scripts/gate-responsivo.mjs --url <url>
  */
@@ -66,6 +69,11 @@ const TELAS = [
 
 const falhas = [];
 const avisos = [];
+// Auditoria da v4 (02/10/2026): no celular, o que fica fixo na tela (cabeçalho + barra) passa de
+// 15% da altura e o espaço de leitura some; a foto do herói precisa aparecer na 1a tela com
+// pelo menos 35% da altura.
+const LIMITE_FIXO = 0.15;
+const MINIMO_FOTO = 0.35;
 
 const luz = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
 const lum = (r, g, b) => 0.2126 * luz(r) + 0.7152 * luz(g) + 0.0722 * luz(b);
@@ -362,23 +370,90 @@ for (const [nome, w, h, mob] of TELAS) {
   // pergunta em cada parada se ALGUM botao esta visivel na janela. Assim barra fixa que so
   // aparece depois do hero conta, e botao escondido no celular (hidden sm:inline-flex) nao conta.
   r.trechoSemBotao = null;
+  r.fixoDemais = null; r.botoesNaTela = null; r.cobertos = []; r.fotoHeroi = null;
   if (mob) {
+    // FOTO DO HEROI NA PRIMEIRA TELA (auditoria da v4): em 390 a foto aparecia em 134 px, em 320
+    // nao aparecia, e o rosto da instrutora ficava cortado na dobra. Mede a parte da maior foto do
+    // primeiro bloco que fica entre o que e fixo em cima e o que e fixo embaixo, em scrollY 0.
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await page.waitForTimeout(200);
+    r.fotoHeroi = await page.evaluate(() => {
+      const heroi = document.querySelector('section');
+      if (!heroi) return null;
+      const fotos = [...heroi.querySelectorAll('img, video, picture > img')].filter((m) => (m.naturalWidth || m.videoWidth || 0) >= 300 || m.getBoundingClientRect().width >= window.innerWidth * 0.5);
+      if (!fotos.length) return null;
+      let topo = 0, base = window.innerHeight;
+      for (const el of document.querySelectorAll('body *')) {
+        const cs = getComputedStyle(el);
+        if (cs.position !== 'fixed' && cs.position !== 'sticky') continue;
+        if (el.checkVisibility && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+        const c = el.getBoundingClientRect();
+        if (c.height < 20 || c.width < window.innerWidth * 0.5) continue;
+        if (c.top <= 1 && c.bottom > 0) topo = Math.max(topo, c.bottom);
+        if (c.bottom >= window.innerHeight - 1 && c.top < window.innerHeight) base = Math.min(base, c.top);
+      }
+      const vis = Math.max(...fotos.map((m) => { const c = m.getBoundingClientRect(); return Math.max(0, Math.min(c.bottom, base) - Math.max(c.top, topo)); }));
+      return { px: Math.round(vis), frac: vis / window.innerHeight };
+    });
     const altura = await page.evaluate(() => document.documentElement.scrollHeight);
-    const passo = Math.max(120, Math.round(h / 3));
+    // Passo de 1/6 de tela: com 1/3, um botao de 52 px podia passar por baixo da barra entre duas paradas.
+    const passo = Math.max(80, Math.round(h / 6));
     let inicio = null, pior = 0, piorInicio = 0;
     for (let y = 0; y <= Math.max(0, altura - h) + passo; y += passo) {
       const yy = Math.min(y, Math.max(0, altura - h));
       await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), yy);
       await page.waitForTimeout(160);
-      const visivel = await page.evaluate(() => [...document.querySelectorAll('a, button, [data-cta]')].some((el) => {
-        const cs = getComputedStyle(el);
-        const txt = (el.innerText || '').trim();
-        const temCaixa = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || el.hasAttribute('data-cta');
-        if (!temCaixa || txt.length < 4 || txt.length > 60) return false;
-        if (el.checkVisibility && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return false;
-        const c = el.getBoundingClientRect();
-        return c.width >= 40 && c.height >= 20 && c.bottom > 0 && c.top < window.innerHeight;
-      }));
+      const tela = await page.evaluate(() => {
+        const vh = window.innerHeight;
+        const ehVisivel = (el) => !el.checkVisibility || el.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+        // O que fica fixo na tela: cabecalho sticky grudado no topo, barra fixa, e so o de fora
+        // (barra dentro de barra conta uma vez).
+        const fixos = [];
+        for (const el of document.querySelectorAll('body *')) {
+          const cs = getComputedStyle(el);
+          if (cs.position !== 'fixed' && cs.position !== 'sticky') continue;
+          if (!ehVisivel(el) || parseFloat(cs.opacity) < 0.05) continue;
+          const c = el.getBoundingClientRect();
+          if (c.height < 20 || c.width < window.innerWidth * 0.5 || c.bottom <= 0 || c.top >= vh) continue;
+          if (cs.position === 'sticky' && c.top > 1) continue;
+          let dentro = false;
+          for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+            const p = getComputedStyle(n).position;
+            if (p === 'fixed' || p === 'sticky') { dentro = true; break; }
+          }
+          if (!dentro) fixos.push({ el, c, alt: Math.min(c.bottom, vh) - Math.max(c.top, 0) });
+        }
+        const botoes = [...document.querySelectorAll('a, button, [data-cta]')].filter((el) => {
+          const cs = getComputedStyle(el);
+          const txt = (el.innerText || '').trim();
+          const temCaixa = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || el.hasAttribute('data-cta');
+          if (!temCaixa || txt.length < 4 || txt.length > 60 || !ehVisivel(el)) return false;
+          const c = el.getBoundingClientRect();
+          return c.width >= 40 && c.height >= 20 && c.bottom > 0 && c.top < vh;
+        });
+        const cobertos = [];
+        for (const b of botoes) {
+          if (fixos.some((f) => f.el.contains(b))) continue;
+          const cb = b.getBoundingClientRect();
+          // So a barra de baixo: conteudo passando por baixo do cabecalho grudado no topo e rolagem normal.
+          for (const f of fixos.filter((x) => x.c.bottom >= vh - 1)) {
+            const sobrepoe = cb.left < f.c.right && f.c.left < cb.right;
+            const folga = cb.top >= f.c.bottom ? cb.top - f.c.bottom : f.c.top - cb.bottom;
+            if (sobrepoe && folga < 8) cobertos.push(`"${(b.innerText || '').trim().slice(0, 26)}" a ${Math.round(folga)} px da barra fixa`);
+          }
+        }
+        return {
+          visivel: botoes.length > 0,
+          nBotoes: botoes.length,
+          nomes: botoes.map((b) => (b.innerText || '').trim().slice(0, 22)),
+          fixo: Math.round(fixos.reduce((s, f) => s + f.alt, 0)),
+          cobertos,
+        };
+      });
+      const visivel = tela.visivel;
+      if (!r.fixoDemais || tela.fixo > r.fixoDemais.px) r.fixoDemais = { px: tela.fixo, y: yy };
+      if (tela.nBotoes > 1 && (!r.botoesNaTela || tela.nBotoes > r.botoesNaTela.n)) r.botoesNaTela = { n: tela.nBotoes, y: yy, nomes: tela.nomes };
+      for (const c of tela.cobertos) r.cobertos.push(`${c} (scrollY ${yy})`);
       if (visivel) { inicio = null; }
       else {
         if (inicio === null) inicio = yy;
@@ -409,6 +484,14 @@ for (const [nome, w, h, mob] of TELAS) {
   if (!ctaOk) falhas.push(`${onde}: CTA do heroi abaixo da dobra (termina em ${r.ctaBottom}px de ${r.viewportH}px)`);
   if (r.botaoQuebrado?.length) falhas.push(`${onde}: botao em mais de uma linha: ${r.botaoQuebrado.slice(0, 3).join(', ')}`);
   if (r.trechoSemBotao) falhas.push(`${onde}: ${r.trechoSemBotao.telas.toFixed(1)} telas sem nenhum botao visivel a partir de y ${r.trechoSemBotao.de} (maximo 2): barra fixa no celular ou botao repetido`);
+  if (mob && r.fixoDemais && r.fixoDemais.px > LIMITE_FIXO * h)
+    falhas.push(`${onde}: espaço fixo de ${r.fixoDemais.px}px (${(100 * r.fixoDemais.px / h).toFixed(1)}% da tela, máximo ${LIMITE_FIXO * 100}%) em scrollY ${r.fixoDemais.y}: cabeçalho fixo e barra fixa somados`);
+  if (mob && r.botoesNaTela)
+    falhas.push(`${onde}: ${r.botoesNaTela.n} botões de ação na mesma tela em scrollY ${r.botoesNaTela.y} (${r.botoesNaTela.nomes.slice(0, 3).join(' | ')}): no máximo 1 por tela; a barra fixa some quando há botão da página à vista`);
+  if (mob && r.cobertos.length)
+    falhas.push(`${onde}: botão coberto ou encostado na barra fixa (menos de 8 px): ${[...new Set(r.cobertos)].slice(0, 3).join(', ')}`);
+  if (mob && r.fotoHeroi && r.fotoHeroi.frac < MINIMO_FOTO)
+    falhas.push(`${onde}: foto do herói ocupa ${r.fotoHeroi.px}px na primeira tela (${(100 * r.fotoHeroi.frac).toFixed(1)}% da altura, mínimo ${MINIMO_FOTO * 100}%): no celular a foto entra antes do texto longo`);
   if (r.toqueRuim.length) falhas.push(`${onde}: ${r.toqueRuim.length} alvo(s) de toque < 44px: ${r.toqueRuim.slice(0, 3).join(', ')}`);
   if (r.textoPequeno.length) falhas.push(`${onde}: texto de corpo < 14px: ${r.textoPequeno.slice(0, 3).join(', ')}`);
   if (r.cortado.length) falhas.push(`${onde}: texto cortado pela caixa: ${r.cortado.slice(0, 3).join(', ')}`);
