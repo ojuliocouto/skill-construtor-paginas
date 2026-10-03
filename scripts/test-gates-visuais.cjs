@@ -144,7 +144,7 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['responsivo-fixos-demais', 'gate-responsivo.mjs', ['--url', url + '/fixos-demais'], 1, /espa[cç]o fixo/],
     ['responsivo-dois-botoes', 'gate-responsivo.mjs', ['--url', url + '/dois-botoes'], 1, /bot[oõ]es de a[cç][aã]o na mesma tela/],
     ['responsivo-botao-coberto', 'gate-responsivo.mjs', ['--url', url + '/botao-coberto'], 1, /coberto ou encostado/],
-    ['responsivo-hero-foto-ok', 'gate-responsivo.mjs', ['--url', url + '/hero-foto-ok'], 0],
+    ['responsivo-hero-foto-ok', 'gate-responsivo.mjs', ['--url', url + '/hero-foto-ok'], 0, /medido no celular: fixo \d+px \([\d.]+%\), foto do her[oó]i \d+px \([\d.]+%\), at[eé] \d bot/],
     ['responsivo-hero-foto-baixa', 'gate-responsivo.mjs', ['--url', url + '/hero-foto-baixa'], 1, /foto do her[oó]i/],
     ['simetria-positiva', 'gate-simetria.mjs', ['--url', url + '/grade-ok'], 0],
     ['simetria-pagina-simples', 'gate-simetria.mjs', ['--url', url + '/ok'], 0],

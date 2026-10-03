@@ -453,6 +453,7 @@ for (const [nome, w, h, mob] of TELAS) {
       const visivel = tela.visivel;
       if (!r.fixoDemais || tela.fixo > r.fixoDemais.px) r.fixoDemais = { px: tela.fixo, y: yy };
       if (tela.nBotoes > 1 && (!r.botoesNaTela || tela.nBotoes > r.botoesNaTela.n)) r.botoesNaTela = { n: tela.nBotoes, y: yy, nomes: tela.nomes };
+      r.maxBotoes = Math.max(r.maxBotoes || 0, tela.nBotoes);
       for (const c of tela.cobertos) r.cobertos.push(`${c} (scrollY ${yy})`);
       if (visivel) { inicio = null; }
       else {
@@ -478,6 +479,9 @@ for (const [nome, w, h, mob] of TELAS) {
   );
 
   const onde = `${nome} (${w}x${h})`;
+  // O relatório só pode citar o que o gate gravou (auditoria da v4): as medidas do celular saem
+  // sempre, passando ou não.
+  if (mob) console.log(`  medido no celular: fixo ${r.fixoDemais ? r.fixoDemais.px : 0}px (${(100 * (r.fixoDemais ? r.fixoDemais.px : 0) / h).toFixed(1)}%), foto do herói ${r.fotoHeroi ? r.fotoHeroi.px + 'px (' + (100 * r.fotoHeroi.frac).toFixed(1) + '%)' : 'sem foto no herói'}, até ${r.maxBotoes || 0} botão(ões) por tela, ${r.cobertos.length} encostado(s) na barra`);
   if (r.overflow > 0) falhas.push(`${onde}: overflow horizontal de ${r.overflow}px`);
   if (r.ctaSemContraste?.length)
     falhas.push(`${onde}: CTA camuflado no fundo (< 3:1): ${r.ctaSemContraste.slice(0, 3).join(', ')}`);
