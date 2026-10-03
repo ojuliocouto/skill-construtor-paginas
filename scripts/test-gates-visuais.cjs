@@ -62,6 +62,9 @@ const servidor = http.createServer((req, res) => {
   // acima do da outra (ícone e nota com margin-top:auto); o gate media só a caixa.
   const card = (miolo) => `<article style="display:flex;flex-direction:column;background:#eee;padding:16px">${miolo}</article>`;
   const par = (a, b) => texto + '<section><h2>Duas formas</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' + card(a) + card(b) + '</div></section>';
+  // v5: coluna só com uma ilustração aria-hidden (decorativa para leitor de tela, mas visível)
+  // contava como coluna vazia e terminava no topo, e o gate acusava 354 px que não existiam.
+  if (rota === '/ilustracao-ao-lado') corpo = '<section><div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center"><figure style="margin:0"><svg aria-hidden="true" width="200" height="400" viewBox="0 0 200 400"><rect x="10" y="10" width="180" height="380" fill="none" stroke="#111"/></svg></figure><div><h2>Antes da primeira aula</h2><p style="height:280px">Texto ao lado da ilustração grande.</p></div></div></section>';
   if (rota === '/cards-ok') corpo = par('<div style="height:200px;background:#ccd"></div><h3>Em grupo</h3><p>Até quatro pessoas por turma.</p>', '<div style="height:200px;background:#ccd"></div><h3>Particular</h3><p>Aula individual.</p>');
   if (rota === '/cards-titulo-desalinhado') corpo = par('<div style="height:260px;background:#ccd"></div><h3>Em grupo</h3><p>Até quatro pessoas por turma.</p>', '<div style="height:80px;width:80px;margin:auto auto 0;background:#ccd"></div><h3>Particular</h3><p>Aula individual.</p><p style="margin-top:auto">O valor vem pelo WhatsApp.</p>');
   if (rota === '/cards-buraco') corpo = par('<h3>Em grupo</h3><p>Até quatro pessoas por turma.</p><div style="height:220px;background:#ccd"></div>', '<h3>Particular</h3><p>Aula individual.</p><p style="margin-top:auto">O valor de cada forma vem pelo WhatsApp.</p>');
@@ -149,6 +152,7 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['simetria-alturas', 'gate-simetria.mjs', ['--url', url + '/grade-alturas'], 1, /alturas diferentes/],
     ['simetria-passos-ao-lado', 'gate-simetria.mjs', ['--url', url + '/passos-ao-lado'], 1, /lista vertical ao lado do t[ií]tulo/],
     ['simetria-colunas', 'gate-simetria.mjs', ['--url', url + '/colunas-desbalanceadas'], 1, /colunas desbalanceadas/],
+    ['simetria-ilustracao-ao-lado', 'gate-simetria.mjs', ['--url', url + '/ilustracao-ao-lado'], 0],
     ['simetria-cards-ok', 'gate-simetria.mjs', ['--url', url + '/cards-ok'], 0],
     ['simetria-cards-titulo', 'gate-simetria.mjs', ['--url', url + '/cards-titulo-desalinhado'], 1, /t[ií]tulos de cards vizinhos desalinhados/],
     ['simetria-cards-buraco', 'gate-simetria.mjs', ['--url', url + '/cards-buraco'], 1, /buraco interno/],

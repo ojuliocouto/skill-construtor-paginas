@@ -173,6 +173,9 @@ for (const [nome, w, h] of TELAS) {
       if (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || cs.backgroundImage !== 'none' || cs.boxShadow !== 'none') return true;
       return ['Top', 'Right', 'Bottom', 'Left'].filter((l) => parseFloat(cs['border' + l + 'Width']) > 0 && cs['border' + l + 'Style'] !== 'none').length >= 3;
     };
+    // Ilustração em fluxo com aria-hidden é decorativa para leitor de tela, mas é o conteúdo
+    // visual da coluna (v5: a coluna vertebral da avaliação contava como coluna vazia).
+    const ilustracao = (n) => ['svg', 'IMG', 'PICTURE', 'CANVAS', 'VIDEO'].includes(n.tagName) && n.getBoundingClientRect().width >= 80 && n.getBoundingClientRect().height >= 80;
     const baseVisual = (el) => {
       if (temCaixa(el)) return el.getBoundingClientRect().bottom;
       let m = -Infinity;
@@ -180,7 +183,7 @@ for (const [nome, w, h] of TELAS) {
         if (n.nodeType === 3 && n.textContent.trim()) {
           const rg = document.createRange(); rg.selectNodeContents(n);
           const b = rg.getBoundingClientRect(); if (b.height) m = Math.max(m, b.bottom);
-        } else if (n.nodeType === 1 && visivel(n) && !solto(n) && n.getAttribute('aria-hidden') !== 'true') {
+        } else if (n.nodeType === 1 && visivel(n) && !solto(n) && (n.getAttribute('aria-hidden') !== 'true' || ilustracao(n))) {
           m = Math.max(m, baseVisual(n));
         }
       }
