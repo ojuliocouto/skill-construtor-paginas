@@ -45,7 +45,7 @@ if (!URL_ALVO || URL_ALVO.startsWith('--')) {
 }
 const MAXIMO_SEGUIDAS = 2;
 // Metáforas de biblioteca de ícone. O problema não é o ícone, é o genérico: desenhe o assunto.
-const GENERICOS = String.raw`bal[aã]o|chat|calend[aá]rio|agenda|check|visto|boneco|palito|estrela|cora[cç][aã]o|l[aâ]mpada|foguete|alvo|engrenagem|cadeado|escudo|trof[eé]u|medalha|sino|lupa|envelope|telefone|rel[oó]gio|raio|polegar|joinha|aperto de m[aã]o|gr[aá]fico subindo`;
+const GENERICOS = String.raw`bal[aã]o|chat|calend[aá]rio|agenda|check|sinal de visto|boneco|palito|estrela|cora[cç][aã]o|l[aâ]mpada|foguete|alvo|engrenagem|cadeado|escudo|trof[eé]u|medalha|sino|lupa|envelope|telefone|rel[oó]gio|raio|polegar|joinha|aperto de m[aã]o|gr[aá]fico subindo`;
 
 const navegador = await chromium.launch();
 const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 } });

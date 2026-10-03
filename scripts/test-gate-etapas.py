@@ -111,6 +111,8 @@ class Etapas(unittest.TestCase):
         self.assertEqual(self.validar('2', b), 1)
         b['icones'][0]['desenha'] = 'calendário com check'
         self.assertEqual(self.validar('2', b), 1)
+        b['icones'][0]['desenha'] = 'aparelho de pilates visto de lado'
+        self.assertEqual(self.validar('2', b), 0, '"visto de lado" não é o sinal de visto')
         b['icones'][0]['desenha'] = 'planta baixa de uma sala com quatro aparelhos'
         self.assertEqual(self.validar('2', b), 0)
 

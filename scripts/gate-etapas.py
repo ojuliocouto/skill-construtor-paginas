@@ -47,7 +47,7 @@ DASH = {
 }
 REGISTRO = ".etapas-verificadas.json"
 # Metáforas de biblioteca de ícone (sem acento, depois de normalizar). Mesma lista do gate-composicao.mjs.
-GENERICOS = r"balao|chat|calendario|agenda|check|visto|boneco|palito|estrela|coracao|lampada|foguete|alvo|engrenagem|cadeado|escudo|trofeu|medalha|sino|lupa|envelope|telefone|relogio|raio|polegar|joinha|aperto de mao|grafico subindo"
+GENERICOS = r"balao|chat|calendario|agenda|check|sinal de visto|boneco|palito|estrela|coracao|lampada|foguete|alvo|engrenagem|cadeado|escudo|trofeu|medalha|sino|lupa|envelope|telefone|relogio|raio|polegar|joinha|aperto de mao|grafico subindo"
 
 
 def normalizar(s):
