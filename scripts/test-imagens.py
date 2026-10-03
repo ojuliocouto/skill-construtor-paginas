@@ -67,6 +67,36 @@ class GateImagens(unittest.TestCase):
         problemas = gate.checar(self.projeto([SALA, OG_SALA], RODAPE_OK.replace("Imagem ilustrativa: a sala", "A sala")))
         self.assertTrue(any("ilustrativa" in p and "página" in p for p in problemas), problemas)
 
+    # Auditoria da v5 (03/10/2026): o crédito dizia Foto "Sala de pilates com aparelhos", e o
+    # título da foto no Unsplash é "a room filled with lots of different types of equipment".
+    def test_titulo_inventado_no_credito_reprova(self):
+        origem = "https://unsplash.com/photos/a-room-filled-with-lots-of-different-types-of-equipment-2sXYx7sd-kg"
+        linha = SALA.replace("https://unsplash.com/photos/x", origem).replace("| Sala de pilates |", "| Sala de pilates com aparelhos |")
+        og = OG_SALA.replace("| Sala de pilates |", "| Sala de pilates com aparelhos |")
+        rodape = RODAPE_OK.replace("Foto: Ahmet Kurt", 'Foto "Sala de pilates com aparelhos": Ahmet Kurt')
+        problemas = " | ".join(gate.checar(self.projeto([linha, og], rodape)))
+        self.assertRegex(problemas, r"t[ií]tulo")
+        self.assertIn("a room filled with lots", problemas)
+
+    def test_titulo_real_da_fonte_passa(self):
+        titulo = "a room filled with lots of different types of equipment"
+        origem = "https://unsplash.com/photos/a-room-filled-with-lots-of-different-types-of-equipment-2sXYx7sd-kg"
+        linha = SALA.replace("https://unsplash.com/photos/x", origem).replace("| Sala de pilates |", f"| {titulo} |")
+        og = OG_SALA.replace("| Sala de pilates |", f"| {titulo} |")
+        rodape = RODAPE_OK.replace("Foto: Ahmet Kurt", f'Foto "{titulo}": Ahmet Kurt')
+        self.assertEqual(gate.checar(self.projeto([linha, og], rodape)), [])
+
+    def test_aspas_no_credito_com_outro_titulo_reprova(self):
+        rodape = RODAPE_OK.replace("Foto: Ahmet Kurt", 'Foto "Estúdio iluminado": Ahmet Kurt')
+        problemas = " | ".join(gate.checar(self.projeto([SALA, OG_SALA], rodape)))
+        self.assertIn("Estúdio iluminado", problemas)
+
+    def test_ilustracao_propria_dispensa_link_de_licenca(self):
+        linha = "| aula-1200.webp | ilustração própria, feita para esta página | Studio | Avaliação postural | própria | | nenhuma | não | não se aplica | não |\n"
+        og = "| og-image.jpg | ilustração própria, feita para esta página | Studio | Avaliação postural | própria | | texto ao lado | não | não se aplica | não |\n"
+        rodape = "<footer><p>Ilustrações feitas para esta página.</p></footer>"
+        self.assertEqual(gate.checar(self.projeto([linha, og], rodape, imagens=("imagens/aula-1200.webp", "og-image.jpg"))), [])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

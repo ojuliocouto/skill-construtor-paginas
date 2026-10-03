@@ -21,7 +21,14 @@ ilustrativa) e a `dist/`. Reprova (exit 1):
   4. og-image que não é do cliente sem aviso de "imagem ilustrativa";
   5. crédito incompleto na página: para CC, autor, título, licença COM versão e link para a
      licença no HTML publicado; imagem CC BY-SA alterada sem "mesma licença" escrito;
-  6. página com imagem que não é do cliente e sem "imagem ilustrativa" no texto.
+  6. página com imagem que não é do cliente e sem "imagem ilustrativa" no texto;
+  7. (auditoria da v5, 03/10/2026) título que não é o da fonte: quando a origem é uma URL com
+     o título no endereço (Unsplash, Wikimedia), o Título da tabela tem de estar nele; e todo
+     trecho entre aspas no crédito da página (na frase com o nome do autor) tem de ser o
+     Título da tabela. A v5 publicou Foto "Sala de pilates com aparelhos" para uma foto que
+     no Unsplash se chama "a room filled with lots of different types of equipment".
+Ilustração própria (Origem com "ilustração própria" ou "desenho próprio") não pede link de
+licença nem "imagem ilustrativa": é da página, não de terceiro.
 Favicon, apple-touch-icon e fontes ficam de fora.
 
 Uso: python3 scripts/gate-imagens.py --projeto <dir> [--dist <dir>/dist]
@@ -99,6 +106,32 @@ def do_cliente(item):
     return any(k in norm(item.get("origem", "") + " " + item.get("licenca", "")) for k in ("do cliente", "da cliente", "propria do cliente"))
 
 
+def propria(item):
+    return any(k in norm(item.get("origem", "")) for k in ("ilustracao propria", "desenho proprio", "ilustracoes proprias"))
+
+
+def titulo_da_url(origem):
+    """Título legível no endereço da fonte (slug do Unsplash, nome do arquivo da Wikimedia)."""
+    m = re.match(r"https?://\S+", origem or "")
+    if not m:
+        return ""
+    ultimo = re.sub(r"[?#].*$", "", m.group(0)).rstrip("/").split("/")[-1]
+    ultimo = re.sub(r"^(file|arquivo):", "", ultimo, flags=re.I)
+    ultimo = re.sub(r"\.(jpe?g|png|webp|gif|tiff?)$", "", ultimo, flags=re.I)
+    return norm(re.sub(r"[-_%]+", " ", ultimo))
+
+
+def citacoes_do_credito(texto, autor):
+    """Trechos entre aspas nas frases do texto da página que citam o autor."""
+    if not autor.strip():
+        return []
+    achados = []
+    for frase in re.split(r"(?<=[.!?])\s+", texto):
+        if norm(autor) in norm(frase):
+            achados += re.findall(r'["“]([^"”]{2,140})["”]', frase)
+    return achados
+
+
 def checar(projeto, dist=None):
     projeto = Path(projeto)
     dist = Path(dist) if dist else projeto / "dist"
@@ -133,8 +166,8 @@ def checar(projeto, dist=None):
         chave = id(it)
         og = Path(rel).stem.startswith("og-image")
         cliente = do_cliente(it)
-        algum_terceiro |= not cliente
-        if og and not cliente and not sim(it["aviso"]):
+        algum_terceiro |= not cliente and not propria(it)
+        if og and not cliente and not propria(it) and not sim(it["aviso"]):
             problemas.append(f"{rel}: prévia do link sem aviso de \"imagem ilustrativa\" (a foto não é do cliente e é a primeira coisa que a visitante vê no WhatsApp)")
         if chave in vistos:
             continue
@@ -143,7 +176,7 @@ def checar(projeto, dist=None):
         licenca, link = it["licenca"], it["link"].strip()
         if not licenca:
             problemas.append(f"{nome}: sem licença")
-        if not cliente and not re.match(r"https?://", link):
+        if not cliente and not propria(it) and not re.match(r"https?://", link):
             problemas.append(f"{nome}: sem link da licença (http...)")
         if eh_cc(licenca):
             versao = re.search(r"\d\.\d", licenca)
@@ -167,6 +200,13 @@ def checar(projeto, dist=None):
             alterada = norm(it["alteracao"]) not in ("", "nenhuma", "nao", "-")
             if alterada and re.search(r"BY-?\s?SA", licenca, re.I) and "mesma licenca" not in texto_n:
                 problemas.append(f"{nome}: versão alterada de CC BY-SA sem \"mesma licença\" escrito no crédito da página")
+        slug = titulo_da_url(it.get("origem", ""))
+        titulo = it.get("titulo", "").strip()
+        if titulo and len(slug.split()) >= 3 and norm(titulo) not in slug:
+            problemas.append(f"{nome}: Título \"{titulo}\" não é o da fonte (o endereço diz \"{slug}\"): use o título real ou crédito sem título entre aspas")
+        for citado in citacoes_do_credito(texto, it.get("autor", "")):
+            if norm(citado) != norm(titulo):
+                problemas.append(f"{nome}: o crédito da página cita \"{citado}\" entre aspas como título, e o título da fonte é \"{titulo or slug}\"")
         if sim(it["pessoa"]) and not sim(it["autorizacao"]):
             problemas.append(f"{nome}: pessoa identificável sem autorização de imagem: prefira foto sem pessoa identificável ou ilustração própria; a licença do autor não cobre a imagem de quem aparece")
     if algum_terceiro and "ilustrativa" not in texto_n:
