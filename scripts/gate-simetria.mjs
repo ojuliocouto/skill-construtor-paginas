@@ -22,6 +22,10 @@
  *     caixas iguais (540 = 540 px) e os títulos a 147 px um do outro.
  *  3. COLUNAS VIZINHAS: filhos lado a lado de um grid ou flex cuja base visual (a caixa, se o
  *     filho tem fundo, borda ou sombra; senão o fim do conteúdo) difere mais de 80 px.
+ *  5. (auditoria da v5) FAIXA DE LINHAS: caixas da mesma linha com o texto principal em
+ *     quantidades de linhas que diferem mais de 1 (regra 20; em 768 eram 5, 3 e 4); e PASSOS
+ *     SEM CAIXA: ol (ou [data-passos]) com 3 a 6 passos lado a lado sem fundo, borda nem sombra
+ *     (regra 15: sequência de passos também vira grade de caixas iguais).
  *
  * Exceção declarada: `data-simetria-ok="motivo"` no contêiner (e cabeçalho, rodapé, nav e
  * aria-hidden ficam de fora). O motivo aparece na saída.
@@ -92,7 +96,7 @@ for (const [nome, w, h] of TELAS) {
   await assentar(page);
 
   const r = await page.evaluate(({ limite, desktop, TOL_TITULO, BURACO, BURACO_MIN }) => {
-    const out = { grupos: [], ladoTitulo: [], colunas: [], titulos: [], buracos: [], excecoes: [], maiorTitulo: 0 };
+    const out = { grupos: [], ladoTitulo: [], colunas: [], titulos: [], buracos: [], excecoes: [], maiorTitulo: 0, faixas: [], passosSemCaixa: [], maiorFaixa: 0 };
     const visivel = (el) => {
       const cs = getComputedStyle(el);
       if (cs.display === 'none' || cs.visibility === 'hidden') return false;
@@ -120,6 +124,45 @@ for (const [nome, w, h] of TELAS) {
       }
       return grupos;
     };
+
+    // Linhas renderizadas do texto principal de uma caixa (o parágrafo mais longo).
+    const linhasDe = (el) => {
+      const blocos = [...el.querySelectorAll('p, dd, blockquote')].filter(visivel);
+      if (!blocos.length) return null;
+      const b = blocos.sort((x, y) => (y.innerText || '').length - (x.innerText || '').length)[0];
+      const rg = document.createRange(); rg.selectNodeContents(b);
+      const tops = [];
+      for (const r of rg.getClientRects()) {
+        if (r.width < 1) continue;
+        if (!tops.some((t) => Math.abs(t - r.top) < r.height * 0.5)) tops.push(r.top);
+      }
+      return tops.length;
+    };
+    const fundoDe = (el) => {
+      for (let n = el; n; n = n.parentElement) {
+        const b = getComputedStyle(n).backgroundColor;
+        if (b && b !== 'rgba(0, 0, 0, 0)' && b !== 'transparent') return b;
+      }
+      return 'rgb(255, 255, 255)';
+    };
+    const caixaDe = (el) => {
+      const cs = getComputedStyle(el);
+      if (cs.boxShadow !== 'none' || cs.backgroundImage !== 'none') return true;
+      if (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== fundoDe(el.parentElement)) return true;
+      return ['Top', 'Right', 'Bottom', 'Left'].filter((l) => parseFloat(cs['border' + l + 'Width']) > 0 && cs['border' + l + 'Style'] !== 'none').length >= 3;
+    };
+
+    // 5 (auditoria da v5): PASSOS SEM CAIXA. A regra 15 do dono pede sequência de passos em
+    // grade de caixas iguais; a v5 trocou as caixas por uma linha do tempo sem caixa e passou.
+    for (const ol of document.querySelectorAll('ol, [data-passos]')) {
+      if (!visivel(ol) || fora(ol)) continue;
+      const passos = [...ol.children].filter((f) => visivel(f) && !solto(f));
+      if (passos.length < 3 || passos.length > 6) continue;
+      const tops = passos.map((f) => f.getBoundingClientRect().top);
+      if (Math.max(...tops) - Math.min(...tops) > 12) continue;
+      if (passos.some(caixaDe)) continue;
+      out.passosSemCaixa.push(`${passos.length} passos lado a lado sem caixa a partir de "${rotulo(passos[0])}" (sequência de passos vira grade de caixas iguais)`);
+    }
 
     // 1 e 2: grupos paralelos
     for (const pai of document.querySelectorAll('body *')) {
@@ -162,6 +205,13 @@ for (const [nome, w, h] of TELAS) {
           const dt = Math.max(...tops) - Math.min(...tops), dh = Math.max(...alts) - Math.min(...alts);
           if (dt > 1) out.grupos.push(`topos diferentes em ${dt.toFixed(1)} px na linha de "${rotulo(l.itens[0].x.el)}"`);
           if (dh > 1) out.grupos.push(`alturas diferentes em ${dh.toFixed(1)} px (${alts.map(Math.round).join(', ')}) na linha de "${rotulo(l.itens[0].x.el)}"`);
+          // Regra 20 do dono (auditoria da v5): texto de cada caixa na mesma faixa de linhas.
+          // Em 768 as situações tinham 5, 3 e 4 linhas e o gate só olhava topo e altura.
+          const nl = l.itens.map((v) => linhasDe(v.x.el)).filter((n) => n !== null);
+          if (nl.length === l.itens.length && Math.max(...nl) - Math.min(...nl) > 1) {
+            out.faixas.push(`texto em ${nl.join(', ')} linhas nas caixas de "${rotulo(l.itens[0].x.el)}" (máximo 1 linha de diferença)`);
+          }
+          out.maiorFaixa = Math.max(out.maiorFaixa, nl.length ? Math.max(...nl) - Math.min(...nl) : 0);
         }
       }
     }
@@ -238,10 +288,12 @@ for (const [nome, w, h] of TELAS) {
     .concat([...new Set(r.ladoTitulo)].map((x) => `lista vertical ao lado do título: ${x}`))
     .concat([...new Set(r.colunas)].map((x) => `colunas desbalanceadas: ${x}`))
     .concat([...new Set(r.titulos)].map((x) => `títulos de cards vizinhos desalinhados: ${x}`))
-    .concat([...new Set(r.buracos)].map((x) => `buraco interno: ${x}`));
+    .concat([...new Set(r.buracos)].map((x) => `buraco interno: ${x}`))
+    .concat([...new Set(r.faixas)].map((x) => `faixa de linhas diferente: ${x}`))
+    .concat([...new Set(r.passosSemCaixa)].map((x) => `passos sem caixa: ${x}`));
   r.excecoes.forEach((e) => excecoes.add(e));
   console.log(`${onde.padEnd(32)} ${todas.length ? 'FALHA (' + todas.length + ')' : 'ok'}`);
-  console.log(`  medido: maior diferença entre títulos vizinhos ${Math.round(r.maiorTitulo)} px`);
+  console.log(`  medido: maior diferença entre títulos vizinhos ${Math.round(r.maiorTitulo)} px, maior diferença de linhas entre caixas da mesma linha ${r.maiorFaixa}`);
   for (const t of todas) falhas.push(`${onde}: ${t}`);
   await ctx.close();
 }
