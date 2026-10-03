@@ -295,9 +295,13 @@ async function medirTela(pg, publico) {
     for (const ol of document.querySelectorAll('ol')) {
       if (!H.visivel(ol) || getComputedStyle(ol).position === 'static') continue;
       const lis = [...ol.children].filter(H.visivel);
+      // Tamanho de layout (offsetWidth), que a animação de escala não zera; o centro da caixa
+      // escalada é o mesmo da caixa inteira.
       const marcos = lis.map((li) => [...li.querySelectorAll('*')].find((m) => {
         const c = m.getBoundingClientRect();
-        return H.visivel(m) && c.width >= 8 && c.width <= 48 && c.height >= 8 && c.height <= 48 && Math.abs(c.width - c.height) <= 4;
+        const w = m.offsetWidth ?? c.width, h = m.offsetHeight ?? c.height;
+        const cs = getComputedStyle(m);
+        return cs.display !== 'none' && cs.visibility !== 'hidden' && w >= 8 && w <= 48 && h >= 8 && h <= 48 && Math.abs(w - h) <= 4;
       })).filter(Boolean);
       if (marcos.length < 2) continue;
       const or = ol.getBoundingClientRect();
@@ -351,7 +355,11 @@ telasMedidas.push(['desktop 1440', await medirTela(page, PUBLICO)]);
   const pm = await ctxM.newPage();
   try { await pm.goto(URL_ALVO, { waitUntil: 'networkidle', timeout: 45000 }); }
   catch { await pm.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
+  const altM = await pm.evaluate(() => document.documentElement.scrollHeight);
+  for (let y = 0; y <= altM; y += 420) { await pm.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), y); await pm.waitForTimeout(100); }
   await pm.waitForTimeout(1500);
+  await pm.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await pm.waitForTimeout(300);
   await pm.evaluate(`window.__H = (${AJUDA.toString()})()`);
   telasMedidas.push(['celular 390', await medirTela(pm, PUBLICO)]);
   await ctxM.close();
