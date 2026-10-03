@@ -154,8 +154,17 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
 2. **Imagens:** material real do cliente primeiro. Sem ele, banco com licença livre (Openverse
    pelo `scripts/assets-search.py "<tema em inglês>" --type photo`, Unsplash, Pexels,
    Wikimedia Commons), escolhida pelo que as referências ensinaram (assunto, luz,
-   enquadramento), nunca a primeira que aparece. Registre cada uma em `imagens/LICENCAS.md`
-   (arquivo, página de origem, autor, licença). Foto que não é do cliente leva "imagem
+   enquadramento), nunca a primeira que aparece. Registre cada uma em `imagens/LICENCAS.md`,
+   na tabela com as colunas `Arquivo publicado | Origem | Autor | Título | Licença | Link da
+   licença | Alteração | Pessoa identificável | Autorização de imagem | Aviso de ilustrativa`,
+   uma linha também para o og-image. **Licença com nome, versão e link** ("CC BY-SA 3.0" com
+   https://creativecommons.org/licenses/by-sa/3.0/; Unsplash e Pexels com o link da licença
+   deles), e o crédito no rodapé repete autor, título, licença com versão e o link; versão
+   alterada de CC BY-SA diz que segue a mesma licença. **Direito de imagem:** licença do
+   fotógrafo não cobre a imagem de quem aparece; sem autorização das retratadas, prefira foto
+   sem pessoa identificável (o espaço, o aparelho) ou ilustração própria. Na v4, a foto era de
+   um estúdio real com duas pessoas identificáveis, o crédito vinha sem versão e sem link da
+   licença, e o og-image saía sem "imagem ilustrativa"; o `gate-imagens.py` reprova os três. Foto que não é do cliente leva "imagem
    ilustrativa" e nunca pode sugerir ser o espaço ou a profissional dele. Arquivo e caixa na
    mesma proporção; WebP; `width` e `height`; `srcset` e `sizes` em TODA foto (não só no
    hero: a foto da sala de 1500 px exibida a 348 px custou 171 KiB no Lighthouse da v3);
@@ -211,13 +220,14 @@ Rode cada gate e registre o exit REAL na wave:
 `node <dir-da-skill>/scripts/gate-composicao.mjs --url http://localhost:8765/` (mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido)
 `node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, e pelo menos 2 seções animam ao chegar)
 `python3 <dir-da-skill>/scripts/gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas)
+`python3 <dir-da-skill>/scripts/gate-imagens.py --projeto <dir>` (licença com versão e link, pessoa identificável sem autorização, crédito no HTML, aviso no og-image)
 `python3 <dir-da-skill>/scripts/montar-dist.py --projeto <dir> --css-em-linha` e `python3 <dir-da-skill>/scripts/gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar)
 `node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/prova --click "<seletor do botão>"` (identidade, scrollY 0, clique)
 `python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> registrar Playwright --arquivo prova/prova-desktop.png --detalhe "prova de tela lida"`
 `python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> checar --caminho criar`
 `python3 <dir-da-skill>/scripts/gate-referencias.py --projeto <dir>`
 `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> gate <nome> --exit <0|1> --detalhe "<o que o gate imprimiu>"`
-(nomes: `sem-kicker`, `classes-mortas`, `responsivo`, `oclusao`, `identidade`, `uso-ferramentas`, `referencias`, `simetria`, `texto`, `verdade`, `publicacao`, `movimento`, `composicao`)
+(nomes: `sem-kicker`, `classes-mortas`, `responsivo`, `oclusao`, `identidade`, `uso-ferramentas`, `referencias`, `simetria`, `texto`, `verdade`, `publicacao`, `movimento`, `composicao`, `imagens`)
 
 O `gate-responsivo.mjs` também reprova botão em mais de uma linha até 768 px e trecho de mais de
 2 telas sem botão no celular. Rode os gates de tela contra a `dist/` servida (é o que vai para o ar).

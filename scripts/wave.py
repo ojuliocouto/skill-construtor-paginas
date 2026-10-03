@@ -79,6 +79,7 @@ GATES = {
     # das telas e dos elementos que os gates mediam.
     "movimento": "gate-movimento.mjs (visita de 8 s parada no topo: nada anima fora da tela)",
     "composicao": "gate-composicao.mjs (mesmo esqueleto em mais de 2 secoes seguidas, icone de biblioteca)",
+    "imagens": "gate-imagens.py (licenca com versao e link, direito de imagem, aviso no og-image)",
 }
 
 # Quem auditou. Nota de autoavaliacao (quem construiu olhando o proprio trabalho) NAO libera

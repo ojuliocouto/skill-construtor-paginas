@@ -144,7 +144,8 @@ preenche o ritmo que o plano desenhou e nunca inventa fato; o código segue os d
   se não está no briefing, não existe. Foto, alt e JSON-LD também afirmam e entram no diff.
 - **Imagem real com licença registrada.** Material do cliente primeiro; senão banco de licença
   livre escolhido pelo que as referências ensinaram, com a licença em `imagens/LICENCAS.md` e
-  "imagem ilustrativa" quando a foto não é do cliente.
+  "imagem ilustrativa" quando a foto não é do cliente, inclusive no og-image. Sem autorização de
+  imagem de quem aparece, foto sem pessoa identificável ou ilustração própria (`gate-imagens.py`).
 - **Zero travessão** (U+2014 e U+2013), **zero emoji**, acentuação correta, contato idêntico
   dígito por dígito em toda a página.
 - **Sem kicker, sem 01/02/03, sem número gigante decorativo** (`references/preferencias-de-design.md`).
@@ -219,6 +220,7 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `gate-composicao.mjs` | cara de template: mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido | f |
 | `gate-movimento.mjs` | visita real: 8 s parada no topo, depois rola; reprova animação que roda fora da tela e página que não anima ao chegar | f |
 | `gate-verdade.py` | toda promessa (e a meta description) com linha do briefing que sustente | d, f |
+| `gate-imagens.py` | licença completa (nome, versão, link), pessoa identificável sem autorização, crédito no HTML e "imagem ilustrativa" também no og-image | e, f |
 | `montar-dist.py` + `gate-publicacao.py` | `dist/` só com o que a página usa, e o gate que reprova a casa na publicação | f, h |
 | `gate-video.mjs` | as 7 checagens de vídeo (só em página com vídeo) | f |
 | `uso-ferramentas.py` | Playwright e `frontend-design` foram usados de verdade | f |
