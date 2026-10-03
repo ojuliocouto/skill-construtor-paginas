@@ -51,6 +51,10 @@ const servidor = http.createServer((req, res) => {
   const curta = '<section><h1>Página curta</h1><p>Texto normal com uma <em style="color:#24525A">palavra</em> só.</p><dl><dt>Em grupo</dt><dd>Até 4 pessoas</dd></dl></section>';
   if (rota === '/texto-ok') corpo = curta;
   if (rota === '/viuva') corpo = curta + '<h2 style="width:9ch;font:32px/1.2 monospace">aaaa bbbb c</h2>';
+  // Auditoria da v4: o gate media só h1 e h2 e só até 360 px; em 320 o h2 do fecho e dois h3
+  // ficavam com palavra sozinha, e em 768 os 3 h3 dos passos também.
+  if (rota === '/viuva-h3-320') corpo = curta + '<style>@media (max-width:340px){.t3{width:9ch}}</style><h3 class="t3" style="font:24px/1.2 monospace">Aaaa bbbb c</h3>';
+  if (rota === '/viuva-titulo-card') corpo = curta.replace('<dt>Em grupo</dt>', '<dt style="width:9ch;font:24px/1.2 monospace">Aaaa bbbb c</dt>');
   if (rota === '/minuscula') corpo = curta.replace('Até 4 pessoas', 'até 4 pessoas');
   if (rota === '/italicos') corpo = curta + '<h2>Outro <em style="color:#24525A">título</em></h2><h2>Mais <em style="color:#24525A">um</em></h2>';
   // gate-movimento (auditoria da v4): um setTimeout de 3 s revelava todas as seções com a página
@@ -112,6 +116,8 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['simetria-colunas', 'gate-simetria.mjs', ['--url', url + '/colunas-desbalanceadas'], 1, /colunas desbalanceadas/],
     ['texto-positivo', 'gate-texto.mjs', ['--url', url + '/texto-ok'], 0],
     ['texto-viuva', 'gate-texto.mjs', ['--url', url + '/viuva'], 1, /vi[uú]va/],
+    ['texto-viuva-h3-320', 'gate-texto.mjs', ['--url', url + '/viuva-h3-320'], 1, /menor suportado.*h3/],
+    ['texto-viuva-titulo-card', 'gate-texto.mjs', ['--url', url + '/viuva-titulo-card'], 1, /vi[uú]va: dt/],
     ['texto-minuscula', 'gate-texto.mjs', ['--url', url + '/minuscula'], 1, /min[uú]scula: <dd> "at[eé] 4/],
     ['texto-italicos', 'gate-texto.mjs', ['--url', url + '/italicos'], 1, /it[aá]lico colorido/],
     ['movimento-positivo', 'gate-movimento.mjs', ['--url', url + '/movimento-ok'], 0],

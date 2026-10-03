@@ -72,7 +72,7 @@ GATES = {
     # Auditoria da v3 (02/10/2026): os quatro desenhos e afirmacoes que passaram por todos os
     # gates anteriores e derrubaram a pagina para 5,5 viraram medida.
     "simetria": "gate-simetria.mjs (itens paralelos em caixas iguais, colunas que terminam juntas)",
-    "texto": "gate-texto.mjs (viuva em h1 e h2, item em minuscula, italico colorido repetido)",
+    "texto": "gate-texto.mjs (viuva em titulo e subtitulo de 320 a 1440, item em minuscula, italico colorido repetido)",
     "verdade": "gate-verdade.py (toda promessa com linha do briefing, inclusive nas metas)",
     "publicacao": "gate-publicacao.py (dist/ so com o que a pagina usa)",
     # Auditoria da v4 (02/10/2026, nota 6,5): defeitos que so aparecem na visita real ou fora

@@ -12,7 +12,8 @@
  * Quebra de linha só existe no navegador, na largura real: por isso é Playwright, em 6 telas.
  *
  * Reprova (exit 1):
- *  1. h1 ou h2 com mais de uma linha cuja última linha tem UMA palavra só.
+ *  1. título (h1, h2, h3, h4, dt, summary ou [data-titulo]) com mais de uma linha cuja última
+ *     linha tem UMA palavra só, em 7 telas de 320 a 1440 (a 320 entrou na auditoria da v4).
  *  2. item de texto visível (bloco com texto próprio: p, li, dd, dt, td, legenda, botão, rótulo)
  *     que começa com letra minúscula. Exceção declarada: `data-minuscula-ok` (marca que se
  *     escreve assim, por exemplo).
@@ -47,6 +48,9 @@ const TELAS = [
   ['iphone pro max', 430, 932, true],
   ['iphone padrao', 390, 844, true],
   ['android comum', 360, 740, true],
+  // Auditoria da v4: em 320 o h2 do fecho ficou "Marque / a sua aula / experimental" e o gate,
+  // que parava em 360, dava PASSA.
+  ['menor suportado', 320, 568, true],
 ];
 
 const navegador = await chromium.launch();
@@ -74,8 +78,11 @@ for (const [nome, w, h, mob] of TELAS) {
     };
     const curto = (t) => t.replace(/\s+/g, ' ').trim().slice(0, 40);
 
-    // 1. viúva em h1 e h2
-    for (const t of document.querySelectorAll('h1, h2')) {
+    // 1. viúva em título: h1 e h2, e também os subtítulos (h3, h4) e os títulos de card (dt,
+    //    summary de pergunta e o que for marcado com data-titulo). Na v4 os 3 h3 dos passos
+    //    quebravam com palavra sozinha em 768 e o gate só olhava h1 e h2.
+    for (const t of document.querySelectorAll('h1, h2, h3, h4, dt, summary, [data-titulo]')) {
+      if (t.closest('[data-viuva-ok]')) continue;
       if (!visivel(t)) continue;
       const palavras = [];
       const andar = document.createTreeWalker(t, NodeFilter.SHOW_TEXT);
@@ -160,4 +167,4 @@ if (falhas.length) {
   console.log('  em todo item. Itálico colorido: no máximo um trecho na página.\n');
   process.exit(1);
 }
-console.log(`  PASSA: ${TELAS.length} telas, sem viúva em título, sem item em minúscula, itálico contido.\n`);
+console.log(`  PASSA: ${TELAS.length} telas (320 a 1440), sem viúva em título nem subtítulo, sem item em minúscula, itálico contido.\n`);

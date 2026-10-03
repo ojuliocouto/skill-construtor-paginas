@@ -164,7 +164,7 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    reveladas com a página parada no topo, e a visita chegava em tudo parado); o
    `gate-movimento.mjs` simula a visita e reprova. Grade de itens paralelos entra escalonada e cada
    caixa tem o próprio SVG animado; FAQ e fecho também têm movimento.
-   **Texto:** `text-wrap: balance` em h1 e h2, `text-wrap: pretty` em parágrafo e pergunta.
+   **Texto:** `text-wrap: balance` em h1, h2, h3 e título de card (na v4, os h3 dos passos ficaram com palavra sozinha em 768 e o h2 do fecho em 320), `text-wrap: pretty` em parágrafo e pergunta.
    **Botão no celular:** rótulo que cabe numa linha em 320 px e, abaixo de 768 px, barra fixa
    inferior depois do hero (ou botão repetido a cada 2 telas). A barra escondida leva
    `visibility: hidden` além do `translate`: só deslocada, ela aparece no print de página
@@ -194,7 +194,7 @@ Rode cada gate e registre o exit REAL na wave:
 `node <dir-da-skill>/scripts/gate-responsivo.mjs --url http://localhost:8765/` (12 telas)
 `node <dir-da-skill>/scripts/gate-oclusao.mjs --url http://localhost:8765/` (texto coberto ou cortado)
 `node <dir-da-skill>/scripts/gate-simetria.mjs --url http://localhost:8765/` (itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas)
-`node <dir-da-skill>/scripts/gate-texto.mjs --url http://localhost:8765/` (viúva em h1 e h2, item em minúscula, itálico colorido repetido)
+`node <dir-da-skill>/scripts/gate-texto.mjs --url http://localhost:8765/` (viúva em título e subtítulo, de h1 a h4, dt e summary, em 7 telas de 320 a 1440; item em minúscula; itálico colorido repetido)
 `node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, e pelo menos 2 seções animam ao chegar)
 `python3 <dir-da-skill>/scripts/gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas)
 `python3 <dir-da-skill>/scripts/montar-dist.py --projeto <dir> --css-em-linha` e `python3 <dir-da-skill>/scripts/gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar)
