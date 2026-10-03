@@ -30,6 +30,19 @@ class Classes(unittest.TestCase):
                 r = subprocess.run([sys.executable, str(script), '--projeto', pasta], capture_output=True, text=True)
                 self.assertEqual(r.returncode, esperado, r.stdout)
 
+    def test_dist_com_css_em_linha(self):
+        # v3.1 (02/10/2026): montar-dist.py --css-em-linha põe o CSS num <style> do index.html da
+        # dist/, e o gate dizia "nenhum .css em dist" para uma página com o CSS presente.
+        script = pathlib.Path(__file__).with_name('gate-classes-mortas.py')
+        for css, esperado in [('.outra{color:red}', 1), ('.bg-marca\\/97{background:red}', 0)]:
+            with self.subTest(css=css), tempfile.TemporaryDirectory() as pasta:
+                raiz = pathlib.Path(pasta)
+                (raiz / 'dist').mkdir()
+                (raiz / 'index.html').write_text('<p class="bg-marca/97">Controle</p>')
+                (raiz / 'dist' / 'index.html').write_text(f'<style>{css}</style><p class="bg-marca/97">Controle</p>')
+                r = subprocess.run([sys.executable, str(script), '--projeto', pasta], capture_output=True, text=True)
+                self.assertEqual(r.returncode, esperado, r.stdout)
+
     def test_wave_aceita_o_gate(self):
         import importlib.util
         spec = importlib.util.spec_from_file_location('wave', pathlib.Path(__file__).with_name('wave.py'))

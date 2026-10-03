@@ -105,12 +105,23 @@ def main() -> int:
     dir_fonte = pathlib.Path(args.fonte) if args.fonte else raiz / 'src'
 
     css_arquivos = sorted(p for p in dir_css.rglob('*.css') if 'node_modules' not in p.parts)
+    # dist/ montada com CSS em linha (montar-dist.py --css-em-linha): o CSS gerado mora nos
+    # <style> do HTML publicado, e é ele que vale.
+    em_linha = []
+    if not css_arquivos:
+        import re as _re
+        for h in sorted(dir_css.glob('*.html')):
+            blocos = _re.findall(r'<style[^>]*>(.*?)</style>', h.read_text(encoding='utf-8', errors='replace'), _re.S)
+            if blocos:
+                em_linha.append((h, '\n'.join(blocos)))
+        css_arquivos = [h for h, _ in em_linha]
     if not css_arquivos:
         print(f'  ERRO: nenhum .css encontrado em {dir_css}.')
         print('  Rode o build ANTES do gate: o CSS gerado e a fonte da verdade aqui.')
         print('  Pagina HTML com Tailwind: compile com npx tailwindcss@3 -i _input.css -o tailwind-compiled.css')
         return 1
-    css = '\n'.join(p.read_text(encoding='utf-8', errors='replace') for p in css_arquivos)
+    css = '\n'.join(b for _, b in em_linha) if em_linha else \
+        '\n'.join(p.read_text(encoding='utf-8', errors='replace') for p in css_arquivos)
 
     fontes = sorted(dir_fonte.rglob('*.jsx')) + sorted(dir_fonte.rglob('*.tsx')) \
         + sorted(dir_fonte.rglob('*.js')) + sorted(dir_fonte.rglob('*.ts')) \
