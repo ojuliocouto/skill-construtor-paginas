@@ -144,6 +144,13 @@ class Ciclo(unittest.TestCase):
         for g in ("movimento", "composicao", "imagens"):
             self.assertIn(g, wave.GATES, g)
 
+    def test_gates_da_etapa_plano(self):
+        for g in ("plano", "rastreamento"):
+            self.assertIn(g, wave.GATES, g)
+        self.assertIn("plano", wave.gates_exigidos("criar"))
+        self.assertNotIn("plano", wave.gates_exigidos("clonar"))
+        self.assertIn("rastreamento", wave.gates_exigidos("clonar"))
+
     # Auditoria da v5 (03/10/2026): 7,0, "correta, mas vazia; o dono não chamaria de foda". A
     # régua do dono depois da SobrAI (9,05 nas lentes e "que página FEIA") é a pergunta "isso é
     # bonito ou só está correto?", e nenhum registro a fazia. A nona lente responde por escrito.

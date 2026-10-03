@@ -81,6 +81,9 @@ GATES = {
     "movimento": "gate-movimento.mjs (visita de 8 s parada no topo: nada anima fora da tela)",
     "composicao": "gate-composicao.mjs (mesmo esqueleto em mais de 2 secoes seguidas, icone de biblioteca)",
     "imagens": "gate-imagens.py (licenca com versao e link, direito de imagem, aviso no og-image)",
+    # Etapa PLANO (03/10/2026): o aluno aprova visual, secoes, copy, pixel e codigo antes do codigo.
+    "plano": "gate-plano.py (PLANO.md com as 7 secoes, 3 direcoes com previa e tudo aprovado)",
+    "rastreamento": "gate-rastreamento.py (pixel e eventos que o plano pediu ligados na dist/)",
 }
 
 # Quem auditou. Nota de autoavaliacao (quem construiu olhando o proprio trabalho) NAO libera
@@ -97,7 +100,9 @@ CAMINHOS = ("criar", "clonar", "clonar-elevar", "melhorar", "variante")
 
 def gates_exigidos(caminho):
     # Clone fiel copia o texto da original: a fonte da verdade e a propria pagina, nao um briefing.
-    return {g: d for g, d in GATES.items() if not (caminho == "clonar" and g in ("referencias", "verdade"))}
+    # A etapa PLANO e do CRIAR: os outros caminhos partem de uma pagina que ja existe.
+    return {g: d for g, d in GATES.items()
+            if not (caminho == "clonar" and g in ("referencias", "verdade")) and not (caminho != "criar" and g == "plano")}
 
 PISO_NOTA = 7.0
 PISO_MEDIA = 8.0
