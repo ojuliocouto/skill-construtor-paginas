@@ -271,8 +271,8 @@ passe de gosto: tells antes e depois, o depois é 0.
 
 ## h. Prova e entrega
 
-1. Print final pelo `screenshot-prova.js` com `--com-360` (desktop 1440, celular 390 e Android
-   360, página inteira em scrollY 0), servindo a `dist/`. Nunca por script próprio: cabeçalho fixo no meio do print é artefato de rolagem.
+1. Print final pelo `screenshot-prova.js` com `--com-360 --com-320` (desktop 1440, celular 390,
+   Android 360 e o menor suportado, 320, página inteira em scrollY 0), servindo a `dist/`. Nunca por script próprio: cabeçalho fixo no meio do print é artefato de rolagem.
 2. **Leia os PNGs com os próprios olhos** (Read): a página inteira para ritmo e composição, e
    recortes 1:1 para texto, rótulo e borda. Screenshot reduzido não aprova detalhe.
 3. A interação principal clicada nos dois viewports.

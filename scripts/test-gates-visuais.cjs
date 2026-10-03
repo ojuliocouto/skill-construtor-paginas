@@ -170,6 +170,7 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['movimento-positivo', 'gate-movimento.mjs', ['--url', url + '/movimento-ok'], 0],
     ['movimento-temporizador', 'gate-movimento.mjs', ['--url', url + '/movimento-temporizador'], 1, /fora da tela/],
     ['movimento-parado', 'gate-movimento.mjs', ['--url', url + '/movimento-parado'], 1, /animam ao chegar/],
+    ['identidade-320', 'screenshot-prova.js', [url + '/ok', path.join(pasta, 'identidade-320'), '--com-320'], 0, /topo +mobile320: scrollY 0/],
     ['identidade-360','screenshot-prova.js', [url + '/ok', path.join(pasta, 'identidade-360'), '--com-360'], 0, /topo +mobile360: scrollY 0/],
     ['video-ausente', 'gate-video.mjs', ['--url', url + '/ok', '--publico', pasta, '--frames', path.join(pasta, 'frames-ausente')], 0],
     ['video-positivo', 'gate-video.mjs', ['--url', url + '/video-ok', '--publico', pasta, '--frames', path.join(pasta, 'frames-positivo')], 0],
