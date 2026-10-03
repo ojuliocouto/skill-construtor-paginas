@@ -68,7 +68,7 @@ calibrada. Nota que cai pode ser régua mais fina, não página pior.
 
 ### 1. design-critic (cara de IA, gosto)
 Lê a página inteira no print e em recortes 1:1. Conta os tells de
-`references/anti-vibe-coding.md` (V1 a V16, o V16 é o "jornal de filetes") e as proibições de
+`references/anti-vibe-coding.md` (V1 a V17, o V16 é o "jornal de filetes" e o V17 o esqueleto repetido) e as proibições de
 `references/preferencias-de-design.md`, item por item (inclusive itens paralelos em caixas
 iguais, passos em grade, FAQ e fecho com movimento, legenda que explica o design). Aplica a autocrítica da `frontend-design`: alguma
 parte do plano virou o padrão que sairia para qualquer página parecida? Os três visuais

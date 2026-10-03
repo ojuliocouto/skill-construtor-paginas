@@ -7,7 +7,7 @@ Base: dissecação frame a frame do reel de Patrick Minardi (@patrickwithprospec
 vibe-coded website", analisando o que ele **aponta na tela** (SaaS "LaunchLand"), não só o que fala.
 
 Complementa `references/preferencias-de-design.md` (gosto medido em correção real). Aqui o foco é
-**funcionalidade e substância**, e depois **aparência** (os tells V1 a V15).
+**funcionalidade e substância**, e depois **aparência** (os tells V1 a V17).
 
 ---
 
@@ -47,9 +47,9 @@ Itens **1, 2 e 5** são **YELLOW**: corrigir se presentes, mas não bloqueiam so
 3 ou 4 FALHA → NÃO entregar até resolver
 ```
 
-### Limiar de bloqueio dos tells VISUAIS (V1-V15)
+### Limiar de bloqueio dos tells VISUAIS (V1-V17)
 
-Os tells visuais abaixo (V1 a V16) não bloqueavam sozinhos. Agora bloqueiam por acúmulo:
+Os tells visuais abaixo (V1 a V17) não bloqueavam sozinhos. Agora bloqueiam por acúmulo:
 
 ```
 0-2 tells visuais presentes → YELLOW (corrigir, mas não bloqueia)
@@ -90,6 +90,7 @@ onde o cliente apontou cada um destes em prints. A lente design-critic conta est
 | V14 | **Seção com clip diagonal + gradiente** repetida com tratamentos diferentes | Estética de template; incoerência de marca | Padronizar (cor chapada). Variar superfícies por cor (claro/escuro), não por efeito. |
 | V15 | **Logo minúscula** (<56px desktop) | Faz a marca parecer "perdida"/genérica | Logo proeminente: mín 56-64px desktop, 40-48px mobile. Ao clonar, baixar o logo REAL do site. |
 | V16 | **"Jornal de filetes"**: muitos filetes finos de 1 px (cabeçalho, seção, item, card), serifa com UMA palavra em itálico colorida repetida em vários títulos e fundo de grade decorativo | Medido na auditoria de 02/10/2026: 14 filetes, itálico colorido em 3 de 7 títulos e grade no fecho. Serifa + filete + muito branco é o terceiro visual padrão de IA, depois do creme com terracota e do quase preto com acento ácido | No máximo um trecho em itálico colorido na página (`gate-texto.mjs` reprova o segundo); separar por cor de superfície e espaço, não por fio; nada de grade de fundo como enfeite. `gate-texto.mjs` avisa a partir de 10 filetes |
+| V17 | **Esqueleto repetido**: o mesmo h2 à esquerda com uma grade de caixas embaixo em seção após seção, e ícone de biblioteca (balão de conversa, calendário com check, boneco de palito) | Medido na auditoria da v4 (02/10/2026): 4 seções seguidas com a mesma composição, 14 caixas na página, 2 ícones de biblioteca e o mesmo par de bonecos em duas seções. As referências fortes dão a cada seção uma composição própria | Cada seção com um tratamento próprio tirado de uma referência (lista editorial, linha do tempo, split com imagem, faixa cheia) e registrado em `secoes` na etapa 2; desenho feito para o assunto, com `data-desenho`. `gate-composicao.mjs` reprova mais de 2 seções seguidas com o mesmo esqueleto e ícone genérico |
 
 **Regra-mãe destes tells:** quando o brief é *clonar e melhorar* uma loja real, a referência de
 "bonito" é o concorrente do nicho (Netshoes, Centauro, Nike.com.br, Dafiti), **não** o Dribbble/landing

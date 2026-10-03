@@ -12,13 +12,15 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import re
 import sys
+import unicodedata
 from pathlib import Path
 
 PAGINAS = {
     "0": ("briefing", "inventario", "pendencias_cliente"),
     "1": ("referencias",),
-    "2": ("direcao", "tipografia", "paleta", "imagem", "ritmo", "assinatura", "referencias_usadas", "foto_publico"),
+    "2": ("direcao", "tipografia", "paleta", "imagem", "ritmo", "assinatura", "referencias_usadas", "foto_publico", "secoes"),
     "3": ("copy", "aprovacao", "sustentacao"),
     "4": ("primeiro_bloco", "stack", "imagens"),
     "5": ("gates", "auditores", "claims", "contato", "passe_de_gosto", "prova", "pendencias"),
@@ -44,6 +46,13 @@ DASH = {
     "7": ("contexto",),
 }
 REGISTRO = ".etapas-verificadas.json"
+# Metáforas de biblioteca de ícone (sem acento, depois de normalizar). Mesma lista do gate-composicao.mjs.
+GENERICOS = r"balao|chat|calendario|agenda|check|visto|boneco|palito|estrela|coracao|lampada|foguete|alvo|engrenagem|cadeado|escudo|trofeu|medalha|sino|lupa|envelope|telefone|relogio|raio|polegar|joinha|aperto de mao|grafico subindo"
+
+
+def normalizar(s):
+    s = unicodedata.normalize("NFKD", str(s).lower())
+    return " ".join("".join(c for c in s if not unicodedata.combining(c)).split())
 
 
 def digest(p):
@@ -72,6 +81,24 @@ def validar(projeto, arquivo, etapa, campos, perfil):
         fp = doc["foto_publico"]
         if not isinstance(fp, list) or not all(isinstance(i, dict) and all(str(i.get(k) or "").strip() for k in ("publico", "foto", "porque")) for i in fp):
             raise ValueError("Etapa 2: foto_publico é uma lista de {publico, foto, porque}, uma linha por foto de pessoa.")
+    # Auditoria da v4 (02/10/2026): Situações, Como funciona, Duas formas e Dúvidas com o mesmo
+    # esqueleto (h2 à esquerda + grade de caixas) e ícones de biblioteca (balão, calendário com
+    # check, boneco de palito). O plano dá a cada seção um tratamento próprio, tirado de uma
+    # referência, e diz o que cada desenho desenha.
+    if perfil == "paginas" and etapa == "2":
+        secoes = doc["secoes"]
+        if not isinstance(secoes, list) or len(secoes) < 3 or not all(isinstance(s, dict) and all(str(s.get(k) or "").strip() for k in ("secao", "tratamento", "referencia")) for s in secoes):
+            raise ValueError("Etapa 2: secoes é uma lista de {secao, tratamento, referencia}, uma linha por seção (3 ou mais).")
+        norm = [normalizar(s["tratamento"]) for s in secoes]
+        for i in range(len(norm) - 2):
+            if norm[i] == norm[i + 1] == norm[i + 2]:
+                raise ValueError(f"Etapa 2: '{secoes[i]['tratamento']}' em 3 seções seguidas ({secoes[i]['secao']}, {secoes[i + 1]['secao']}, {secoes[i + 2]['secao']}): cada seção ganha um tratamento próprio.")
+        for ic in doc.get("icones") or []:
+            desenha = str((ic or {}).get("desenha") or "").strip() if isinstance(ic, dict) else ""
+            if not desenha:
+                raise ValueError("Etapa 2: icones é uma lista de {secao, desenha}.")
+            if re.search(GENERICOS, normalizar(desenha)):
+                raise ValueError(f"Etapa 2: ícone de biblioteca ('{desenha}'): desenhe o assunto da seção.")
     if perfil == "paginas" and etapa == "3":
         alvo = (projeto / str(doc["sustentacao"])).resolve()
         if not alvo.is_relative_to(projeto) or not alvo.is_file() or "|" not in alvo.read_text(encoding="utf-8"):

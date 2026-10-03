@@ -81,7 +81,15 @@ ANTES de qualquer código:
   e roupa da pessoa na foto contra o público do briefing). Ela vai para o campo `foto_publico`
   da etapa 2, e o gate da etapa reprova sem ela
 - **Ritmo das seções**: a ordem, o layout de cada uma em uma linha ou em wireframe ASCII, onde
-  a página respira e onde adensa
+  a página respira e onde adensa. **Cada seção ganha um tratamento próprio**, tirado de uma
+  referência lida (lista editorial, linha do tempo, split com imagem, faixa cheia, grade de
+  caixas onde a regra de itens paralelos pede), e a seção que é o diferencial do negócio leva o
+  tratamento mais forte. Vai para o campo `secoes` da etapa 2 (`{secao, tratamento, referencia}`):
+  o mesmo tratamento em 3 seções seguidas reprova (na v4, 4 seções seguidas tinham h2 à
+  esquerda e grade de caixas, e a página leu como template). **Desenhos e ícones** se desenham
+  para o assunto e vão no campo `icones` (`{secao, desenha}`); metáfora de biblioteca (balão de
+  conversa, calendário com check, boneco de palito) reprova, e o SVG na página leva
+  `data-desenho` com a mesma descrição
 - **Assinatura**: o elemento único pelo qual a página vai ser lembrada, e o risco estético
   que ela assume. Ela mora AO LADO da foto, nunca por cima de gente: linha, grade ou forma que
   atravessa rosto ou corpo de pessoa reprova (na v3, o prumo cortava a cabeça da modelo)
@@ -200,6 +208,7 @@ Rode cada gate e registre o exit REAL na wave:
 `node <dir-da-skill>/scripts/gate-oclusao.mjs --url http://localhost:8765/` (texto coberto ou cortado)
 `node <dir-da-skill>/scripts/gate-simetria.mjs --url http://localhost:8765/` (itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos com 4 px de folga e conteúdo interno sem buraco)
 `node <dir-da-skill>/scripts/gate-texto.mjs --url http://localhost:8765/` (viúva em título e subtítulo, de h1 a h4, dt e summary, em 7 telas de 320 a 1440; item em minúscula; itálico colorido repetido)
+`node <dir-da-skill>/scripts/gate-composicao.mjs --url http://localhost:8765/` (mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido)
 `node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, e pelo menos 2 seções animam ao chegar)
 `python3 <dir-da-skill>/scripts/gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas)
 `python3 <dir-da-skill>/scripts/montar-dist.py --projeto <dir> --css-em-linha` e `python3 <dir-da-skill>/scripts/gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar)
@@ -208,7 +217,7 @@ Rode cada gate e registre o exit REAL na wave:
 `python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> checar --caminho criar`
 `python3 <dir-da-skill>/scripts/gate-referencias.py --projeto <dir>`
 `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> gate <nome> --exit <0|1> --detalhe "<o que o gate imprimiu>"`
-(nomes: `sem-kicker`, `classes-mortas`, `responsivo`, `oclusao`, `identidade`, `uso-ferramentas`, `referencias`, `simetria`, `texto`, `verdade`, `publicacao`, `movimento`)
+(nomes: `sem-kicker`, `classes-mortas`, `responsivo`, `oclusao`, `identidade`, `uso-ferramentas`, `referencias`, `simetria`, `texto`, `verdade`, `publicacao`, `movimento`, `composicao`)
 
 O `gate-responsivo.mjs` também reprova botão em mais de uma linha até 768 px e trecho de mais de
 2 telas sem botão no celular. Rode os gates de tela contra a `dist/` servida (é o que vai para o ar).

@@ -74,7 +74,45 @@ class Etapas(unittest.TestCase):
         base['foto_publico'] = [{'publico': 'Mulheres de 35 a 60 com dor', 'foto': 'hero.webp'}]
         self.assertEqual(self.validar('2', base), 1, 'sem o porquê')
         base['foto_publico'][0]['porque'] = 'Aluna adulta com a profissional ao lado'
+        base['secoes'] = self.SECOES
         self.assertEqual(self.validar('2', base), 0)
+
+    # Auditoria da v4 (02/10/2026): 4 seções seguidas com o mesmo esqueleto e ícone de biblioteca.
+    # O plano visual passa a dar a cada seção um tratamento próprio, ligado a uma referência.
+    SECOES = [{'secao': 'Situações', 'tratamento': 'grade de caixas com desenho próprio', 'referencia': 'Tia (09)'},
+              {'secao': 'Avaliação', 'tratamento': 'faixa cheia com ilustração grande', 'referencia': 'Kins (07)'},
+              {'secao': 'Como funciona', 'tratamento': 'linha do tempo', 'referencia': 'Kins (07)'},
+              {'secao': 'Dúvidas', 'tratamento': 'lista editorial em coluna centrada', 'referencia': 'Parsley (10)'}]
+
+    def plano(self, **extra):
+        base = {'direcao': 'x', 'tipografia': 'x', 'paleta': 'x', 'imagem': 'x', 'ritmo': 'x',
+                'assinatura': 'x', 'referencias_usadas': ['x'], 'arquivos': ['briefing.txt'],
+                'foto_publico': [{'publico': 'Mulheres de 35 a 60', 'foto': 'sala.webp', 'porque': 'Sem pessoa identificável'}],
+                'secoes': [dict(s) for s in self.SECOES]}
+        base.update(extra)
+        return base
+
+    def test_plano_visual_exige_tratamento_por_secao(self):
+        b = self.plano(); del b['secoes']
+        self.assertEqual(self.validar('2', b), 1, 'sem secoes')
+        b = self.plano(); b['secoes'][1]['referencia'] = ''
+        self.assertEqual(self.validar('2', b), 1, 'tratamento sem referência')
+
+    def test_plano_visual_reprova_tres_secoes_seguidas_com_o_mesmo_tratamento(self):
+        b = self.plano()
+        for s in b['secoes'][:3]:
+            s['tratamento'] = 'Título à esquerda + grade de caixas'
+        self.assertEqual(self.validar('2', b), 1)
+        b['secoes'][2]['tratamento'] = 'linha do tempo'
+        self.assertEqual(self.validar('2', b), 0, 'duas seguidas iguais é o limite')
+
+    def test_plano_visual_reprova_icone_de_biblioteca(self):
+        b = self.plano(icones=[{'secao': 'Como funciona', 'desenha': 'balão de conversa com três pontos'}])
+        self.assertEqual(self.validar('2', b), 1)
+        b['icones'][0]['desenha'] = 'calendário com check'
+        self.assertEqual(self.validar('2', b), 1)
+        b['icones'][0]['desenha'] = 'planta baixa de uma sala com quatro aparelhos'
+        self.assertEqual(self.validar('2', b), 0)
 
     def test_copy_exige_tabela_de_sustentacao(self):
         base = {'copy': 'copy.md', 'aprovacao': 'x', 'arquivos': ['briefing.txt']}

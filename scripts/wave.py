@@ -78,6 +78,7 @@ GATES = {
     # Auditoria da v4 (02/10/2026, nota 6,5): defeitos que so aparecem na visita real ou fora
     # das telas e dos elementos que os gates mediam.
     "movimento": "gate-movimento.mjs (visita de 8 s parada no topo: nada anima fora da tela)",
+    "composicao": "gate-composicao.mjs (mesmo esqueleto em mais de 2 secoes seguidas, icone de biblioteca)",
 }
 
 # Quem auditou. Nota de autoavaliacao (quem construiu olhando o proprio trabalho) NAO libera

@@ -65,6 +65,18 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/cards-ok') corpo = par('<div style="height:200px;background:#ccd"></div><h3>Em grupo</h3><p>Até quatro pessoas por turma.</p>', '<div style="height:200px;background:#ccd"></div><h3>Particular</h3><p>Aula individual.</p>');
   if (rota === '/cards-titulo-desalinhado') corpo = par('<div style="height:260px;background:#ccd"></div><h3>Em grupo</h3><p>Até quatro pessoas por turma.</p>', '<div style="height:80px;width:80px;margin:auto auto 0;background:#ccd"></div><h3>Particular</h3><p>Aula individual.</p><p style="margin-top:auto">O valor vem pelo WhatsApp.</p>');
   if (rota === '/cards-buraco') corpo = par('<h3>Em grupo</h3><p>Até quatro pessoas por turma.</p><div style="height:220px;background:#ccd"></div>', '<h3>Particular</h3><p>Aula individual.</p><p style="margin-top:auto">O valor de cada forma vem pelo WhatsApp.</p>');
+  // gate-composicao (auditoria da v4): 4 seções seguidas com o mesmo esqueleto (h2 à esquerda +
+  // grade de caixas), ícones de biblioteca (balão, calendário com check, boneco de palito).
+  const grade3 = (n) => `<section><h2>Seção em grade ${n}</h2><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">${caixa('Um')}${caixa('Dois')}${caixa('Três')}</div></section>`;
+  const desenho = (d, miolo = '<path d="M8 40c10-20 30-20 40 0"/>') => `<svg data-desenho="${d}" width="56" height="56" viewBox="0 0 56 56" aria-hidden="true" fill="none" stroke="#111">${miolo}</svg>`;
+  if (rota === '/composicao-repetida') corpo = texto + grade3(1) + grade3(2) + grade3(3);
+  if (rota === '/composicao-variada') corpo = texto + grade3(1)
+    + '<section><div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center"><div><h2>Seção em split</h2><p>Texto ao lado da imagem.</p></div><img src="/poster.png" width="320" height="180" alt="Imagem de controle" style="width:100%;height:auto"></div></section>'
+    + '<section style="text-align:center"><h2>Seção em lista</h2>' + desenho('coluna vertebral de perfil') + '<ul style="list-style:none;padding:0"><li>Primeira linha da lista</li><li>Segunda linha da lista</li><li>Terceira linha da lista</li></ul></section>'
+    + grade3(4);
+  if (rota === '/icone-generico') corpo = texto + '<section><h2>Ícones</h2>' + desenho('balão de conversa com três pontos') + '</section>';
+  if (rota === '/icone-sem-desenho') corpo = texto + '<section><h2>Ícones</h2><svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true"><path d="M8 40h40"/></svg></section>';
+  if (rota === '/icone-repetido') corpo = texto + '<section><h2>Ícones</h2>' + desenho('duas pessoas lado a lado') + '<p>Entre os dois.</p>' + desenho('aluna e instrutora') + '</section>';
   // gate-texto (auditoria da v3): viúva em título, item em minúscula e itálico colorido repetido.
   const curta = '<section><h1>Página curta</h1><p>Texto normal com uma <em style="color:#24525A">palavra</em> só.</p><dl><dt>Em grupo</dt><dd>Até 4 pessoas</dd></dl></section>';
   if (rota === '/texto-ok') corpo = curta;
@@ -140,6 +152,11 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['simetria-cards-ok', 'gate-simetria.mjs', ['--url', url + '/cards-ok'], 0],
     ['simetria-cards-titulo', 'gate-simetria.mjs', ['--url', url + '/cards-titulo-desalinhado'], 1, /t[ií]tulos de cards vizinhos desalinhados/],
     ['simetria-cards-buraco', 'gate-simetria.mjs', ['--url', url + '/cards-buraco'], 1, /buraco interno/],
+    ['composicao-variada', 'gate-composicao.mjs', ['--url', url + '/composicao-variada'], 0],
+    ['composicao-repetida', 'gate-composicao.mjs', ['--url', url + '/composicao-repetida'], 1, /mesmo esqueleto/],
+    ['composicao-icone-generico', 'gate-composicao.mjs', ['--url', url + '/icone-generico'], 1, /gen[eé]rico/],
+    ['composicao-icone-sem-desenho', 'gate-composicao.mjs', ['--url', url + '/icone-sem-desenho'], 1, /sem data-desenho/],
+    ['composicao-icone-repetido', 'gate-composicao.mjs', ['--url', url + '/icone-repetido'], 1, /repetido/],
     ['texto-positivo', 'gate-texto.mjs', ['--url', url + '/texto-ok'], 0],
     ['texto-viuva', 'gate-texto.mjs', ['--url', url + '/viuva'], 1, /vi[uú]va/],
     ['texto-viuva-h3-320', 'gate-texto.mjs', ['--url', url + '/viuva-h3-320'], 1, /menor suportado.*h3/],

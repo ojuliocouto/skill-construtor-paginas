@@ -138,7 +138,7 @@ class Ciclo(unittest.TestCase):
             self.assertIn(g, wave.GATES, g)
 
     def test_gates_novos_da_auditoria_da_v4(self):
-        for g in ("movimento",):
+        for g in ("movimento", "composicao"):
             self.assertIn(g, wave.GATES, g)
 
 

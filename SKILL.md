@@ -216,6 +216,7 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `gate-oclusao.mjs` | texto coberto por camada ou cortado pela caixa | f |
 | `gate-simetria.mjs` | itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos (4 px) e sem buraco interno | f |
 | `gate-texto.mjs` | viúva em título e subtítulo (h1 a h4, dt, summary) de 320 a 1440, item em minúscula, itálico colorido repetido | f |
+| `gate-composicao.mjs` | cara de template: mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido | f |
 | `gate-movimento.mjs` | visita real: 8 s parada no topo, depois rola; reprova animação que roda fora da tela e página que não anima ao chegar | f |
 | `gate-verdade.py` | toda promessa (e a meta description) com linha do briefing que sustente | d, f |
 | `montar-dist.py` + `gate-publicacao.py` | `dist/` só com o que a página usa, e o gate que reprova a casa na publicação | f, h |
