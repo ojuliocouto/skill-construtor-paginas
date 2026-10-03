@@ -222,6 +222,7 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `gate-verdade.py` | toda promessa (e a meta description) com linha do briefing que sustente | d, f |
 | `gate-imagens.py` | licença completa (nome, versão, link), pessoa identificável sem autorização, crédito no HTML e "imagem ilustrativa" também no og-image | e, f |
 | `montar-dist.py` + `gate-publicacao.py` | `dist/` só com o que a página usa, e o gate que reprova a casa na publicação | f, h |
+| `gate-relatorio.py` | o relatório final só afirma medida que um gate gravou: cada número cita o arquivo e está nele, nada anterior à `dist/` | h |
 | `gate-video.mjs` | as 7 checagens de vídeo (só em página com vídeo) | f |
 | `uso-ferramentas.py` | Playwright e `frontend-design` foram usados de verdade | f |
 | `wave.py` | registro das 9 lentes, auditor master e ciclo de rodadas | f, g |

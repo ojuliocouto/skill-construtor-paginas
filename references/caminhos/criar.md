@@ -283,7 +283,11 @@ passe de gosto: tells antes e depois, o depois é 0.
    com prints de terceiros e o briefing da cliente). Nunca sobrescrever projeto que já tem
    conteúdo; página nova entra em subpasta do projeto existente. Sem conta de hospedagem, a
    entrega é local e o deploy vira pendência declarada.
-6. A mensagem de entrega leva o bloco do SKILL.md (auditores, identidade, passe de gosto, prova,
+6. **Relatório só com medida gravada:** cada número (px, %, s, KiB, :1, telas, Lighthouse) cita
+   entre crases o arquivo de texto do gate que o mediu, e o arquivo é da `dist/` entregue. Na v4
+   o auditor refutou 10 afirmações do relatório, entre elas um Lighthouse 100 medido antes da
+   versão final. `python3 <dir-da-skill>/scripts/gate-relatorio.py --relatorio <relatório.md> --base <dir> --dist <dir>/dist`
+7. A mensagem de entrega leva o bloco do SKILL.md (auditores, identidade, passe de gosto, prova,
    pendências) e o link ou os prints.
 
 ## Depois da entrega

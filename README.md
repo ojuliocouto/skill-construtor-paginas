@@ -144,6 +144,7 @@ python3 scripts/test-preferencias.py
 python3 scripts/test-publicacao.py
 python3 scripts/test-gate-verdade.py
 python3 scripts/test-imagens.py
+python3 scripts/test-relatorio.py
 node scripts/test-capturar-referencias.cjs
 node scripts/test-gates-visuais.cjs
 node scripts/test-print-cabecalho.cjs
