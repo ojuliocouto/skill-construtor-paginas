@@ -99,6 +99,8 @@ def checar(relatorio, base=None, dist=None):
             for p in textos:
                 if p.suffix.lower() == ".md":
                     continue  # texto de referência (auditoria, licenças), não arquivo de medida
+                if not p.resolve().is_relative_to(Path(dist).resolve().parent):
+                    continue  # medida de outra versão (fora do projeto da dist), citada como antes
                 if p.stat().st_mtime + 1 < fim_dist and not p.is_relative_to(Path(dist)):
                     problemas.append(f"linha {n}: {p.name} é anterior à dist/ final; meça de novo a versão entregue")
     return problemas

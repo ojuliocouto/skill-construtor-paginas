@@ -58,6 +58,16 @@ class GateRelatorio(unittest.TestCase):
         p = self.checar("- Lighthouse 100 em desempenho (`gates/lighthouse.json`)\n")
         self.assertTrue(any("anterior" in x for x in p), p)
 
+    def test_medida_de_outra_versao_fora_do_projeto_nao_e_comparada_com_a_dist(self):
+        # v5: o relatório cita a medida da v4 (outra pasta) para provar o defeito; ela é mais
+        # antiga que a dist/ da v5 por definição e não é medida da versão entregue.
+        outra = pathlib.Path(tempfile.mkdtemp()) / "v4-simetria.txt"
+        self.addCleanup(lambda: outra.unlink(missing_ok=True))
+        outra.write_text("títulos com 147 px de diferença")
+        antigo = time.time() - 3600
+        os.utime(outra, (antigo, antigo))
+        self.assertEqual(self.checar(f"- Na v4, títulos a 147 px (`{outra}`)\n"), [])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
