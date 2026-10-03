@@ -18,10 +18,13 @@ class Ciclo(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.projeto = self.temp.name
 
-    def executar(self, nota=8, criticos=0, regressoes=0, gates=True, altos=1, pendencias=0, origem="subagente"):
+    def executar(self, nota=8, criticos=0, regressoes=0, gates=True, altos=1, pendencias=0, origem="subagente", gosto="bonito"):
+        lentes = {n: {"nota": nota, "veredito": "aprovado", "origem": origem,
+                      "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES}
+        if gosto:
+            lentes["comparacao-referencias"]["gosto"] = gosto
         wave.salvar(self.projeto, {
-            "lentes": {n: {"nota": nota, "veredito": "aprovado", "origem": origem,
-                           "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES},
+            "lentes": lentes,
             "gates": {n: {"exit": 0, "detalhe": "Controle positivo"} for n in wave.GATES} if gates else {},
         })
         with contextlib.redirect_stdout(io.StringIO()):
@@ -109,7 +112,7 @@ class Ciclo(unittest.TestCase):
     def test_autoavaliacao_nao_libera_entrega(self):
         saida = io.StringIO()
         wave.salvar(self.projeto, {
-            "lentes": {n: {"nota": 9, "veredito": "aprovado", "origem": "autoavaliacao",
+            "lentes": {n: {"nota": 9, "veredito": "aprovado", "origem": "autoavaliacao", "gosto": "bonito",
                            "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES},
             "gates": {n: {"exit": 0, "detalhe": "Controle positivo"} for n in wave.GATES},
         })
@@ -140,6 +143,36 @@ class Ciclo(unittest.TestCase):
     def test_gates_novos_da_auditoria_da_v4(self):
         for g in ("movimento", "composicao", "imagens"):
             self.assertIn(g, wave.GATES, g)
+
+    # Auditoria da v5 (03/10/2026): 7,0, "correta, mas vazia; o dono não chamaria de foda". A
+    # régua do dono depois da SobrAI (9,05 nas lentes e "que página FEIA") é a pergunta "isso é
+    # bonito ou só está correto?", e nenhum registro a fazia. A nona lente responde por escrito.
+    def registrar_ref(self, **kw):
+        base = dict(projeto=self.projeto, lente="comparacao-referencias", veredito="aprovado", nota=8.5,
+                    origem="subagente", achados="Comparei a dobra com Kins, Tia e Parsley lado a lado")
+        base.update(kw)
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return wave.cmd_registrar(argparse.Namespace(**base))
+
+    def test_comparacao_sem_resposta_de_gosto_e_erro(self):
+        self.assertEqual(self.registrar_ref(), 2)
+
+    def test_so_correto_nao_aprova(self):
+        self.assertEqual(self.registrar_ref(gosto="correto"), 2)
+
+    def test_bonito_aprovado_grava(self):
+        self.assertEqual(self.registrar_ref(gosto="bonito"), 0)
+        self.assertEqual(wave.carregar(self.projeto)["lentes"]["comparacao-referencias"]["gosto"], "bonito")
+
+    def test_pagina_so_correta_volta_ao_plano(self):
+        saida = io.StringIO()
+        self.executar(nota=9, altos=0, gosto="correto")
+        with contextlib.redirect_stdout(saida):
+            code = self.executar(nota=9, altos=0, gosto="correto")
+        self.assertEqual(code, 1)
+
+    def test_rodada_sem_a_pergunta_de_gosto_nao_entrega(self):
+        self.assertEqual(self.executar(nota=9, altos=0, gosto=None), 1)
 
 
 if __name__ == "__main__":

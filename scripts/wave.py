@@ -59,6 +59,7 @@ LENTES = {
     "comparacao-referencias": "a pagina esta no nivel das referencias printadas no passo b?",
 }
 LENTE_REFERENCIAS = "comparacao-referencias"
+GOSTOS = ("bonito", "correto")
 
 # Gates EXECUTAVEIS que precisam estar verdes. Nao dependem de julgamento: rodam e saem 0 ou 1.
 GATES = {
@@ -135,6 +136,19 @@ def cmd_registrar(args):
         print("ERRO: a comparacao com as referencias sempre se aplica. No CLONAR, a referencia e a "
               "pagina original; nos outros caminhos, os prints do passo b.", file=sys.stderr)
         return 2
+    gosto = getattr(args, "gosto", None)
+    if args.lente == LENTE_REFERENCIAS:
+        # Auditoria da v5 (03/10/2026): 7,0 e "correta, mas vazia; o dono nao chamaria de foda".
+        # A regua do dono depois da SobrAI e a pergunta "isso e bonito ou so esta correto?".
+        if gosto not in GOSTOS:
+            print("ERRO: a comparacao com as referencias responde --gosto bonito|correto: a pagina "
+                  "e bonita no nivel das referencias, ou so esta correta? Diga por que nos achados.",
+                  file=sys.stderr)
+            return 2
+        if gosto == "correto" and args.veredito == "aprovado":
+            print("ERRO: pagina so correta nao aprova a comparacao com as referencias. Registre "
+                  "--veredito reprovado e volte ao plano visual.", file=sys.stderr)
+            return 2
     if args.veredito != "nao_aplicavel" and (args.nota is None):
         print("ERRO: lente que rodou precisa de --nota", file=sys.stderr)
         return 2
@@ -150,6 +164,8 @@ def cmd_registrar(args):
         "achados": args.achados.strip(),
         "origem": getattr(args, "origem", None) or "autoavaliacao",
     }
+    if gosto:
+        d["lentes"][args.lente]["gosto"] = gosto
     salvar(args.projeto, d)
     print(f"lente registrada: {args.lente} -> {args.veredito} [{d['lentes'][args.lente]['origem']}]"
           + (f" (nota {args.nota})" if args.nota is not None else ""))
@@ -385,6 +401,11 @@ def cmd_rodada(args):
         print("  nao esta no nivel das referencias printadas no passo b, e isso nao se resolve com")
         print("  nota alta nas outras lentes. Refaca o plano a partir das referencias e reconstrua.\n")
         return 1
+    if ref.get("gosto") != "bonito":
+        print("  VOLTA PRO PLANO VISUAL (passo c): a comparacao-referencias nao respondeu que a pagina")
+        print(f"  e bonita no nivel das referencias (resposta: {ref.get('gosto') or 'nenhuma'}). Correta nao")
+        print("  basta: o dono reprovou pagina com 9,05 nas lentes chamando de FEIA.\n")
+        return 1
     if args.criticos > 0:
         print(f"  CONTINUA: {args.criticos} critico(s) confirmado(s). Critico nao negocia com media.")
         print("  Corrija os criticos e rode a wave de novo.\n")
@@ -448,6 +469,9 @@ def main():
     r.add_argument("--nota", type=float)
     r.add_argument("--veredito", choices=["aprovado", "reprovado", "nao_aplicavel"], required=True)
     r.add_argument("--achados", required=True, help="o que foi olhado e o que foi encontrado")
+    r.add_argument("--gosto", choices=GOSTOS, default=None,
+                   help="so na comparacao-referencias, obrigatorio: a pagina e bonita no nivel das "
+                        "referencias, ou so esta correta? 'correto' reprova e volta ao plano visual")
     r.add_argument("--origem", choices=ORIGENS, default="autoavaliacao",
                    help="quem auditou: subagente independente, outra sessao, outra pessoa ou "
                         "autoavaliacao (padrao). Autoavaliacao nunca libera entrega")
