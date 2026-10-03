@@ -14,6 +14,8 @@
  * Reprova (exit 1):
  *  1. título (h1, h2, h3, h4, dt, summary ou [data-titulo]) com mais de uma linha cuja última
  *     linha tem UMA palavra só, em 7 telas de 320 a 1440 (a 320 entrou na auditoria da v4).
+ *     Vale também (auditoria da v5) para parágrafo na fonte do título e parágrafo dentro de
+ *     caixa de grade (li ou article com irmãos do mesmo tipo); texto corrido de seção não.
  *  2. item de texto visível (bloco com texto próprio: p, li, dd, dt, td, legenda, botão, rótulo)
  *     que começa com letra minúscula. Exceção declarada: `data-minuscula-ok` (marca que se
  *     escreve assim, por exemplo).
@@ -81,9 +83,7 @@ for (const [nome, w, h, mob] of TELAS) {
     // 1. viúva em título: h1 e h2, e também os subtítulos (h3, h4) e os títulos de card (dt,
     //    summary de pergunta e o que for marcado com data-titulo). Na v4 os 3 h3 dos passos
     //    quebravam com palavra sozinha em 768 e o gate só olhava h1 e h2.
-    for (const t of document.querySelectorAll('h1, h2, h3, h4, dt, summary, [data-titulo]')) {
-      if (t.closest('[data-viuva-ok]')) continue;
-      if (!visivel(t)) continue;
+    const viuva = (t) => {
       const palavras = [];
       const andar = document.createTreeWalker(t, NodeFilter.SHOW_TEXT);
       for (let n = andar.nextNode(); n; n = andar.nextNode()) {
@@ -103,9 +103,33 @@ for (const [nome, w, h, mob] of TELAS) {
         if (l) l.ult = pw.p;
       }
       linhas.sort((a, b) => a.top - b.top);
-      if (linhas.length >= 2 && linhas[linhas.length - 1].n === 1) {
-        out.viuvas.push(`${t.tagName.toLowerCase()} "${curto(t.innerText)}" termina com "${linhas[linhas.length - 1].ult}" sozinha (${linhas.length} linhas)`);
-      }
+      return linhas.length >= 2 && linhas[linhas.length - 1].n === 1 ? { ult: linhas[linhas.length - 1].ult, n: linhas.length } : null;
+    };
+    for (const t of document.querySelectorAll('h1, h2, h3, h4, dt, summary, [data-titulo]')) {
+      if (t.closest('[data-viuva-ok]')) continue;
+      if (!visivel(t)) continue;
+      const v = viuva(t);
+      if (v) out.viuvas.push(`${t.tagName.toLowerCase()} "${curto(t.innerText)}" termina com "${v.ult}" sozinha (${v.n} linhas)`);
+    }
+    // 1b (auditoria da v5): parágrafo na FONTE DO TÍTULO (o texto das situações era Newsreader de
+    // 22 px e ficava com "depois." sozinho em 768) e parágrafo de CAIXA de grade (o 1o passo
+    // terminava com "experimental." sozinho em 360 e 320). Texto corrido de seção fica de fora.
+    const h1 = [...document.querySelectorAll('h1, h2')].find(visivel);
+    const familia = (el) => getComputedStyle(el).fontFamily.split(',')[0].replace(/["']/g, '').trim().toLowerCase();
+    // Só conta como "fonte do título" quando ela é diferente da fonte do corpo.
+    const fonteTitulo = h1 && familia(h1) !== familia(document.body) ? familia(h1) : null;
+    const emCaixa = (el) => {
+      const item = el.closest('li, article');
+      if (!item || !item.parentElement) return false;
+      return [...item.parentElement.children].filter((f) => f.tagName === item.tagName && visivel(f)).length >= 2;
+    };
+    for (const p of document.querySelectorAll('p, dd, blockquote')) {
+      if (p.closest('[data-viuva-ok], footer') || !visivel(p)) continue;
+      const serifa = fonteTitulo && familia(p) === fonteTitulo;
+      const caixa = emCaixa(p);
+      if (!serifa && !caixa) continue;
+      const v = viuva(p);
+      if (v) out.viuvas.push(`${p.tagName.toLowerCase()} "${curto(p.innerText)}" termina com "${v.ult}" sozinha (${v.n} linhas, ${serifa ? 'na fonte do título' : 'texto de caixa'})`);
     }
 
     // 2. item de texto que começa com minúscula
