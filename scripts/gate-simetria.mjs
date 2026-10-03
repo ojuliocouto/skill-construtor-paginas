@@ -16,6 +16,10 @@
  *     quantidades diferentes (4 + 2): reprova.
  *  2. LISTA AO LADO DO TÍTULO (desktop, a partir de 1024 px): 3 ou mais li, details ou article
  *     empilhados numa coluna com o h2 da seção à esquerda deles. Reprova.
+ *  4. DENTRO DE CARDS VIZINHOS (auditoria da v4): o título de um card e o do vizinho com o topo
+ *     igual (4 px de folga), e nenhum card com um vão interno entre dois blocos mais de 80 px
+ *     maior que o do vizinho (conteúdo flutuando por margin-top:auto). "Duas formas" tinha as
+ *     caixas iguais (540 = 540 px) e os títulos a 147 px um do outro.
  *  3. COLUNAS VIZINHAS: filhos lado a lado de um grid ou flex cuja base visual (a caixa, se o
  *     filho tem fundo, borda ou sombra; senão o fim do conteúdo) difere mais de 80 px.
  *
@@ -44,6 +48,9 @@ if (!URL_ALVO || URL_ALVO.startsWith('--')) {
   process.exit(2);
 }
 const LIMITE_COLUNAS = 80;
+const TOL_TITULO = 4;      // título com título nos cards vizinhos: topo igual com 4 px de folga
+const BURACO = 80;         // diferença de vão interno entre cards vizinhos
+const BURACO_MIN = 100;    // vão interno a partir do qual se chama de buraco
 const TELAS = [
   ['desktop comum', 1440, 900],
   ['notebook comum', 1366, 768],
@@ -84,8 +91,8 @@ for (const [nome, w, h] of TELAS) {
   catch { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
   await assentar(page);
 
-  const r = await page.evaluate(({ limite, desktop }) => {
-    const out = { grupos: [], ladoTitulo: [], colunas: [], excecoes: [] };
+  const r = await page.evaluate(({ limite, desktop, TOL_TITULO, BURACO, BURACO_MIN }) => {
+    const out = { grupos: [], ladoTitulo: [], colunas: [], titulos: [], buracos: [], excecoes: [] };
     const visivel = (el) => {
       const cs = getComputedStyle(el);
       if (cs.display === 'none' || cs.visibility === 'hidden') return false;
@@ -179,6 +186,14 @@ for (const [nome, w, h] of TELAS) {
       }
       return m === -Infinity ? el.getBoundingClientRect().top : m;
     };
+    const tituloDe = (card) => [...card.querySelectorAll('h2, h3, h4, dt, [data-titulo]')]
+      .find((el) => visivel(el) && !el.closest('[aria-hidden="true"]')) || null;
+    const maiorBuraco = (card) => {
+      const blocos = [...card.children].filter((f) => visivel(f) && !solto(f)).map((f) => f.getBoundingClientRect()).sort((x, y) => x.top - y.top);
+      let m = 0;
+      for (let k = 1; k < blocos.length; k++) m = Math.max(m, blocos[k].top - blocos[k - 1].bottom);
+      return m;
+    };
     for (const pai of document.querySelectorAll('body *')) {
       if (!visivel(pai) || fora(pai)) continue;
       const cs = getComputedStyle(pai);
@@ -193,16 +208,32 @@ for (const [nome, w, h] of TELAS) {
           if (!vizinhos) continue;
           const d = Math.abs(baseVisual(filhos[i]) - baseVisual(filhos[j]));
           if (d > limite) out.colunas.push(`"${rotulo(filhos[i])}" e "${rotulo(filhos[j])}" terminam com ${Math.round(d)} px de diferença`);
+          // 4 (auditoria da v4): DENTRO dos cards vizinhos. Caixa igual não basta: o título de um
+          // card ficava 147 px acima do título do vizinho, e um card tinha um buraco no meio.
+          if (temCaixa(filhos[i]) && temCaixa(filhos[j]) && a.height >= 80 && b.height >= 80) {
+            const ta = tituloDe(filhos[i]), tb = tituloDe(filhos[j]);
+            if (ta && tb) {
+              const dt = Math.abs(ta.getBoundingClientRect().top - tb.getBoundingClientRect().top);
+              if (dt > TOL_TITULO) out.titulos.push(`"${rotulo(ta)}" e "${rotulo(tb)}" com ${Math.round(dt)} px de diferença no topo (máximo ${TOL_TITULO})`);
+            }
+            const ga = maiorBuraco(filhos[i]), gb = maiorBuraco(filhos[j]);
+            if (Math.abs(ga - gb) > BURACO && Math.max(ga, gb) > BURACO_MIN) {
+              const [cheio, oco] = ga > gb ? [filhos[j], filhos[i]] : [filhos[i], filhos[j]];
+              out.buracos.push(`"${rotulo(oco)}" tem ${Math.round(Math.max(ga, gb))} px vazios entre dois blocos, o vizinho "${rotulo(cheio)}" tem ${Math.round(Math.min(ga, gb))} px (conteúdo flutuando no card)`);
+            }
+          }
         }
       }
     }
     return out;
-  }, { limite: LIMITE_COLUNAS, desktop: w >= 1024 });
+  }, { limite: LIMITE_COLUNAS, desktop: w >= 1024, TOL_TITULO, BURACO, BURACO_MIN });
 
   const onde = `${nome} (${w}x${h})`;
   const todas = [...new Set(r.grupos)].map((x) => `grupo paralelo: ${x}`)
     .concat([...new Set(r.ladoTitulo)].map((x) => `lista vertical ao lado do título: ${x}`))
-    .concat([...new Set(r.colunas)].map((x) => `colunas desbalanceadas: ${x}`));
+    .concat([...new Set(r.colunas)].map((x) => `colunas desbalanceadas: ${x}`))
+    .concat([...new Set(r.titulos)].map((x) => `títulos de cards vizinhos desalinhados: ${x}`))
+    .concat([...new Set(r.buracos)].map((x) => `buraco interno: ${x}`));
   r.excecoes.forEach((e) => excecoes.add(e));
   console.log(`${onde.padEnd(32)} ${todas.length ? 'FALHA (' + todas.length + ')' : 'ok'}`);
   for (const t of todas) falhas.push(`${onde}: ${t}`);
@@ -217,7 +248,8 @@ if (falhas.length) {
   console.log(`\n  REPROVA: ${falhas.length} problema(s) de simetria.`);
   console.log('  Itens paralelos: grade de caixas iguais (mesmo topo, mesma altura, entrada escalonada).');
   console.log('  Passos e perguntas: título em largura total em cima, itens em grade embaixo.');
-  console.log(`  Colunas vizinhas terminam juntas (até ${LIMITE_COLUNAS} px) ou a seção se reestrutura.\n`);
+  console.log(`  Colunas vizinhas terminam juntas (até ${LIMITE_COLUNAS} px) ou a seção se reestrutura.`);
+  console.log('  Cards vizinhos: mesma estrutura por dentro (mídia do mesmo tamanho, título na mesma altura).\n');
   process.exit(1);
 }
 console.log(`  PASSA: ${TELAS.length} telas, itens paralelos simétricos e colunas equilibradas.\n`);

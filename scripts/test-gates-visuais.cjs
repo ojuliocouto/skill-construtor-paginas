@@ -47,6 +47,13 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/grade-alturas') corpo = texto + '<section><h2>Três itens</h2><div style="display:flex;gap:16px;align-items:flex-start">' + caixa('Um', ';flex:1') + caixa('Dois', ';flex:1') + caixa('Três com um título bem mais longo que os outros para quebrar em mais linhas no card', ';flex:1') + '</div></section>';
   if (rota === '/passos-ao-lado') corpo = texto + '<section style="display:grid;grid-template-columns:1fr 1fr;gap:32px"><h2>Como funciona</h2><ol><li style="height:60px">Chame no WhatsApp</li><li style="height:60px">Combine o dia</li><li style="height:60px">Faça a aula</li></ol></section>';
   if (rota === '/colunas-desbalanceadas') corpo = '<section style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start"><div><h1>Título</h1><p>Texto curto.</p><button>Ver resultado</button></div><div style="height:620px;background:#ccd"></div></section>';
+  // Auditoria da v4: "Duas formas" tinha as caixas com a mesma altura e o título de uma 147 px
+  // acima do da outra (ícone e nota com margin-top:auto); o gate media só a caixa.
+  const card = (miolo) => `<article style="display:flex;flex-direction:column;background:#eee;padding:16px">${miolo}</article>`;
+  const par = (a, b) => texto + '<section><h2>Duas formas</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' + card(a) + card(b) + '</div></section>';
+  if (rota === '/cards-ok') corpo = par('<div style="height:200px;background:#ccd"></div><h3>Em grupo</h3><p>Até quatro pessoas por turma.</p>', '<div style="height:200px;background:#ccd"></div><h3>Particular</h3><p>Aula individual.</p>');
+  if (rota === '/cards-titulo-desalinhado') corpo = par('<div style="height:260px;background:#ccd"></div><h3>Em grupo</h3><p>Até quatro pessoas por turma.</p>', '<div style="height:80px;width:80px;margin:auto auto 0;background:#ccd"></div><h3>Particular</h3><p>Aula individual.</p><p style="margin-top:auto">O valor vem pelo WhatsApp.</p>');
+  if (rota === '/cards-buraco') corpo = par('<h3>Em grupo</h3><p>Até quatro pessoas por turma.</p><div style="height:220px;background:#ccd"></div>', '<h3>Particular</h3><p>Aula individual.</p><p style="margin-top:auto">O valor de cada forma vem pelo WhatsApp.</p>');
   // gate-texto (auditoria da v3): viúva em título, item em minúscula e itálico colorido repetido.
   const curta = '<section><h1>Página curta</h1><p>Texto normal com uma <em style="color:#24525A">palavra</em> só.</p><dl><dt>Em grupo</dt><dd>Até 4 pessoas</dd></dl></section>';
   if (rota === '/texto-ok') corpo = curta;
@@ -114,6 +121,9 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['simetria-alturas', 'gate-simetria.mjs', ['--url', url + '/grade-alturas'], 1, /alturas diferentes/],
     ['simetria-passos-ao-lado', 'gate-simetria.mjs', ['--url', url + '/passos-ao-lado'], 1, /lista vertical ao lado do t[ií]tulo/],
     ['simetria-colunas', 'gate-simetria.mjs', ['--url', url + '/colunas-desbalanceadas'], 1, /colunas desbalanceadas/],
+    ['simetria-cards-ok', 'gate-simetria.mjs', ['--url', url + '/cards-ok'], 0],
+    ['simetria-cards-titulo', 'gate-simetria.mjs', ['--url', url + '/cards-titulo-desalinhado'], 1, /t[ií]tulos de cards vizinhos desalinhados/],
+    ['simetria-cards-buraco', 'gate-simetria.mjs', ['--url', url + '/cards-buraco'], 1, /buraco interno/],
     ['texto-positivo', 'gate-texto.mjs', ['--url', url + '/texto-ok'], 0],
     ['texto-viuva', 'gate-texto.mjs', ['--url', url + '/viuva'], 1, /vi[uú]va/],
     ['texto-viuva-h3-320', 'gate-texto.mjs', ['--url', url + '/viuva-h3-320'], 1, /menor suportado.*h3/],
