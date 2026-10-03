@@ -303,6 +303,21 @@ class GateRastreamento(unittest.TestCase):
                                 str(raiz / "PLANO.md")], capture_output=True, text=True)
             self.assertEqual(r.returncode, 1, r.stdout)
 
+    def test_snippet_da_referencia_passa_no_gate_e_sem_comentario(self):
+        # O snippet que o aluno copia de references/rastreamento.md tem que passar nos dois gates
+        # que a dist/ enfrenta: o de rastreamento e o de comentário interno da publicação.
+        import importlib.util
+        import re
+        ref = (AQUI.parent / "references" / "rastreamento.md").read_text(encoding="utf-8")
+        snippet = re.search(r"```html\n(.*?)```", ref, re.S).group(1)
+        pagina = PAGINA.format(snippet=snippet)
+        code, out = self.rodar(pagina)
+        self.assertEqual(code, 0, out)
+        spec = importlib.util.spec_from_file_location("pub", AQUI / "gate-publicacao.py")
+        pub = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(pub)
+        self.assertEqual(pub.comentarios_internos(pagina), [])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
