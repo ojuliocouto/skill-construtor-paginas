@@ -1,6 +1,6 @@
 # Caminho CRIAR: página nova, do zero
 
-Oito passos, cada um com um gate que bloqueia. Saída diferente de zero em qualquer comando =
+Oito passos e o PLANO (b2), cada um com um gate que bloqueia. Saída diferente de zero em qualquer comando =
 PARA e conserta antes de seguir. `<dir-da-skill>` = a pasta desta skill; `<dir>` = a pasta do
 projeto da página. Cada comando vai inteiro na linha (variável com comando não roda no zsh).
 
@@ -8,7 +8,8 @@ A ordem existe por um motivo: a página só sai no nível das melhores do ramo s
 nascer delas (b), virar um plano deliberado antes do código (c) e for cobrada por olhos
 adversariais no fim (g). Gate mecânico verde não é página boa; é o piso.
 
-**Sessão interativa:** mostre o plano visual (c) e a copy (d) e espere o ok antes de construir.
+**Sessão interativa:** mostre o PLANO (b2) com o `direcoes.png` e espere o aluno marcar as aprovações
+antes de construir.
 **Sessão não interativa** (subagente, "faz direto"): siga sem parar, rode todos os gates e liste
 na entrega as decisões que o dono deveria ter aprovado. A exceção dispensa a parada, nunca o gate.
 
@@ -64,10 +65,32 @@ manifesto e escreva `referencias/sintese.md`. Gate:
 
 **GATE b:** sem 6 prints reais lidos (2 de cada tipo), o plano visual não começa.
 
+## b2. PLANO (obrigatório, antes de qualquer código)
+
+Método e modelo completos em `references/plano.md`. Um documento único, `<dir>/PLANO.md`, com
+sete seções que o aluno aprova: a. Referências (os prints, cada um com o que faz bem, e as que
+ele marcou), b. Visual (3 direções BEM diferentes, feitas com a `frontend-design`, cada uma com
+a primeira dobra real renderizada em PNG), c. Seções (o cardápio de `references/secoes/README.md`
+com miniatura e "quando usar", e a ordem que ele montou), d. Copy (frase -> linha do briefing
+que sustenta), e. Pixel e rastreamento (`references/rastreamento.md`), f. Código e publicação e
+g. Aprovação.
+
+`node <dir-da-skill>/scripts/previa-direcoes.mjs --saida <dir>/plano <dir>/plano/direcoes/a.html <dir>/plano/direcoes/b.html <dir>/plano/direcoes/c.html`
+`node <dir-da-skill>/scripts/previa-direcoes.mjs --miniaturas <dir-da-skill>/references/secoes --saida <dir>/plano/miniaturas`
+
+Abra o `plano/direcoes.png` (Read): se duas direções parecem a mesma página com outra cor,
+refaça uma delas antes de mostrar.
+
+`python3 <dir-da-skill>/scripts/gate-plano.py --projeto <dir>`
+
+**GATE b2:** sem `PLANO.md` aprovado (as 7 seções, as 3 prévias, a copy sustentada, o pixel
+declarado e todas as caixas marcadas), o plano visual e o código não começam.
+
 ## c. Plano visual, pela skill `frontend-design`
 
-Acione a skill de verdade (Skill tool, `frontend-design`) com o briefing e a síntese das
-referências na mão. Ela trabalha em duas passadas: rascunha o plano e depois o revisa contra o
+Acione a skill de verdade (Skill tool, `frontend-design`) com o briefing, a síntese das
+referências e a direção que o aluno escolheu no PLANO na mão: o plano visual detalha essa
+direção (e a mistura, se ele pediu), sem reabrir as outras. Ela trabalha em duas passadas: rascunha o plano e depois o revisa contra o
 padrão que sairia para qualquer página parecida. Escreva o resultado em `<dir>/plano-visual.md`,
 ANTES de qualquer código:
 
@@ -116,6 +139,8 @@ pode dar ideia, nunca decide.
   que diz para quem e o que resolve, botão com verbo e ganho, objeções respondidas na página e
   urgência só se for real.
 - Se o cliente já trouxe a copy: só valide e organize; copy aprovada não se reescreve.
+- A copy aprovada na seção d do PLANO é o ponto de partida: ela vira `evidencias/copy.md`, e a
+  tabela dela vira a tabela de sustentação abaixo.
 
 Toda frase com número, preço, credencial ou resultado precisa de fonte no briefing.
 
@@ -140,6 +165,9 @@ Na tela, nada de "em breve depoimentos", estrela ou contador.
 Grave `evidencias/copy.md` e registre (o JSON da etapa 3 leva `"sustentacao": "evidencias/sustentacao.md"`): `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 3 --arquivo evidencias/etapa-3.json`
 
 ## e. Construção
+
+**Antes da primeira linha:** `python3 <dir-da-skill>/scripts/gate-plano.py --projeto <dir>` verde.
+A construção segue a ordem escolhida no PLANO, com os formatos de `references/secoes/`.
 
 **Stack padrão: HTML + Tailwind compilado.** React só se o projeto destino já for React ou se
 a página precisar de estado de verdade (calculadora, quiz, checkout em etapas). Nunca
@@ -222,7 +250,11 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    destino real. WhatsApp sem número é pendência declarada, e a página não recebe tráfego.
    **Quem é o dono ou a profissional aparece no corpo**, quando o briefing nomeia (com o que o
    briefing permite dizer, sem inventar credencial); na v5 a fisioterapeuta só estava no rodapé.
-7. **Nenhum comentário interno no HTML publicado** (`<!-- -->`, `//` e `/* */` em script e
+7. **Rastreamento, se o PLANO pediu:** o snippet de `references/rastreamento.md` no fim do
+   `<head>`, com os IDs vazios no `window.RASTREIO` até o aluno preencher, e o `data-evento`
+   em cada link de WhatsApp (`clique_whatsapp`), no botão principal (`clique_cta`) e em cada
+   formulário (`envio_formulario`).
+8. **Nenhum comentário interno no HTML publicado** (`<!-- -->`, `//` e `/* */` em script e
    style; só o aviso de licença `/*! */` passa): a v5 publicou o histórico da construção num
    comentário do script.
 
@@ -246,12 +278,14 @@ Rode cada gate e registre o exit REAL na wave:
 `python3 <dir-da-skill>/scripts/gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas, e o dono nomeado no briefing no corpo da página)
 `python3 <dir-da-skill>/scripts/gate-imagens.py --projeto <dir>` (licença com versão e link, pessoa identificável sem autorização, crédito no HTML com o título real da fonte, aviso no og-image)
 `python3 <dir-da-skill>/scripts/montar-dist.py --projeto <dir> --css-em-linha` e `python3 <dir-da-skill>/scripts/gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar, sem comentário interno, e ícones gerados do `icones/icone.svg` do motivo do plano)
+`python3 <dir-da-skill>/scripts/gate-rastreamento.py --dist <dir>/dist --plano <dir>/PLANO.md` (pixel e eventos que o plano pediu; passa direto com `Pixel pedido: nenhum`)
+`python3 <dir-da-skill>/scripts/gate-plano.py --projeto <dir>` (o plano continua aprovado depois das correções)
 `node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/prova --click "<seletor do botão>"` (identidade, scrollY 0, clique)
 `python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> registrar Playwright --arquivo prova/prova-desktop.png --detalhe "prova de tela lida"`
 `python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> checar --caminho criar`
 `python3 <dir-da-skill>/scripts/gate-referencias.py --projeto <dir>`
 `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> gate <nome> --exit <0|1> --detalhe "<o que o gate imprimiu>"`
-(nomes: `sem-kicker`, `classes-mortas`, `responsivo`, `oclusao`, `identidade`, `uso-ferramentas`, `referencias`, `simetria`, `texto`, `verdade`, `publicacao`, `movimento`, `composicao`, `imagens`)
+(nomes: `sem-kicker`, `classes-mortas`, `responsivo`, `oclusao`, `identidade`, `uso-ferramentas`, `referencias`, `simetria`, `texto`, `verdade`, `publicacao`, `movimento`, `composicao`, `imagens`, `plano`, `rastreamento`)
 
 O `gate-responsivo.mjs` também reprova botão em mais de uma linha até 768 px e trecho de mais de
 2 telas sem botão no celular. Rode os gates de tela contra a `dist/` servida (é o que vai para o ar).

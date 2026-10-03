@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.3.0
+version: 3.4.0
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -19,6 +19,12 @@ aprovadas em gate. A versão 3 depende de **três coisas, e só delas**:
 Decisão do dono (02/10/2026): *"se o construtor só precisar do front end designer e
 auditores, e pesquisa de referências, pra mim tá ótimo"*. O objetivo é a página sair muito
 boa; os gates mecânicos são o piso, não a meta.
+
+**Etapa PLANO (v3.4, obrigatória no CRIAR).** Decisão do dono (03/10/2026): *"seria bom se essa
+skill desse opções de visual e tipos de seções pro cara, inclusive uma etapa de planejamento pra
+copy, pixel, código, referências"*. Entre as referências e o código, o aluno recebe um
+`PLANO.md` com 3 direções visuais renderizadas, o cardápio de seções, a copy sustentada, o pixel
+e a publicação, e aprova item por item (`references/plano.md`, `gate-plano.py`).
 
 **`<dir-da-skill>`** em todo comando = a pasta onde esta skill foi clonada, a que tem este
 SKILL.md. Troque pelo caminho real antes de colar. **`<dir>`** = a pasta do projeto da página.
@@ -71,7 +77,7 @@ uma página que o dono reprova em dois segundos.
 
 | Caminho | Referências | Plano visual (`frontend-design`) | Auditores | Gate próprio |
 |---|---|---|---|---|
-| CRIAR | 6 a 10 páginas | sim | 9 lentes | os oito passos com gate |
+| CRIAR | 6 a 10 páginas | sim, depois do PLANO aprovado | 9 lentes | o PLANO e os oito passos com gate |
 | CLONAR | a original | não (identidade dada) | 9 lentes, `--caminho clonar` | fidelidade lado a lado |
 | CLONAR + ELEVAR | original + 6 a 10 | sim, com a identidade travada | 9 lentes | 4 de 6 eixos elevados |
 | MELHORAR | 6 a 10 páginas | sim, partindo da atual | 9 lentes | baseline e não regressão |
@@ -124,15 +130,17 @@ Detalhe, comandos e gates de cada passo: `references/caminhos/criar.md`.
 |---|---|---|
 | a. Briefing | o que vende, para quem, oferta, preço, ação, material real; o que falta vira pendência do cliente | `gate-etapas.py registrar 0` |
 | b. Referências | 6 a 10 páginas reais printadas e lidas, `referencias/sintese.md` | `gate-referencias.py` e `registrar 1` |
-| c. Plano visual | `plano-visual.md` pela `frontend-design` | `registrar 2` |
+| b2. PLANO | `PLANO.md` aprovado: referências marcadas, 3 direções com prévia (`plano/direcoes.png`), seções do cardápio na ordem do aluno, copy sustentada, pixel e publicação | `gate-plano.py` |
+| c. Plano visual | `plano-visual.md` pela `frontend-design`, detalhando a direção escolhida | `registrar 2` |
 | d. Copy | texto de cada seção, só com fato do briefing, e a tabela frase da página -> linha do briefing | `gate-verdade.py` e `registrar 3` |
-| e. Construção | HTML + Tailwind compilado, hero primeiro, imagens com licença | `registrar 4` |
-| f. Gates mecânicos | sem kicker, classes mortas, 12 telas (botão em uma linha, botão a 2 telas), oclusão, simetria, texto, verdade, publicação, identidade, uso, referências | cada exit no `wave.py gate` |
+| e. Construção | HTML + Tailwind compilado na ordem do PLANO, hero primeiro, imagens com licença, pixel se pedido | `gate-plano.py` verde antes e `registrar 4` |
+| f. Gates mecânicos | sem kicker, classes mortas, 12 telas (botão em uma linha, botão a 2 telas), oclusão, simetria, texto, verdade, publicação, identidade, uso, referências, rastreamento (`gate-rastreamento.py`) | cada exit no `wave.py gate` |
 | g. Auditores | 9 lentes por subagente independente, ciclo fechado, passe de gosto com 0 tells | `wave.py checar` e `wave.py rodada` |
 | h. Prova | prints desktop 1440 e celular 390 e 360 lidos, clique testado, deploy só da `dist/`, bloco de entrega | `registrar 5` |
 
-**Ordem:** briefing, referências, plano, copy, código. O plano vem das referências; a copy
-preenche o ritmo que o plano desenhou e nunca inventa fato; o código segue os dois.
+**Ordem:** briefing, referências, PLANO aprovado, plano visual, copy, código. O PLANO vem das
+referências e é do aluno; o plano visual detalha a direção que ele escolheu; a copy é a que ele
+aprovou e nunca inventa fato; o código segue os três.
 
 ---
 
@@ -207,6 +215,9 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `gate-etapas.py` | sequência e integridade das evidências de cada passo | a a h |
 | `capturar-referencias.mjs` | abre a URL no Chromium headless e grava primeira dobra e meio | b |
 | `gate-referencias.py` | reprova sem 6 prints reais lidos, 2 de cada tipo | b, f |
+| `previa-direcoes.mjs` | as 3 primeiras dobras em PNG (1440 e 390) e o `direcoes.png` lado a lado; `--miniaturas` grava o cardápio de seções | b2 |
+| `gate-plano.py` | reprova o `PLANO.md` sem as 7 seções, as 3 prévias, a copy sustentada, o pixel declarado ou alguma aprovação | b2, e, f |
+| `gate-rastreamento.py` | reprova a `dist/` sem o pixel e os 5 eventos que o plano pediu | f |
 | `search.py` + `core.py` + `data/` | banco de design, consulta opcional | c |
 | `assets-search.py` | fotos com licença aberta, sem chave (Openverse) | e |
 | `screenshot-prova.js` | prints desktop e celular em scrollY 0, identidade da página, clique | e, f, h |
@@ -238,6 +249,9 @@ Testes: `scripts/test-*.py` e `scripts/test-*.cjs` (lista e comando no `README.m
 |---|---|
 | `caminhos/criar.md`, `caminhos/clonar.md`, `caminhos/clonar-elevar.md`, `caminhos/melhorar.md`, `caminhos/editar.md` | o fluxo de cada caminho, sempre |
 | `pesquisa-de-referencias.md` | passo b: como achar, capturar, ler e registrar |
+| `plano.md` | passo b2: a etapa PLANO, o modelo do `PLANO.md` e o que o gate cobra |
+| `secoes/README.md` | passo b2 e e: o cardápio de seções por objetivo, um arquivo e um HTML por formato |
+| `rastreamento.md` | passo b2 e e: Meta Pixel, GA4, onde pegar cada ID e os eventos por `data-evento` |
 | `auditores.md` | passo g: as 9 lentes, o schema, a régua do ciclo, o passe de gosto |
 | `preferencias-de-design.md` | antes do plano visual, em toda página |
 | `anti-vibe-coding.md` | os tells V1 a V15 que a lente design-critic conta |

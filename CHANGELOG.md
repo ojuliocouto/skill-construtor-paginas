@@ -1,5 +1,35 @@
 # Changelog
 
+## 3.4.0 (03/10/2026): etapa PLANO antes de qualquer código
+
+Decisão do dono: "seria bom se essa skill desse opções de visual e tipos de seções pro cara,
+inclusive uma etapa de planejamento pra copy, pixel, código, referências". No CRIAR, entre as
+referências (b) e o plano visual (c), entra o passo b2: um `PLANO.md` único que o aluno aprova
+antes do código. Teste vermelho antes e verde depois em cada peça.
+
+### Adicionado
+- `references/plano.md`: a etapa, o modelo do `PLANO.md` em 7 seções (referências, visual,
+  seções, copy, pixel e rastreamento, código e publicação, aprovação) e o que o gate cobra.
+- `references/secoes/`: cardápio de 18 formatos de seção para 8 objetivos (primeira dobra, dor,
+  mecanismo ou diferencial, prova, oferta, como funciona, FAQ, fecho), cada um com quando usar,
+  estrutura, armadilha e um HTML mínimo que passa no `gate-sem-kicker.py`.
+- `references/rastreamento.md`: snippet de Meta Pixel e GA4 com os IDs em `window.RASTREIO`
+  (vazios no repositório), os eventos `clique_whatsapp`, `clique_cta`, `rolagem_50`,
+  `rolagem_90` e `envio_formulario` por `data-evento`, e onde o aluno pega cada ID.
+- `scripts/previa-direcoes.mjs`: as 3 primeiras dobras em PNG (1440 e 390) e o
+  `plano/direcoes.png` lado a lado; `--miniaturas` grava as miniaturas do cardápio.
+- `scripts/gate-plano.py`: reprova o `PLANO.md` sem as 7 seções, as 3 prévias e a comparação,
+  a copy com sustentação, o pixel declarado e os eventos, com ID real no texto ou com alguma
+  aprovação desmarcada.
+- `scripts/gate-rastreamento.py`: reprova a `dist/` sem o pixel e os eventos que o plano pediu.
+- Testes: `test-gate-plano.py`, `test-secoes.py`, `test-previa-direcoes.cjs`.
+
+### Mudado
+- `SKILL.md` e `references/caminhos/criar.md`: passo b2 obrigatório; o plano visual detalha a
+  direção escolhida; a copy parte da aprovada; `gate-plano.py` antes da construção e
+  `gate-rastreamento.py` nos gates mecânicos.
+- `wave.py`: gates `plano` (só no CRIAR) e `rastreamento`.
+
 ## 3.3.0 (03/10/2026): "correta, mas vazia", os buracos que a auditoria da v5 achou
 
 Um auditor independente deu 7,0 à v5 da página do estúdio, com todos os gates verdes: nenhuma

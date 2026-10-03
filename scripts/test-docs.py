@@ -183,6 +183,36 @@ class Estrutura(unittest.TestCase):
         self.assertIn("gate-verdade.py", c)
 
 
+    # Etapa PLANO (03/10/2026): "seria bom se essa skill desse opções de visual e tipos de seções
+    # pro cara, inclusive uma etapa de planejamento pra copy, pixel, código, referências".
+    def test_v34_plano_entre_referencias_e_construcao(self):
+        c = ler(CRIAR)
+        b, p, cc, e = c.find("## b."), c.find("## b2. PLANO"), c.find("## c."), c.find("## e.")
+        self.assertTrue(0 < b < p < cc < e, (b, p, cc, e))
+        trecho = c[p:cc]
+        for item in ("references/plano.md", "PLANO.md", "previa-direcoes.mjs", "gate-plano.py", "obrigat"):
+            self.assertIn(item, trecho, item)
+        self.assertIn("gate-plano.py", c[c.find("## e."):c.find("## f.")])
+        self.assertIn("gate-rastreamento.py", c[c.find("## f."):c.find("## g.")])
+        s = ler(SKILL)
+        for item in ("references/plano.md", "PLANO", "gate-plano.py", "gate-rastreamento.py", "previa-direcoes.mjs"):
+            self.assertIn(item, s, item)
+        self.assertRegex(s[:600], r"(?m)^version: 3\.4\.\d+$")
+        self.assertIn("3.4.0", ler(RAIZ / "CHANGELOG.md"))
+
+    def test_v34_plano_tem_as_sete_secoes(self):
+        pl = ler(REF / "plano.md")
+        for sec in ("Referências", "Visual", "Seções", "Copy", "Pixel e rastreamento", "Código e publicação", "Aprovação"):
+            self.assertIn(sec, pl, sec)
+        for item in ("frontend-design", "references/secoes/README.md", "references/rastreamento.md", "noindex"):
+            self.assertIn(item, pl, item)
+        r = ler(REF / "rastreamento.md")
+        for ev in ("clique_whatsapp", "clique_cta", "rolagem_50", "rolagem_90", "envio_formulario", "data-evento"):
+            self.assertIn(ev, r, ev)
+        self.assertNotRegex(r, r"\bG-(?!X+\b)[A-Z0-9]{8,12}\b")
+        self.assertNotRegex(r, r"\b\d{15,16}\b")
+
+
 class Travadas(unittest.TestCase):
     """As travadas do teste com aluno que continuam valendo na v3."""
 
