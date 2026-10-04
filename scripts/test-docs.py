@@ -238,7 +238,7 @@ class Estrutura(unittest.TestCase):
 
     def test_v35_references_curtas_existem_e_dizem_o_essencial(self):
         esperado = {
-            "imagem.md": ("foto real", "ilustração", "60%", "pHash", "100", "--trafego-real", "primeira tela", "mesmo gênero", "data-ilustracao-ok"),
+            "imagem.md": ("foto real", "ilustração", "60%", "pHash", "2,5", "RELATIVA", "--trafego-real", "primeira tela", "mesmo gênero", "data-ilustracao-ok"),
             "densidade-servico-local.md": ("nome e formação", "passo a passo", "para quem é", "para quem não é", "horários", "faixa de preço", "onde fica", "o que levar"),
             "vh-estavel.md": ("--vh", "innerHeight", "scroll-behavior", "fullPage"),
             "sticky-e-sobreposicao.md": ("sticky", "largura total", "sobreposicao.mjs", "grid"),
