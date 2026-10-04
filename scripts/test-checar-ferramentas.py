@@ -71,6 +71,13 @@ for opcional in ("skill design-taste-frontend", "Banco de design", "Assets sem c
                  "skill high-end-visual-design", "skill animate"):
     checa(f"{opcional} e opcional na v3", crit.get(opcional) is False, str(crit.get(opcional)))
 
+# v3.5: o gate-imagens (repeticao e nitidez) e a prancha de animacao medem com Pillow e numpy. Sao
+# opcionais (nunca bloqueiam o aluno), mas o verificador avisa o que falta e como instalar.
+checa("Pillow e numpy sao opcionais, com aviso", crit.get("Pillow e numpy") is False, str(crit.get("Pillow e numpy")))
+pn = [l for l in chk.checagens(False) if l[0] == "Pillow e numpy"]
+checa("o verificador checa Pillow e numpy e diz como instalar",
+      len(pn) == 1 and "pip install pillow numpy" in pn[0][5] and pn[0][3] in (True, False), str(pn))
+
 # frontend-design ausente tem que reprovar (exit 1); opcional ausente nunca reprova.
 orig_skill = chk.skill_existe
 orig_argv = sys.argv

@@ -53,6 +53,7 @@ CRITICIDADE = {
     "skill animate": False,
     "Assets sem chave (Openverse)": False,
     "Banco de design": False,
+    "Pillow e numpy": False,
 }
 
 # Onde o teste do 21st procura a chave para fazer a chamada REAL. Estar em `claude mcp list`
@@ -194,6 +195,14 @@ def checagens(opcionais=False):
            "npx -y skills add anthropics/skills --skill frontend-design --agent claude-code")
 
     # ---------------- daqui pra baixo, tudo opcional: nunca bloqueia ----------------
+    try:
+        import numpy, PIL  # noqa: F401
+        tem_pn, det_pn = True, f"Pillow {PIL.__version__}, numpy {numpy.__version__}"
+    except ImportError:
+        tem_pn, det_pn = False, "ausentes"
+    yield ("Pillow e numpy", "repeticao e nitidez de foto (gate-imagens) e a prancha de animacao (opcional)",
+           CRITICIDADE["Pillow e numpy"], tem_pn, det_pn, "pip install pillow numpy")
+
     ok, saida = roda("ffprobe -version")
     yield ("ffmpeg/ffprobe", "gate de video (so em pagina com video)", CRITICIDADE["ffmpeg/ffprobe"], ok,
            saida.splitlines()[0] if saida else "", "brew install ffmpeg")
