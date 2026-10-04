@@ -31,16 +31,47 @@ Ilustração própria (Origem com "ilustração própria" ou "desenho próprio")
 licença nem "imagem ilustrativa": é da página, não de terceiro.
 Favicon, apple-touch-icon e fontes ficam de fora.
 
-Uso: python3 scripts/gate-imagens.py --projeto <dir> [--dist <dir>/dist]
+v3.5 (padrão da v7, 04/10/2026). A v7 do estúdio saiu muito melhor que a v6 com foto de banco
+no lugar da ilustração chapada, e isso trouxe cinco regras que nenhum gate cobrava:
+  8. FOTO REPETIDA ENTRE SEÇÕES: a mesma cena (mesma origem em LICENCAS.md, ou hash perceptual
+     pHash de 64 bits a menos de 10 bits de distância) em duas seções reprova; os recortes da
+     mesma foto dentro de UMA seção (arte dirigida para o celular) passam;
+  9. NITIDEZ: variância do laplaciano abaixo de 100 reprova (foto borrada: o auditor mediu 8,6 a
+     21,7 nos recortes de baixa profundidade de campo, contra mais de 1.000 nos nítidos), medida
+     na maior variante legível de cada foto (avif não abre no Pillow: vale o webp ou jpg irmão);
+ 10. PESSOA IDENTIFICÁVEL DE BANCO (Unsplash, Pexels) sem autorização das retratadas deixou de
+     bloquear a página de teste: vira AVISO "bloqueia tráfego real", desde que "imagem
+     ilustrativa" esteja visível na primeira tela. Com `--trafego-real` volta a reprovar;
+ 11. AVISO NA PRIMEIRA TELA: com essa foto na página, "imagem ilustrativa" tem de estar dentro da
+     primeira tela em 1440 e em 390 (com `--url`, medido pelo navegador; sem ele, a checagem é
+     estática: o texto dentro do cabeçalho ou da primeira seção);
+ 12. FOTO REAL ANTES DE ILUSTRAÇÃO (só com `--url`): na primeira tela, em 1440 e em 390, a área
+     de foto (img) é pelo menos 60% da área de imagem (foto + desenho em SVG). Acento pequeno
+     passa; ilustração chapada como imagem principal reprova. `data-ilustracao-ok="motivo"` no
+     SVG o tira da conta.
+Mede com Pillow e numpy (`pip install pillow numpy`).
+
+Uso: python3 scripts/gate-imagens.py --projeto <dir> [--dist <dir>/dist] [--url <url>] [--trafego-real]
 """
 import argparse
 import html as html_mod
+import json
 import re
+import subprocess
 import sys
 import unicodedata
+from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import urlparse
 
 EXTENSOES = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".gif", ".svg"}
+LEGIVEIS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+LIMIAR_PHASH = 10          # distância de Hamming (de 64 bits) abaixo da qual duas fotos são a mesma cena
+NITIDEZ_MINIMA = 100       # variância do laplaciano abaixo da qual a foto é borrada
+LADO_MINIMO_NITIDEZ = 300  # miniatura e ícone não entram na medida de nitidez
+FOTO_NA_DOBRA_MINIMA = 0.6
+BANCOS = ("unsplash", "pexels", "pixabay")
+AQUI = Path(__file__).resolve().parent
 FORA = re.compile(r"^(favicon|apple-touch-icon|android-chrome|mstile)", re.I)
 COLUNAS = {
     "arquivo": ("arquivo publicado", "arquivo"),
@@ -132,17 +163,247 @@ def citacoes_do_credito(texto, autor):
     return achados
 
 
-def checar(projeto, dist=None):
+class _Regioes(HTMLParser):
+    """Divide o corpo em regiões (cada <section> de topo; header, footer e nav fora delas) e anota,
+    por região, as imagens que ela usa e o texto que ela mostra."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.profundidade = 0
+        self.n = 0
+        self.regiao = "(fora de seção)"
+        self.ordem = []
+        self.imagens = {}
+        self.texto = {}
+        self.cabeca = False
+        self.ignorar = 0
+
+    def _abre(self, chave):
+        self.regiao = chave
+        if chave not in self.ordem:
+            self.ordem.append(chave)
+            self.imagens[chave] = []
+            self.texto[chave] = []
+
+    def _ref(self, valor):
+        for parte in re.split(r",", valor or ""):
+            alvo = parte.strip().split(" ")[0]
+            if alvo and not alvo.startswith("data:"):
+                nome = Path(urlparse(alvo).path).name
+                if Path(nome).suffix.lower() in EXTENSOES:
+                    self.imagens[self.regiao].append(nome)
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag == "head":
+            self.cabeca = True
+        if tag in ("script", "style"):
+            self.ignorar += 1
+        if self.cabeca:
+            return
+        if not self.ordem:
+            self._abre("(fora de seção)")
+        if tag == "section":
+            if self.profundidade == 0:
+                self.n += 1
+                self._abre(a.get("id") or f"seção {self.n}")
+            self.profundidade += 1
+        elif tag in ("header", "footer", "nav") and self.profundidade == 0:
+            self._abre(tag)
+        if tag in ("img", "source"):
+            self._ref(a.get("src") or a.get("data-src"))
+            self._ref(a.get("srcset"))
+        for m in re.finditer(r"url\(['\"]?([^'\")]+)", a.get("style") or ""):
+            self._ref(m.group(1))
+
+    def handle_endtag(self, tag):
+        if tag == "head":
+            self.cabeca = False
+        if tag in ("script", "style") and self.ignorar:
+            self.ignorar -= 1
+        if tag == "section" and self.profundidade:
+            self.profundidade -= 1
+            if self.profundidade == 0:
+                self.regiao = "(fora de seção)"
+                if self.regiao not in self.ordem:
+                    self._abre(self.regiao)
+        elif tag in ("header", "footer", "nav") and self.profundidade == 0:
+            self.regiao = "(fora de seção)"
+            if self.regiao not in self.ordem:
+                self._abre(self.regiao)
+
+    def handle_data(self, data):
+        if self.cabeca or self.ignorar or not self.ordem:
+            return
+        self.texto[self.regiao].append(data)
+
+
+def regioes_da_pagina(pagina):
+    r = _Regioes()
+    r.feed(pagina)
+    return r
+
+
+def aviso_na_primeira_regiao(r):
+    """Checagem estática do aviso na primeira tela: o texto está no cabeçalho ou na primeira seção."""
+    for chave in r.ordem:
+        if "ilustrativa" in norm(" ".join(r.texto[chave])):
+            return True
+        if chave not in ("header", "nav", "(fora de seção)"):
+            return False
+    return False
+
+
+def carregar_medidas():
+    try:
+        import numpy as np
+        from PIL import Image
+        return np, Image
+    except ImportError:
+        return None, None
+
+
+def phash(np, Image, img):
+    """pHash de 64 bits: DCT 2D de 32x32 em cinza, os 8x8 de baixa frequência contra a mediana."""
+    a = np.asarray(img.convert("L").resize((32, 32), Image.LANCZOS), dtype=np.float64)
+    k = np.arange(32)
+    dct = np.cos(np.pi * (2 * k[None, :] + 1) * k[:, None] / 64.0)
+    d = (dct @ a @ dct.T)[:8, :8].flatten()
+    return d > np.median(d[1:])
+
+
+def variancia_laplaciano(np, img):
+    g = np.asarray(img.convert("L"), dtype=np.float64)
+    if min(g.shape) < 3:
+        return 0.0
+    c = g[1:-1, 1:-1]
+    lap = g[:-2, 1:-1] + g[2:, 1:-1] + g[1:-1, :-2] + g[1:-1, 2:] - 4 * c
+    return float(lap.var())
+
+
+def maior_variante(Image, caminhos):
+    """A maior variante que o Pillow abre (avif não abre: vale o webp ou jpg irmão)."""
+    abertas = []
+    for c in caminhos:
+        if c.suffix.lower() not in LEGIVEIS:
+            continue
+        try:
+            im = Image.open(c)
+            im.load()
+            abertas.append((im.size[0] * im.size[1], c, im))
+        except Exception:
+            continue
+    if not abertas:
+        return None, None
+    abertas.sort(key=lambda x: x[0], reverse=True)
+    return abertas[0][1], abertas[0][2]
+
+
+def origem_normalizada(origem):
+    m = re.search(r"https?://\S+", origem or "")
+    return re.sub(r"[?#].*$", "", m.group(0)).rstrip("/").lower() if m else ""
+
+
+def checar_fotos(dist, usados, regioes, problemas, avisos):
+    """Regras 8 e 9: foto repetida entre seções e nitidez."""
+    np, Image = carregar_medidas()
+    if np is None:
+        problemas.append("faltam pillow e numpy para medir repetição e nitidez das fotos: pip install pillow numpy")
+        return
+    por_base = {}
+    for rel, it in usados:
+        if Path(rel).stem.startswith("og-image") or propria(it):
+            continue
+        por_base.setdefault(base(Path(rel).name), {"item": it, "arquivos": []})["arquivos"].append(dist / rel)
+    secoes_de = {}
+    for chave in regioes.ordem:
+        for nome in regioes.imagens[chave]:
+            secoes_de.setdefault(base(nome), set()).add(chave)
+    lidas = {}
+    for b, info in sorted(por_base.items()):
+        caminho, im = maior_variante(Image, info["arquivos"])
+        if im is None:
+            if any(c.suffix.lower() in LEGIVEIS for c in info["arquivos"]) or not any(c.suffix.lower() == ".svg" for c in info["arquivos"]):
+                avisos.append(f"{b}: nenhuma variante legível pelo Pillow; repetição e nitidez não medidas")
+            continue
+        lidas[b] = (caminho, im)
+        if max(im.size) >= LADO_MINIMO_NITIDEZ:
+            v = variancia_laplaciano(np, im)
+            if v < NITIDEZ_MINIMA:
+                problemas.append(f"{b}: foto borrada, nitidez {v:.1f} (variância do laplaciano de {caminho.name}; mínimo {NITIDEZ_MINIMA}): "
+                                 "troque pela foto nítida ou por outro recorte")
+    # Cenas: mesma origem em LICENCAS.md ou pHash a menos de LIMIAR_PHASH bits.
+    nomes = sorted(lidas)
+    pai = {b: b for b in nomes}
+
+    def raiz(b):
+        while pai[b] != b:
+            pai[b] = pai[pai[b]]
+            b = pai[b]
+        return b
+    motivo = {}
+    hashes = {b: phash(np, Image, lidas[b][1]) for b in nomes}
+    for i, a in enumerate(nomes):
+        for b in nomes[i + 1:]:
+            oa = origem_normalizada(por_base[a]["item"].get("origem", ""))
+            ob = origem_normalizada(por_base[b]["item"].get("origem", ""))
+            d = int((hashes[a] != hashes[b]).sum())
+            why = None
+            if oa and oa == ob:
+                why = f"a mesma origem {oa}"
+            elif d < LIMIAR_PHASH:
+                why = f"pHash a {d} bits de distância (limiar {LIMIAR_PHASH})"
+            if why:
+                pai[raiz(a)] = raiz(b)
+                motivo[(a, b)] = why
+    grupos = {}
+    for b in nomes:
+        grupos.setdefault(raiz(b), []).append(b)
+    for membros in grupos.values():
+        secoes = set()
+        for b in membros:
+            secoes |= secoes_de.get(b, set())
+        if len(secoes) < 2:
+            continue
+        razoes = sorted({v for (x, y), v in motivo.items() if x in membros and y in membros})
+        quem = ", ".join(f"{b} (em {', '.join(sorted(secoes_de.get(b, set())))})" for b in membros)
+        problemas.append(f"foto repetida entre seções {', '.join(sorted(secoes))}: {quem}"
+                         + (f"; {'; '.join(razoes)}" if razoes else "; o mesmo arquivo")
+                         + ": cada seção usa uma foto e uma cena que as outras não usaram")
+
+
+def medir_dobra(url):
+    """Mede, no navegador, aviso e áreas de foto e desenho na primeira tela (1440 e 390)."""
+    r = subprocess.run(["node", str(AQUI / "medir-dobra.mjs"), "--url", url], capture_output=True, text=True, timeout=180)
+    if r.returncode != 0:
+        raise RuntimeError((r.stderr or r.stdout).strip()[-400:])
+    return json.loads(r.stdout)
+
+
+def checar_dobra(medida, precisa_aviso, problemas):
+    for tela, m in medida.items():
+        rotulo = "desktop 1440" if tela == "desk" else "celular 390"
+        if precisa_aviso and not m["aviso"]:
+            problemas.append(f"{rotulo}: 'imagem ilustrativa' fora da primeira tela (foto de banco com pessoa identificável só passa "
+                             "como ponte com o aviso visível sem rolar)")
+        total = m["foto"] + m["desenho"]
+        if total > 0 and m["foto"] / total < FOTO_NA_DOBRA_MINIMA:
+            problemas.append(f"{rotulo}: foto é {100 * m['foto'] / total:.0f}% da imagem da primeira tela (mínimo {100 * FOTO_NA_DOBRA_MINIMA:.0f}%): "
+                             "foto real, do cliente ou de banco livre como ponte, antes de ilustração chapada; ilustração só como acento")
+
+
+def avaliar(projeto, dist=None, trafego_real=False, url=None):
+    """Devolve (problemas, avisos). Problema reprova (exit 1); aviso não reprova."""
     projeto = Path(projeto)
     dist = Path(dist) if dist else projeto / "dist"
-    problemas = []
+    problemas, avisos = [], []
     lic = projeto / "imagens" / "LICENCAS.md"
     if not lic.is_file():
-        return [f"falta {lic}: toda imagem publicada precisa de origem, autor, licença e link"]
+        return [f"falta {lic}: toda imagem publicada precisa de origem, autor, licença e link"], avisos
     mapa, itens = ler_tabela(lic.read_text(encoding="utf-8"))
     faltam = [c for c in COLUNAS if c not in mapa]
     if faltam:
-        return [f"LICENCAS.md sem as colunas {', '.join(faltam)} (cabeçalho: Arquivo publicado | Origem | Autor | Título | Licença | Link da licença | Alteração | Pessoa identificável | Autorização de imagem | Aviso de ilustrativa)"]
+        return [f"LICENCAS.md sem as colunas {', '.join(faltam)} (cabeçalho: Arquivo publicado | Origem | Autor | Título | Licença | Link da licença | Alteração | Pessoa identificável | Autorização de imagem | Aviso de ilustrativa)"], avisos
     index = dist / "index.html"
     pagina = index.read_text(encoding="utf-8") if index.is_file() else ""
     texto = texto_visivel(pagina)
@@ -161,6 +422,7 @@ def checar(projeto, dist=None):
         usados.append((rel, achou[0]))
 
     vistos = set()
+    pessoas_sem_autorizacao = []
     algum_terceiro = False
     for rel, it in usados:
         chave = id(it)
@@ -208,27 +470,60 @@ def checar(projeto, dist=None):
             if norm(citado) != norm(titulo):
                 problemas.append(f"{nome}: o crédito da página cita \"{citado}\" entre aspas como título, e o título da fonte é \"{titulo or slug}\"")
         if sim(it["pessoa"]) and not sim(it["autorizacao"]):
-            problemas.append(f"{nome}: pessoa identificável sem autorização de imagem: prefira foto sem pessoa identificável ou ilustração própria; a licença do autor não cobre a imagem de quem aparece")
+            pessoas_sem_autorizacao.append(nome)
+            if trafego_real:
+                problemas.append(f"{nome}: pessoa identificável sem autorização de imagem: prefira foto sem pessoa identificável ou ilustração própria; a licença do autor não cobre a imagem de quem aparece")
+            else:
+                avisos.append(f"{nome}: pessoa identificável sem autorização das retratadas: bloqueia tráfego real (a licença do banco não cobre quem aparece). "
+                              "Serve à página de teste com \"imagem ilustrativa\" na primeira tela; antes de anunciar, entra a foto da cliente com autorização (--trafego-real reprova)")
     if algum_terceiro and "ilustrativa" not in texto_n:
         problemas.append("página: imagem que não é do cliente sem \"imagem ilustrativa\" no texto publicado")
-    return problemas
+
+    regioes = regioes_da_pagina(pagina)
+    medida = None
+    if url:
+        try:
+            medida = medir_dobra(url)
+        except Exception as e:  # navegador ausente ou página fora do ar: sem medida não há aprovação
+            problemas.append(f"não consegui medir a primeira tela em {url}: {e}")
+    if pessoas_sem_autorizacao and not trafego_real:
+        if medida:
+            checar_dobra({t: {**m, "foto": 0, "desenho": 0} for t, m in medida.items()}, True, problemas)
+        elif not aviso_na_primeira_regiao(regioes):
+            problemas.append("foto com pessoa identificável sem autorização, e \"imagem ilustrativa\" fora da primeira tela "
+                             "(não está no cabeçalho nem na primeira seção; rode com --url para medir no navegador)")
+    if medida:
+        checar_dobra({t: {**m, "aviso": True} for t, m in medida.items()}, False, problemas)
+    if usados:
+        checar_fotos(dist, usados, regioes, problemas, avisos)
+    return problemas, avisos
+
+
+def checar(projeto, dist=None):
+    return avaliar(projeto, dist)[0]
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--projeto", required=True)
     ap.add_argument("--dist")
+    ap.add_argument("--url", help="página servida da dist/: mede no navegador o aviso e a foto na primeira tela")
+    ap.add_argument("--trafego-real", action="store_true",
+                    help="página que vai receber anúncio: pessoa identificável sem autorização reprova")
     a = ap.parse_args()
-    problemas = checar(a.projeto, a.dist)
+    problemas, avisos = avaliar(a.projeto, a.dist, a.trafego_real, a.url)
     print("\nGATE DE IMAGENS  " + str(Path(a.projeto).resolve()))
     print("=" * 80)
+    for av in avisos:
+        print("  AVISO: " + av)
     if problemas:
         for p in problemas:
             print("  FALHA: " + p)
         print(f"\n  REPROVA: {len(problemas)} problema(s) de licença, imagem ou aviso.\n")
         return 1
-    print("  PASSA: toda imagem publicada com licença completa, sem pessoa identificável sem autorização,")
-    print("  crédito completo na página e aviso de imagem ilustrativa, inclusive na prévia do link.\n")
+    print("  PASSA: toda imagem publicada com licença completa, crédito completo na página, aviso de imagem")
+    print("  ilustrativa (inclusive na prévia do link), nenhuma foto repetida entre seções e nenhuma borrada."
+          + (f" {len(avisos)} aviso(s) acima." if avisos else "") + "\n")
     return 0
 
 

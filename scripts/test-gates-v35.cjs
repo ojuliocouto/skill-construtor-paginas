@@ -36,8 +36,39 @@ const ladoLista = (titulo) => `<section><div style="display:grid;grid-template-c
 const splitImg = (titulo) => `<section><h2>${titulo}</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center"><img src="/foto-nitida.jpg" alt="Foto de controle" style="width:100%;height:260px;object-fit:cover"><p>Texto ao lado da foto, para a seção ler como split com imagem.</p></div></section>`;
 const hero = '<section><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center"><div><h1>Título da página</h1><p>Subtítulo curto.</p><a href="#c">Ver como funciona</a></div><img src="/foto-nitida.jpg" alt="Foto de controle" style="width:100%;height:320px;object-fit:cover"></div></section>';
 
+// Projetos mínimos para o gate-imagens com --url: dist/index.html, dist/img/foto1-800.jpg e a
+// tabela de licenças. O servidor entrega cada dist/ em /p/<nome>/.
+const CAB = '| Arquivo publicado | Origem | Autor | Título | Licença | Link da licença | Alteração | Pessoa identificável | Autorização de imagem | Aviso de ilustrativa |\n|---|---|---|---|---|---|---|---|---|---|\n';
+function projeto(nome, corpo, pessoa) {
+  const raiz = path.join(pasta, nome);
+  fs.mkdirSync(path.join(raiz, 'dist', 'img'), { recursive: true });
+  fs.mkdirSync(path.join(raiz, 'imagens'), { recursive: true });
+  fs.copyFileSync(path.join(pasta, 'foto-nitida.jpg'), path.join(raiz, 'dist', 'img', 'foto1-800.jpg'));
+  fs.writeFileSync(path.join(raiz, 'imagens', 'LICENCAS.md'), '# Licenças\n\n' + CAB + `| img/foto1-800.jpg | https://unsplash.com/photos/o1 | Fulana de Tal | | Licença Unsplash | https://unsplash.com/license | recorte | ${pessoa ? 'sim' : 'não'} | ${pessoa ? 'não' : 'não se aplica'} | sim |\n`);
+  fs.writeFileSync(path.join(raiz, 'dist', 'index.html'), '<!doctype html><html lang="pt-BR"><head>' + head + estilo + '<style>img{max-width:100%}.foto{display:block;width:700px;height:400px;object-fit:cover}</style></head><body>' + corpo + '</body></html>');
+  return raiz;
+}
+const AVISO = '<p class="av">Imagem ilustrativa de banco de imagens.</p>';
+const FOTO = '<img class="foto" src="img/foto1-800.jpg" alt="Foto de controle" width="700" height="400">';
+const SVG_GRANDE = (extra = '') => `<svg ${extra} data-desenho="cena grande" width="600" height="400" viewBox="0 0 600 400"><circle cx="300" cy="200" r="190" fill="#8D5A3B"/><rect x="100" y="100" width="400" height="200" fill="#555"/></svg>`;
+const projetos = {
+  'img-aviso-na-dobra': projeto('img-aviso-na-dobra', '<section style="min-height:0;padding:20px">' + FOTO + AVISO + '<h1>Título</h1></section>', true),
+  'img-aviso-abaixo-da-dobra': projeto('img-aviso-abaixo-da-dobra', '<section style="min-height:0;padding:20px">' + FOTO + '<div style="height:900px"></div>' + AVISO + '</section>', true),
+  'img-aviso-so-no-celular': projeto('img-aviso-so-no-celular', '<style>@media (max-width:600px){.foto{height:900px}}</style><section style="min-height:0;padding:20px">' + FOTO + AVISO + '</section>', true),
+  'img-ilustracao-domina': projeto('img-ilustracao-domina', '<section style="min-height:0;padding:20px"><div style="display:flex;gap:16px;align-items:flex-start">' + SVG_GRANDE() + '<img src="img/foto1-800.jpg" alt="Foto de controle" width="100" height="100" style="width:100px;height:100px"></div>' + AVISO + '</section>', false),
+  'img-foto-com-acento-svg': projeto('img-foto-com-acento-svg', '<section style="min-height:0;padding:20px"><div style="display:flex;gap:16px;align-items:flex-start">' + FOTO + '<svg data-desenho="traço pequeno" width="60" height="200" viewBox="0 0 60 200"><path d="M30 0v200" stroke="#555" stroke-width="3"/><circle cx="30" cy="40" r="12" fill="#8D5A3B"/></svg></div>' + AVISO + '</section>', false),
+  'img-ilustracao-marcada': projeto('img-ilustracao-marcada', '<section style="min-height:0;padding:20px"><div style="display:flex;gap:16px;align-items:flex-start">' + SVG_GRANDE('data-ilustracao-ok="coluna da assinatura, acento pedido no plano"') + '<img src="img/foto1-800.jpg" alt="Foto de controle" width="100" height="100" style="width:100px;height:100px"></div>' + AVISO + '</section>', false),
+};
+
 const servidor = http.createServer((req, res) => {
   const rota = req.url.split('?')[0];
+  const mp = rota.match(/^\/p\/([^/]+)\/(.*)$/);
+  if (mp && projetos[mp[1]]) {
+    const arq = path.join(projetos[mp[1]], 'dist', mp[2] || 'index.html');
+    if (!fs.existsSync(arq)) { res.writeHead(404); res.end(); return; }
+    res.writeHead(200, { 'Content-Type': arq.endsWith('.jpg') ? 'image/jpeg' : 'text/html; charset=utf-8' });
+    res.end(fs.readFileSync(arq)); return;
+  }
   if (rota.endsWith('.jpg')) { res.writeHead(200, { 'Content-Type': 'image/jpeg' }); res.end(fs.readFileSync(path.join(pasta, rota.slice(1)))); return; }
   let corpo = '<main><h1>Página simples</h1></main>';
   // gate-ritmo: duas seções vizinhas com o mesmo esqueleto, mais de 1 "título centralizado + cartões".
@@ -101,6 +132,13 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['ritmo-centro-cartoes', 'gate-ritmo.mjs', ['--url', url + '/ritmo-centro-cartoes'], 1, /2 seções no formato "título centralizado \+ cartões"/],
     ['ritmo-excecao', 'gate-ritmo.mjs', ['--url', url + '/ritmo-excecao'], 0, /exceção declarada/],
     ['ritmo-assimetrico-nao-e-cartao', 'gate-ritmo.mjs', ['--url', url + '/ritmo-assimetrico-nao-e-cartao'], 0],
+    // gate-imagens com --url: aviso na primeira tela e foto antes de ilustração.
+    ['imagens-aviso-na-dobra', 'gate-imagens.py', ['--projeto', projetos['img-aviso-na-dobra'], '--url', url + '/p/img-aviso-na-dobra/'], 0, /AVISO.*tr[aá]fego real/],
+    ['imagens-aviso-abaixo-da-dobra', 'gate-imagens.py', ['--projeto', projetos['img-aviso-abaixo-da-dobra'], '--url', url + '/p/img-aviso-abaixo-da-dobra/'], 1, /desktop 1440: 'imagem ilustrativa' fora da primeira tela/],
+    ['imagens-aviso-so-no-celular', 'gate-imagens.py', ['--projeto', projetos['img-aviso-so-no-celular'], '--url', url + '/p/img-aviso-so-no-celular/'], 1, /celular 390: 'imagem ilustrativa' fora da primeira tela/],
+    ['imagens-ilustracao-domina', 'gate-imagens.py', ['--projeto', projetos['img-ilustracao-domina'], '--url', url + '/p/img-ilustracao-domina/'], 1, /foto é \d+% da imagem da primeira tela/],
+    ['imagens-foto-com-acento-svg', 'gate-imagens.py', ['--projeto', projetos['img-foto-com-acento-svg'], '--url', url + '/p/img-foto-com-acento-svg/'], 0],
+    ['imagens-ilustracao-marcada', 'gate-imagens.py', ['--projeto', projetos['img-ilustracao-marcada'], '--url', url + '/p/img-ilustracao-marcada/'], 0],
   ];
   const resultados = [...await unidade()];
   const filtro = process.env.GATES_FILTRO;
