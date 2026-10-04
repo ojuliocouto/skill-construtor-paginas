@@ -11,6 +11,16 @@ d. Copy, e. Pixel e rastreamento, f. Código e publicação, g. Aprovação), se
 sustentação preenchida, se o pixel não declarar o pedido e os eventos, se houver ID real de
 rastreamento no texto ou se alguma aprovação estiver desmarcada. Imagens se conferem no disco,
 pelo cabeçalho PNG, relativas à pasta do PLANO.md.
+
+v3.5 (padrão da v7, 04/10/2026). Cobra também o que fez a v7 sair melhor que a v6:
+  - `Momento assinatura:` com o elemento, as seções onde aparece (3 ou mais) e os estados
+    (`torta -> alinhada`): uma linha com `;` ou o campo mais as linhas `- Seções:` e `- Estados:`;
+  - a tabela `| Seção | Desktop | Celular | Animação |` com uma linha por seção da ordem
+    escolhida, nenhuma célula vazia e no máximo 2 seções com o mesmo tipo de animação (o tipo é
+    o que vem antes dos dois pontos da célula; o tipo `assinatura` é o próprio momento
+    assinatura, que aparece em 3 seções por regra, e fica fora da contagem);
+  - `Material da cliente pedido:` com a lista do que só a cliente tem (foto real, número do
+    WhatsApp, depoimento com autorização). `nenhum` só vale com o motivo.
 """
 import argparse
 import pathlib
@@ -63,6 +73,118 @@ def fatiar(texto):
     return achadas, ordem
 
 
+def vazio(valor):
+    """Célula ou campo sem conteúdo de verdade: vazio, traço ou modelo `<...>` não preenchido."""
+    v = valor.strip().strip("*_ ")
+    return not v or v in ("-", "...", "…") or bool(re.fullmatch(r"<[^>]*>", v))
+
+
+def bloco_do_campo(texto, rotulo):
+    """O campo `Rótulo: ...` e as linhas seguidas dele até a primeira linha em branco."""
+    m = re.search(r"(?mi)^[ \t]*" + rotulo + r"[ \t]*:[ \t]*(.*)$", texto)
+    if not m:
+        return None
+    linhas = [m.group(1)]
+    for l in texto[m.end():].splitlines()[1:]:
+        if not l.strip() or l.lstrip().startswith(("#", "|")):
+            break
+        linhas.append(l)
+    return linhas
+
+
+def checar_assinatura(texto):
+    erros = []
+    linhas = bloco_do_campo(texto, r"momento assinatura")
+    if linhas is None:
+        return ["Momento assinatura: falta a linha 'Momento assinatura: <elemento>; seções: <3 ou mais>; "
+                "estados: <de -> para>' (um elemento ligado ao assunto que muda de estado ao longo da página)"]
+    bloco = "\n".join(linhas)
+    elemento = re.split(r"[;|\n]", linhas[0])[0]
+    if vazio(elemento) or re.match(r"(?i)\s*se[cç][õo]es\s*:|\s*estados?\s*:", elemento):
+        erros.append("Momento assinatura: falta o elemento (o que é, em uma frase: 'a coluna vertebral em SVG')")
+    secoes = re.search(r"(?i)se[cç][õo]es\s*:\s*([^;|\n]+)", bloco)
+    lista = [x for x in re.split(r"\s*(?:,|\be\b)\s*", secoes.group(1)) if not vazio(x)] if secoes else []
+    if len(lista) < 3:
+        erros.append(f"Momento assinatura: aparece em {len(lista)} seção(ões); precisa de 3 ou mais "
+                     "(começo, meio e fim da página), senão é enfeite e não assinatura")
+    estados = re.search(r"(?i)estados?\s*:\s*([^;|\n]+)", bloco)
+    if not estados or not re.search(r"->|→|\bpara\b", estados.group(1)):
+        erros.append("Momento assinatura: faltam os estados com a mudança ('torta -> alinhada'); "
+                     "o elemento tem de mudar de estado ao longo da página")
+    return erros
+
+
+def tipo_da_animacao(celula):
+    return sem_acento(celula.split(":", 1)[0]).strip()
+
+
+def linhas_da_composicao(texto):
+    """A tabela Seção | Desktop | Celular | Animação do PLANO.md como lista de dicts, ou None."""
+    tabela, cab = [], None
+    for l in (l.strip() for l in texto.splitlines()):
+        if not l.startswith("|"):
+            if tabela and cab:
+                break
+            tabela, cab = [], None
+            continue
+        cels = [x.strip() for x in l.strip("|").split("|")]
+        if cab is None:
+            nomes = [sem_acento(x) for x in cels]
+            if all(any(n.startswith(k) for n in nomes) for k in ("secao", "desktop", "celular", "animacao")):
+                cab = nomes
+            continue
+        tabela.append(cels)
+    if cab is None:
+        return None
+    idx = {k: next(i for i, n in enumerate(cab) if n.startswith(k)) for k in ("secao", "desktop", "celular", "animacao")}
+    dados = [c for c in tabela if not all(re.fullmatch(r":?-+:?", x) for x in c if x)]
+    return [{k: (c[i] if i < len(c) else "") for k, i in idx.items()} for c in dados]
+
+
+def checar_composicao(texto, sec, ordem_itens):
+    """Tabela Seção | Desktop | Celular | Animação, uma linha por seção, sem célula vazia."""
+    erros = []
+    linhas = linhas_da_composicao(texto)
+    if linhas is None:
+        return ["Composição por seção: falta a tabela '| Seção | Desktop | Celular | Animação |' "
+                "(uma linha por seção: o que muda no desktop, no celular e como anima)"]
+    if not linhas:
+        return ["Composição por seção: a tabela não tem nenhuma linha"]
+    if ordem_itens and len(linhas) < ordem_itens:
+        erros.append(f"Composição por seção: {len(linhas)} linha(s) para {ordem_itens} seções da ordem escolhida "
+                     "(uma linha por seção)")
+    tipos = {}
+    for c in linhas:
+        nome = c["secao"] or "?"
+        for k, rot in (("desktop", "Desktop"), ("celular", "Celular"), ("animacao", "Animação")):
+            if vazio(c[k]):
+                erros.append(f"Composição por seção: célula vazia em '{nome}' sem {rot}")
+        anim = c["animacao"]
+        if not vazio(anim) and tipo_da_animacao(anim) != "assinatura":
+            tipos.setdefault(tipo_da_animacao(anim), (anim.split(":", 1)[0].strip(), []))[1].append(nome)
+    for chave, (tipo, nomes) in tipos.items():
+        if len(nomes) > 2:
+            erros.append(f"Composição por seção: {len(nomes)} seções com a mesma animação ('{tipo}': "
+                         f"{', '.join(nomes)}); no máximo 2, cada uma anima o próprio conteúdo")
+    return erros
+
+
+def checar_material(texto):
+    linhas = bloco_do_campo(texto, r"material da cliente pedido")
+    if linhas is None:
+        return ["Material da cliente: falta a linha 'Material da cliente pedido:' com a lista do que só a cliente "
+                "tem (foto real da profissional, número do WhatsApp, depoimentos com autorização...)"]
+    itens = [x.strip(" -*") for x in linhas[0].split(";")] + [l.strip().lstrip("-* ").strip() for l in linhas[1:]]
+    itens = [x for x in itens if not vazio(x)]
+    if not itens:
+        return ["Material da cliente: a lista está vazia; liste o que só a cliente tem ou escreva 'nenhum' com o motivo"]
+    if len(itens) == 1 and sem_acento(itens[0]).startswith("nenhum"):
+        motivo = re.sub(r"(?i)^nenhum[a-z]*[\s,.:;-]*", "", itens[0]).strip()
+        if len(motivo) < 15:
+            return ["Material da cliente: 'nenhum' sem o motivo (por que a página não depende de nada da cliente?)"]
+    return []
+
+
 def imagens(corpo, base):
     return [(alvo, png_real(base / alvo)) for alvo in IMG.findall(corpo)]
 
@@ -92,6 +214,9 @@ def checar(caminho):
         erros.append(f"ID real de Meta Pixel no plano ({m.group(0)}): o ID mora na conta do aluno e no projeto, nunca no documento")
     for m in ID_GA4.finditer(texto):
         erros.append(f"ID real de GA4 no plano ({m.group(0)}): use G-XXXXXXXX no texto")
+
+    erros += checar_assinatura(texto)
+    erros += checar_material(texto)
 
     # a. Referências
     if "a" in sec:
@@ -147,6 +272,7 @@ def checar(caminho):
         itens = re.findall(r"(?m)^\s*(?:\d+\.|[-*])\s+\S", ordem_sub[0]) if ordem_sub else []
         if len(itens) < 3:
             erros.append("Seções: falta '### Ordem escolhida' com pelo menos 3 seções montadas pelo aluno")
+        erros += checar_composicao(c, sec, len(itens))
 
     # d. Copy
     if "d" in sec:
@@ -228,7 +354,8 @@ def main():
         for e in erros:
             print(f"  - {e}")
         return 1
-    print(f"PASSA: {caminho.name} com as 7 seções, 3 direções com prévia, copy sustentada, pixel declarado e tudo aprovado.")
+    print(f"PASSA: {caminho.name} com as 7 seções, 3 direções com prévia, momento assinatura, composição por seção, "
+          "copy sustentada, material da cliente, pixel declarado e tudo aprovado.")
     return 0
 
 

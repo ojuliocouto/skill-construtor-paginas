@@ -28,10 +28,18 @@ direção aqui custa uma conversa; depois do código, custa a página.
    `node <dir-da-skill>/scripts/previa-direcoes.mjs --miniaturas <dir-da-skill>/references/secoes --saida <dir>/plano/miniaturas`
    Marque com uma sugestão o formato que você recomendaria para cada objetivo, e por quê. O
    aluno monta a `### Ordem escolhida`.
+   Depois da ordem, a `### Composição por seção` (v3.5): uma tabela
+   `| Seção | Desktop | Celular | Animação |`, uma linha por seção da ordem, sem célula vazia. A
+   animação começa com o tipo, antes dos dois pontos, e é ligada ao conteúdo da seção; no
+   máximo 2 seções com o mesmo tipo (`references/ritmo-e-animacao.md`).
+   O PLANO também nomeia o **momento assinatura** (v3.5): um elemento ligado ao assunto, que
+   aparece em 3 ou mais seções e muda de estado ao longo da página.
 4. **Copy (d):** o texto de cada seção da ordem escolhida, na tabela
    `| Seção | Frase | Linha do briefing que sustenta |`. A sustentação é a linha do briefing
    entre aspas; o que o briefing não tem vira `PENDENTE: <o quê>` e entra em
    `### Pendências do cliente`. Essa tabela vira depois o `evidencias/sustentacao.md` do passo d.
+   A linha `Material da cliente pedido:` (v3.5) lista o que só a cliente tem: foto real da
+   profissional, número do WhatsApp, depoimentos com autorização, registro no conselho.
 5. **Pixel e rastreamento (e):** pergunte se a página vai receber anúncio. A linha
    `Pixel pedido: Meta e GA4` (ou `Meta`, `GA4`, `nenhum`) fica no topo do plano; a seção diz
    onde o aluno pega cada ID e o que fazer se não tiver, e lista os eventos (`clique_whatsapp`,
@@ -54,6 +62,13 @@ Os títulos `## a.` a `## g.` são lidos pelo gate. Imagens com caminho relativo
 # PLANO: <nome do negócio>
 
 Pixel pedido: Meta e GA4
+
+Momento assinatura: <o elemento, em uma frase>; seções: <3 ou mais, separadas por vírgula>; estados: <de -> para>
+
+Material da cliente pedido:
+- <foto real da profissional>
+- <número do WhatsApp>
+- <depoimentos com autorização>
 
 ## a. Referências
 
@@ -87,6 +102,12 @@ Escolha: [ ] A  [ ] B  [ ] C  [ ] misturar: <o quê de cada>
 ### Ordem escolhida
 1. Primeira dobra: <formato>
 2. <objetivo>: <formato>
+
+### Composição por seção
+
+| Seção | Desktop | Celular | Animação |
+|---|---|---|---|
+| Primeira dobra | <como se compõe em 1440> | <como se compõe em 390> | <tipo>: <o que anima> |
 
 ## d. Copy
 
@@ -123,11 +144,15 @@ direção sem prévia PNG, falta do `direcoes.png` ou nenhuma escolha marcada; m
 miniaturas no cardápio ou sem `### Ordem escolhida` com 3 seções; tabela de copy sem a coluna
 de sustentação, frase sem sustentação ou `PENDENTE` sem a lista de pendências; sem a linha
 `Pixel pedido:`, evento faltando quando há pixel, ID real de Meta Pixel ou GA4 no texto; código
-sem `noindex`, `robots` ou `og:image`; e qualquer caixa da aprovação desmarcada.
+sem `noindex`, `robots` ou `og:image`; e qualquer caixa da aprovação desmarcada. Desde a 3.5, também:
+sem `Momento assinatura:` (elemento, 3 ou mais seções e os estados com `->`), sem a tabela
+`Composição por seção` (uma linha por seção da ordem, célula vazia, mais de 2 seções com o mesmo
+tipo de animação) e sem `Material da cliente pedido:` (`nenhum` só com o motivo).
 
 ## Depois do PLANO
 
-O passo c (plano visual) detalha a direção escolhida, sem reabrir as outras; o passo d copia a
+A tabela de composição vira o `secoes.json` da prova de animação (passo f) e o momento assinatura
+é a coluna `assinatura` dela. O passo c (plano visual) detalha a direção escolhida, sem reabrir as outras; o passo d copia a
 copy aprovada para `evidencias/copy.md` e `evidencias/sustentacao.md`; o passo e constrói a
 ordem escolhida com os formatos de `references/secoes/` e, se houver pixel, o snippet de
 `references/rastreamento.md`; o passo f roda o `gate-rastreamento.py` na `dist/`.

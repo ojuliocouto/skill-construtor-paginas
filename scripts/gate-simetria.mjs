@@ -30,6 +30,12 @@
  * Exceção declarada: `data-simetria-ok="motivo"` no contêiner (e cabeçalho, rodapé, nav e
  * aria-hidden ficam de fora). O motivo aparece na saída.
  *
+ * ASSIMETRIA DECLARADA (v3.5, 04/10/2026): `data-assimetrico="motivo"` no contêiner, na seção ou
+ * em um dos blocos envolvidos. A v7 do estúdio pediu composição assimétrica (par de comparação
+ * "largo x estreito" que começa mais alto, foto deslocada, título fixo ao lado de uma lista) e este
+ * gate reprovava exatamente esses lugares: a régua contradizia a composição pedida. Falha em
+ * elemento marcado vira AVISO (não reprova); falha em elemento sem a marca continua reprovando.
+ *
  * Uso: node scripts/gate-simetria.mjs --url <url>
  */
 import { createRequire } from 'node:module';
@@ -84,6 +90,7 @@ async function assentar(page) {
 
 const navegador = await chromium.launch();
 const falhas = [];
+const avisos = [];
 const excecoes = new Set();
 console.log('\nGATE DE SIMETRIA  ' + URL_ALVO);
 console.log('='.repeat(80));
@@ -96,7 +103,10 @@ for (const [nome, w, h] of TELAS) {
   await assentar(page);
 
   const r = await page.evaluate(({ limite, desktop, TOL_TITULO, BURACO, BURACO_MIN }) => {
-    const out = { grupos: [], ladoTitulo: [], colunas: [], titulos: [], buracos: [], excecoes: [], maiorTitulo: 0, faixas: [], passosSemCaixa: [], maiorFaixa: 0 };
+    const out = { grupos: [], ladoTitulo: [], colunas: [], titulos: [], buracos: [], excecoes: [], maiorTitulo: 0, faixas: [], passosSemCaixa: [], maiorFaixa: 0, avisos: [] };
+    // Falha envolvendo elemento (ou ancestral) com data-assimetrico vira aviso, e o motivo vai junto.
+    const marcado = (...els) => { const m = els.map((e) => e && e.closest && e.closest('[data-assimetrico]')).find(Boolean); return m ? (m.getAttribute('data-assimetrico') || 'sem motivo escrito') : null; };
+    const reg = (lista, prefixo, motivo, msg) => { if (motivo) out.avisos.push(`AVISO (data-assimetrico): ${prefixo}: ${msg} [${motivo}]`); else lista.push(msg); };
     const visivel = (el) => {
       const cs = getComputedStyle(el);
       if (cs.display === 'none' || cs.visibility === 'hidden') return false;
@@ -161,7 +171,7 @@ for (const [nome, w, h] of TELAS) {
       const tops = passos.map((f) => f.getBoundingClientRect().top);
       if (Math.max(...tops) - Math.min(...tops) > 12) continue;
       if (passos.some(caixaDe)) continue;
-      out.passosSemCaixa.push(`${passos.length} passos lado a lado sem caixa a partir de "${rotulo(passos[0])}" (sequência de passos vira grade de caixas iguais)`);
+      reg(out.passosSemCaixa, 'passos sem caixa', marcado(ol, ...passos), `${passos.length} passos lado a lado sem caixa a partir de "${rotulo(passos[0])}" (sequência de passos vira grade de caixas iguais)`);
     }
 
     // 1 e 2: grupos paralelos
@@ -176,6 +186,7 @@ for (const [nome, w, h] of TELAS) {
       }
       for (const [tipo, itens] of Object.entries(porTipo)) {
         if (itens.length < 3 || itens.length > 6) continue;
+        const mrcGrupo = marcado(pai, ...itens);
         const caixas = itens.map((el) => ({ el, c: el.getBoundingClientRect() }));
         if (caixas.some((x) => x.c.height < 40)) continue;
         const colunas = agrupar(caixas.map((x) => ({ k: x.c.left, x })), 8);
@@ -189,27 +200,27 @@ for (const [nome, w, h] of TELAS) {
             const c = t.getBoundingClientRect();
             return visivel(t) && c.right <= esq + 4 && c.top < base && c.bottom > topo - 40;
           });
-          if (titulo) out.ladoTitulo.push(`"${rotulo(titulo)}" à esquerda + ${itens.length} itens empilhados à direita`);
+          if (titulo) reg(out.ladoTitulo, 'lista vertical ao lado do título', mrcGrupo || marcado(titulo, secao), `"${rotulo(titulo)}" à esquerda + ${itens.length} itens empilhados à direita`);
           continue;
         }
         const linhas = agrupar(caixas.map((x) => ({ k: x.c.top, x })), 12);
         const porLinha = linhas.map((l) => l.itens.length);
         if (Math.max(...porLinha) === 1) {
-          out.grupos.push(`escada: ${itens.length} ${tipo.toLowerCase()} em ${linhas.length} alturas e ${colunas.length} colunas (x ${caixas.map((x) => Math.round(x.c.left)).join(', ')}) a partir de "${rotulo(itens[0])}"`);
+          reg(out.grupos, 'grupo paralelo', mrcGrupo, `escada: ${itens.length} ${tipo.toLowerCase()} em ${linhas.length} alturas e ${colunas.length} colunas (x ${caixas.map((x) => Math.round(x.c.left)).join(', ')}) a partir de "${rotulo(itens[0])}"`);
           continue;
         }
-        if (new Set(porLinha).size > 1) out.grupos.push(`grade irregular (${porLinha.join(' + ')}) em "${rotulo(itens[0])}"`);
+        if (new Set(porLinha).size > 1) reg(out.grupos, 'grupo paralelo', mrcGrupo, `grade irregular (${porLinha.join(' + ')}) em "${rotulo(itens[0])}"`);
         for (const l of linhas) {
           if (l.itens.length < 2) continue;
           const tops = l.itens.map((v) => v.x.c.top), alts = l.itens.map((v) => v.x.c.height);
           const dt = Math.max(...tops) - Math.min(...tops), dh = Math.max(...alts) - Math.min(...alts);
-          if (dt > 1) out.grupos.push(`topos diferentes em ${dt.toFixed(1)} px na linha de "${rotulo(l.itens[0].x.el)}"`);
-          if (dh > 1) out.grupos.push(`alturas diferentes em ${dh.toFixed(1)} px (${alts.map(Math.round).join(', ')}) na linha de "${rotulo(l.itens[0].x.el)}"`);
+          if (dt > 1) reg(out.grupos, 'grupo paralelo', mrcGrupo, `topos diferentes em ${dt.toFixed(1)} px na linha de "${rotulo(l.itens[0].x.el)}"`);
+          if (dh > 1) reg(out.grupos, 'grupo paralelo', mrcGrupo, `alturas diferentes em ${dh.toFixed(1)} px (${alts.map(Math.round).join(', ')}) na linha de "${rotulo(l.itens[0].x.el)}"`);
           // Regra 20 do dono (auditoria da v5): texto de cada caixa na mesma faixa de linhas.
           // Em 768 as situações tinham 5, 3 e 4 linhas e o gate só olhava topo e altura.
           const nl = l.itens.map((v) => linhasDe(v.x.el)).filter((n) => n !== null);
           if (nl.length === l.itens.length && Math.max(...nl) - Math.min(...nl) > 1) {
-            out.faixas.push(`texto em ${nl.join(', ')} linhas nas caixas de "${rotulo(l.itens[0].x.el)}" (máximo 1 linha de diferença)`);
+            reg(out.faixas, 'faixa de linhas diferente', mrcGrupo, `texto em ${nl.join(', ')} linhas nas caixas de "${rotulo(l.itens[0].x.el)}" (máximo 1 linha de diferença)`);
           }
           out.maiorFaixa = Math.max(out.maiorFaixa, nl.length ? Math.max(...nl) - Math.min(...nl) : 0);
         }
@@ -259,8 +270,9 @@ for (const [nome, w, h] of TELAS) {
           const a = filhos[i].getBoundingClientRect(), b = filhos[j].getBoundingClientRect();
           const vizinhos = (a.right <= b.left + 2 || b.right <= a.left + 2) && a.top < b.bottom && b.top < a.bottom;
           if (!vizinhos) continue;
+          const mrc = marcado(pai, filhos[i], filhos[j]);
           const d = Math.abs(baseVisual(filhos[i]) - baseVisual(filhos[j]));
-          if (d > limite) out.colunas.push(`"${rotulo(filhos[i])}" e "${rotulo(filhos[j])}" terminam com ${Math.round(d)} px de diferença`);
+          if (d > limite) reg(out.colunas, 'colunas desbalanceadas', mrc, `"${rotulo(filhos[i])}" e "${rotulo(filhos[j])}" terminam com ${Math.round(d)} px de diferença`);
           // 4 (auditoria da v4): DENTRO dos cards vizinhos. Caixa igual não basta: o título de um
           // card ficava 147 px acima do título do vizinho, e um card tinha um buraco no meio.
           // Título com título vale para coluna com ou sem caixa (v5: duas colunas sem caixa).
@@ -268,13 +280,13 @@ for (const [nome, w, h] of TELAS) {
           if (ta && tb && a.height >= 80 && b.height >= 80) {
             const dt = Math.abs(ta.getBoundingClientRect().top - tb.getBoundingClientRect().top);
             out.maiorTitulo = Math.max(out.maiorTitulo, dt);
-            if (dt > TOL_TITULO) out.titulos.push(`"${rotulo(ta)}" e "${rotulo(tb)}" com ${Math.round(dt)} px de diferença no topo (máximo ${TOL_TITULO})`);
+            if (dt > TOL_TITULO) reg(out.titulos, 'títulos de cards vizinhos desalinhados', mrc, `"${rotulo(ta)}" e "${rotulo(tb)}" com ${Math.round(dt)} px de diferença no topo (máximo ${TOL_TITULO})`);
           }
           if (temCaixa(filhos[i]) && temCaixa(filhos[j]) && a.height >= 80 && b.height >= 80) {
             const ga = maiorBuraco(filhos[i]), gb = maiorBuraco(filhos[j]);
             if (Math.abs(ga - gb) > BURACO && Math.max(ga, gb) > BURACO_MIN) {
               const [cheio, oco] = ga > gb ? [filhos[j], filhos[i]] : [filhos[i], filhos[j]];
-              out.buracos.push(`"${rotulo(oco)}" tem ${Math.round(Math.max(ga, gb))} px vazios entre dois blocos, o vizinho "${rotulo(cheio)}" tem ${Math.round(Math.min(ga, gb))} px (conteúdo flutuando no card)`);
+              reg(out.buracos, 'buraco interno', mrc, `"${rotulo(oco)}" tem ${Math.round(Math.max(ga, gb))} px vazios entre dois blocos, o vizinho "${rotulo(cheio)}" tem ${Math.round(Math.min(ga, gb))} px (conteúdo flutuando no card)`);
             }
           }
         }
@@ -292,7 +304,8 @@ for (const [nome, w, h] of TELAS) {
     .concat([...new Set(r.faixas)].map((x) => `faixa de linhas diferente: ${x}`))
     .concat([...new Set(r.passosSemCaixa)].map((x) => `passos sem caixa: ${x}`));
   r.excecoes.forEach((e) => excecoes.add(e));
-  console.log(`${onde.padEnd(32)} ${todas.length ? 'FALHA (' + todas.length + ')' : 'ok'}`);
+  console.log(`${onde.padEnd(32)} ${todas.length ? 'FALHA (' + todas.length + ')' : 'ok'}${r.avisos.length ? ' (' + r.avisos.length + ' aviso(s) de assimetria declarada)' : ''}`);
+  for (const a of [...new Set(r.avisos)]) avisos.push(`${onde}: ${a}`);
   console.log(`  medido: maior diferença entre títulos vizinhos ${Math.round(r.maiorTitulo)} px, maior diferença de linhas entre caixas da mesma linha ${r.maiorFaixa}`);
   for (const t of todas) falhas.push(`${onde}: ${t}`);
   await ctx.close();
@@ -301,6 +314,7 @@ await navegador.close();
 
 console.log('='.repeat(80));
 excecoes.forEach((e) => console.log(`  exceção declarada (data-simetria-ok): ${e}`));
+avisos.forEach((a) => console.log('  ' + a));
 if (falhas.length) {
   falhas.forEach((f) => console.log('  FALHA: ' + f));
   console.log(`\n  REPROVA: ${falhas.length} problema(s) de simetria.`);
@@ -310,4 +324,4 @@ if (falhas.length) {
   console.log('  Cards vizinhos: mesma estrutura por dentro (mídia do mesmo tamanho, título na mesma altura).\n');
   process.exit(1);
 }
-console.log(`  PASSA: ${TELAS.length} telas, itens paralelos simétricos e colunas equilibradas.\n`);
+console.log(`  PASSA: ${TELAS.length} telas, itens paralelos simétricos e colunas equilibradas${avisos.length ? `; ${avisos.length} aviso(s) de assimetria declarada em data-assimetrico, não contam como falha` : ''}.\n`);

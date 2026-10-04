@@ -84,6 +84,9 @@ GATES = {
     # Etapa PLANO (03/10/2026): o aluno aprova visual, secoes, copy, pixel e codigo antes do codigo.
     "plano": "gate-plano.py (PLANO.md com as 7 secoes, 3 direcoes com previa e tudo aprovado)",
     "rastreamento": "gate-rastreamento.py (pixel e eventos que o plano pediu ligados na dist/)",
+    # Padrao da v7 (04/10/2026): o que separou a v7 da v6, a "correta e generica", virou medida.
+    "ritmo": "gate-ritmo.mjs (nenhuma secao vizinha com o mesmo esqueleto, no maximo 1 titulo centralizado com cartoes)",
+    "animacao": "gate-animacao.py (cada secao muda 2% ou mais dos pixels em 1440 e 390, no maximo 2 com o mesmo tipo de animacao)",
 }
 
 # Quem auditou. Nota de autoavaliacao (quem construiu olhando o proprio trabalho) NAO libera
@@ -100,9 +103,11 @@ CAMINHOS = ("criar", "clonar", "clonar-elevar", "melhorar", "variante")
 
 def gates_exigidos(caminho):
     # Clone fiel copia o texto da original: a fonte da verdade e a propria pagina, nao um briefing.
-    # A etapa PLANO e do CRIAR: os outros caminhos partem de uma pagina que ja existe.
+    # A etapa PLANO e do CRIAR: os outros caminhos partem de uma pagina que ja existe. Ritmo e animacao
+    # tambem nao valem para o clone fiel: a composicao e a da original.
     return {g: d for g, d in GATES.items()
-            if not (caminho == "clonar" and g in ("referencias", "verdade")) and not (caminho != "criar" and g == "plano")}
+            if not (caminho == "clonar" and g in ("referencias", "verdade", "ritmo", "animacao"))
+            and not (caminho != "criar" and g == "plano")}
 
 PISO_NOTA = 7.0
 PISO_MEDIA = 8.0

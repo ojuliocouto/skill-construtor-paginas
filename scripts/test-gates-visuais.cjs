@@ -240,9 +240,11 @@ servidor.listen(0, '127.0.0.1', async () => {
   const resultados = [];
   const selecionados = casos.filter(([nome]) => !process.env.GATES_FILTRO || nome.startsWith(process.env.GATES_FILTRO));
   if (!selecionados.length) throw new Error('O filtro não selecionou nenhum controle.');
-  // Duas execuções por vez evitam que falta de memória pareça defeito da página.
-  for (let i = 0; i < selecionados.length; i += 2) {
-    resultados.push(...await Promise.all(selecionados.slice(i, i + 2).map(([nome, arquivo, args, esperado, padrao]) =>
+  // Duas execuções por vez evitam que falta de memória pareça defeito da página; GATES_PARALELO=1
+  // roda um navegador por vez.
+  const lote = Math.max(1, Number(process.env.GATES_PARALELO) || 2);
+  for (let i = 0; i < selecionados.length; i += lote) {
+    resultados.push(...await Promise.all(selecionados.slice(i, i + lote).map(([nome, arquivo, args, esperado, padrao]) =>
       rodar(nome, path.isAbsolute(arquivo) ? arquivo : script(arquivo), args, esperado, padrao))));
   }
   console.log(`Evidências: ${pasta}`);

@@ -7,6 +7,7 @@ reprova o PLANO.md incompleto; o gate-rastreamento.py reprova a dist/ sem os eve
 plano pediu. Cada mutante abaixo é um jeito real de pular a etapa.
 """
 import pathlib
+import re
 import subprocess
 import sys
 import tempfile
@@ -35,6 +36,13 @@ MINIS = ["dobra-split-imagem", "dobra-faixa-cheia", "dobra-tipografica", "caixas
 PLANO = """# PLANO: Estúdio de teste
 
 Pixel pedido: Meta e GA4
+
+Momento assinatura: a coluna vertebral em SVG; seções: topo, avaliação, fecho; estados: torta -> alinhada
+
+Material da cliente pedido:
+- foto real da profissional
+- número do WhatsApp
+- depoimentos com autorização
 
 ## a. Referências
 
@@ -71,6 +79,15 @@ Escolha: [x] A  [ ] B  [ ] C  [ ] misturar
 2. Dor: lista editorial
 3. Como funciona: linha do tempo
 4. Fecho: faixa cheia
+
+### Composição por seção
+
+| Seção | Desktop | Celular | Animação |
+|---|---|---|---|
+| Primeira dobra | foto sangrando à direita, texto à esquerda | foto quadrada e cartão em arco | abertura da foto: a foto abre de cima para baixo |
+| Dor | título fixo e frases com recuo alternado | frases em coluna | frases em sequência: uma depois da outra |
+| Como funciona | coluna fixa e passos ao lado | coluna em faixa estreita | assinatura: a coluna se alinha com a rolagem |
+| Fecho | texto à esquerda e coluna grande à direita | coluna pequena ao lado do título | assinatura: a coluna termina de se alinhar |
 
 ## d. Copy
 
@@ -224,6 +241,104 @@ class GatePlano(unittest.TestCase):
         code, out = self.rodar(lambda t: t.replace("noindex", "sem índice"))
         self.assertEqual(code, 1, out)
         self.assertIn("noindex", out)
+
+    # v3.5 (padrão da v7): o plano nomeia o momento assinatura, a composição de cada seção e o
+    # material que só a cliente tem. A v6 era correta e genérica porque nada disso estava escrito.
+    def test_sem_momento_assinatura_reprova(self):
+        code, out = self.rodar(lambda t: re.sub(r"Momento assinatura:.*\n", "", t))
+        self.assertEqual(code, 1, out)
+        self.assertIn("Momento assinatura", out)
+
+    def test_momento_assinatura_em_duas_secoes_reprova(self):
+        code, out = self.rodar(lambda t: t.replace("seções: topo, avaliação, fecho", "seções: topo, fecho"))
+        self.assertEqual(code, 1, out)
+        self.assertRegex(out, r"3 ou mais|pelo menos 3")
+
+    def test_momento_assinatura_sem_estados_reprova(self):
+        code, out = self.rodar(lambda t: t.replace("; estados: torta -> alinhada", ""))
+        self.assertEqual(code, 1, out)
+        self.assertIn("estados", out.lower())
+
+    def test_momento_assinatura_estados_sem_mudanca_reprova(self):
+        code, out = self.rodar(lambda t: t.replace("torta -> alinhada", "alinhada"))
+        self.assertEqual(code, 1, out)
+
+    def test_momento_assinatura_sem_elemento_reprova(self):
+        code, out = self.rodar(lambda t: t.replace("Momento assinatura: a coluna vertebral em SVG;", "Momento assinatura: ;"))
+        self.assertEqual(code, 1, out)
+        self.assertIn("elemento", out.lower())
+
+    def test_momento_assinatura_em_linhas_separadas_passa(self):
+        def separa(t):
+            return t.replace("Momento assinatura: a coluna vertebral em SVG; seções: topo, avaliação, fecho; estados: torta -> alinhada",
+                             "Momento assinatura: a coluna vertebral em SVG\n- Seções: topo, avaliação, fecho\n- Estados: torta -> alinhada")
+        code, out = self.rodar(separa)
+        self.assertEqual(code, 0, out)
+
+    def test_sem_tabela_de_composicao_reprova(self):
+        def tira(t):
+            i, j = t.index("### Composição por seção"), t.index("## d. Copy")
+            return t[:i] + t[j:]
+        code, out = self.rodar(tira)
+        self.assertEqual(code, 1, out)
+        self.assertIn("Composição", out)
+
+    def test_tabela_de_composicao_com_celula_vazia_reprova(self):
+        code, out = self.rodar(lambda t: t.replace("| frases em coluna |", "|  |"))
+        self.assertEqual(code, 1, out)
+        self.assertRegex(out, r"vazia|sem Celular")
+
+    def test_tabela_de_composicao_com_menos_linhas_que_secoes_reprova(self):
+        code, out = self.rodar(lambda t: re.sub(r"\| Dor \|.*\n", "", t))
+        self.assertEqual(code, 1, out)
+        self.assertRegex(out, r"uma linha por seção")
+
+    def test_tres_secoes_com_a_mesma_animacao_reprova(self):
+        def mesma(t):
+            t = t.replace("frases em sequência: uma depois da outra", "revelação por linha: sobe")
+            t = t.replace("abertura da foto: a foto abre de cima para baixo", "revelação por linha: sobe")
+            return t.replace("assinatura: a coluna se alinha com a rolagem", "revelação por linha: sobe")
+        code, out = self.rodar(mesma)
+        self.assertEqual(code, 1, out)
+        self.assertIn("revelação por linha", out)
+
+    def test_duas_secoes_com_a_mesma_animacao_passa(self):
+        def duas(t):
+            t = t.replace("frases em sequência: uma depois da outra", "revelação por linha: sobe")
+            return t.replace("abertura da foto: a foto abre de cima para baixo", "revelação por linha: sobe")
+        code, out = self.rodar(duas)
+        self.assertEqual(code, 0, out)
+
+    def test_sem_material_da_cliente_reprova(self):
+        code, out = self.rodar(lambda t: t.replace("Material da cliente pedido:", "Outra coisa:"))
+        self.assertEqual(code, 1, out)
+        self.assertIn("Material da cliente", out)
+
+    def test_material_da_cliente_vazio_reprova(self):
+        def vazio(t):
+            return re.sub(r"Material da cliente pedido:\n(?:- .*\n)+", "Material da cliente pedido:\n\n", t)
+        code, out = self.rodar(vazio)
+        self.assertEqual(code, 1, out)
+
+    def test_material_da_cliente_em_uma_linha_passa(self):
+        def linha(t):
+            return re.sub(r"Material da cliente pedido:\n(?:- .*\n)+",
+                          "Material da cliente pedido: foto real da profissional; número do WhatsApp\n", t)
+        code, out = self.rodar(linha)
+        self.assertEqual(code, 0, out)
+
+    def test_material_nenhum_sem_motivo_reprova(self):
+        def nenhum(t):
+            return re.sub(r"Material da cliente pedido:\n(?:- .*\n)+", "Material da cliente pedido: nenhum\n", t)
+        code, out = self.rodar(nenhum)
+        self.assertEqual(code, 1, out)
+
+    def test_material_nenhum_com_motivo_passa(self):
+        def nenhum(t):
+            return re.sub(r"Material da cliente pedido:\n(?:- .*\n)+",
+                          "Material da cliente pedido: nenhum, porque a página é institucional e o dono já mandou tudo no briefing\n", t)
+        code, out = self.rodar(nenhum)
+        self.assertEqual(code, 0, out)
 
     def test_sem_plano_reprova(self):
         with tempfile.TemporaryDirectory() as pasta:

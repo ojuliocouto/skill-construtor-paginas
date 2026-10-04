@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.4.0
+version: 3.5.0
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -25,6 +25,13 @@ skill desse opções de visual e tipos de seções pro cara, inclusive uma etapa
 copy, pixel, código, referências"*. Entre as referências e o código, o aluno recebe um
 `PLANO.md` com 3 direções visuais renderizadas, o cardápio de seções, a copy sustentada, o pixel
 e a publicação, e aprova item por item (`references/plano.md`, `gate-plano.py`).
+
+**Padrão da v7 (v3.5).** O dono reprovou a v6 do estúdio ("correta e genérica") e a v7 saiu muito
+melhor. O que fez a diferença virou regra e gate: o **Momento assinatura** no PLANO, composição
+de desktop, celular e animação **por seção** com prova de pixels (`gate-animacao.py`), ritmo sem
+seções vizinhas iguais (`gate-ritmo.mjs`), foto real antes de ilustração, sem foto repetida nem
+borrada (`gate-imagens.py`), e os gates de simetria e de responsivo aceitando a assimetria e o
+carrossel que o plano pediu (`data-assimetrico`).
 
 **`<dir-da-skill>`** em todo comando = a pasta onde esta skill foi clonada, a que tem este
 SKILL.md. Troque pelo caminho real antes de colar. **`<dir>`** = a pasta do projeto da página.
@@ -130,11 +137,11 @@ Detalhe, comandos e gates de cada passo: `references/caminhos/criar.md`.
 |---|---|---|
 | a. Briefing | o que vende, para quem, oferta, preço, ação, material real; o que falta vira pendência do cliente | `gate-etapas.py registrar 0` |
 | b. Referências | 6 a 10 páginas reais printadas e lidas, `referencias/sintese.md` | `gate-referencias.py` e `registrar 1` |
-| b2. PLANO | `PLANO.md` aprovado: referências marcadas, 3 direções com prévia (`plano/direcoes.png`), seções do cardápio na ordem do aluno, copy sustentada, pixel e publicação | `gate-plano.py` |
+| b2. PLANO | `PLANO.md` aprovado: referências marcadas, 3 direções com prévia (`plano/direcoes.png`), seções do cardápio na ordem do aluno, composição por seção, momento assinatura, material da cliente, copy sustentada, pixel e publicação | `gate-plano.py` |
 | c. Plano visual | `plano-visual.md` pela `frontend-design`, detalhando a direção escolhida | `registrar 2` |
 | d. Copy | texto de cada seção, só com fato do briefing, e a tabela frase da página -> linha do briefing | `gate-verdade.py` e `registrar 3` |
 | e. Construção | HTML + Tailwind compilado na ordem do PLANO, hero primeiro, imagens com licença, pixel se pedido | `gate-plano.py` verde antes e `registrar 4` |
-| f. Gates mecânicos | sem kicker, classes mortas, 12 telas (botão em uma linha, botão a 2 telas), oclusão, simetria, texto, verdade, publicação, identidade, uso, referências, rastreamento (`gate-rastreamento.py`) | cada exit no `wave.py gate` |
+| f. Gates mecânicos | sem kicker, classes mortas, 12 telas, oclusão, simetria, texto, ritmo, animação (prancha por seção), imagens, verdade, publicação, identidade, uso, referências, rastreamento | cada exit no `wave.py gate` |
 | g. Auditores | 9 lentes por subagente independente, ciclo fechado, passe de gosto com 0 tells | `wave.py checar` e `wave.py rodada` |
 | h. Prova | prints desktop 1440 e celular 390 e 360 lidos, clique testado, deploy só da `dist/`, bloco de entrega | `registrar 5` |
 
@@ -150,10 +157,11 @@ aprovou e nunca inventa fato; o código segue os três.
   são. Logo ilegível a 40px: aumente ou peça outra versão, nunca recrie em texto.
 - **Nunca inventar dado.** Preço, número de alunos, resultado, prazo, credencial, depoimento:
   se não está no briefing, não existe. Foto, alt e JSON-LD também afirmam e entram no diff.
-- **Imagem real com licença registrada.** Material do cliente primeiro; senão banco de licença
-  livre escolhido pelo que as referências ensinaram, com a licença em `imagens/LICENCAS.md` e
-  "imagem ilustrativa" quando a foto não é do cliente, inclusive no og-image. Sem autorização de
-  imagem de quem aparece, foto sem pessoa identificável ou ilustração própria (`gate-imagens.py`).
+- **Foto real antes de ilustração, com licença registrada.** Material do cliente primeiro; senão
+  banco livre como ponte, com a licença em `imagens/LICENCAS.md` e "imagem ilustrativa" visível na
+  primeira tela (e no og-image). Pessoa identificável sem autorização é aviso de tráfego real, não
+  bloqueio da página de teste. Sem foto repetida entre seções, sem foto borrada, e a foto não
+  contradiz o texto ao lado (`references/imagem.md`, `gate-imagens.py`).
 - **Zero travessão** (U+2014 e U+2013), **zero emoji**, acentuação correta, contato idêntico
   dígito por dígito em toda a página.
 - **Sem kicker, sem 01/02/03, sem número gigante decorativo** (`references/preferencias-de-design.md`).
@@ -224,14 +232,18 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `servidor-gzip.py` | serve o build local com compressão | f |
 | `gate-sem-kicker.py` | kicker, 01/02/03 e número gigante, em HTML, Tailwind e `.css` | f |
 | `gate-classes-mortas.py` | classe do código que não existe no CSS gerado | f |
-| `gate-responsivo.mjs` | 12 telas: rolagem lateral, CTA na dobra, toque 44px, corpo 14px, botão em uma linha, botão a 2 telas no celular; no celular, fixo somado até 15%, 1 botão por tela, nenhum botão sob a barra e foto do herói com 35% da 1a tela | f |
+| `gate-responsivo.mjs` | 12 telas: rolagem lateral da página, CTA na dobra, toque 44px, corpo 14px, botão em uma linha e a 2 telas; celular: fixo até 15%, 1 botão por tela, foto do herói 35%; carrossel com encaixe não é estouro | f |
 | `gate-oclusao.mjs` | texto coberto por camada ou cortado pela caixa | f |
-| `gate-simetria.mjs` | itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos (4 px), sem buraco interno, texto das caixas na mesma faixa de linhas e passos em caixas | f |
+| `gate-simetria.mjs` | itens paralelos em caixas iguais, colunas que terminam juntas, títulos vizinhos a 4 px, sem buraco interno, passos em caixas; falha em elemento com `data-assimetrico` vira aviso | f |
 | `gate-texto.mjs` | viúva em título e subtítulo (h1 a h4, dt, summary) e em parágrafo na fonte do título ou de caixa, de 320 a 1440, item em minúscula, itálico colorido repetido | f |
-| `gate-composicao.mjs` | cara de template: mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, desenho que lê como wireframe, linha do tempo além do último marco, público de pessoas sem ninguém na primeira tela, destaque abaixo de 3:1 | f |
+| `gate-composicao.mjs` | cara de template: 3 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, wireframe, linha do tempo além do último marco, ninguém na primeira tela, destaque abaixo de 3:1 | f |
+| `gate-ritmo.mjs` | seções VIZINHAS com o mesmo esqueleto (posição do título x tipo de corpo) e mais de 1 "título centralizado + cartões" | f |
+| `anim.mjs` + `prancha.py` | 3 quadros por seção em 1440 e 390 (`secoes.json`) e a prancha com a % de pixels que mudou | f |
+| `gate-animacao.py` | seção com menos de 2% de pixels mudando, mais de 2 seções com o mesmo tipo de animação, menos pranchas que linhas do plano | f |
+| `sobreposicao.mjs` | varredura de rolagem: elemento fixo (sticky) cobrindo um bloco, em px² por tela | f |
 | `gate-movimento.mjs` | visita real: 8 s parada no topo, depois rola; reprova animação que roda fora da tela, página que não anima ao chegar, item que chega parado a 300 px/s e rolagem suave com movimento reduzido | f |
 | `gate-verdade.py` | toda promessa (e a meta description) com linha do briefing que sustente; dono nomeado no briefing aparece no corpo | d, f |
-| `gate-imagens.py` | licença completa (nome, versão, link), pessoa identificável sem autorização, crédito no HTML com o título real da fonte e "imagem ilustrativa" também no og-image | e, f |
+| `gate-imagens.py` | licença completa, crédito com o título real, aviso no og-image; foto repetida entre seções (pHash e origem), nitidez relativa (abaixo de 2,5 reprova, abaixo de 6 avisa), aviso e 60% de foto na primeira tela (`--url`), pessoa de banco como aviso (`--trafego-real` reprova) | e, f |
 | `gerar-icones.mjs` | favicon e ícone de tela inicial gerados do `icones/icone.svg` do motivo do plano, com registro | e |
 | `montar-dist.py` + `gate-publicacao.py` | `dist/` só com o que a página usa, e o gate que reprova a casa na publicação, comentário interno e ícone de outra identidade | f, h |
 | `gate-relatorio.py` | o relatório final só afirma medida que um gate gravou: cada número cita o arquivo e está nele, nada anterior à `dist/` | h |
@@ -250,6 +262,10 @@ Testes: `scripts/test-*.py` e `scripts/test-*.cjs` (lista e comando no `README.m
 | `caminhos/criar.md`, `caminhos/clonar.md`, `caminhos/clonar-elevar.md`, `caminhos/melhorar.md`, `caminhos/editar.md` | o fluxo de cada caminho, sempre |
 | `pesquisa-de-referencias.md` | passo b: como achar, capturar, ler e registrar |
 | `plano.md` | passo b2: a etapa PLANO, o modelo do `PLANO.md` e o que o gate cobra |
+| `references/ritmo-e-animacao.md` | momento assinatura, esqueleto por seção e a prova de animação (`anim.mjs`, `prancha.py`) |
+| `references/imagem.md` | foto real antes de ilustração, foto que não contradiz o texto, repetição, nitidez, aviso |
+| `references/densidade-servico-local.md` | os 7 itens de copy de serviço local, passo d |
+| `references/vh-estavel.md`, `references/sticky-e-sobreposicao.md`, `references/texto-em-linhas.md` | `--vh` medido, sticky fora do grid com bloco largo, divisão em linhas e `li > span` |
 | `secoes/README.md` | passo b2 e e: o cardápio de seções por objetivo, um arquivo e um HTML por formato |
 | `rastreamento.md` | passo b2 e e: Meta Pixel, GA4, onde pegar cada ID e os eventos por `data-evento` |
 | `auditores.md` | passo g: as 9 lentes, o schema, a régua do ciclo, o passe de gosto |
