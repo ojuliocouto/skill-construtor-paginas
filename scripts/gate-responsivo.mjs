@@ -28,6 +28,11 @@
  *     1 botao de acao visivel por tela; nenhum botao coberto ou a menos de 8 px da barra fixa;
  *     foto do heroi na primeira tela com pelo menos 35% da altura
  *
+ *   - (v3.5, 04/10/2026) carrossel e composicao, nao estouro: filho de conteiner com overflow-x
+ *     auto e scroll-snap-type nao conta como "elemento maior que o container" (a v7 pediu o
+ *     carrossel de aparelhos no celular e o gate reprovava o proprio pedido); a pagina continua
+ *     sem rolagem lateral, e o gate imprime scrollWidth e innerWidth medidos
+ *
  * Uso: node scripts/gate-responsivo.mjs --url <url>
  */
 import { createRequire } from 'node:module';
@@ -170,7 +175,17 @@ for (const [nome, w, h, mob] of TELAS) {
 
   const r = await page.evaluate((ehMobile) => {
     const doc = document.documentElement;
-    const saida = { overflow: doc.scrollWidth - doc.clientWidth, toqueRuim: [], textoPequeno: [], cortado: [], distorcida: [], estouro: [] };
+    const saida = { overflow: doc.scrollWidth - doc.clientWidth, larguraPagina: doc.scrollWidth, janela: window.innerWidth, carrosseis: 0, toqueRuim: [], textoPequeno: [], cortado: [], distorcida: [], estouro: [] };
+    // Carrossel declarado: contêiner com overflow-x auto/scroll e scroll-snap-type. O que passa da
+    // borda dele é o que a rolagem lateral do carrossel mostra, não estouro de layout.
+    const carrosselDe = (el) => {
+      for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+        const c = getComputedStyle(n);
+        if (['auto', 'scroll'].includes(c.overflowX) && c.scrollSnapType && c.scrollSnapType !== 'none') return n;
+      }
+      return null;
+    };
+    const vistos = new Set();
 
     // OVERFLOW INTERNO. O overflow do DOCUMENTO nao ve corte dentro de container que tem
     // `overflow-hidden`: ele zera o scrollWidth e o defeito fica invisivel pra qualquer
@@ -180,6 +195,8 @@ for (const [nome, w, h, mob] of TELAS) {
     for (const filho of document.querySelectorAll('article, figure, li > div, .card, [class*="rounded"]')) {
       const pai = filho.parentElement;
       if (!pai) continue;
+      const carrossel = carrosselDe(pai);
+      if (carrossel) { vistos.add(carrossel); continue; }
       const csf = getComputedStyle(filho);
       // Decoracao SAI da caixa de proposito (bloco de cor com offset negativo, sangria,
       // faixa que atravessa a borda). O que e defeito e CONTEUDO estourando o container.
@@ -202,6 +219,8 @@ for (const [nome, w, h, mob] of TELAS) {
         );
       }
     }
+
+    saida.carrosseis = vistos.size;
 
     // BOTAO EM UMA LINHA. Conta as linhas do proprio texto do botao, palavra por palavra, pelo
     // topo de cada retangulo de texto. Altura do botao nao serve: padding grande engana.
@@ -481,6 +500,7 @@ for (const [nome, w, h, mob] of TELAS) {
   const onde = `${nome} (${w}x${h})`;
   // O relatório só pode citar o que o gate gravou (auditoria da v4): as medidas do celular saem
   // sempre, passando ou não.
+  console.log(`  medido: scrollWidth da pagina ${r.larguraPagina}px, innerWidth ${r.janela}px${r.carrosseis ? `, ${r.carrosseis} ${r.carrosseis === 1 ? 'carrossel' : 'carrosseis'} com encaixe (overflow-x auto + scroll-snap-type) fora da conta de estouro` : ''}`);
   if (mob) console.log(`  medido no celular: fixo ${r.fixoDemais ? r.fixoDemais.px : 0}px (${(100 * (r.fixoDemais ? r.fixoDemais.px : 0) / h).toFixed(1)}%), foto do herói ${r.fotoHeroi ? r.fotoHeroi.px + 'px (' + (100 * r.fotoHeroi.frac).toFixed(1) + '%)' : 'sem foto no herói'}, até ${r.maxBotoes || 0} botão(ões) por tela, ${r.cobertos.length} encostado(s) na barra`);
   if (r.overflow > 0) falhas.push(`${onde}: overflow horizontal de ${r.overflow}px`);
   if (r.ctaSemContraste?.length)

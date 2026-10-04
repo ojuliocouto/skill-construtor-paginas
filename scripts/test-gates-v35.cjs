@@ -77,6 +77,25 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/ritmo-centro-cartoes') corpo = hero + cartoes('Situações', 'style="text-align:center"') + lista('Passos') + cartoes('Grupo ou particular', 'style="text-align:center"') + splitImg('Fecho');
   if (rota === '/ritmo-excecao') corpo = hero + cartoes('Primeiro bloco', '', 'data-ritmo-ok="duas grades de preço pedidas pelo cliente"') + cartoes('Segundo bloco', '', 'data-ritmo-ok="duas grades de preço pedidas pelo cliente"') + lista('Passos');
   if (rota === '/ritmo-assimetrico-nao-e-cartao') corpo = hero + cartoes('Situações', 'style="text-align:center"') + lista('Passos') + assim('Para quem é', 'style="text-align:center"') + splitImg('Fecho');
+  // gate-responsivo com carrossel: filhos de contêiner com overflow-x auto e scroll-snap-type não
+  // são estouro; a página inteira continua sem rolagem lateral.
+  const trilha = (estilo) => `<section style="padding:24px 16px;min-height:0"><h2>Aparelhos</h2><div class="trilha" style="display:flex;gap:16px;overflow-x:auto;${estilo}">${[1, 2, 3, 4].map((n) => `<figure style="flex:0 0 300px;margin:0;background:#eee;padding:12px"><h3>Aparelho ${n}</h3><p>Descrição do aparelho ${n}.</p></figure>`).join('')}</div></section>`;
+  const cta = '<section><h1>Controle da página</h1><button>Ver resultado</button></section>';
+  if (rota === '/carrossel-snap') corpo = cta + trilha('scroll-snap-type:x mandatory');
+  if (rota === '/carrossel-sem-snap') corpo = cta + trilha('');
+  if (rota === '/carrossel-snap-e-pagina-vaza') corpo = cta + trilha('scroll-snap-type:x mandatory') + '<div style="width:3000px">Conteúdo que excede a janela</div>';
+  // gate-simetria com data-assimetrico: a assimetria declarada no plano (par de comparação, foto
+  // deslocada, título fixo) vira aviso; a mesma falha em elemento NÃO marcado continua reprovando.
+  const caixaH = (t, extra = '') => `<article style="background:#eee;padding:16px${extra}"><h3>${t}</h3><p>Descrição curta do item paralelo.</p></article>`;
+  const alturas = (attr) => `<section><h2>Duas formas</h2><div ${attr} style="display:flex;gap:16px;align-items:flex-start">${caixaH('Um', ';flex:1')}${caixaH('Dois', ';flex:1')}${caixaH('Três com um título bem mais longo que os outros para quebrar em mais linhas no card', ';flex:1')}</div></section>`;
+  if (rota === '/assim-sem-marca') corpo = alturas('');
+  if (rota === '/assim-marcado') corpo = alturas('data-assimetrico="comparação com pesos diferentes, pedida no plano"');
+  if (rota === '/assim-marca-em-outro-lugar') corpo = alturas('') + '<p data-assimetrico="outra coisa">Outro trecho marcado, sem relação com a grade.</p>';
+  const colunas = (attr) => `<section ${attr} style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start"><div><h1>Título</h1><p>Texto curto.</p></div><div style="height:620px;background:#ccd"></div></section>`;
+  if (rota === '/assim-colunas-sem-marca') corpo = colunas('');
+  if (rota === '/assim-colunas-marcado') corpo = colunas('data-assimetrico="foto deslocada para cima, de propósito"');
+  const ladoTitulo = (attr) => `<section ${attr} style="display:grid;grid-template-columns:1fr 1fr;gap:32px"><h2>Como funciona</h2><ol><li style="height:60px">Chame no WhatsApp</li><li style="height:60px">Combine o dia</li><li style="height:60px">Faça a aula</li></ol></section>`;
+  if (rota === '/assim-lado-titulo-marcado') corpo = ladoTitulo('data-assimetrico="título fixo ao lado, pedido no plano"');
   // anim.mjs: uma seção que muda de cor ao entrar na tela (animada) e outra que não muda (parada).
   if (rota === '/anim') {
     corpo = '<style>.bloco{height:520px;margin:40px;background:#fff;transition:background 700ms}.bloco.vai{background:#1b3a5c}.faixa{height:900px}</style>'
@@ -162,6 +181,17 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['ritmo-centro-cartoes', 'gate-ritmo.mjs', ['--url', url + '/ritmo-centro-cartoes'], 1, /2 seções no formato "título centralizado \+ cartões"/],
     ['ritmo-excecao', 'gate-ritmo.mjs', ['--url', url + '/ritmo-excecao'], 0, /exceção declarada/],
     ['ritmo-assimetrico-nao-e-cartao', 'gate-ritmo.mjs', ['--url', url + '/ritmo-assimetrico-nao-e-cartao'], 0],
+    // gate-responsivo: carrossel
+    ['responsivo-carrossel-com-encaixe-passa', 'gate-responsivo.mjs', ['--url', url + '/carrossel-snap'], 0, /carrossel com encaixe/],
+    ['responsivo-carrossel-sem-encaixe-reprova', 'gate-responsivo.mjs', ['--url', url + '/carrossel-sem-snap'], 1, /elemento maior que o container/],
+    ['responsivo-carrossel-e-pagina-que-vaza-reprova', 'gate-responsivo.mjs', ['--url', url + '/carrossel-snap-e-pagina-vaza'], 1, /overflow horizontal/],
+    // gate-simetria: data-assimetrico
+    ['simetria-sem-marca-reprova', 'gate-simetria.mjs', ['--url', url + '/assim-sem-marca'], 1, /alturas diferentes/],
+    ['simetria-marcado-vira-aviso', 'gate-simetria.mjs', ['--url', url + '/assim-marcado'], 0, /AVISO \(data-assimetrico\).*alturas diferentes/],
+    ['simetria-marca-em-outro-lugar-reprova', 'gate-simetria.mjs', ['--url', url + '/assim-marca-em-outro-lugar'], 1, /alturas diferentes/],
+    ['simetria-colunas-sem-marca-reprova', 'gate-simetria.mjs', ['--url', url + '/assim-colunas-sem-marca'], 1, /colunas desbalanceadas/],
+    ['simetria-colunas-marcado-vira-aviso', 'gate-simetria.mjs', ['--url', url + '/assim-colunas-marcado'], 0, /AVISO \(data-assimetrico\).*terminam com/],
+    ['simetria-lado-titulo-marcado-vira-aviso', 'gate-simetria.mjs', ['--url', url + '/assim-lado-titulo-marcado'], 0, /AVISO \(data-assimetrico\).*lista vertical ao lado do t[ií]tulo/],
     // gate-imagens com --url: aviso na primeira tela e foto antes de ilustração.
     ['imagens-aviso-na-dobra', 'gate-imagens.py', ['--projeto', projetos['img-aviso-na-dobra'], '--url', url + '/p/img-aviso-na-dobra/'], 0, /AVISO.*tr[aá]fego real/],
     ['imagens-aviso-abaixo-da-dobra', 'gate-imagens.py', ['--projeto', projetos['img-aviso-abaixo-da-dobra'], '--url', url + '/p/img-aviso-abaixo-da-dobra/'], 1, /desktop 1440: 'imagem ilustrativa' fora da primeira tela/],
