@@ -195,7 +195,29 @@ class GateImagensV35(unittest.TestCase):
     def test_foto_borrada_reprova_com_a_variancia(self):
         raiz = self.projeto([self.sec("a", "foto1-800.jpg")], [self.foto_ok(1)], {"foto1-800.jpg": (1, False)})
         problemas, _ = gate.avaliar(raiz)
-        self.assertTrue(any("nitidez" in p and "foto1" in p and "100" in p for p in problemas), problemas)
+        self.assertTrue(any("nitidez" in p and "foto1" in p and "borrada" in p for p in problemas), problemas)
+
+    def test_foto_nitida_de_pouco_contraste_nao_reprova(self):
+        # paleta bege: detalhe fino de amplitude baixa. O laplaciano absoluto dá < 100 e a foto está nítida.
+        raiz = self.projeto([self.sec("a", "foto1-800.jpg")], [self.foto_ok(1)], {"foto1-800.jpg": (1, True)})
+        caminho = raiz / "dist" / "img" / "foto1-800.jpg"
+        a = np.asarray(Image.open(caminho).convert("L"), dtype=np.float64)
+        suave = np.clip(128 + (a - 128) * 0.15, 0, 255).astype(np.uint8)
+        Image.fromarray(np.stack([suave] * 3, axis=-1)).save(caminho, quality=95)
+        self.assertLess(gate.variancia_laplaciano(np, Image.open(caminho)), 100)
+        problemas, _ = gate.avaliar(raiz)
+        self.assertFalse(any("nitidez" in p for p in problemas), problemas)
+
+    def test_foto_macia_e_so_aviso(self):
+        from PIL import ImageFilter
+        raiz = self.projeto([self.sec("a", "foto1-800.jpg")], [self.foto_ok(1)], {"foto1-800.jpg": (1, True)})
+        caminho = raiz / "dist" / "img" / "foto1-800.jpg"
+        Image.open(caminho).filter(ImageFilter.GaussianBlur(1.2)).save(caminho, quality=95)
+        r = gate.razao_nitidez(np, ImageFilter, Image.open(caminho).convert("RGB"))
+        self.assertTrue(gate.NITIDEZ_REPROVA <= r < gate.NITIDEZ_AVISA, r)
+        problemas, avisos = gate.avaliar(raiz)
+        self.assertFalse(any("nitidez" in p for p in problemas), problemas)
+        self.assertTrue(any("macia" in a and "foto1" in a for a in avisos), avisos)
 
     def test_foto_nitida_passa(self):
         raiz = self.projeto([self.sec("a", "foto1-800.jpg")], [self.foto_ok(1)], {"foto1-800.jpg": (1, True)})

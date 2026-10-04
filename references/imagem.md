@@ -40,9 +40,12 @@ dentro de UMA seção (arte dirigida para o celular) passam. Na v7, "seis fotos"
 
 ## Foto borrada não entra
 
-Variância do laplaciano abaixo de 100 reprova, medida na maior variante legível de cada foto. O
-auditor mediu 8,6 e 21,7 nos recortes de baixa profundidade de campo da v7, contra mais de 1.000
-nos nítidos. Troque a foto ou o recorte; o enquadramento inteiro precisa estar em foco.
+A medida é RELATIVA: o detalhe fino da foto dividido pelo da mesma foto desfocada (raio 1,5), na
+maior variante legível, em 800 px. Abaixo de 2,5 reprova (borrada), abaixo de 6 é aviso (macia).
+O laplaciano absoluto foi descartado: ele confunde pouco contraste com borrado e reprovava uma
+foto bege nítida da v7 (8,6) enquanto aprovava fotos de alto contraste já desfocadas. Medido em
+04/10/2026: desfocadas com raio 2 dão 1,2 a 1,7; nítidas, 18 a 42; macias, 4 a 6. No aviso, abra
+o print e confira se o assunto está em foco: desfoque de fundo proposital pode ficar.
 
 ## Comandos
 

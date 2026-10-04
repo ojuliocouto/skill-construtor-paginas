@@ -243,7 +243,7 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `sobreposicao.mjs` | varredura de rolagem: elemento fixo (sticky) cobrindo um bloco, em px² por tela | f |
 | `gate-movimento.mjs` | visita real: 8 s parada no topo, depois rola; reprova animação que roda fora da tela, página que não anima ao chegar, item que chega parado a 300 px/s e rolagem suave com movimento reduzido | f |
 | `gate-verdade.py` | toda promessa (e a meta description) com linha do briefing que sustente; dono nomeado no briefing aparece no corpo | d, f |
-| `gate-imagens.py` | licença completa, crédito com o título real, aviso no og-image; foto repetida entre seções (pHash e origem), nitidez abaixo de 100, aviso e 60% de foto na primeira tela (`--url`), pessoa de banco como aviso (`--trafego-real` reprova) | e, f |
+| `gate-imagens.py` | licença completa, crédito com o título real, aviso no og-image; foto repetida entre seções (pHash e origem), nitidez relativa (abaixo de 2,5 reprova, abaixo de 6 avisa), aviso e 60% de foto na primeira tela (`--url`), pessoa de banco como aviso (`--trafego-real` reprova) | e, f |
 | `gerar-icones.mjs` | favicon e ícone de tela inicial gerados do `icones/icone.svg` do motivo do plano, com registro | e |
 | `montar-dist.py` + `gate-publicacao.py` | `dist/` só com o que a página usa, e o gate que reprova a casa na publicação, comentário interno e ícone de outra identidade | f, h |
 | `gate-relatorio.py` | o relatório final só afirma medida que um gate gravou: cada número cita o arquivo e está nele, nada anterior à `dist/` | h |

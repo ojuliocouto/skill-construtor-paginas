@@ -127,7 +127,7 @@ originou; `scripts/test-preferencias.py` reprova se uma correção nova ficar se
 - **A foto não contradiz o texto ao lado.** Se o texto nomeia a profissional ("a Carla"), quem
   cuida na foto tem o mesmo gênero e papel, e "imagem ilustrativa" aparece na primeira tela.
 - **[gate `gate-imagens.py`] Nenhuma foto, nem cena, repetida entre seções, e nenhuma foto
-  borrada** (nitidez de 100 ou mais).
+  borrada** (nitidez relativa de 2,5 ou mais; abaixo de 6 é aviso de foto macia).
 - **A foto bate com o público do briefing**: idade, perfil e roupa adequada ao que a página
   vende. Para mulheres de 35 a 60 com dor, modelo de 25 de top cropped em pose avançada
   reprova. O plano visual registra a tabela "público -> foto escolhida -> por quê".

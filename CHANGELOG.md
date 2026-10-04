@@ -29,7 +29,7 @@ gate; as outras, referência curta. Teste vermelho antes e verde depois em cada 
   tabela `Composição por seção` (Seção, Desktop, Celular, Animação; uma linha por seção, sem célula
   vazia, no máximo 2 seções com o mesmo tipo) e `Material da cliente pedido:`.
 - `gate-imagens.py`: foto repetida entre seções (pHash a menos de 10 bits ou mesma origem),
-  nitidez (variância do laplaciano abaixo de 100 reprova), "imagem ilustrativa" visível na
+  nitidez relativa (laplaciano da foto dividido pelo da foto desfocada: abaixo de 2,5 reprova, abaixo de 6 avisa), "imagem ilustrativa" visível na
   primeira tela, 60% de foto na primeira tela com `--url`, e pessoa identificável de banco sem
   autorização deixa de bloquear a página de teste: vira aviso de tráfego real (`--trafego-real` a
   reprova).

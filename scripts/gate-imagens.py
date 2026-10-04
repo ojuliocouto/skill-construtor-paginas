@@ -36,7 +36,7 @@ no lugar da ilustração chapada, e isso trouxe cinco regras que nenhum gate cob
   8. FOTO REPETIDA ENTRE SEÇÕES: a mesma cena (mesma origem em LICENCAS.md, ou hash perceptual
      pHash de 64 bits a menos de 10 bits de distância) em duas seções reprova; os recortes da
      mesma foto dentro de UMA seção (arte dirigida para o celular) passam;
-  9. NITIDEZ: variância do laplaciano abaixo de 100 reprova (foto borrada: o auditor mediu 8,6 a
+  9. NITIDEZ relativa (laplaciano da foto / da foto desfocada): abaixo de 2,5 reprova, abaixo de 6 avisa (foto borrada: o auditor mediu 8,6 a
      21,7 nos recortes de baixa profundidade de campo, contra mais de 1.000 nos nítidos), medida
      na maior variante legível de cada foto (avif não abre no Pillow: vale o webp ou jpg irmão);
  10. PESSOA IDENTIFICÁVEL DE BANCO (Unsplash, Pexels) sem autorização das retratadas deixou de
@@ -67,7 +67,12 @@ from urllib.parse import urlparse
 EXTENSOES = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".gif", ".svg"}
 LEGIVEIS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 LIMIAR_PHASH = 10          # distância de Hamming (de 64 bits) abaixo da qual duas fotos são a mesma cena
-NITIDEZ_MINIMA = 100       # variância do laplaciano abaixo da qual a foto é borrada
+# Nitidez RELATIVA: detalhe fino da foto dividido pelo da mesma foto desfocada (raio 1,5).
+# O laplaciano absoluto confunde pouco contraste com borrado (paleta bege nítida dava 8,6;
+# medido na v7 em 04/10/2026). Desfocada com raio 2: 1,2 a 1,7. Nítidas: 18 a 42. Macias: 4 a 6.
+NITIDEZ_REPROVA = 2.5      # abaixo disso a foto já está borrada (reprova)
+NITIDEZ_AVISA = 6.0        # abaixo disso a foto está macia (aviso, decisão de quem constrói)
+LADO_MEDIDA_NITIDEZ = 800  # mede sempre na mesma escala
 LADO_MINIMO_NITIDEZ = 300  # miniatura e ícone não entram na medida de nitidez
 FOTO_NA_DOBRA_MINIMA = 0.6
 BANCOS = ("unsplash", "pexels", "pixabay")
@@ -281,6 +286,17 @@ def variancia_laplaciano(np, img):
     return float(lap.var())
 
 
+def razao_nitidez(np, ImageFilter, img):
+    """Laplaciano da foto / laplaciano da mesma foto desfocada, numa escala fixa."""
+    im = img.convert("RGB")
+    if max(im.size) > LADO_MEDIDA_NITIDEZ:
+        f = LADO_MEDIDA_NITIDEZ / max(im.size)
+        im = im.resize((max(3, round(im.size[0] * f)), max(3, round(im.size[1] * f))))
+    base_ = variancia_laplaciano(np, im)
+    borrada = variancia_laplaciano(np, im.filter(ImageFilter.GaussianBlur(1.5)))
+    return base_ / max(borrada, 1e-6)
+
+
 def maior_variante(Image, caminhos):
     """A maior variante que o Pillow abre (avif não abre: vale o webp ou jpg irmão)."""
     abertas = []
@@ -328,10 +344,14 @@ def checar_fotos(dist, usados, regioes, problemas, avisos):
             continue
         lidas[b] = (caminho, im)
         if max(im.size) >= LADO_MINIMO_NITIDEZ:
-            v = variancia_laplaciano(np, im)
-            if v < NITIDEZ_MINIMA:
-                problemas.append(f"{b}: foto borrada, nitidez {v:.1f} (variância do laplaciano de {caminho.name}; mínimo {NITIDEZ_MINIMA}): "
+            from PIL import ImageFilter
+            r = razao_nitidez(np, ImageFilter, im)
+            if r < NITIDEZ_REPROVA:
+                problemas.append(f"{b}: foto borrada, nitidez relativa {r:.1f} em {caminho.name} (mínimo {NITIDEZ_REPROVA}): "
                                  "troque pela foto nítida ou por outro recorte")
+            elif r < NITIDEZ_AVISA:
+                avisos.append(f"{b}: foto macia, nitidez relativa {r:.1f} em {caminho.name} (nítida fica acima de {NITIDEZ_AVISA}): "
+                              "confira no print se o assunto está em foco; desfoque de fundo proposital pode ficar")
     # Cenas: mesma origem em LICENCAS.md ou pHash a menos de LIMIAR_PHASH bits.
     nomes = sorted(lidas)
     pai = {b: b for b in nomes}
