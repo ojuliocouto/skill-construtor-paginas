@@ -118,9 +118,8 @@ def tipo_da_animacao(celula):
     return sem_acento(celula.split(":", 1)[0]).strip()
 
 
-def checar_composicao(texto, sec, ordem_itens):
-    """Tabela Seção | Desktop | Celular | Animação, uma linha por seção, sem célula vazia."""
-    erros = []
+def linhas_da_composicao(texto):
+    """A tabela Seção | Desktop | Celular | Animação do PLANO.md como lista de dicts, ou None."""
     tabela, cab = [], None
     for l in (l.strip() for l in texto.splitlines()):
         if not l.startswith("|"):
@@ -136,23 +135,31 @@ def checar_composicao(texto, sec, ordem_itens):
             continue
         tabela.append(cels)
     if cab is None:
-        return ["Composição por seção: falta a tabela '| Seção | Desktop | Celular | Animação |' "
-                "(uma linha por seção: o que muda no desktop, no celular e como anima)"]
+        return None
     idx = {k: next(i for i, n in enumerate(cab) if n.startswith(k)) for k in ("secao", "desktop", "celular", "animacao")}
     dados = [c for c in tabela if not all(re.fullmatch(r":?-+:?", x) for x in c if x)]
-    if not dados:
+    return [{k: (c[i] if i < len(c) else "") for k, i in idx.items()} for c in dados]
+
+
+def checar_composicao(texto, sec, ordem_itens):
+    """Tabela Seção | Desktop | Celular | Animação, uma linha por seção, sem célula vazia."""
+    erros = []
+    linhas = linhas_da_composicao(texto)
+    if linhas is None:
+        return ["Composição por seção: falta a tabela '| Seção | Desktop | Celular | Animação |' "
+                "(uma linha por seção: o que muda no desktop, no celular e como anima)"]
+    if not linhas:
         return ["Composição por seção: a tabela não tem nenhuma linha"]
-    if ordem_itens and len(dados) < ordem_itens:
-        erros.append(f"Composição por seção: {len(dados)} linha(s) para {ordem_itens} seções da ordem escolhida "
+    if ordem_itens and len(linhas) < ordem_itens:
+        erros.append(f"Composição por seção: {len(linhas)} linha(s) para {ordem_itens} seções da ordem escolhida "
                      "(uma linha por seção)")
     tipos = {}
-    for c in dados:
-        nome = c[idx["secao"]] if idx["secao"] < len(c) else "?"
+    for c in linhas:
+        nome = c["secao"] or "?"
         for k, rot in (("desktop", "Desktop"), ("celular", "Celular"), ("animacao", "Animação")):
-            v = c[idx[k]] if idx[k] < len(c) else ""
-            if vazio(v):
+            if vazio(c[k]):
                 erros.append(f"Composição por seção: célula vazia em '{nome}' sem {rot}")
-        anim = c[idx["animacao"]] if idx["animacao"] < len(c) else ""
+        anim = c["animacao"]
         if not vazio(anim) and tipo_da_animacao(anim) != "assinatura":
             tipos.setdefault(tipo_da_animacao(anim), (anim.split(":", 1)[0].strip(), []))[1].append(nome)
     for chave, (tipo, nomes) in tipos.items():

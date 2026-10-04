@@ -77,6 +77,16 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/ritmo-centro-cartoes') corpo = hero + cartoes('Situações', 'style="text-align:center"') + lista('Passos') + cartoes('Grupo ou particular', 'style="text-align:center"') + splitImg('Fecho');
   if (rota === '/ritmo-excecao') corpo = hero + cartoes('Primeiro bloco', '', 'data-ritmo-ok="duas grades de preço pedidas pelo cliente"') + cartoes('Segundo bloco', '', 'data-ritmo-ok="duas grades de preço pedidas pelo cliente"') + lista('Passos');
   if (rota === '/ritmo-assimetrico-nao-e-cartao') corpo = hero + cartoes('Situações', 'style="text-align:center"') + lista('Passos') + assim('Para quem é', 'style="text-align:center"') + splitImg('Fecho');
+  // anim.mjs: uma seção que muda de cor ao entrar na tela (animada) e outra que não muda (parada).
+  if (rota === '/anim') {
+    corpo = '<style>.bloco{height:520px;margin:40px;background:#fff;transition:background 700ms}.bloco.vai{background:#1b3a5c}.faixa{height:900px}</style>'
+      + '<div class="faixa"><h1>Topo</h1></div>'
+      + '<section id="animada" style="min-height:700px"><div class="bloco"></div></section>'
+      + '<div class="faixa"></div>'
+      + '<section id="parada" style="min-height:700px"><div style="height:520px;margin:40px;background:#ddd"></div></section>'
+      + '<div class="faixa"></div>'
+      + '<script>new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)e.target.classList.add("vai")})}).observe(document.querySelector(".bloco"))</script>';
+  }
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end('<!doctype html><html lang="pt-BR"><head>' + head + estilo + '</head><body>' + corpo + '</body></html>');
 });
@@ -98,6 +108,26 @@ function rodar(nome, script, args, esperado, padrao) {
       resolve(passou);
     });
   });
+}
+
+/** anim.mjs -> prancha.py -> gate-animacao.py contra uma página de controle. */
+async function cadeia(nome, url, secoes, esperado, padrao) {
+  const saida = path.join(pasta, 'anim-' + nome);
+  fs.mkdirSync(saida, { recursive: true });
+  const json = path.join(saida, 'secoes.json');
+  fs.writeFileSync(json, JSON.stringify(secoes));
+  const passos = [
+    [path.join(__dirname, 'anim.mjs'), ['--url', url, '--saida', saida, '--secoes', json], 0],
+    [path.join(__dirname, 'prancha.py'), ['--pasta', saida, '--secoes', json], 0],
+    [path.join(__dirname, 'gate-animacao.py'), ['--pasta', saida], esperado],
+  ];
+  let ok = true;
+  for (const [i, [arq, args, esp]] of passos.entries()) {
+    const ultimo = i === passos.length - 1;
+    ok = (await rodar(`${nome}-${i + 1}`, arq, args, esp, ultimo ? padrao : undefined)) && ok;
+    if (!ok) break;
+  }
+  return ok;
 }
 
 async function unidade() {
@@ -141,6 +171,12 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['imagens-ilustracao-marcada', 'gate-imagens.py', ['--projeto', projetos['img-ilustracao-marcada'], '--url', url + '/p/img-ilustracao-marcada/'], 0],
   ];
   const resultados = [...await unidade()];
+  if (!process.env.GATES_FILTRO || 'animacao'.startsWith(process.env.GATES_FILTRO)) {
+    const todas = [{ nome: '01-animada', titulo: 'Animada', seletor: '#animada', modo: 'entrada', tipo: 'cor ao entrar' },
+                   { nome: '02-parada', titulo: 'Parada', seletor: '#parada', modo: 'entrada', tipo: 'nenhuma' }];
+    resultados.push(await cadeia('animacao-secao-animada', url + '/anim', [todas[0]], 0, /PASSA/));
+    resultados.push(await cadeia('animacao-secao-parada', url + '/anim', todas, 1, /02-parada: desktop 1440: só 0\.0% dos pixels/));
+  }
   const filtro = process.env.GATES_FILTRO;
   const selecionados = casos.filter(([nome]) => !filtro || nome.startsWith(filtro));
   for (const [nome, arquivo, args, esperado, padrao] of selecionados) {
