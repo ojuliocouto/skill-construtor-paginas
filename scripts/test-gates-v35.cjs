@@ -77,6 +77,11 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/ritmo-centro-cartoes') corpo = hero + cartoes('Situações', 'style="text-align:center"') + lista('Passos') + cartoes('Grupo ou particular', 'style="text-align:center"') + splitImg('Fecho');
   if (rota === '/ritmo-excecao') corpo = hero + cartoes('Primeiro bloco', '', 'data-ritmo-ok="duas grades de preço pedidas pelo cliente"') + cartoes('Segundo bloco', '', 'data-ritmo-ok="duas grades de preço pedidas pelo cliente"') + lista('Passos');
   if (rota === '/ritmo-assimetrico-nao-e-cartao') corpo = hero + cartoes('Situações', 'style="text-align:center"') + lista('Passos') + assim('Para quem é', 'style="text-align:center"') + splitImg('Fecho');
+  // sobreposicao.mjs: título fixo (sticky) dividindo o grid com um bloco de largura total.
+  const ul = '<ul>' + Array.from({ length: 14 }, (_, i) => `<li style="height:80px;border-bottom:1px solid #ddd">Frase ${i + 1} da lista longa.</li>`).join('') + '</ul>';
+  const largo = '<p class="largo" style="background:#fde;padding:24px;margin:0">Frase de impacto em largura total.</p>';
+  if (rota === '/sticky-no-mesmo-grid') corpo = '<section style="min-height:0"><div style="display:grid;grid-template-columns:1fr 2fr;gap:32px"><h2 id="t" style="position:sticky;top:20px;align-self:start;grid-row:1/-1;grid-column:1">Título fixo</h2><div style="grid-column:2">' + ul + '</div><div style="grid-column:1/-1">' + largo + '</div></div></section>' + '<div style="height:800px"></div>';
+  if (rota === '/sticky-grid-termina-antes') corpo = '<section style="min-height:0"><div style="display:grid;grid-template-columns:1fr 2fr;gap:32px"><h2 id="t" style="position:sticky;top:20px;align-self:start">Título fixo</h2><div>' + ul + '</div></div>' + largo + '</section>' + '<div style="height:800px"></div>';
   // gate-responsivo com carrossel: filhos de contêiner com overflow-x auto e scroll-snap-type não
   // são estouro; a página inteira continua sem rolagem lateral.
   const trilha = (estilo) => `<section style="padding:24px 16px;min-height:0"><h2>Aparelhos</h2><div class="trilha" style="display:flex;gap:16px;overflow-x:auto;${estilo}">${[1, 2, 3, 4].map((n) => `<figure style="flex:0 0 300px;margin:0;background:#eee;padding:12px"><h3>Aparelho ${n}</h3><p>Descrição do aparelho ${n}.</p></figure>`).join('')}</div></section>`;
@@ -181,6 +186,10 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['ritmo-centro-cartoes', 'gate-ritmo.mjs', ['--url', url + '/ritmo-centro-cartoes'], 1, /2 seções no formato "título centralizado \+ cartões"/],
     ['ritmo-excecao', 'gate-ritmo.mjs', ['--url', url + '/ritmo-excecao'], 0, /exceção declarada/],
     ['ritmo-assimetrico-nao-e-cartao', 'gate-ritmo.mjs', ['--url', url + '/ritmo-assimetrico-nao-e-cartao'], 0],
+    // sobreposicao.mjs
+    ['sobreposicao-sticky-no-mesmo-grid-reprova', 'sobreposicao.mjs', ['--url', url + '/sticky-no-mesmo-grid', '--fixo', '#t', '--contra', '.largo'], 1, /interse[cç][aã]o m[aá]xima \d+ px²/],
+    ['sobreposicao-grid-termina-antes-passa', 'sobreposicao.mjs', ['--url', url + '/sticky-grid-termina-antes', '--fixo', '#t', '--contra', '.largo'], 0, /interse[cç][aã]o m[aá]xima 0 px²/],
+    ['sobreposicao-seletor-inexistente-reprova', 'sobreposicao.mjs', ['--url', url + '/sticky-grid-termina-antes', '--fixo', '#nada', '--contra', '.largo'], 1, /n[aã]o existe/],
     // gate-responsivo: carrossel
     ['responsivo-carrossel-com-encaixe-passa', 'gate-responsivo.mjs', ['--url', url + '/carrossel-snap'], 0, /carrossel com encaixe/],
     ['responsivo-carrossel-sem-encaixe-reprova', 'gate-responsivo.mjs', ['--url', url + '/carrossel-sem-snap'], 1, /elemento maior que o container/],
