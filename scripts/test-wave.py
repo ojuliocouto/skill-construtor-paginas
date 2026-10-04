@@ -151,6 +151,15 @@ class Ciclo(unittest.TestCase):
         self.assertNotIn("plano", wave.gates_exigidos("clonar"))
         self.assertIn("rastreamento", wave.gates_exigidos("clonar"))
 
+    # v3.5 (04/10/2026): ritmo e animação viraram gates exigidos; o clone fiel copia a composição
+    # da original e não responde por eles.
+    def test_gates_do_padrao_da_v7(self):
+        for g in ("ritmo", "animacao"):
+            self.assertIn(g, wave.GATES, g)
+            self.assertIn(g, wave.gates_exigidos("criar"))
+            self.assertIn(g, wave.gates_exigidos("melhorar"))
+            self.assertNotIn(g, wave.gates_exigidos("clonar"))
+
     # Auditoria da v5 (03/10/2026): 7,0, "correta, mas vazia; o dono não chamaria de foda". A
     # régua do dono depois da SobrAI (9,05 nas lentes e "que página FEIA") é a pergunta "isso é
     # bonito ou só está correto?", e nenhum registro a fazia. A nona lente responde por escrito.
