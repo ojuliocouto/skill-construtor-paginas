@@ -71,9 +71,13 @@ Método e modelo completos em `references/plano.md`. Um documento único, `<dir>
 sete seções que o aluno aprova: a. Referências (os prints, cada um com o que faz bem, e as que
 ele marcou), b. Visual (3 direções BEM diferentes, feitas com a `frontend-design`, cada uma com
 a primeira dobra real renderizada em PNG), c. Seções (o cardápio de `references/secoes/README.md`
-com miniatura e "quando usar", e a ordem que ele montou), d. Copy (frase -> linha do briefing
-que sustenta), e. Pixel e rastreamento (`references/rastreamento.md`), f. Código e publicação e
-g. Aprovação.
+com miniatura e "quando usar", a ordem que ele montou e, desde a 3.5, a tabela
+`Composição por seção`: desktop, celular e animação de cada uma), d. Copy (frase -> linha do
+briefing que sustenta), e. Pixel e rastreamento (`references/rastreamento.md`), f. Código e
+publicação e g. Aprovação. No topo do PLANO, além do pixel: o **Momento assinatura** (um elemento
+ligado ao assunto, em 3 ou mais seções, que muda de estado) e o **Material da cliente pedido**
+(foto real da profissional, número do WhatsApp, depoimentos com autorização). Estética por seção
+em `references/ritmo-e-animacao.md`.
 
 `node <dir-da-skill>/scripts/previa-direcoes.mjs --saida <dir>/plano <dir>/plano/direcoes/a.html <dir>/plano/direcoes/b.html <dir>/plano/direcoes/c.html`
 `node <dir-da-skill>/scripts/previa-direcoes.mjs --miniaturas <dir-da-skill>/references/secoes --saida <dir>/plano/miniaturas`
@@ -84,7 +88,8 @@ refaça uma delas antes de mostrar.
 `python3 <dir-da-skill>/scripts/gate-plano.py --projeto <dir>`
 
 **GATE b2:** sem `PLANO.md` aprovado (as 7 seções, as 3 prévias, a copy sustentada, o pixel
-declarado e todas as caixas marcadas), o plano visual e o código não começam.
+declarado, o momento assinatura, a composição por seção, o material da cliente e todas as caixas
+marcadas), o plano visual e o código não começam.
 
 ## c. Plano visual, pela skill `frontend-design`
 
@@ -101,8 +106,10 @@ ANTES de qualquer código:
   utilitária; escala com tamanhos e pesos
 - **Como a imagem entra**: que foto, de quê, com que luz e enquadramento, em que seções, e a
   tabela **público -> foto escolhida -> por quê** (uma linha por foto de pessoa: idade, perfil
-  e roupa da pessoa na foto contra o público do briefing). Ela vai para o campo `foto_publico`
-  da etapa 2, e o gate da etapa reprova sem ela
+  e roupa da pessoa na foto contra o público do briefing, mais a coluna "quem aparece cuidando"
+  contra o dono nomeado no briefing). Ela vai para o campo `foto_publico`
+  da etapa 2, e o gate da etapa reprova sem ela. **Foto real antes de ilustração** (do cliente, ou
+  de banco livre como ponte); ilustração só como acento (`references/imagem.md`)
 - **Ritmo das seções**: a ordem, o layout de cada uma em uma linha ou em wireframe ASCII, onde
   a página respira e onde adensa. **Cada seção ganha um tratamento próprio**, tirado de uma
   referência lida (lista editorial, linha do tempo, split com imagem, faixa cheia, grade de
@@ -134,7 +141,9 @@ pode dar ideia, nunca decide.
 ## d. Copy
 
 - Serviço local ou agendamento (estúdio, clínica, consultório, salão): o modelo curto
-  `references/copy-servico-local.md`.
+  `references/copy-servico-local.md` e os 7 itens de densidade de
+  `references/densidade-servico-local.md` (quem cuida, primeiro atendimento passo a passo, para quem
+  é e para quem não é, horários, faixa de preço, onde fica, o que levar).
 - Outros tipos: as seções do tipo em `references/page-types.md` (modelo geral), com headline
   que diz para quem e o que resolve, botão com verbo e ganho, objeções respondidas na página e
   urgência só se for real.
@@ -198,7 +207,11 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    hero: a foto da sala de 1500 px exibida a 348 px custou 171 KiB no Lighthouse da v3);
    `loading="lazy"` abaixo da dobra; `fetchpriority="high"` no hero.
    **A foto bate com o público** do briefing (idade, perfil, roupa adequada), como registrado
-   na tabela do plano visual. **Logo de terceiro na cena reprova** (outro estúdio na parede,
+   na tabela do plano visual, e **não contradiz o texto ao lado** (quem cuida na foto tem o mesmo
+   gênero e papel da profissional nomeada). **Nenhuma foto nem cena repetida entre seções** e
+   **nenhuma foto borrada** (nitidez de 100 ou mais); foto de banco com gente leva "imagem
+   ilustrativa" visível na primeira tela, e a pessoa identificável sem autorização é aviso de
+   tráfego real (`references/imagem.md`). **Logo de terceiro na cena reprova** (outro estúdio na parede,
    marca de fabricante legível, nome na roupa): amplie a foto 4x num recorte, procure, e
    retoque ou troque; o retoque vai escrito em `imagens/LICENCAS.md`. A legenda "imagem
    ilustrativa" fica colada na foto que ela descreve, dentro do mesmo card.
@@ -236,6 +249,14 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    inteira logo abaixo da primeira tela, por cima da foto (medido na v4).
    **Peso:** fonte só nos pesos e estilos usados (itálico de 144 KiB para 3 palavras foi achado
    da v3); CSS em linha na publicação (`montar-dist.py --css-em-linha`).
+3b. **Padrão da v7 na construção** (cada item custou retrabalho): o momento assinatura do plano
+   aparece nas seções que ele listou; cada seção tem esqueleto, celular e animação próprios
+   (`references/ritmo-e-animacao.md`); assimetria pedida no plano leva `data-assimetrico="motivo"`
+   no contêiner (o `gate-simetria.mjs` a trata como aviso); carrossel no celular é composição, com
+   `overflow-x: auto` e `scroll-snap-type`, e a página sem rolagem lateral; altura de layout em
+   `--vh` medido (`references/vh-estavel.md`); sticky num grid que termina antes do bloco de
+   largura total (`references/sticky-e-sobreposicao.md`); texto dividido em linhas sem `span`
+   interno e `li > span` em CSS (`references/texto-em-linhas.md`).
 4. **Identidade da página** (bloqueia, com ou sem deploy): `<title>` próprio, meta description,
    favicon PNG quadrado e `apple-touch-icon`, `og:title`, `og:description` e `og:image`.
    Favicon: recorte quadrado primeiro, depois redimensione. **O ícone é a identidade ATUAL:** o
@@ -276,7 +297,11 @@ Rode cada gate e registre o exit REAL na wave:
 `node <dir-da-skill>/scripts/gate-composicao.mjs --url http://localhost:8765/ --projeto <dir>` (mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, desenho que lê como wireframe, linha do tempo que passa do último marco, nenhuma pessoa na primeira tela para público de pessoas, destaque abaixo de 3:1)
 `node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, pelo menos 2 seções animam ao chegar, nenhum item chega parado numa rolagem de 300 px/s em 1440, 390 e 320, e rolagem sem animação com movimento reduzido)
 `python3 <dir-da-skill>/scripts/gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas, e o dono nomeado no briefing no corpo da página)
-`python3 <dir-da-skill>/scripts/gate-imagens.py --projeto <dir>` (licença com versão e link, pessoa identificável sem autorização, crédito no HTML com o título real da fonte, aviso no og-image)
+`python3 <dir-da-skill>/scripts/gate-imagens.py --projeto <dir> --url http://localhost:8765/` (licença com versão e link, crédito no HTML com o título real da fonte, aviso no og-image; foto repetida entre seções por pHash e origem, nitidez abaixo de 100, "imagem ilustrativa" e 60% de foto na primeira tela medidos no navegador; pessoa identificável de banco é aviso de tráfego real, e `--trafego-real` a reprova)
+`node <dir-da-skill>/scripts/gate-ritmo.mjs --url http://localhost:8765/` (duas seções vizinhas com o mesmo esqueleto e mais de 1 "título centralizado + cartões")
+`node <dir-da-skill>/scripts/anim.mjs --url http://localhost:8765/ --saida <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` e `python3 <dir-da-skill>/scripts/prancha.py --pasta <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` (3 quadros por seção em 1440 e 390 e a prancha com a porcentagem de pixels que mudou; abra as pranchas)
+`python3 <dir-da-skill>/scripts/gate-animacao.py --pasta <dir>/prova/anim --plano <dir>/PLANO.md` (menos de 2% de pixels mudando entre início e fim, mais de 2 seções com o mesmo tipo, menos pranchas que linhas da tabela do plano)
+`node <dir-da-skill>/scripts/sobreposicao.mjs --url http://localhost:8765/ --fixo "<seletor do sticky>" --contra "<seletor do bloco largo>"` (um para cada elemento fixo: 0 px² em 1024 a 1920)
 `python3 <dir-da-skill>/scripts/montar-dist.py --projeto <dir> --css-em-linha` e `python3 <dir-da-skill>/scripts/gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar, sem comentário interno, e ícones gerados do `icones/icone.svg` do motivo do plano)
 `python3 <dir-da-skill>/scripts/gate-rastreamento.py --dist <dir>/dist --plano <dir>/PLANO.md` (pixel e eventos que o plano pediu; passa direto com `Pixel pedido: nenhum`)
 `python3 <dir-da-skill>/scripts/gate-plano.py --projeto <dir>` (o plano continua aprovado depois das correções)
@@ -285,7 +310,7 @@ Rode cada gate e registre o exit REAL na wave:
 `python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> checar --caminho criar`
 `python3 <dir-da-skill>/scripts/gate-referencias.py --projeto <dir>`
 `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> gate <nome> --exit <0|1> --detalhe "<o que o gate imprimiu>"`
-(nomes: `sem-kicker`, `classes-mortas`, `responsivo`, `oclusao`, `identidade`, `uso-ferramentas`, `referencias`, `simetria`, `texto`, `verdade`, `publicacao`, `movimento`, `composicao`, `imagens`, `plano`, `rastreamento`)
+(nomes: `sem-kicker`, `classes-mortas`, `responsivo`, `oclusao`, `identidade`, `uso-ferramentas`, `referencias`, `simetria`, `texto`, `verdade`, `publicacao`, `movimento`, `composicao`, `imagens`, `plano`, `rastreamento`, `ritmo`, `animacao`)
 
 O `gate-responsivo.mjs` também reprova botão em mais de uma linha até 768 px e trecho de mais de
 2 telas sem botão no celular. Rode os gates de tela contra a `dist/` servida (é o que vai para o ar).

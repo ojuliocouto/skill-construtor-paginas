@@ -57,6 +57,15 @@ originou; `scripts/test-preferencias.py` reprova se uma correção nova ficar se
   de cada caixa na mesma faixa de linhas. Cada caixa com um SVG próprio, desenhado para o
   texto dela e animado (traço que se desenha, leve deslocamento). Biblioteca de ícone genérico
   em quadradinho continua proibida: o problema era o genérico, não o ícone. <!-- gosto:20 -->
+- **[gate `gate-ritmo.mjs`] Ritmo: nenhuma seção vizinha com o mesmo esqueleto, e no máximo uma
+  "título centralizado + cartões".** Cada seção escolhe um esqueleto (posição do título x tipo de
+  corpo) que a anterior não usou. A v6 tinha duas seções no molde centralizado com cartões e foi
+  reprovada como "correta e genérica"; a v7 deu a cada seção um esqueleto próprio
+  (`references/ritmo-e-animacao.md`).
+- **[gate `gate-simetria.mjs`] Assimetria pedida no plano se declara com `data-assimetrico`.**
+  O par de comparação "largo x estreito" que começa mais alto, a foto deslocada e o título fixo ao
+  lado de uma lista contradiziam a régua de simetria. Falha em elemento marcado vira aviso;
+  em elemento sem a marca continua reprovando.
 - **Fecho e FAQ também animam.** Seção final parada e FAQ numa caixa só com metade da tela
   vazia reprovam. FAQ com o título em largura total e as perguntas em grade (ou numa coluna
   centrada), entrando com movimento; fecho com pelo menos um movimento além do título.
@@ -112,6 +121,13 @@ originou; `scripts/test-preferencias.py` reprova se uma correção nova ficar se
 
 ## Foto e público
 
+- **[gate `gate-imagens.py --url`] Foto real antes de ilustração.** A foto real (do cliente, ou de
+  banco livre como ponte) ocupa 60% ou mais da imagem da primeira tela; ilustração chapada só como
+  acento (`references/imagem.md`). A v6 era só ilustração e saiu com cara de banco corporativo.
+- **A foto não contradiz o texto ao lado.** Se o texto nomeia a profissional ("a Carla"), quem
+  cuida na foto tem o mesmo gênero e papel, e "imagem ilustrativa" aparece na primeira tela.
+- **[gate `gate-imagens.py`] Nenhuma foto, nem cena, repetida entre seções, e nenhuma foto
+  borrada** (nitidez de 100 ou mais).
 - **A foto bate com o público do briefing**: idade, perfil e roupa adequada ao que a página
   vende. Para mulheres de 35 a 60 com dor, modelo de 25 de top cropped em pose avançada
   reprova. O plano visual registra a tabela "público -> foto escolhida -> por quê".
