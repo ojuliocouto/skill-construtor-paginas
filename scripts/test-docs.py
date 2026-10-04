@@ -197,7 +197,7 @@ class Estrutura(unittest.TestCase):
         s = ler(SKILL)
         for item in ("references/plano.md", "PLANO", "gate-plano.py", "gate-rastreamento.py", "previa-direcoes.mjs"):
             self.assertIn(item, s, item)
-        self.assertRegex(s[:600], r"(?m)^version: 3\.4\.\d+$")
+        self.assertRegex(s[:600], r"(?m)^version: 3\.[45]\.\d+$")
         self.assertIn("3.4.0", ler(RAIZ / "CHANGELOG.md"))
 
     def test_v34_plano_tem_as_sete_secoes(self):
@@ -211,6 +211,53 @@ class Estrutura(unittest.TestCase):
             self.assertIn(ev, r, ev)
         self.assertNotRegex(r, r"\bG-(?!X+\b)[A-Z0-9]{8,12}\b")
         self.assertNotRegex(r, r"\b\d{15,16}\b")
+
+
+    # Padrão da v7 (04/10/2026): o que fez a v7 sair melhor que a v6 virou regra e gate, e o
+    # SKILL.md continua curto: o detalhe mora nas references.
+    def test_v35_skill_na_versao_e_curta(self):
+        s = ler(SKILL)
+        self.assertRegex(s[:600], r"(?m)^version: 3\.5\.\d+$")
+        self.assertLessEqual(len(s.splitlines()), 330, "SKILL.md passou de ~330 linhas: o detalhe vai para references")
+        for item in ("gate-ritmo.mjs", "gate-animacao.py", "anim.mjs", "prancha.py", "sobreposicao.mjs", "Momento assinatura",
+                     "references/imagem.md", "references/ritmo-e-animacao.md", "references/densidade-servico-local.md",
+                     "references/vh-estavel.md", "references/sticky-e-sobreposicao.md", "references/texto-em-linhas.md"):
+            self.assertIn(item, s, item)
+        self.assertIn("3.5.0", ler(RAIZ / "CHANGELOG.md"))
+
+    def test_v35_plano_e_caminho_criar_cobram_o_padrao_da_v7(self):
+        pl, c = ler(REF / "plano.md"), ler(CRIAR)
+        for item in ("Momento assinatura:", "Composição por seção", "Material da cliente pedido:", "Seção | Desktop | Celular | Animação"):
+            self.assertIn(item, pl, item)
+        for item in ("Momento assinatura", "gate-ritmo.mjs", "anim.mjs", "prancha.py", "gate-animacao.py", "data-assimetrico",
+                     "sobreposicao.mjs", "--vh", "references/imagem.md", "references/densidade-servico-local.md"):
+            self.assertIn(item, c, item)
+        self.assertIn("gate-ritmo", c[c.find("## f."):c.find("## g.")])
+        self.assertIn("gate-animacao", c[c.find("## f."):c.find("## g.")])
+        self.assertIn("anim.mjs", c[c.find("## e."):c.find("## f.")] + c[c.find("## f."):c.find("## g.")])
+
+    def test_v35_references_curtas_existem_e_dizem_o_essencial(self):
+        esperado = {
+            "imagem.md": ("foto real", "ilustração", "60%", "pHash", "100", "--trafego-real", "primeira tela", "mesmo gênero", "data-ilustracao-ok"),
+            "densidade-servico-local.md": ("nome e formação", "passo a passo", "para quem é", "para quem não é", "horários", "faixa de preço", "onde fica", "o que levar"),
+            "vh-estavel.md": ("--vh", "innerHeight", "scroll-behavior", "fullPage"),
+            "sticky-e-sobreposicao.md": ("sticky", "largura total", "sobreposicao.mjs", "grid"),
+            "texto-em-linhas.md": ("li > span", "gate-texto", "data-linhas"),
+            "ritmo-e-animacao.md": ("Momento assinatura", "gate-ritmo.mjs", "secoes.json", "anim.mjs", "prancha.py", "gate-animacao.py", "2%", "assinatura"),
+        }
+        for arq, itens in esperado.items():
+            t = ler(REF / arq)
+            self.assertLessEqual(len(t.splitlines()), 90, f"{arq} deveria ser curta")
+            for item in itens:
+                self.assertIn(item, t, f"{arq}: {item}")
+
+    def test_v35_preferencias_e_readme_mencionam_o_novo(self):
+        pref = ler(REF / "preferencias-de-design.md")
+        for item in ("data-assimetrico", "foto real", "gate-ritmo.mjs"):
+            self.assertIn(item, pref, item)
+        r = ler(RAIZ / "README.md")
+        for item in ("gate-ritmo.mjs", "gate-animacao.py", "anim.mjs", "test-animacao.py", "test-gates-v35.cjs"):
+            self.assertIn(item, r, item)
 
 
 class Travadas(unittest.TestCase):

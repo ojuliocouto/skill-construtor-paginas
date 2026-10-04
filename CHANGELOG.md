@@ -1,5 +1,44 @@
 # Changelog
 
+## 3.5.0 (04/10/2026): o padrão da v7 vira regra e gate
+
+O dono reprovou a v6 da página do estúdio ("correta e genérica") e a v7 saiu muito melhor. O
+relatório da v7 listou 15 decisões que a 3.4 não exigia nem orientava. As que se medem viraram
+gate; as outras, referência curta. Teste vermelho antes e verde depois em cada peça
+(`relatorios/v35-tdd-vermelho.txt` e `v35-testes.txt`).
+
+### Adicionado
+- `scripts/gate-ritmo.mjs` (+ `ritmo-regras.mjs`): reprova duas seções VIZINHAS com o mesmo
+  esqueleto (posição do título x tipo de corpo) e mais de 1 "título centralizado + cartões". Gate
+  à parte do `gate-composicao.mjs`: distingue cartões iguais de comparação assimétrica e foto de
+  desenho fixo, e a decisão é testada sem navegador.
+- `scripts/anim.mjs`, `scripts/prancha.py`, `scripts/gate-animacao.py`: o par de prova de animação
+  da v7, sem caminho nem seletor fixo (uma lista `secoes.json`), e o gate que reprova seção com
+  menos de 2% de pixels mudando entre início e fim (1440 e 390), mais de 2 seções com o mesmo tipo
+  de animação e menos pranchas que linhas da tabela do plano.
+- `scripts/sobreposicao.mjs`: varredura de rolagem que mede a interseção entre um elemento
+  sticky e os blocos que ele não pode cobrir.
+- `scripts/medir-dobra.mjs`: aviso "imagem ilustrativa" e área de foto contra desenho na primeira
+  tela, usado pelo `gate-imagens.py --url`.
+- `references/ritmo-e-animacao.md`, `imagem.md`, `densidade-servico-local.md`, `vh-estavel.md`,
+  `sticky-e-sobreposicao.md`, `texto-em-linhas.md`.
+- Testes: `test-animacao.py` e `test-gates-v35.cjs` (um processo de navegador por vez).
+
+### Mudado
+- `gate-plano.py` cobra `Momento assinatura:` (elemento, 3 ou mais seções, estados com `->`), a
+  tabela `Composição por seção` (Seção, Desktop, Celular, Animação; uma linha por seção, sem célula
+  vazia, no máximo 2 seções com o mesmo tipo) e `Material da cliente pedido:`.
+- `gate-imagens.py`: foto repetida entre seções (pHash a menos de 10 bits ou mesma origem),
+  nitidez (variância do laplaciano abaixo de 100 reprova), "imagem ilustrativa" visível na
+  primeira tela, 60% de foto na primeira tela com `--url`, e pessoa identificável de banco sem
+  autorização deixa de bloquear a página de teste: vira aviso de tráfego real (`--trafego-real` a
+  reprova).
+- `gate-simetria.mjs`: falha em elemento com `data-assimetrico` vira aviso.
+- `gate-responsivo.mjs`: filho de contêiner com `overflow-x: auto` e `scroll-snap-type` não é
+  estouro; imprime scrollWidth e innerWidth medidos.
+- `wave.py`: gates `ritmo` e `animacao` (fora do clone fiel).
+- `SKILL.md` (3.5.0, 327 linhas), `criar.md`, `plano.md`, `preferencias-de-design.md` e README.
+
 ## 3.4.0 (03/10/2026): etapa PLANO antes de qualquer código
 
 Decisão do dono: "seria bom se essa skill desse opções de visual e tipos de seções pro cara,
