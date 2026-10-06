@@ -62,10 +62,12 @@ CHAVES_21ST = ("TWENTYFIRST_API_KEY", "API_KEY_21ST", "MAGIC_API_KEY")
 URL_21ST = "https://21st.dev/api/mcp"
 
 
-def roda(cmd, timeout=25):
-    """Executa e devolve (ok, saida). Nunca levanta: timeout e binario ausente viram ok=False."""
+def roda(cmd, timeout=25, env=None):
+    """Executa e devolve (ok, saida). Nunca levanta: timeout e binario ausente viram ok=False.
+    cmd em texto roda pelo shell; cmd em lista roda direto (igual em Windows, macOS e Linux)."""
     try:
-        p = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
+        p = subprocess.run(cmd, shell=isinstance(cmd, str), capture_output=True, text=True,
+                           timeout=timeout, env=env)
         return p.returncode == 0, (p.stdout + p.stderr).strip()
     except subprocess.TimeoutExpired:
         return False, f"timeout depois de {timeout}s"
@@ -194,8 +196,11 @@ def checagens(opcionais=False):
     yield ("node", "roda o Playwright, os prints e os gates visuais", CRITICIDADE["node"], ok,
            saida.splitlines()[0] if saida else "", "instale o Node 18 ou mais novo (https://nodejs.org)")
 
-    ok, saida = roda(
-        f'NODE_PATH="$HOME/.npm-global/lib/node_modules" node "{RAIZ}/scripts/screenshot-prova.js" --check')
+    # NODE_PATH vai pelo env (e nao na frente do comando): o cmd.exe do Windows nao entende VAR="x" cmd.
+    global_npm = os.path.join(os.path.expanduser("~"), ".npm-global", "lib", "node_modules")
+    caminhos = [p for p in (os.environ.get("NODE_PATH"), global_npm) if p]
+    ok, saida = roda(["node", os.path.join(str(RAIZ), "scripts", "screenshot-prova.js"), "--check"],
+                     env={**os.environ, "NODE_PATH": os.pathsep.join(caminhos)})
     yield ("Playwright", "prints das referencias e prova de entrega (Chromium baixado)",
            CRITICIDADE["Playwright"], ok, saida.splitlines()[0][:110] if saida else "",
            "npm i -g playwright && npx playwright install chromium")

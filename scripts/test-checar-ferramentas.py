@@ -60,6 +60,10 @@ with tempfile.TemporaryDirectory() as _tmp:
 
 _fonte_chk = (AQUI / "checar-ferramentas.py").read_text(encoding="utf-8")
 _linhas_add = [l for l in _fonte_chk.splitlines() if "skills add " in l]
+# No Windows o Python roda comando de texto pelo cmd.exe, que nao entende VAR="x" comando.
+# Variavel de ambiente vai pelo parametro env, nunca na frente do comando.
+checa("nenhum comando poe variavel de ambiente na frente (quebra no Windows)",
+      'NODE_PATH="' not in _fonte_chk and "env=" in _fonte_chk)
 checa("todo `skills add` instala global, sem pergunta e por copia (-g -y --copy)",
       bool(_linhas_add) and all("-g -y --copy" in l for l in _linhas_add),
       f"{sum('-g -y --copy' not in l for l in _linhas_add)} linha(s) sem as opcoes")
