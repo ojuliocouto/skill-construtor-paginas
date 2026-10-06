@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.5.0
+version: 3.5.1
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -193,6 +193,9 @@ pendências. Faltou uma linha do bloco = gate pulado = não entregue.
 ---
 
 ## Antes de começar e depois de terminar
+
+**Windows e Linux:** leia `references/sistemas.md` antes do primeiro comando (Git Bash no
+Windows, e todo `python3 <script>` roda por `node <dir-da-skill>/scripts/py.mjs <script>`).
 
 **Primeiro comando, em qualquer caminho:**
 
