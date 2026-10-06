@@ -167,11 +167,21 @@ def testar_21st():
     return True, f"chamada real ok: {busca['name']}(\"button\") devolveu resultado"
 
 
-def skill_existe(nome):
+def pastas_de_skills():
+    """Onde o Claude Code procura skill: a pasta de config (que pode vir de CLAUDE_CONFIG_DIR),
+    as pastas globais conhecidas e a pasta do projeto atual (./.claude/skills)."""
+    bases = []
+    cfg = os.environ.get("CLAUDE_CONFIG_DIR")
+    if cfg:
+        bases.append(Path(cfg) / "skills")
     for base in ("~/.claude/skills", "~/.agents/skills", "~/.claude-hubx/skills"):
-        if (Path(os.path.expanduser(base)) / nome).exists():
-            return True
-    return False
+        bases.append(Path(os.path.expanduser(base)))
+    bases.append(Path.cwd() / ".claude" / "skills")
+    return bases
+
+
+def skill_existe(nome):
+    return any((base / nome).exists() for base in pastas_de_skills())
 
 
 # (rotulo, papel, critico, ok, detalhe, como_resolver). Item opcional lento e nao checado
@@ -192,7 +202,7 @@ def checagens(opcionais=False):
 
     yield ("skill frontend-design", "plano visual antes do codigo (passo c do CRIAR)",
            CRITICIDADE["skill frontend-design"], skill_existe("frontend-design"), "",
-           "npx -y skills add anthropics/skills --skill frontend-design --agent claude-code")
+           "npx -y skills add anthropics/skills --skill frontend-design --agent claude-code -g -y --copy")
 
     # ---------------- daqui pra baixo, tudo opcional: nunca bloqueia ----------------
     try:
@@ -207,12 +217,12 @@ def checagens(opcionais=False):
     yield ("ffmpeg/ffprobe", "gate de video (so em pagina com video)", CRITICIDADE["ffmpeg/ffprobe"], ok,
            saida.splitlines()[0] if saida else "", "brew install ffmpeg")
 
-    TASTE = "npx skills add Leonxlnx/taste-skill"
+    TASTE = "npx skills add Leonxlnx/taste-skill -g -y --copy"
     for s, papel, fix in [
         ("design-taste-frontend", "segunda opiniao anti-slop (opcional)", TASTE),
         ("high-end-visual-design", "acabamento (opcional)", TASTE),
         ("animate", "movimento em React (opcional)",
-         "npx -y skills add https://github.com/delphi-ai/animate-skill --agent claude-code"),
+         "npx -y skills add https://github.com/delphi-ai/animate-skill --agent claude-code -g -y --copy"),
     ]:
         yield (f"skill {s}", papel, CRITICIDADE[f"skill {s}"], skill_existe(s), "", fix)
 

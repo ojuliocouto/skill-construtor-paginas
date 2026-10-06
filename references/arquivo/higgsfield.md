@@ -21,7 +21,7 @@ higgsfield auth login
 **4. Instalar as skills companheiras** (trazem geração de imagem, vídeo, áudio, 3D,
 brandkit, thumbnail, e mais):
 ```bash
-npx skills add higgsfield-ai/skills
+npx skills add higgsfield-ai/skills -g -y --copy
 ```
 
 **5. Selecionar o workspace.** PASSO QUE FALTA EM TODO TUTORIAL e trava tudo: sem

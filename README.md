@@ -64,7 +64,7 @@ Everything else (21st.dev, Stitch, Higgsfield, image generators, brand kits, ext
 | **Python 3.8+** | gates, audit registry, reference gate | yes |
 | **Node.js 18+** | Playwright, screenshots, visual gates | yes |
 | **Playwright with Chromium** (`npm i -g playwright && npx playwright install chromium`) | reference screenshots and delivery proof | yes |
-| **`frontend-design` skill** (`npx -y skills add anthropics/skills --skill frontend-design --agent claude-code`) | the visual plan | yes |
+| **`frontend-design` skill** (`npx -y skills add anthropics/skills --skill frontend-design --agent claude-code -g -y --copy`) | the visual plan | yes |
 | A web search tool in the agent session | finding the reference pages | yes (any search tool works) |
 | ffmpeg | video gate, only for pages with video | optional |
 | 21st.dev, Stitch, Higgsfield, Pexels key, extra design skills | optional reinforcements | optional |
@@ -80,10 +80,24 @@ python3 <skill-dir>/scripts/checar-ferramentas.py --opcionais  # also MCPs, Higg
 
 ```bash
 git clone https://github.com/ojuliocouto/skill-construtor-paginas.git ~/.claude/skills/construtor-paginas
-npx -y skills add anthropics/skills --skill frontend-design --agent claude-code
+npx -y skills add anthropics/skills --skill frontend-design --agent claude-code -g -y --copy
 npm i -g playwright && npx playwright install chromium
-python3 <skill-dir>/scripts/checar-ferramentas.py   # <skill-dir> = where you cloned it
+node <skill-dir>/scripts/py.mjs checar-ferramentas.py   # <skill-dir> = where you cloned it
 ```
+
+### Windows, macOS and Linux
+
+`scripts/py.mjs` is a small launcher that finds the Python on your machine (its command name differs between Windows, macOS and Linux) and turns on UTF-8 mode. Wherever this guide shows `python3 <skill-dir>/scripts/<script>.py`, `node <skill-dir>/scripts/py.mjs <script>.py` does the same on any system.
+
+| | Windows | macOS | Linux (Debian/Ubuntu, Fedora) |
+|---|---|---|---|
+| Node 18+ | `winget install -e --id OpenJS.NodeJS.LTS` | `brew install node` | installer or `nvm` from nodejs.org |
+| Python 3.8+ | `winget install -e --id Python.Python.3.12` | `brew install python` | `sudo apt install python3` / `sudo dnf install python3` |
+| Git | `winget install -e --id Git.Git` (ships Git Bash) | Apple Command Line Tools | `sudo apt install git` / `sudo dnf install git` |
+
+On Windows, run everything from Git Bash (or WSL), not plain PowerShell. The `-g` in the `skills add` command matters: without it the `frontend-design` skill is installed into the current folder instead of your user-level skills folder.
+
+Status: the skill was built and tested on macOS. Windows and Linux follow the path above and have not yet been run on a real machine.
 
 The skill activates on the next Claude Code session whenever you ask to create, clone, improve or edit a page. Optional: `hooks/pagina-skill-inject.py` is a `UserPromptSubmit` hook that injects a reminder to run the skill when it detects those intents. Wire it in `settings.json`:
 
@@ -111,7 +125,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.0)
+SKILL.md                       router (v3.5.1)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
