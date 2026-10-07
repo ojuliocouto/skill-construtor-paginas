@@ -1,0 +1,79 @@
+{
+  "nome": "demo-receitas",
+  "descricao": "Roteiro do demo de receitas: abre, rola até o meio, leva o mouse ao botão marcado com data-painel, clica, espera 1 s (o painel cobre a tela entre 0,83 e 1,28 s depois do clique), espera chegar ao destino e volta ao topo. Prova a receita painel-de-cor em vídeo; cada print é um quadro da prancha.",
+  "duracao_minima_s": 11,
+  "passos": [
+    {
+      "acao": "abrir"
+    },
+    {
+      "acao": "esperar_seletor",
+      "seletor": "h1",
+      "opcional": true
+    },
+    {
+      "acao": "esperar",
+      "ms": 2600
+    },
+    {
+      "acao": "print",
+      "nome": "abertura"
+    },
+    {
+      "acao": "rolar",
+      "y": 3000
+    },
+    {
+      "acao": "esperar",
+      "ms": 1600
+    },
+    {
+      "acao": "print",
+      "nome": "meio da pagina"
+    },
+    {
+      "acao": "mover_mouse",
+      "seletor": "[data-painel]"
+    },
+    {
+      "acao": "esperar",
+      "ms": 3500
+    },
+    {
+      "acao": "print",
+      "nome": "mouse no botao"
+    },
+    {
+      "acao": "clicar",
+      "seletor": "[data-painel]"
+    },
+    {
+      "acao": "esperar",
+      "ms": 1000
+    },
+    {
+      "acao": "print",
+      "nome": "painel cobrindo a tela"
+    },
+    {
+      "acao": "esperar",
+      "ms": 2200
+    },
+    {
+      "acao": "print",
+      "nome": "chegou ao destino"
+    },
+    {
+      "acao": "rolar",
+      "y": 0
+    },
+    {
+      "acao": "esperar",
+      "ms": 2400
+    },
+    {
+      "acao": "print",
+      "nome": "de volta ao topo"
+    }
+  ]
+}

@@ -42,7 +42,7 @@ Everything else (21st.dev, Stitch, Higgsfield, image generators, brand kits, ext
 | e. Build | in the order approved in the PLAN, with the tracking snippet when the PLAN asked for it; HTML + compiled Tailwind by default (React only when the project truly needs it), hero first and checked against the plan, freely licensed images chosen by what the references taught, license recorded | `gate-etapas.py registrar 4` |
 | f. Mechanical gates | no uppercase kicker or decorative numbers, dead utility classes, 12 real viewports (including one-line buttons up to 768 px and a button within 2 screens on phones), occluded text, symmetry of parallel items and columns (`gate-simetria.mjs`), on-screen text (widows, lowercase starts, repeated colored italics: `gate-texto.mjs`), every promise backed by a briefing line (`gate-verdade.py`), a publish folder with nothing but the page, no internal code comments and site icons generated from the current identity (`montar-dist.py` + `gate-publicacao.py` + `gerar-icones.mjs`), composition (no repeated section skeleton, no wireframe-looking drawings, a timeline that ends at its last marker, a person in the first screen when the audience is people, accent strokes at 3:1: `gate-composicao.mjs`), rhythm (`gate-ritmo.mjs`), per-section animation proof (`anim.mjs` + `prancha.py` + `gate-animacao.py`: at least 2% of pixels change between start and end in 1440 and 390, at most 2 sections share an animation type), images (`gate-imagens.py`: licenses, no repeated photo across sections by perceptual hash and source, sharpness of 100 or more, 60% photo in the first screen, "imagem ilustrativa" visible in the first screen), sticky overlap (`sobreposicao.mjs`), the pixel and the 5 events the PLAN asked for, bound by `data-evento` (`gate-rastreamento.py`), motion seen on a real visit (nothing finishes animating before it enters the screen at 300 px/s, no smooth scroll under reduced motion: `gate-movimento.mjs`), page identity, tool usage, references | each exit code recorded in `wave.py gate` |
 | g. Auditors | 9 lenses: `design-critic`, `assets-auditor`, `visual-auditor`, `motion-auditor`, `responsive-auditor`, `cro-auditor`, `a11y-auditor`, `content-auditor`, `comparacao-referencias`, run by an independent auditor subagent when the environment allows. The reference lens also answers, with `--gosto bonito|correto`, whether the page is beautiful or merely correct; "correct" sends it back to the visual plan. A self-review score never releases delivery | `wave.py checar` (every lens and gate ran) and `wave.py rodada` (the review cycle, which answers AUDITORIA INDEPENDENTE PENDENTE while any lens is `--origem autoavaliacao`) |
-| h. Proof | desktop 1440 and mobile 390 screenshots read by the agent, main interaction clicked, delivery block | `gate-etapas.py registrar 5` |
+| h. Proof | desktop 1440 and mobile 390 screenshots read by the agent, a scroll video (desktop and mobile) with its contact sheets read, main interaction clicked, delivery block | `gate-etapas.py registrar 5` |
 
 - **Auditors run as independent subagents when the environment allows it** (one per lens, in parallel, none seeing the others). When it does not, the same checks run sequentially, one lens at a time, and the record says it was a self-review.
 - **The `comparacao-referencias` lens** puts the page next to the strongest references, axis by axis. If it fails, the cycle refuses to close no matter how high the other scores are, and the agent goes back to the visual plan.
@@ -125,13 +125,15 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.2)
+SKILL.md                       router (v3.5.3)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
   pesquisa-de-referencias.md   how to find, capture, read and record references
   plano.md                     the PLAN step, the PLANO.md template and what its gate checks
   ritmo-e-animacao.md          signature moment, section skeletons and the animation proof
+  receitas-de-movimento.md     15 motion recipes extracted from the approved page (HTML, CSS, JS, no-JS and reduced-motion fallbacks)
+  receitas/demo.html           one self-contained page that shows every recipe working (opens from disk or over HTTP)
   imagem.md                    real photo before illustration, repetition, sharpness, notice
   densidade-servico-local.md   the 7 copy items of a local-service page
   vh-estavel.md                measured --vh instead of stretched vh
@@ -153,6 +155,12 @@ scripts/                       gates, capture, audit registry, tests
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.5.3
+
+- **Motion recipes** (`references/receitas-de-movimento.md`): the animations of the page the owner approved, as copyable recipes with the exact curve (`cubic-bezier(.2,.8,.2,1)`), durations and delays, the `.no-js` and reduced-motion fallbacks and the mobile cost. The PLAN's animation column now picks a recipe by name or declares `criação nova: <reason>`. `references/receitas/demo.html` runs all of them; `scripts/provar-receitas.mjs` proves in Chromium that every block changes pixels, that nothing is hidden with JavaScript off, and that reduced motion shows the same text. The colour-panel navigation recipe (the effect the owner liked in a prototype) is hardened: it only intercepts plain clicks on marked same-page links, covers 100% of the window, always releases the page (3 s ceiling), keeps focus, URL and the back button working, and is proved by `scripts/provar-painel.mjs`. The line-by-line text recipe re-splits after the font loads and when the width changes (`scripts/test-linhas.cjs` reproduces the defect with the original code).
+- **Motion lens aligned with the approved page**: the motion-auditor and AI-tell 2 now reject the SAME generic fade applied to everything, not the number of revealed items; one curve and one duration scale, each item entering when it reaches the screen, plus moments tied to the content.
+- **Scroll proof video** (`scripts/gravar-video.js`, `scripts/video/`, `roteiro-pagina.json`): records desktop and mobile from top to bottom at reading pace with Playwright's native recorder (no ffmpeg of your own, no OS-specific tool), plus a contact sheet per profile. Duration band 10 to 90 s in this skill. `gate-etapas.py registrar 5` now requires the two `.webm` files.
 
 ## Tests
 
@@ -176,6 +184,12 @@ python3 scripts/test-relatorio.py
 python3 scripts/test-gate-plano.py
 python3 scripts/test-secoes.py
 python3 scripts/test-animacao.py
+python3 scripts/test-receitas.py
+node scripts/test-painel.cjs
+node scripts/test-receitas-navegador.cjs
+node scripts/test-linhas.cjs
+node scripts/test-roteiro-de-video.cjs
+node scripts/test-gravar-video-integracao.cjs
 node scripts/test-previa-direcoes.cjs
 node scripts/test-capturar-referencias.cjs
 node scripts/test-gates-visuais.cjs

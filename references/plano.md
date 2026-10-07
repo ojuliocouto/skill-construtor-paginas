@@ -31,7 +31,9 @@ direção aqui custa uma conversa; depois do código, custa a página.
    Depois da ordem, a `### Composição por seção` (v3.5): uma tabela
    `| Seção | Desktop | Celular | Animação |`, uma linha por seção da ordem, sem célula vazia. A
    animação começa com o tipo, antes dos dois pontos, e é ligada ao conteúdo da seção; no
-   máximo 2 seções com o mesmo tipo (`references/ritmo-e-animacao.md`).
+   máximo 2 seções com o mesmo tipo (`references/ritmo-e-animacao.md`). **O tipo vem do
+   repertório** (`references/receitas-de-movimento.md`: use o nome da receita) **ou declara
+   `criação nova: <motivo>`**; uma seção sem receita nem motivo volta para o plano.
    O PLANO também nomeia o **momento assinatura** (v3.5): um elemento ligado ao assunto, que
    aparece em 3 ou mais seções e muda de estado ao longo da página.
 4. **Copy (d):** o texto de cada seção da ordem escolhida, na tabela

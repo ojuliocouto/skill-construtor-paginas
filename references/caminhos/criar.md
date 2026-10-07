@@ -226,8 +226,8 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    **Desenho lê de primeira, sem o texto:** retângulos e retas alinhadas (planta baixa, mesa
    de linhas) leem como wireframe e reprovam; traço fino e destaque com pelo menos 3:1 contra
    o que está embaixo deles (o amarelo da v5 estava a 2,07:1).
-3. **Movimento em CSS:** entrada do hero, 2 a 4 revelações nas seções-chave (no máximo uma por
-   seção), hover e microinteração no botão, `prefers-reduced-motion` respeitado. Conteúdo
+3. **Movimento em CSS:** entrada do hero, cada item revelado quando ELE entra na tela (gramática
+   única de curva e duração) mais momentos próprios ligados ao conteúdo, hover e microinteração no botão, `prefers-reduced-motion` respeitado. Conteúdo
    nunca depende de animação para aparecer. **Revele só o que entra na tela:** nada de
    `setTimeout` que marca tudo como visível (na v4, 3 s depois da carga as 6 seções já estavam
    reveladas com a página parada no topo, e a visita chegava em tudo parado); o
@@ -249,7 +249,9 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    inteira logo abaixo da primeira tela, por cima da foto (medido na v4).
    **Peso:** fonte só nos pesos e estilos usados (itálico de 144 KiB para 3 palavras foi achado
    da v3); CSS em linha na publicação (`montar-dist.py --css-em-linha`).
-3b. **Padrão da v7 na construção** (cada item custou retrabalho): o momento assinatura do plano
+3b. **Padrão da v7 na construção** (cada item custou retrabalho): a animação de cada seção sai
+   do repertório (`references/receitas-de-movimento.md`, com a página `references/receitas/demo.html`
+   para ver cada uma andando) ou declara `criação nova: <motivo>` no PLANO; o momento assinatura do plano
    aparece nas seções que ele listou; cada seção tem esqueleto, celular e animação próprios
    (`references/ritmo-e-animacao.md`); assimetria pedida no plano leva `data-assimetrico="motivo"`
    no contêiner (o `gate-simetria.mjs` a trata como aviso); carrossel no celular é composição, com
@@ -362,6 +364,14 @@ passe de gosto: tells antes e depois, o depois é 0.
 2. **Leia os PNGs com os próprios olhos** (Read): a página inteira para ritmo e composição, e
    recortes 1:1 para texto, rótulo e borda. Screenshot reduzido não aprova detalhe.
 3. A interação principal clicada nos dois viewports.
+3b. **Vídeo da rolagem, junto dos prints:** com a página servida, grave desktop e celular do topo ao
+   fim em ritmo de leitura:
+   `node <dir-da-skill>/scripts/gravar-video.js http://localhost:8765/ --saida <dir>/videos`
+   (usa o `roteiro-pagina.json` da pasta de scripts: abre, espera a abertura, rola meia janela a cada 1,5 s e
+   tira 7 quadros; leva de 30 a 70 s). **Leia as duas pranchas** (`prancha-desktop.png` e
+   `prancha-mobile.png`): o vídeo prova o movimento, a prancha prova o que apareceu em cada ponto.
+   Sem a rolagem chegar ao fim da página, a gravação reprova. Os dois `.webm` entram em
+   `video` na etapa 5; etapa sem vídeo não registra.
 4. Re-registrar a etapa 4 depois dos auditores é esperado (`references/gate-etapas.md`); depois:
    `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 5 --arquivo evidencias/etapa-5.json`
 5. Deploy (opcional para aluno): **sai só de `dist/`**, montada por `montar-dist.py` e aprovada

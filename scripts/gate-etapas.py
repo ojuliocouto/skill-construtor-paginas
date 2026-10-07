@@ -23,8 +23,27 @@ PAGINAS = {
     "2": ("direcao", "tipografia", "paleta", "imagem", "ritmo", "assinatura", "referencias_usadas", "foto_publico", "secoes"),
     "3": ("copy", "aprovacao", "sustentacao"),
     "4": ("primeiro_bloco", "stack", "imagens"),
-    "5": ("gates", "auditores", "claims", "contato", "passe_de_gosto", "prova", "pendencias"),
+    "5": ("gates", "auditores", "claims", "contato", "passe_de_gosto", "prova", "video", "pendencias"),
 }
+
+
+def videos_da_prova(projeto, doc):
+    """Etapa 5: a prova leva o vídeo da rolagem (gravar-video.js) junto dos prints, em desktop e celular."""
+    v = doc.get("video")
+    if not isinstance(v, dict) or not all(str(v.get(k) or "").strip() for k in ("desktop", "mobile")):
+        raise ValueError("Etapa 5: video é {desktop, mobile}, os dois .webm gravados por scripts/gravar-video.js (prova junto dos prints).")
+    achados = {}
+    for perfil in ("desktop", "mobile"):
+        p = (projeto / str(v[perfil])).resolve()
+        if not p.is_relative_to(projeto) or p.suffix.lower() != ".webm":
+            raise ValueError(f"Etapa 5: o vídeo de {perfil} precisa ser um .webm dentro do projeto.")
+        if not p.is_file() or p.stat().st_size == 0:
+            raise ValueError(f"Etapa 5: vídeo de {perfil} ausente ou vazio ({p.name}). Grave com scripts/gravar-video.js.")
+        with p.open("rb") as f:
+            if f.read(4).hex() != "1a45dfa3":
+                raise ValueError(f"Etapa 5: {p.name} não é um WebM (cabeçalho EBML ausente).")
+        achados[str(p.relative_to(projeto))] = digest(p)
+    return achados
 
 
 def gate_de_referencias(projeto):
@@ -111,6 +130,8 @@ def validar(projeto, arquivo, etapa, campos, perfil):
     if not isinstance(arquivos, list) or not arquivos:
         raise ValueError("Liste em arquivos as evidências reais desta etapa.")
     hashes = {}
+    if perfil == "paginas" and etapa == "5":
+        hashes.update(videos_da_prova(projeto, doc))
     for nome in arquivos:
         p = (projeto / nome).resolve()
         if not p.is_relative_to(projeto) or p == arquivo or p.name == REGISTRO:

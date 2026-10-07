@@ -1,5 +1,29 @@
 # Changelog
 
+## 3.5.3 (06/10/2026): receitas de movimento, lente alinhada e vídeo de prova
+
+O dono disse da página aprovada: "as animações da página ficaram foda, todas as páginas criadas com
+essa skill têm que ser criativas assim". O movimento dela não estava na skill.
+
+### Adicionado
+- `references/receitas-de-movimento.md`: 15 receitas (14 da v7 e o painel de cor na navegação interna, do protótipo v8) com HTML, CSS e JS reais, reserva sem
+  script e com movimento reduzido, custo no celular e a gramática de base (uma curva, 0,25 a 2,0 s,
+  observador 0,18 e -6%, estado escondido só atrás de `.js`).
+- `scripts/provar-painel.mjs`, `test-painel.cjs`, `roteiro-demo-receitas.json`: a prova do painel de cor (cobre 100% da janela, solta no fim, foco, endereço, voltar, só clique simples em link marcado, movimento reduzido, sem script, teto de tempo, token `--marca`, 390 e 360) e o vídeo do demo com o painel cobrindo a tela.
+- `references/receitas/demo.html`: página autocontida com um bloco por receita (`data-receita`).
+- `scripts/provar-receitas.mjs`, `test-receitas.py`, `test-receitas-navegador.cjs`, `test-linhas.cjs`
+  (+ `scripts/fixtures/`): a prova de pixel, sem script e movimento reduzido; o texto em linhas
+  re-divide depois da fonte e na mudança de largura (defeito medido na v7).
+- `scripts/gravar-video.js`, `scripts/video/*`, `scripts/roteiro-pagina.json` e dois testes: vídeo
+  da rolagem em desktop e celular (copiado do criador-dash; ação nova `rolar_pagina`; faixa 10 a 90 s).
+- `gate-etapas.py`: a etapa 5 exige o campo `video` (os dois `.webm`, conferidos e no SHA-256).
+
+### Alterado
+- `auditores.md` (lente de movimento) e `anti-vibe-coding.md` (sinal 2): reprova o MESMO fade em
+  bloco, não a quantidade de itens revelados; o teto fixo de revelações saiu de todos os arquivos.
+- `ritmo-e-animacao.md`, `plano.md` e `caminhos/criar.md`: a animação de cada seção sai do repertório
+  ou declara `criação nova: <motivo>`; o passo h cobra o vídeo.
+
 ## 3.5.0 (04/10/2026): o padrão da v7 vira regra e gate
 
 O dono reprovou a v6 da página do estúdio ("correta e genérica") e a v7 saiu muito melhor. O
