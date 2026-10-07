@@ -701,7 +701,7 @@ corpo. Movimento reduzido: `.barra { transition: none; }` (aparece sem deslizar)
 `data-receita`: `painel-de-cor`. Nome: **Painel de cor na navegação interna** (a 15ª receita; aprovada pelo dono em protótipo com "Gostei muito desse").
 
 **Quando usar:** página com 2 ou mais links internos de destaque, como o botão do topo que leva para a oferta ou o botão do fim que volta ao formulário. Ao clicar, um painel na cor da marca sobe e cobre a tela em 0,8 s, a página troca de posição por baixo e o painel sai por cima em 0,8 s (mais uma pausa de 0,45 s coberto). Cada clique custa cerca de 2,1 s.
-**Quando NÃO usar:** em link de menu que o visitante clica várias vezes seguidas (2,1 s por clique cansa: use só no botão principal, com `data-painel` nele e em mais nenhum); em página com um link interno só; em link para outra página ou para fora; quando o destino está na própria tela (o painel cobre um movimento que ninguém precisava).
+**Quando NÃO usar:** em link de menu que o visitante clica várias vezes seguidas (1,8 s por clique cansa: use só no botão principal, com `data-painel` nele e em mais nenhum); em página com um link interno só; em link para outra página ou para fora; quando o destino está na própria tela (o painel cobre um movimento que ninguém precisava).
 **Origem no protótipo v8:** `pagina-studio-v8-proto/_efeitos.js:76-106` e `_input.css:556-557` (o painel sobe em 0,77 s e sai em 0,79 s). Endurecido aqui: opt-in por `data-painel`, só clique simples em link da mesma página, `pushState` antes da rolagem (o botão voltar devolve a posição), foco no destino, pausa coberta que dá um quadro "cobre" mensurável, teto de tempo e cor pelo token `--marca`.
 
 ```html
@@ -719,7 +719,7 @@ corpo. Movimento reduzido: `.barra { transition: none; }` (aparece sem deslizar)
 ```js
 (function () {
   var reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var CURVA = 'cubic-bezier(.77,0,.175,1)', SOBE = 800, SEGURA = 450, SAI = 800, TETO = 3000;
+  var CURVA = 'cubic-bezier(.77,0,.175,1)', SOBE = 800, SEGURA = 150, SAI = 800, TETO = 3000;
   var painel = document.createElement('div');
   painel.className = 'painel-cor'; painel.setAttribute('aria-hidden', 'true');
   document.body.appendChild(painel);
@@ -770,5 +770,5 @@ corpo. Movimento reduzido: `.barra { transition: none; }` (aparece sem deslizar)
 **Garantias (cada uma medida por `scripts/provar-painel.mjs`, em 1440, 390 e 360 px):** na fase `cobre` o painel cobre 100% da janela e é o elemento no topo em 5 pontos; no fim a rolagem está no alvo (topo a 0 px), o painel não está ativo, não captura clique e não fica na frente; o foco vai para o título do destino e o endereço ganha o `#alvo`; o botão voltar tira o `#alvo` e devolve a rolagem; ctrl, cmd, shift, botão do meio, `target="_blank"`, link externo e link interno sem `data-painel` passam direto, sem cancelar o clique; a cor vem de `--marca` (trocar o token troca o painel) e o painel não tem filho nem texto; sem rolagem horizontal.
 **Teto de tempo:** se a animação não terminar (aba em segundo plano, navegador que pausa a animação), `TETO = 3000` ms leva ao destino e solta o painel: a página nunca fica coberta. A prova trava de propósito a API de animação e confere.
 **Reserva:** sem script a âncora comum funciona (alvo no topo, `#` no endereço). Movimento reduzido: não há painel (`display: none` e o script nem anima), vai direto ao alvo e atualiza o endereço.
-**Custo no celular:** baixo: um elemento fixo animado só por `transform`. O painel cobre a tela inteira por 0,45 s, então não leve texto nem logo nele (o gate de oclusão não vê o painel).
+**Custo no celular:** baixo: um elemento fixo animado só por `transform`. O painel cobre a tela inteira por 0,15 s, então não leve texto nem logo nele (o gate de oclusão não vê o painel).
 
