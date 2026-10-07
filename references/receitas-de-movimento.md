@@ -344,13 +344,13 @@ bloco de largura total (o título nunca solta). Regras e medidas em
 **Origem na v7:** `_input.css:135`.
 
 ```html
-<div class="fixo-grade"><h2>Título</h2><ul class="fixo-lista"><li>Item</li></ul></div>
+<div class="fixo-grade"><div class="fixo-titulo"><h2>Título</h2></div><ul class="fixo-lista"><li>Item</li></ul></div>
 ```
 
 ```css
 @media (min-width: 1024px) {
   .fixo-grade { display: grid; grid-template-columns: 4fr 7fr; gap: 64px; }
-  .fixo-grade h2 { position: sticky; top: calc(var(--vh, 1vh) * 15); align-self: start; }
+  .fixo-titulo { position: sticky; top: calc(var(--vh, 1vh) * 15); align-self: start; }
 }
 ```
 

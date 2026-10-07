@@ -91,7 +91,7 @@ img, svg { display: block; max-width: 100%; }
 .fixo-grade { display: grid; gap: 28px; margin-top: 8px; }
 .fixo-lista { display: grid; gap: 22px; padding: 0; margin: 0; list-style: none; }
 .fixo-lista li { padding: 22px 24px; background: var(--fundo); border-radius: 16px; min-height: 120px; }
-@media (min-width: 1024px) { .fixo-grade { grid-template-columns: 4fr 7fr; gap: 64px; } .fixo-grade h2 { position: sticky; top: calc(var(--vh, 1vh) * 15); align-self: start; } }
+@media (min-width: 1024px) { .fixo-grade { grid-template-columns: 4fr 7fr; gap: 64px; } .fixo-titulo { position: sticky; top: calc(var(--vh, 1vh) * 15); align-self: start; } }
 
 /* revelar-ao-entrar */
 .cartoes { display: grid; gap: 18px; margin-top: 36px; padding: 0; list-style: none; }
@@ -303,8 +303,8 @@ img, svg { display: block; max-width: 100%; }
 
   <section class="bloco" data-receita="titulo-fixo" data-gatilho="rolagem">
     <div class="moldura fixo-grade">
-      <p class="selo">Receita: <code>titulo-fixo</code></p>
-      <h2>Título que fica enquanto a lista passa</h2>
+      <div class="fixo-titulo"><p class="selo">Receita: <code>titulo-fixo</code></p>
+      <h2>Título que fica enquanto a lista passa</h2></div>
       <ul class="fixo-lista">
         <li><h3>Primeiro item</h3><p>O título ao lado permanece preso no topo, a 15% da altura medida da tela.</p></li>
         <li><h3>Segundo item</h3><p>Funciona só em tela larga: no celular a coluna única segue o fluxo normal.</p></li>

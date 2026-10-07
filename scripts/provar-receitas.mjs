@@ -202,6 +202,24 @@ for (const [tn, tela, opc] of TELAS) {
   }
 }
 
+// 1b. Título fixo: em tela larga o título fica à esquerda da lista e não sai do lugar enquanto a lista passa
+if (!SO || SO === 'titulo-fixo') {
+  const ctx = await navegador.newContext({ viewport: TELAS[0][1] });
+  const p = await ctx.newPage();
+  await p.goto(URL_ALVO, { waitUntil: 'load' });
+  const topo = await p.evaluate(() => document.querySelector('[data-receita="titulo-fixo"]').getBoundingClientRect().top + window.scrollY);
+  const medir = () => p.evaluate(() => { const t = document.querySelector('[data-receita="titulo-fixo"] h2').getBoundingClientRect(), l = document.querySelector('[data-receita="titulo-fixo"] .fixo-lista').getBoundingClientRect(); return { tituloY: Math.round(t.top), tituloEsquerda: t.left < l.left }; });
+  await rolarPara(p, topo + 200); await espera(400);
+  const a = await medir();
+  await rolarPara(p, topo + 500); await espera(400);
+  const b = await medir();
+  const ok = a.tituloEsquerda && b.tituloEsquerda && a.tituloY === b.tituloY;
+  resultado.titulo_fixo = { a, b, ok };
+  if (!ok) falhou = true;
+  console.log((ok ? 'OK    ' : 'FALHOU') + ' título fixo: à esquerda=' + a.tituloEsquerda + ', y ' + a.tituloY + ' e ' + b.tituloY);
+  await ctx.close();
+}
+
 // 2. Sem script: nada com opacidade zero ou escondido, e o conteúdo está lá
 {
   const ctx = await navegador.newContext({ viewport: TELAS[0][1], javaScriptEnabled: false });
