@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.5.2
+version: 3.5.3
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -143,7 +143,7 @@ Detalhe, comandos e gates de cada passo: `references/caminhos/criar.md`.
 | e. Construção | HTML + Tailwind compilado na ordem do PLANO, hero primeiro, imagens com licença, pixel se pedido | `gate-plano.py` verde antes e `registrar 4` |
 | f. Gates mecânicos | sem kicker, classes mortas, 12 telas, oclusão, simetria, texto, ritmo, animação (prancha por seção), imagens, verdade, publicação, identidade, uso, referências, rastreamento | cada exit no `wave.py gate` |
 | g. Auditores | 9 lentes por subagente independente, ciclo fechado, passe de gosto com 0 tells | `wave.py checar` e `wave.py rodada` |
-| h. Prova | prints desktop 1440 e celular 390 e 360 lidos, clique testado, deploy só da `dist/`, bloco de entrega | `registrar 5` |
+| h. Prova | prints desktop 1440 e celular 390 e 360 lidos, vídeo da rolagem, clique testado, deploy só da `dist/`, bloco de entrega | `registrar 5` |
 
 **Ordem:** briefing, referências, PLANO aprovado, plano visual, copy, código. O PLANO vem das
 referências e é do aluno; o plano visual detalha a direção que ele escolheu; a copy é a que ele

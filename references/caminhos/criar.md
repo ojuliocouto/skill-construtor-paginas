@@ -364,6 +364,14 @@ passe de gosto: tells antes e depois, o depois é 0.
 2. **Leia os PNGs com os próprios olhos** (Read): a página inteira para ritmo e composição, e
    recortes 1:1 para texto, rótulo e borda. Screenshot reduzido não aprova detalhe.
 3. A interação principal clicada nos dois viewports.
+3b. **Vídeo da rolagem, junto dos prints:** com a página servida, grave desktop e celular do topo ao
+   fim em ritmo de leitura:
+   `node <dir-da-skill>/scripts/gravar-video.js http://localhost:8765/ --saida <dir>/videos`
+   (usa o `roteiro-pagina.json` da pasta de scripts: abre, espera a abertura, rola meia janela a cada 1,5 s e
+   tira 7 quadros; leva de 30 a 70 s). **Leia as duas pranchas** (`prancha-desktop.png` e
+   `prancha-mobile.png`): o vídeo prova o movimento, a prancha prova o que apareceu em cada ponto.
+   Sem a rolagem chegar ao fim da página, a gravação reprova. Os dois `.webm` entram em
+   `video` na etapa 5; etapa sem vídeo não registra.
 4. Re-registrar a etapa 4 depois dos auditores é esperado (`references/gate-etapas.md`); depois:
    `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 5 --arquivo evidencias/etapa-5.json`
 5. Deploy (opcional para aluno): **sai só de `dist/`**, montada por `montar-dist.py` e aprovada

@@ -126,5 +126,58 @@ class Etapas(unittest.TestCase):
         self.assertEqual(self.validar('3', base), 0)
 
 
+    # Fatia C (06/10/2026): a prova de entrega leva o VÍDEO da rolagem junto dos prints.
+    def etapa5(self, **extra):
+        base = {'gates': 'g', 'auditores': 'a', 'claims': 'c', 'contato': 'x', 'prova': 'prints lidos',
+                'pendencias': ['nenhuma'], 'passe_de_gosto': {'antes': 2, 'depois': 0, 'inspecao': 'percorri a página'},
+                'arquivos': ['briefing.txt']}
+        base.update(extra)
+        return base
+
+    def webm(self, nome, conteudo=None):
+        (self.pasta / 'videos').mkdir(exist_ok=True)
+        (self.pasta / 'videos' / nome).write_bytes(conteudo if conteudo is not None else bytes.fromhex('1a45dfa3') + b'\x00' * 64)
+        return 'videos/' + nome
+
+    def test_etapa_5_sem_video_nao_registra(self):
+        self.assertEqual(self.validar('5', self.etapa5()), 1)
+
+    def test_etapa_5_exige_video_de_desktop_e_de_celular_que_existam(self):
+        d, m = self.webm('video-desktop.webm'), self.webm('video-mobile.webm')
+        self.assertEqual(self.validar('5', self.etapa5(video={'desktop': d})), 1, 'falta o celular')
+        self.assertEqual(self.validar('5', self.etapa5(video={'desktop': d, 'mobile': 'videos/nao-existe.webm'})), 1)
+        self.assertEqual(self.validar('5', self.etapa5(video='videos/x.webm')), 1, 'precisa ser {desktop, mobile}')
+        self.assertEqual(self.validar('5', self.etapa5(video={'desktop': d, 'mobile': m})), 0)
+
+    def test_etapa_5_recusa_video_vazio_ou_que_nao_e_webm(self):
+        d = self.webm('video-desktop.webm')
+        vazio = self.webm('vazio.webm', b'')
+        lixo = self.webm('lixo.webm', b'isto nao e um video de verdade, so texto')
+        self.assertEqual(self.validar('5', self.etapa5(video={'desktop': d, 'mobile': vazio})), 1)
+        self.assertEqual(self.validar('5', self.etapa5(video={'desktop': d, 'mobile': lixo})), 1)
+
+    def test_etapa_5_video_fora_do_projeto_e_recusado(self):
+        d = self.webm('video-desktop.webm')
+        self.assertEqual(self.validar('5', self.etapa5(video={'desktop': d, 'mobile': '../fora.webm'})), 1)
+
+    def test_etapa_5_o_video_entra_na_integridade(self):
+        for e in ('0', '1', '2', '3', '4'):
+            self.registrar_fake(e)
+        d, m = self.webm('video-desktop.webm'), self.webm('video-mobile.webm')
+        self.doc = self.etapa5(video={'desktop': d, 'mobile': m})
+        self.assertEqual(self.rodar('registrar', '5', '--arquivo', 'etapa.json'), 0)
+        self.assertEqual(self.rodar('checar', '5'), 0)
+        (self.pasta / m).write_bytes(bytes.fromhex('1a45dfa3') + b'\x01' * 64)
+        self.assertEqual(self.rodar('checar', '5'), 1, 'trocar o vídeo depois de registrar invalida a etapa')
+
+    def registrar_fake(self, etapa):
+        """Grava direto no registro as etapas anteriores, só para testar a 5 em sequência."""
+        import hashlib
+        alvo = self.pasta / '.etapas-verificadas.json'
+        reg = json.loads(alvo.read_text()) if alvo.exists() else {}
+        reg[etapa] = {'hashes': {'briefing.txt': hashlib.sha256((self.pasta / 'briefing.txt').read_bytes()).hexdigest()}}
+        alvo.write_text(json.dumps(reg))
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

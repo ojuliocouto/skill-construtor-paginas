@@ -17,7 +17,7 @@ cópias estáveis dos documentos aprovados: modificar a evidência invalida a et
 | 2 | c. plano visual | `direcao`, `tipografia`, `paleta`, `imagem`, `ritmo`, `assinatura`, `referencias_usadas`, `foto_publico` (lista de `{publico, foto, porque}`, uma linha por foto de pessoa), `secoes` (lista de `{secao, tratamento, referencia}`, 3 ou mais, nunca o mesmo tratamento em 3 seções seguidas) e, se houver desenho, `icones` (lista de `{secao, desenha}`; metáfora de biblioteca como balão, calendário, check ou boneco de palito reprova) |
 | 3 | d. copy | `copy`, `aprovacao`, `sustentacao` (caminho da tabela `evidencias/sustentacao.md`, a mesma que o `gate-verdade.py` lê) |
 | 4 | e. construção | `primeiro_bloco`, `stack`, `imagens` (cada imagem com fonte e licença) |
-| 5 | f, g, h. gates, auditores e prova | `gates`, `auditores`, `claims`, `contato`, `passe_de_gosto`, `prova`, `pendencias` |
+| 5 | f, g, h. gates, auditores e prova | `gates`, `auditores`, `claims`, `contato`, `passe_de_gosto`, `prova`, `video` (`{"desktop": "videos/video-desktop.webm", "mobile": "videos/video-mobile.webm"}`, os dois gravados por `scripts/gravar-video.js` e lidos pela prancha; o gate confere que existem, não estão vazios e são WebM, e entram no SHA-256), `pendencias` |
 
 Todas as etapas também exigem `arquivos`: lista de arquivos não vazios dentro do projeto.
 Fato que falta no briefing (preço, número do WhatsApp) entra como `"Pendente: ..."`, nunca

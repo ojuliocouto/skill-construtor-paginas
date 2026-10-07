@@ -1,0 +1,13 @@
+{
+  "nome": "pagina",
+  "descricao": "Abre a página, espera a abertura animar, rola do topo ao fim em ritmo de leitura (meia janela a cada 1,5 s, cerca de 300 px por segundo) e termina no rodapé. Serve a qualquer página sem editar. Roda em desktop e celular.",
+  "duracao_minima_s": 11,
+  "passos": [
+    { "acao": "abrir" },
+    { "acao": "esperar_seletor", "seletor": "h1", "opcional": true },
+    { "acao": "esperar", "ms": 2600 },
+    { "acao": "print", "nome": "abertura" },
+    { "acao": "rolar_pagina", "passo": 0.5, "espera_ms": 1500, "max_passos": 45, "prints": 5 },
+    { "acao": "print", "nome": "fim da pagina" }
+  ]
+}
