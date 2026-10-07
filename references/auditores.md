@@ -99,11 +99,18 @@ ritmo entre seções. Imagem com `loading="lazy"` precisa ter carregado antes do
 fonte fora do plano visual, crop que corta rosto ou objeto principal.
 
 ### 4. motion-auditor (movimento)
-Entrada do hero, 2 a 4 revelações nas seções-chave (nunca em todo elemento), hover e
-microinteração no botão, `prefers-reduced-motion` respeitado. Movimento que nunca termina (fica
-em opacity 0 se o observer falhar) é crítico.
+Entrada do hero em escada; cada item revelado quando ELE chega na tela (a v7 aprovada pelo dono
+revela 24 elementos, um a um, em 0,8 s, com observador de limiar 0,18 e margem de -6%); mais os
+momentos próprios ligados ao conteúdo (traço que desenha a marca, barras que crescem, vagas que
+se preenchem, a assinatura que muda de estado); hover e microinteração no botão;
+`prefers-reduced-motion` respeitado. A base é única: uma curva (`cubic-bezier(.2,.8,.2,1)`) e uma
+escala de duração (0,25 a 2,0 s), com as receitas de `references/receitas-de-movimento.md`.
+Movimento que nunca termina (fica em opacity 0 se o observer falhar) é crítico.
 **Reprova (crítico) se:** conteúdo que pode ficar invisível, animação sem respeitar
-reduced-motion.
+reduced-motion. **Reprova (maior) se:** o MESMO fade aplicado em bloco a tudo (tudo entra junto,
+ou tudo com a mesma animação sem ligação com o conteúdo, o sinal 2 do `anti-vibe-coding.md`) ou
+se a página só tem fade e nenhum momento próprio. Quantidade de itens revelados não reprova;
+repetição sem ligação com o conteúdo reprova.
 
 ### 5. responsive-auditor (12 telas)
 Roda `scripts/gate-responsivo.mjs` e olha os prints do celular em recortes 1:1.

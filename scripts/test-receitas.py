@@ -134,6 +134,34 @@ class Travessao(unittest.TestCase):
         self.assertEqual(ruins, [])
 
 
+class LenteDeMovimento(unittest.TestCase):
+    """Fatia B: a lente de movimento e o sinal 2 dizem o que a v7 aprovada faz de fato."""
+
+    def arquivos(self):
+        for q in sorted(RAIZ.glob("**/*.md")):
+            if {".git", "arquivo", "sessions", "projects"} & set(q.relative_to(RAIZ).parts):
+                continue
+            yield q, ler(q)
+
+    def test_nenhum_arquivo_manda_revelar_so_2_a_4_secoes(self):
+        ruins = [f"{q.name}" for q, t in self.arquivos() if re.search(r"2 a 4\s+(revela|seç)|nunca em todo elemento|Animar só o que tem hierarquia", re.sub(r"\s+", " ", t))]
+        self.assertEqual(ruins, [])
+
+    def test_lente_de_movimento_cita_a_v7_com_os_numeros(self):
+        a = re.sub(r"\s+", " ", ler(REF / "auditores.md"))
+        trecho = a[a.index("### 4. motion-auditor"):a.index("### 5. responsive-auditor")]
+        for item in ("24 elementos", "ELE chega na tela", "0,18", "-6%", "cubic-bezier(.2,.8,.2,1)", "0,25 a 2,0 s", "momentos próprios", "MESMO fade", "receitas-de-movimento.md"):
+            self.assertIn(item, trecho, item)
+        self.assertIn("Quantidade de itens revelados não reprova", trecho)
+
+    def test_sinal_2_condena_o_fade_igual_e_nao_a_quantidade(self):
+        a = ler(REF / "anti-vibe-coding.md")
+        linha = [l for l in a.splitlines() if l.startswith("| 2 |")][0]
+        for item in ("MESMO fade", "tudo entra junto", "sem ligação com o conteúdo", "24", "ELE entra na tela", "MAIS momentos próprios"):
+            self.assertIn(item, linha, item)
+        self.assertNotIn("Cada card, cada parágrafo animando", linha)
+
+
 class Ligacao(unittest.TestCase):
     """O repertório só serve se o fluxo manda escolher dele."""
 

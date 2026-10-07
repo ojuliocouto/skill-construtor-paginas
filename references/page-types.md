@@ -169,8 +169,8 @@ pelo WhatsApp não é capture curta nem sales page, e a skill não tinha o tipo.
 ```
 STACK DEFINIDA: HTML + Tailwind compilado (npx tailwindcss@3, passo e do CRIAR), SEM React.
   Página curta, uma ação (agendar), sem oferta empilhada nem checkout: React + Vite só
-  adiciona build e peso. Movimento em CSS (entrada do hero, reveal em 2 a 4 seções,
-  hover no botão). Exceção: o projeto do cliente já roda em React, ai vira rota dele.
+  adiciona build e peso. Movimento em CSS (entrada do hero, cada item revelado ao entrar na
+  tela, momentos próprios ligados ao conteúdo, hover no botão). Exceção: o projeto do cliente já roda em React, ai vira rota dele.
 
 Seções (nesta ordem, 6 a 8):
 1. Hero split: headline com o público e a dor + subtítulo com cidade/bairro + botão de agendar
