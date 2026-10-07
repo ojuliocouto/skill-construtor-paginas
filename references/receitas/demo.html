@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="pt-BR" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Repertório de movimento</title>
+<meta name="description" content="Demonstração das receitas de movimento da skill construtor-paginas, com texto fictício.">
+<script>document.documentElement.classList.replace('no-js','js')</script>
+<style>
+:root { --fundo: #f4f1ea; --papel: #fffdf8; --areia: #e4dccb; --tinta: #3b3f3a; --escuro: #1f2622; --verde: #4f7a63; --claro: #cfe3d6; --gutter: clamp(16px, 4.4vw, 64px); }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--fundo); color: var(--escuro); font-size: 1.0625rem; line-height: 1.6; }
+h1, h2, h3, summary { font-family: Georgia, "Times New Roman", serif; font-weight: 400; text-wrap: balance; letter-spacing: -0.01em; margin: 0; }
+p, li { text-wrap: pretty; }
+img, svg { display: block; max-width: 100%; }
+:focus-visible { outline: 3px solid var(--verde); outline-offset: 3px; }
+.moldura { width: 100%; max-width: 1180px; margin-inline: auto; padding-inline: var(--gutter); }
+.bloco { padding-block: clamp(56px, 8vw, 112px); position: relative; }
+.bloco:nth-of-type(even) { background: var(--papel); }
+.bloco h2 { font-size: clamp(1.9rem, 3.4vw, 3rem); line-height: 1.05; }
+.nota { color: var(--tinta); max-width: 40rem; margin-top: 12px; }
+.nota code, .selo code { font-size: .9em; }
+.selo { margin-top: 10px; font-size: .9375rem; color: var(--tinta); }
+
+/* Botão */
+.botao { display: inline-flex; align-items: center; justify-content: center; gap: .75rem; min-height: 52px; padding: .8rem 1.4rem .8rem 1.5rem; border-radius: 14px; background: var(--escuro); color: var(--papel); font-weight: 600; text-decoration: none; transition: background-color .25s ease, transform .25s ease, box-shadow .25s ease; box-shadow: 0 1px 0 rgba(31,38,34,.2); }
+.botao svg { width: 20px; height: 20px; transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+.botao:hover { background: #3a4a41; transform: translateY(-2px); box-shadow: 0 10px 24px -12px rgba(31,38,34,.55); }
+.botao:hover svg { transform: translateX(4px); }
+
+/* abertura-do-topo */
+.abertura { display: grid; gap: 32px; align-items: center; padding-block: clamp(40px, 6vw, 88px); }
+.abertura h1 { font-size: clamp(2.6rem, 6vw, 5rem); line-height: .98; }
+.abertura .abre { margin-top: 20px; max-width: 34rem; font-size: 1.1875rem; }
+.abertura .acoes { margin-top: 28px; }
+.abertura .fatos { margin: 28px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px 22px; color: var(--tinta); }
+.cena-quadro { overflow: hidden; border-radius: 22px; aspect-ratio: 4 / 5; background: var(--areia); }
+.cena-quadro svg { width: 100%; height: 100%; }
+@media (min-width: 900px) { .abertura { grid-template-columns: 7fr 5fr; gap: 64px; } }
+.js .abertura-entra { opacity: 0; transform: translateY(22px); animation: sobe .9s cubic-bezier(.2,.8,.2,1) forwards; }
+.js .abertura-entra.d1 { animation-delay: .12s; } .js .abertura-entra.d2 { animation-delay: .26s; } .js .abertura-entra.d3 { animation-delay: .4s; }
+.js .abertura-foto .cena-quadro { animation: abreFoto 1.3s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes sobe { to { opacity: 1; transform: none; } }
+@keyframes abreFoto { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* paralaxe-da-foto */
+.paralaxe-grade { display: grid; gap: 32px; align-items: center; }
+.paralaxe-quadro { overflow: hidden; border-radius: 22px; aspect-ratio: 16 / 10; background: var(--areia); }
+.paralaxe-quadro svg { width: 100%; height: 100%; will-change: transform; }
+@media (min-width: 900px) { .paralaxe-grade { grid-template-columns: 5fr 7fr; gap: 64px; } }
+
+/* assinatura-em-tres-estados */
+.assin { background: var(--escuro) !important; color: var(--papel); }
+.assin .nota, .assin .selo { color: #d8e3dc; }
+.assin-grade { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 22px; align-items: start; margin-top: 40px; }
+.assin-coluna { position: sticky; top: calc(var(--vh, 1vh) * 12); height: calc(var(--vh, 1vh) * 70); }
+.assin-coluna svg { height: 100%; width: 100%; overflow: visible; }
+.coluna .peca rect { fill: #33403a; stroke: #a9bcb0; stroke-width: 1.2; transition: fill .45s ease; }
+.coluna .peca.alinhada rect { fill: var(--verde); stroke: var(--claro); }
+.coluna .fio { fill: none; stroke: #a9bcb0; stroke-width: 1.4; stroke-dasharray: 2 5; opacity: .7; }
+.peca-dentro { transform-box: fill-box; transform-origin: center; }
+.js .coluna.entra-pecas .peca-dentro { opacity: 0; }
+.js .coluna.entra-pecas.visivel .peca-dentro { animation: pecaEntra .7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(.45s + var(--i) * .05s); }
+@keyframes pecaEntra { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+.passos { position: relative; display: grid; gap: 0; }
+.passos::before { content: ""; position: absolute; left: 7px; top: 14px; width: 1.5px; height: var(--altura-linha, 0px); background: rgba(216,227,220,.25); }
+.passos::after { content: ""; position: absolute; left: 7px; top: 14px; width: 1.5px; background: var(--claro); height: calc(var(--altura-linha, 0px) * var(--enche, 0)); }
+.passo { position: relative; padding: 0 0 clamp(48px, calc(var(--vh, 1vh) * 12), 110px) 40px; min-height: calc(var(--vh, 1vh) * 34); }
+.passo:last-child { padding-bottom: 0; min-height: 0; }
+.passo .marco { position: absolute; left: 0; top: 8px; width: 16px; height: 16px; border-radius: 6px; border: 1.5px solid #8ea296; background: var(--escuro); transition: background-color .4s ease, border-color .4s ease, transform .4s ease; }
+.passo.ativo .marco { background: var(--claro); border-color: var(--claro); transform: scale(1.15); }
+.passo h3 { font-size: clamp(1.4rem, 2.2vw, 2rem); line-height: 1.1; }
+.passo p { margin: 10px 0 0; color: #d8e3dc; max-width: 32rem; }
+.alinha-sozinha { margin-top: clamp(48px, 7vw, 96px); display: grid; gap: 28px; align-items: center; justify-items: start; }
+.alinha-sozinha .coluna-solta { width: 96px; height: 300px; }
+.alinha-sozinha .coluna-solta svg { width: 100%; height: 100%; overflow: visible; }
+@media (min-width: 900px) { .assin-grade { grid-template-columns: 5fr 7fr; gap: 64px; } .assin-coluna svg { width: 46%; margin-inline: auto; } .alinha-sozinha { grid-template-columns: 120px 1fr; } }
+
+/* texto-em-linhas */
+.linhas-grade { display: grid; gap: 28px; margin-top: 36px; }
+.linhas-grade li { font-family: Georgia, serif; font-size: clamp(1.4rem, 2.4vw, 2.1rem); line-height: 1.18; max-width: 24ch; list-style: none; }
+.linhas-grade { padding: 0; }
+.linhas-grade li > span { display: block; font-family: system-ui, sans-serif; font-size: 1rem; line-height: 1.55; color: var(--tinta); margin-top: 8px; max-width: 40ch; }
+.js [data-linhas].dividido .linha { display: block; opacity: 0; transform: translateY(.45em); clip-path: inset(0 0 100% 0); transition: opacity .7s ease, transform .95s cubic-bezier(.2,.8,.2,1), clip-path .95s cubic-bezier(.2,.8,.2,1); transition-delay: var(--d, 0s); }
+.js [data-linhas].dividido.visivel .linha { opacity: 1; transform: none; clip-path: inset(-10% 0 -25% 0); }
+
+/* titulo-fixo */
+.fixo-grade { display: grid; gap: 28px; margin-top: 8px; }
+.fixo-lista { display: grid; gap: 22px; padding: 0; margin: 0; list-style: none; }
+.fixo-lista li { padding: 22px 24px; background: var(--fundo); border-radius: 16px; min-height: 120px; }
+@media (min-width: 1024px) { .fixo-grade { grid-template-columns: 4fr 7fr; gap: 64px; } .fixo-grade h2 { position: sticky; top: calc(var(--vh, 1vh) * 15); align-self: start; } }
+
+/* revelar-ao-entrar */
+.cartoes { display: grid; gap: 18px; margin-top: 36px; padding: 0; list-style: none; }
+.cartoes li { background: var(--fundo); border-radius: 16px; padding: 24px; }
+.cartoes h3 { font-size: 1.35rem; }
+.cartoes p { margin: 8px 0 0; color: var(--tinta); }
+@media (min-width: 900px) { .cartoes { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.js .revela { opacity: 0; transform: translateY(26px); transition: opacity .8s ease, transform .8s cubic-bezier(.2,.8,.2,1); }
+.js .revela.visivel { opacity: 1; transform: none; }
+
+/* foto-que-desliza */
+.desliza-grade { display: grid; gap: 32px; align-items: center; }
+.arco { margin: 0; }
+.arco .quadro { overflow: hidden; aspect-ratio: 4 / 5; border-radius: 999px 999px 18px 18px; background: var(--areia); }
+.arco svg { width: 100%; height: 100%; }
+.arco figcaption { margin-top: 14px; font-size: .9rem; color: var(--tinta); }
+@media (min-width: 900px) { .desliza-grade { grid-template-columns: 5fr 7fr; gap: 64px; } }
+.js .desliza { transform: translateY(30px); transition: transform 1.1s cubic-bezier(.2,.8,.2,1); }
+.js .desliza.visivel { transform: none; }
+.js .revela-foto img, .js .revela-foto svg { transform: scale(1.08); transition: transform 1.6s cubic-bezier(.2,.8,.2,1); }
+.js .revela-foto.visivel img, .js .revela-foto.visivel svg { transform: none; }
+.js .revela-foto .quadro { clip-path: inset(12% 0 0 0); transition: clip-path 1.1s cubic-bezier(.2,.8,.2,1); }
+.js .revela-foto.visivel .quadro { clip-path: inset(0 0 0 0); }
+
+/* vagas-que-se-preenchem */
+.vagas { display: flex; gap: 10px; margin-top: 24px; }
+.vagas i { width: 46px; height: 14px; border-radius: 7px; border: 1.5px solid var(--verde); background: transparent; transition: background-color .35s ease, transform .35s ease; }
+.vagas i.cheia, .no-js .vagas i { background: var(--verde); }
+.vagas i.cheia { transform: scaleY(1.15); }
+.contador { display: inline-block; }
+.contador.pulsa { animation: pulsa .7s cubic-bezier(.2,.8,.2,1); color: var(--verde); transition: color .6s ease; }
+@keyframes pulsa { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
+
+/* traco-que-se-desenha */
+.marcas { display: grid; gap: 14px; margin: 28px 0 0; padding: 0; list-style: none; width: max-content; max-width: 100%; }
+.marcas li { display: flex; gap: 12px; align-items: flex-start; }
+.marcas li svg { flex: none; width: 32px; height: 32px; }
+.marcas .traco { stroke-dasharray: 30; stroke-dashoffset: 30; transition: stroke-dashoffset .7s ease; }
+.marcas li:nth-child(2) .traco { transition-delay: .2s; } .marcas li:nth-child(3) .traco { transition-delay: .4s; } .marcas li:nth-child(4) .traco { transition-delay: .6s; }
+.marcas.visivel .traco, .no-js .marcas .traco { stroke-dashoffset: 0; }
+.contorno-quadro { position: relative; margin-top: 36px; max-width: 320px; }
+.contorno-quadro .caixa { aspect-ratio: 4 / 5; border-radius: 999px 999px 22px 22px; background: var(--areia); position: relative; z-index: 1; }
+.arco-traco { position: absolute; z-index: 0; left: 14px; top: 14px; width: 100%; aspect-ratio: 4 / 5; height: auto; pointer-events: none; overflow: visible; }
+.arco-traco path { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.js .contorno .arco-traco path { stroke-dashoffset: 1; transition: stroke-dashoffset 1.8s cubic-bezier(.4,.1,.2,1) .3s; }
+.js .contorno.visivel .arco-traco path { stroke-dashoffset: 0; }
+
+/* faixa-de-figuras */
+.faixa { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px var(--gutter) 8px; margin-top: 32px; }
+.faixa figure { flex: none; width: min(72vw, 280px); margin: 0; scroll-snap-align: start; }
+.faixa .cena-quadro { aspect-ratio: 4 / 5; border-radius: 16px; }
+.faixa figcaption { margin-top: 10px; font-size: .95rem; color: var(--tinta); }
+.faixa-pontos { display: flex; gap: 8px; margin-top: 18px; padding-inline: var(--gutter); }
+.faixa-pontos i { width: 22px; height: 4px; border-radius: 2px; background: rgba(79,122,99,.3); transition: background-color .3s ease, width .3s ease; }
+.faixa-pontos i.ativo { background: var(--verde); width: 40px; }
+@media (min-width: 1024px) { .faixa { overflow: visible; max-width: 1180px; margin-inline: auto; } .faixa figure { flex: 1 1 0; width: auto; } .faixa-pontos { display: none; } }
+.js .revela-lado { opacity: 0; transform: translateY(48px) scale(.97); transition: opacity .9s ease, transform 1.1s cubic-bezier(.2,.8,.2,1); transition-delay: var(--d, 0s); }
+.js .revela-lado.visivel { opacity: 1; transform: none; }
+
+/* barras-que-crescem */
+.quadro-horas { margin-top: 32px; max-width: 40rem; }
+.qh-linhas { display: grid; gap: 10px; margin: 0; }
+.qh-linha { display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 10px; }
+.qh-linha dt { font-weight: 600; font-size: .9375rem; }
+.qh-linha dd { position: relative; height: 26px; margin: 0; border-radius: 6px; background: repeating-linear-gradient(90deg, rgba(79,122,99,.16) 0 1px, transparent 1px calc(100% / 14)); }
+.qh-linha dd i { position: absolute; top: 3px; bottom: 3px; border-radius: 5px; background: var(--verde); transform-origin: left center; transition: transform .9s cubic-bezier(.2,.8,.2,1); }
+.js .quadro-horas:not(.visivel) .qh-linha dd i { transform: scaleX(0); }
+
+/* pergunta-que-abre */
+.faq { margin-top: 32px; max-width: 44rem; border-top: 1px solid rgba(79,122,99,.35); }
+.faq details { border-bottom: 1px solid rgba(79,122,99,.35); }
+.faq summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; gap: 20px; align-items: center; padding: 20px 2px; font-size: clamp(1.15rem, 1.8vw, 1.4rem); line-height: 1.2; min-height: 44px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary svg { flex: none; width: 26px; height: 26px; transition: transform .35s ease; }
+.faq details[open] summary svg { transform: rotate(45deg); }
+.faq details p { margin: 0; padding: 0 2px 22px; color: var(--tinta); }
+.faq .resposta { overflow: hidden; }
+
+/* botao-com-seta */
+.acoes-botao { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 16px; }
+
+/* barra-fixa-do-celular */
+.barra { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(244,241,234,.96); border-top: 1px solid rgba(79,122,99,.3); transform: translateY(110%); visibility: hidden; transition: none; }
+.barra.mostra { transform: none; visibility: visible; transition: transform .35s ease, visibility 0s; }
+.barra .botao { width: 100%; min-height: 52px; }
+.rodape { padding-block: 40px 120px; color: var(--tinta); font-size: .9375rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .js .revela, .js .abertura-entra { opacity: 1; transform: none; transition: none; animation: none; }
+  .js .revela-foto .quadro, .js .abertura-foto .cena-quadro { clip-path: none; animation: none; transition: none; }
+  .js .revela-foto img, .js .revela-foto svg, .js .desliza, .js .revela-lado { transform: none; opacity: 1; transition: none; }
+  .js [data-linhas].dividido .linha { transform: none; transition: none; opacity: 1; clip-path: none; }
+  .js .contorno .arco-traco path { stroke-dashoffset: 0; transition: none; }
+  .marcas .traco { stroke-dashoffset: 0; transition: none; }
+  .js .coluna.entra-pecas .peca-dentro { animation: none; opacity: 1; }
+  .js .quadro-horas:not(.visivel) .qh-linha dd i { transform: none; }
+  .contador.pulsa { animation: none; }
+  .botao, .botao svg, .faq summary svg { transition: none; }
+  .barra { transition: none; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="cena" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice">
+    <defs><linearGradient id="ceu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe3d6"/><stop offset="1" stop-color="#f1e7d2"/></linearGradient></defs>
+    <rect width="400" height="500" fill="url(#ceu)"/>
+    <circle cx="290" cy="130" r="54" fill="#f2c9a0"/>
+    <path d="M0 340 Q100 250 200 330 T400 300 V500 H0Z" fill="#8fb39d"/>
+    <path d="M0 400 Q120 330 230 400 T400 380 V500 H0Z" fill="#4f7a63"/>
+    <rect x="150" y="270" width="12" height="90" rx="4" fill="#3b3f3a"/>
+    <circle cx="156" cy="250" r="34" fill="#3b3f3a" opacity=".85"/>
+  </symbol>
+</svg>
+
+<main id="topo">
+  <section class="bloco" data-receita="abertura-do-topo" data-gatilho="carga" style="background:transparent">
+    <div class="moldura abertura">
+      <div>
+        <h1 class="abertura-entra">Repertório de movimento, uma receita por bloco.</h1>
+        <p class="abre abertura-entra d1">Texto fictício e neutro para provar cada técnica. Role a página e veja cada bloco se mover do jeito dele.</p>
+        <div class="acoes abertura-entra d2"><a href="#revelar" class="botao">Ir para as receitas <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4v12M5 11l5 5 5-5"/></svg></a></div>
+        <ul class="fatos abertura-entra d3"><li>Receita: abertura-do-topo</li><li>Escada de 4 passos</li><li>Foto que abre de cima</li></ul>
+      </div>
+      <figure class="abertura-foto" style="margin:0"><div class="cena-quadro"><svg viewBox="0 0 400 500" role="img" aria-label="Paisagem ilustrada com sol e colinas"><use href="#cena"/></svg></div></figure>
+    </div>
+  </section>
+
+  <section class="bloco" data-receita="paralaxe-da-foto" data-gatilho="rolagem">
+    <div class="moldura paralaxe-grade">
+      <div>
+        <p class="selo">Receita: <code>paralaxe-da-foto</code></p>
+      <h2>Paralaxe da foto</h2>
+        <p class="nota">A imagem anda a 10% da rolagem, com escala 1,06, dentro de um quadro que corta o excesso.</p>
+      </div>
+      <div class="paralaxe-quadro"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Paisagem ilustrada" data-paralaxe><use href="#cena"/></svg></div>
+    </div>
+  </section>
+
+  <section class="bloco assin" data-receita="assinatura-em-tres-estados" data-gatilho="rolagem">
+    <div class="moldura">
+      <p class="selo">Receita: <code>assinatura-em-tres-estados</code></p>
+      <h2>Assinatura em três estados</h2>
+      <p class="nota">Um elemento do assunto que atravessa a página: entra torto, alinha com a rolagem e termina alinhado sozinho.</p>
+      <div class="assin-grade">
+        <div class="assin-coluna" aria-hidden="true">
+          <svg class="coluna entra-pecas" data-coluna="rolagem" viewBox="0 0 120 232" role="img">
+            <polyline class="fio" points=""/>
+          <g class="peca" data-dx="6.23" data-rot="15.26" data-cy="11.5"><g class="peca-dentro" style="--i:0"><rect x="43.0" y="6.0" width="34.0" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="14.21" data-rot="10.40" data-cy="27.5"><g class="peca-dentro" style="--i:1"><rect x="40.6" y="22.0" width="38.8" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="11.56" data-rot="-0.65" data-cy="43.5"><g class="peca-dentro" style="--i:2"><rect x="38.2" y="38.0" width="43.6" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="17.99" data-rot="-1.65" data-cy="59.5"><g class="peca-dentro" style="--i:3"><rect x="35.8" y="54.0" width="48.4" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="15.03" data-rot="-0.47" data-cy="75.5"><g class="peca-dentro" style="--i:4"><rect x="33.4" y="70.0" width="53.2" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="7.09" data-rot="-9.65" data-cy="91.5"><g class="peca-dentro" style="--i:5"><rect x="41.0" y="86.0" width="38.0" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="7.67" data-rot="-16.44" data-cy="107.5"><g class="peca-dentro" style="--i:6"><rect x="38.6" y="102.0" width="42.8" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-3.48" data-rot="-10.25" data-cy="123.5"><g class="peca-dentro" style="--i:7"><rect x="36.2" y="118.0" width="47.6" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-9.82" data-rot="-5.79" data-cy="139.5"><g class="peca-dentro" style="--i:8"><rect x="33.8" y="134.0" width="52.4" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-9.70" data-rot="-9.71" data-cy="155.5"><g class="peca-dentro" style="--i:9"><rect x="31.4" y="150.0" width="57.2" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-18.63" data-rot="-6.19" data-cy="171.5"><g class="peca-dentro" style="--i:10"><rect x="39.0" y="166.0" width="42.0" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-15.08" data-rot="6.22" data-cy="187.5"><g class="peca-dentro" style="--i:11"><rect x="36.6" y="182.0" width="46.8" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-10.86" data-rot="9.73" data-cy="203.5"><g class="peca-dentro" style="--i:12"><rect x="34.2" y="198.0" width="51.6" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-11.75" data-rot="5.80" data-cy="219.5"><g class="peca-dentro" style="--i:13"><rect x="31.8" y="214.0" width="56.4" height="11.0" rx="4.6"/></g></g>
+          </svg>
+        </div>
+        <ol class="passos" style="list-style:none;margin:0;padding:0">
+          <li class="passo"><span class="marco"></span><h3>Primeiro passo</h3><p>As peças entram uma a uma e ficam tortas.</p></li>
+          <li class="passo"><span class="marco"></span><h3>Segundo passo</h3><p>Com a rolagem, cada peça se alinha e o marco acende.</p></li>
+          <li class="passo"><span class="marco"></span><h3>Terceiro passo</h3><p>A linha do lado enche até o último marco.</p></li>
+          <li class="passo"><span class="marco"></span><h3>Quarto passo</h3><p>No fim, tudo alinhado.</p></li>
+        </ol>
+      </div>
+      <div class="alinha-sozinha" data-alinha-sozinha>
+        <div class="coluna-solta" aria-hidden="true">
+          <svg class="coluna" data-coluna="sozinha" viewBox="0 0 120 232" role="img">
+            <polyline class="fio" points=""/>
+          <g class="peca" data-dx="6.23" data-rot="15.26" data-cy="11.5"><g class="peca-dentro" style="--i:0"><rect x="43.0" y="6.0" width="34.0" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="14.21" data-rot="10.40" data-cy="27.5"><g class="peca-dentro" style="--i:1"><rect x="40.6" y="22.0" width="38.8" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="11.56" data-rot="-0.65" data-cy="43.5"><g class="peca-dentro" style="--i:2"><rect x="38.2" y="38.0" width="43.6" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="17.99" data-rot="-1.65" data-cy="59.5"><g class="peca-dentro" style="--i:3"><rect x="35.8" y="54.0" width="48.4" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="15.03" data-rot="-0.47" data-cy="75.5"><g class="peca-dentro" style="--i:4"><rect x="33.4" y="70.0" width="53.2" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="7.09" data-rot="-9.65" data-cy="91.5"><g class="peca-dentro" style="--i:5"><rect x="41.0" y="86.0" width="38.0" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="7.67" data-rot="-16.44" data-cy="107.5"><g class="peca-dentro" style="--i:6"><rect x="38.6" y="102.0" width="42.8" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-3.48" data-rot="-10.25" data-cy="123.5"><g class="peca-dentro" style="--i:7"><rect x="36.2" y="118.0" width="47.6" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-9.82" data-rot="-5.79" data-cy="139.5"><g class="peca-dentro" style="--i:8"><rect x="33.8" y="134.0" width="52.4" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-9.70" data-rot="-9.71" data-cy="155.5"><g class="peca-dentro" style="--i:9"><rect x="31.4" y="150.0" width="57.2" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-18.63" data-rot="-6.19" data-cy="171.5"><g class="peca-dentro" style="--i:10"><rect x="39.0" y="166.0" width="42.0" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-15.08" data-rot="6.22" data-cy="187.5"><g class="peca-dentro" style="--i:11"><rect x="36.6" y="182.0" width="46.8" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-10.86" data-rot="9.73" data-cy="203.5"><g class="peca-dentro" style="--i:12"><rect x="34.2" y="198.0" width="51.6" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="-11.75" data-rot="5.80" data-cy="219.5"><g class="peca-dentro" style="--i:13"><rect x="31.8" y="214.0" width="56.4" height="11.0" rx="4.6"/></g></g>
+          </svg>
+        </div>
+        <p class="nota" style="margin:0">Terceiro estado: ao entrar na tela, a coluna se alinha sozinha em 2,0 s.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloco" data-receita="texto-em-linhas" data-gatilho="entrar">
+    <div class="moldura">
+      <p class="selo">Receita: <code>texto-em-linhas</code></p>
+      <h2 data-linhas>Cada linha do texto sobe na sua vez, sem cortar palavra.</h2>
+      <p class="nota">As frases abaixo entram uma depois da outra, e cada linha de cada frase sobe com 0,14 s de diferença.</p>
+      <ul class="linhas-grade" data-escada>
+        <li class="revela"><strong data-linhas style="font-weight:400">No fim do dia, a lista de tarefas ainda está pela metade.</strong><span>E o descanso fica para amanhã, de novo.</span></li>
+        <li class="revela"><strong data-linhas style="font-weight:400">Você começou três vezes e parou na segunda semana.</strong><span>Sem acompanhamento, quase todo mundo para.</span></li>
+        <li class="revela"><strong data-linhas style="font-weight:400">Alguém disse que bastava começar, e você não sabe por onde.</strong><span>O primeiro passo costuma ser o mais pequeno.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="bloco" data-receita="titulo-fixo" data-gatilho="rolagem">
+    <div class="moldura fixo-grade">
+      <p class="selo">Receita: <code>titulo-fixo</code></p>
+      <h2>Título que fica enquanto a lista passa</h2>
+      <ul class="fixo-lista">
+        <li><h3>Primeiro item</h3><p>O título ao lado permanece preso no topo, a 15% da altura medida da tela.</p></li>
+        <li><h3>Segundo item</h3><p>Funciona só em tela larga: no celular a coluna única segue o fluxo normal.</p></li>
+        <li><h3>Terceiro item</h3><p>O grid termina antes do bloco de largura total, senão o título nunca solta.</p></li>
+        <li><h3>Quarto item</h3><p>Texto fictício para dar altura à lista.</p></li>
+        <li><h3>Quinto item</h3><p>Fim da lista, o título solta junto com o grid.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="bloco" id="revelar" data-receita="revelar-ao-entrar" data-gatilho="entrar">
+    <div class="moldura">
+      <p class="selo">Receita: <code>revelar-ao-entrar</code></p>
+      <h2>Revelar ao entrar</h2>
+      <p class="nota">Cada item aparece quando ele mesmo entra na tela, com opacidade e 26 px de subida em 0,8 s.</p>
+      <ul class="cartoes">
+        <li class="revela"><h3>Primeiro cartão</h3><p>Entra quando chega à tela.</p></li>
+        <li class="revela"><h3>Segundo cartão</h3><p>Mesma curva, mesma duração.</p></li>
+        <li class="revela"><h3>Terceiro cartão</h3><p>Cada um no seu momento.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="bloco" data-receita="foto-que-desliza" data-gatilho="entrar">
+    <div class="moldura desliza-grade">
+      <figure class="arco revela-foto desliza">
+        <div class="quadro"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Paisagem ilustrada"><use href="#cena"/></svg></div>
+        <figcaption>Imagem ilustrativa desenhada para a demonstração</figcaption>
+      </figure>
+      <div>
+        <p class="selo">Receita: <code>foto-que-desliza</code></p>
+      <h2>Foto que desliza</h2>
+        <p class="nota">O quadro abre 12% de baixo para cima, a imagem assenta de 1,08 a 1 e o bloco sobe 30 px.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloco" data-receita="vagas-que-se-preenchem" data-gatilho="entrar" data-medir=".vagas">
+    <div class="moldura">
+      <p class="selo">Receita: <code>vagas-que-se-preenchem</code></p>
+      <h2>Vagas que se preenchem</h2>
+      <p class="nota" data-vagas>Até <span class="contador" data-contador>4</span> pessoas por turma: as marcas se preenchem uma a uma, 300 ms entre elas, e o número pulsa no fim.</p>
+      <div class="vagas" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    </div>
+  </section>
+
+  <section class="bloco" data-receita="traco-que-se-desenha" data-gatilho="entrar" data-medir=".marcas">
+    <div class="moldura">
+      <p class="selo">Receita: <code>traco-que-se-desenha</code></p>
+      <h2>Traço que se desenha</h2>
+      <ul class="marcas">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="#4f7a63" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="traco" d="M4 12l5 5 11-12"/></svg>Primeira marca, sem atraso.</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="#4f7a63" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="traco" d="M4 12l5 5 11-12"/></svg>Segunda marca, 0,2 s depois.</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="#4f7a63" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="traco" d="M4 12l5 5 11-12"/></svg>Terceira marca, 0,4 s depois.</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="#4f7a63" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="traco" d="M4 12l5 5 11-12"/></svg>Quarta marca, 0,6 s depois.</li>
+      </ul>
+      <div class="contorno-quadro contorno">
+        <div class="caixa"></div>
+        <svg class="arco-traco" viewBox="0 0 100 125" preserveAspectRatio="none" aria-hidden="true"><path d="M2 125 V50 A48 48 0 0 1 98 50 V110 Q98 123 85 123 H15" pathLength="1" fill="none" stroke="#4f7a63" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloco" data-receita="faixa-de-figuras" data-gatilho="entrar" style="padding-inline:0">
+    <div class="moldura"><p class="selo">Receita: <code>faixa-de-figuras</code></p>
+      <h2>Faixa de figuras</h2><p class="nota">Cada figura sobe 48 px com escala 0,97, com 0,16 s entre elas. No celular vira carrossel com pontos.</p></div>
+    <div class="faixa" data-faixa tabindex="0" aria-label="Figuras, role para o lado">
+      <figure class="revela-lado"><div class="cena-quadro"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Paisagem ilustrada"><use href="#cena"/></svg></div><figcaption>Primeira figura</figcaption></figure>
+      <figure class="revela-lado"><div class="cena-quadro" style="background:#cfe3d6"></div><figcaption>Segunda figura</figcaption></figure>
+      <figure class="revela-lado"><div class="cena-quadro" style="background:#f1e7d2"></div><figcaption>Terceira figura</figcaption></figure>
+      <figure class="revela-lado"><div class="cena-quadro" style="background:#8fb39d"></div><figcaption>Quarta figura</figcaption></figure>
+    </div>
+    <div class="faixa-pontos" aria-hidden="true"><i class="ativo"></i><i></i><i></i><i></i></div>
+  </section>
+
+  <section class="bloco" data-receita="barras-que-crescem" data-gatilho="entrar" data-medir=".quadro-horas">
+    <div class="moldura">
+      <p class="selo">Receita: <code>barras-que-crescem</code></p>
+      <h2>Barras que crescem</h2>
+      <p class="nota">Cada barra cresce da esquerda para a direita em 0,9 s, na mesma curva da página.</p>
+      <div class="quadro-horas" data-barras>
+        <dl class="qh-linhas">
+          <div class="qh-linha"><dt>Seg</dt><dd><i style="left:0%;width:50%"></i></dd></div>
+          <div class="qh-linha"><dt>Ter</dt><dd><i style="left:14%;width:43%"></i></dd></div>
+          <div class="qh-linha"><dt>Qua</dt><dd><i style="left:0%;width:36%"></i></dd></div>
+          <div class="qh-linha"><dt>Qui</dt><dd><i style="left:28%;width:57%"></i></dd></div>
+          <div class="qh-linha"><dt>Sex</dt><dd><i style="left:7%;width:71%"></i></dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloco" data-receita="pergunta-que-abre" data-gatilho="clique">
+    <div class="moldura">
+      <p class="selo">Receita: <code>pergunta-que-abre</code></p>
+      <h2>Pergunta que abre</h2>
+      <p class="nota">A resposta abre em 420 ms e fecha em 320 ms, com altura e opacidade pela API de animação. O ícone gira 45 graus.</p>
+      <div class="faq">
+        <details><summary>Primeira pergunta de exemplo?<svg viewBox="0 0 26 26" aria-hidden="true"><path d="M13 6v14M6 13h14" stroke="#4f7a63" stroke-width="1.8" stroke-linecap="round"/></svg></summary><div class="resposta"><p>Resposta fictícia, curta e direta, só para mostrar a abertura animada.</p></div></details>
+        <details><summary>Segunda pergunta de exemplo?<svg viewBox="0 0 26 26" aria-hidden="true"><path d="M13 6v14M6 13h14" stroke="#4f7a63" stroke-width="1.8" stroke-linecap="round"/></svg></summary><div class="resposta"><p>Outra resposta fictícia, também curta.</p></div></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloco" data-receita="botao-com-seta" data-gatilho="hover">
+    <div class="moldura">
+      <p class="selo">Receita: <code>botao-com-seta</code></p>
+      <h2>Botão com seta</h2>
+      <p class="nota">Ao passar o mouse ou focar, o botão sobe 2 px, ganha sombra e a seta anda 4 px.</p>
+      <div class="acoes-botao"><a href="#topo" class="botao" data-alvo-hover>Voltar ao topo <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg></a></div>
+    </div>
+  </section>
+
+  <section class="bloco" data-receita="barra-fixa-do-celular" data-gatilho="rolagem">
+    <div class="moldura">
+      <p class="selo">Receita: <code>barra-fixa-do-celular</code></p>
+      <h2>Barra fixa do celular</h2>
+      <p class="nota">Depois que o topo sai da tela, e enquanto nenhum botão da página está à vista, a barra de baixo entra em 0,35 s. Aqui ela também aparece em tela larga, para a demonstração.</p>
+      <p class="nota">Texto fictício para dar altura ao bloco e deixar a barra aparecer sem nenhum outro botão por perto. Role um pouco até ela subir.</p>
+      <div style="height:min(70vh,520px)"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="rodape"><div class="moldura">Repertório de movimento da skill construtor-paginas. Todo texto desta página é fictício.</div></footer>
+<div class="barra" data-barra><a href="#topo" class="botao">Falar com a equipe</a></div>
+
+<script>
+(function () {
+  var reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var raiz = document.documentElement, larguraVh = window.innerWidth;
+  raiz.style.setProperty('--vh', (window.innerHeight / 100) + 'px');
+  window.addEventListener('resize', function () { if (window.innerWidth !== larguraVh) { larguraVh = window.innerWidth; raiz.style.setProperty('--vh', (window.innerHeight / 100) + 'px'); } });
+  var each = function (lista, f) { Array.prototype.forEach.call(lista, f); };
+  var NS = 'http://www.w3.org/2000/svg';
+
+  function montar(svg) {
+    var grupos = [];
+    each(svg.querySelectorAll('.peca'), function (g) {
+      grupos.push({ g: g, cy: parseFloat(g.getAttribute('data-cy')), dx: parseFloat(g.getAttribute('data-dx')), rot: parseFloat(g.getAttribute('data-rot')) });
+    });
+    return { svg: svg, grupos: grupos, fio: svg.querySelector('.fio') };
+  }
+  function aplicar(c, p) {
+    var n = c.grupos.length, pts = [];
+    c.grupos.forEach(function (o, i) {
+      var local = Math.min(1, Math.max(0, (p * (n + 2.2) - i) / 2.2));
+      var e = 1 - Math.pow(1 - local, 3);
+      var dx = o.dx * (1 - e), r = o.rot * (1 - e);
+      o.g.setAttribute('transform', 'translate(' + dx.toFixed(2) + ' 0) rotate(' + r.toFixed(2) + ' 60 ' + o.cy.toFixed(1) + ')');
+      if (local >= 1) o.g.classList.add('alinhada'); else o.g.classList.remove('alinhada');
+      pts.push((60 + dx).toFixed(2) + ',' + o.cy.toFixed(1));
+    });
+    c.fio.setAttribute('points', pts.join(' '));
+    if (p >= 0.999) c.svg.classList.add('completa'); else c.svg.classList.remove('completa');
+  }
+  var colunas = {};
+  each(document.querySelectorAll('svg[data-coluna]'), function (svg) { colunas[svg.getAttribute('data-coluna')] = montar(svg); });
+  if (colunas.rolagem) aplicar(colunas.rolagem, reduz ? 1 : 0);
+  if (colunas.sozinha) aplicar(colunas.sozinha, reduz ? 1 : 0);
+
+  var passos = document.querySelector('.passos'), listaPassos = passos ? passos.querySelectorAll('.passo') : [];
+  function medirLinhaDoTempo() {
+    if (!passos) return;
+    var marcos = passos.querySelectorAll('.marco');
+    if (!marcos.length) return;
+    var ultimo = marcos[marcos.length - 1];
+    passos.style.setProperty('--altura-linha', Math.max(0, ultimo.offsetTop + ultimo.parentNode.offsetTop - 14) + 'px');
+  }
+  medirLinhaDoTempo();
+  window.addEventListener('resize', medirLinhaDoTempo);
+  function progressoAssinatura() {
+    var av = colunas.rolagem;
+    if (!av || !passos) return;
+    var vh = window.innerHeight, p;
+    if (reduz) { p = 1; } else {
+      var r = passos.getBoundingClientRect();
+      p = Math.min(1, Math.max(0, (vh * 0.62 - r.top) / Math.max(1, r.height - vh * 0.3)));
+    }
+    aplicar(av, p);
+    passos.style.setProperty('--enche', p.toFixed(3));
+    each(listaPassos, function (s) { if (reduz || s.getBoundingClientRect().top < vh * 0.62) s.classList.add('ativo'); else s.classList.remove('ativo'); });
+  }
+
+  var linhasOriginais = [];
+  function dividirLinhas() {
+    each(document.querySelectorAll('[data-linhas]'), function (n, k) {
+      if (linhasOriginais[k] === undefined) linhasOriginais[k] = n.textContent.trim();
+      var texto = linhasOriginais[k];
+      n.classList.remove('dividido');
+      n.textContent = '';
+      var palavras = texto.split(/\s+/), spans = [];
+      palavras.forEach(function (w, i) { var sp = document.createElement('span'); sp.textContent = w; n.appendChild(sp); spans.push(sp); if (i < palavras.length - 1) n.appendChild(document.createTextNode(' ')); });
+      var grupos = [], topo = null;
+      spans.forEach(function (sp) { var t = sp.offsetTop; if (topo === null || Math.abs(t - topo) > 4) { grupos.push([]); topo = t; } grupos[grupos.length - 1].push(sp.textContent); });
+      n.textContent = '';
+      var item = n.closest('[data-escada] > *'), base = item ? Array.prototype.indexOf.call(item.parentNode.children, item) * 0.45 : 0;
+      grupos.forEach(function (g, i) {
+        var l = document.createElement('span'); l.className = 'linha';
+        l.textContent = g.join(' '); l.style.setProperty('--d', (base + i * 0.14) + 's');
+        n.appendChild(l); if (i < grupos.length - 1) n.appendChild(document.createTextNode(' '));
+      });
+      n.classList.add('dividido');
+    });
+  }
+  if (!reduz) {
+    dividirLinhas();
+    var larguraAnterior = window.innerWidth, tempo;
+    window.addEventListener('resize', function () {
+      if (window.innerWidth === larguraAnterior) return;
+      larguraAnterior = window.innerWidth; clearTimeout(tempo);
+      tempo = setTimeout(function () {
+        var vis = Array.prototype.map.call(document.querySelectorAll('[data-linhas]'), function (n) { return n.classList.contains('visivel'); });
+        dividirLinhas();
+        each(document.querySelectorAll('[data-linhas]'), function (n, i) { if (vis[i]) n.classList.add('visivel'); });
+      }, 150);
+    });
+  }
+
+  each(document.querySelectorAll('.faixa .revela-lado'), function (f, i) { f.style.setProperty('--d', (i * 0.16) + 's'); });
+  var faixa = document.querySelector('[data-faixa]'), pontos = document.querySelectorAll('.faixa-pontos i');
+  if (faixa && pontos.length) {
+    faixa.addEventListener('scroll', function () {
+      var figs = faixa.querySelectorAll('figure'), melhor = 0, menor = 1e9, base = faixa.getBoundingClientRect().left;
+      each(figs, function (f, i) { var d = Math.abs(f.getBoundingClientRect().left - base - 16); if (d < menor) { menor = d; melhor = i; } });
+      each(pontos, function (pt, i) { pt.classList.toggle('ativo', i === melhor); });
+    }, { passive: true });
+  }
+
+  function contar(h) {
+    var alvo = h.querySelector('[data-contador]'), vagas = document.querySelectorAll('.vagas i');
+    if (reduz) { each(vagas, function (v) { v.classList.add('cheia'); }); return; }
+    var n = 0;
+    var tick = function () {
+      if (vagas[n]) vagas[n].classList.add('cheia');
+      n += 1;
+      if (n < vagas.length) setTimeout(tick, 300);
+      else if (alvo) { alvo.classList.add('pulsa'); }
+    };
+    setTimeout(tick, 250);
+  }
+
+  each(document.querySelectorAll('.faq details'), function (d) {
+    var sum = d.querySelector('summary'), resp = d.querySelector('.resposta');
+    sum.addEventListener('click', function (e) {
+      if (reduz || !resp.animate) return;
+      e.preventDefault();
+      if (d.open) {
+        var h = resp.offsetHeight;
+        var a = resp.animate([{ height: h + 'px', opacity: 1 }, { height: '0px', opacity: 0 }], { duration: 320, easing: 'cubic-bezier(.4,0,.2,1)' });
+        a.onfinish = function () { d.open = false; };
+      } else {
+        d.open = true;
+        var alt = resp.offsetHeight;
+        resp.animate([{ height: '0px', opacity: 0 }, { height: alt + 'px', opacity: 1 }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' });
+      }
+    });
+  });
+
+  var barra = document.querySelector('[data-barra]'), topo = document.querySelector('#topo section');
+  var botoesPagina = document.querySelectorAll('main .botao');
+  function barraFixa() {
+    if (!barra || !topo) return;
+    var vh = window.innerHeight, passou = topo.getBoundingClientRect().bottom < 0, algum = false;
+    each(botoesPagina, function (bt) { var r = bt.getBoundingClientRect(); if (r.bottom > 0 && r.top < vh + 40) algum = true; });
+    if (passou && !algum) barra.classList.add('mostra'); else barra.classList.remove('mostra');
+  }
+
+  var fotoPar = document.querySelector('[data-paralaxe]');
+  var pedido = false;
+  function quadro() {
+    pedido = false;
+    if (fotoPar && !reduz) {
+      var r = fotoPar.parentNode.getBoundingClientRect(), d = window.innerHeight / 2 - (r.top + r.height / 2);
+      var lim = r.height * 0.03, desloc = Math.max(-lim, Math.min(lim, -d * 0.1));
+      fotoPar.style.transform = 'translate3d(0,' + desloc.toFixed(1) + 'px,0) scale(1.06)';
+    }
+    progressoAssinatura();
+    barraFixa();
+  }
+  function aoRolar() { if (!pedido) { pedido = true; window.requestAnimationFrame(quadro); } }
+  window.addEventListener('scroll', aoRolar, { passive: true });
+  window.addEventListener('resize', aoRolar);
+  if (fotoPar && !reduz) fotoPar.style.transform = 'scale(1.06)';
+  quadro();
+
+  function alinharSozinha(col) {
+    if (!col || reduz) return;
+    var t0 = null;
+    var passo = function (ts) {
+      if (!t0) t0 = ts;
+      var k = Math.min(1, (ts - t0) / 2000);
+      aplicar(col, 1 - Math.pow(1 - k, 2));
+      if (k < 1) window.requestAnimationFrame(passo);
+    };
+    window.requestAnimationFrame(passo);
+  }
+  if (colunas.sozinha && reduz) aplicar(colunas.sozinha, 1);
+
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('visivel');
+        io.unobserve(e.target);
+        if (e.target.hasAttribute('data-vagas')) contar(e.target);
+        if (e.target.hasAttribute('data-faixa')) each(e.target.querySelectorAll('.revela-lado'), function (f) { f.classList.add('visivel'); });
+        if (e.target.hasAttribute('data-alinha-sozinha')) alinharSozinha(colunas.sozinha);
+      });
+    }, { threshold: 0.18, rootMargin: '0px 0px -6% 0px' });
+    each(document.querySelectorAll('.revela, .revela-foto, .quadro-horas, .marcas, .contorno, [data-linhas], [data-vagas], [data-faixa], [data-alinha-sozinha], .coluna.entra-pecas'), function (n) { io.observe(n); });
+  } else {
+    each(document.querySelectorAll('.revela, .revela-foto, .revela-lado, .quadro-horas, .marcas, .contorno, [data-linhas], .coluna.entra-pecas'), function (n) { n.classList.add('visivel'); });
+    if (colunas.sozinha) aplicar(colunas.sozinha, 1);
+  }
+})();
+</script>
+</body>
+</html>

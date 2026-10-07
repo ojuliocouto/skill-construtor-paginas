@@ -249,7 +249,9 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    inteira logo abaixo da primeira tela, por cima da foto (medido na v4).
    **Peso:** fonte só nos pesos e estilos usados (itálico de 144 KiB para 3 palavras foi achado
    da v3); CSS em linha na publicação (`montar-dist.py --css-em-linha`).
-3b. **Padrão da v7 na construção** (cada item custou retrabalho): o momento assinatura do plano
+3b. **Padrão da v7 na construção** (cada item custou retrabalho): a animação de cada seção sai
+   do repertório (`references/receitas-de-movimento.md`, com a página `references/receitas/demo.html`
+   para ver cada uma andando) ou declara `criação nova: <motivo>` no PLANO; o momento assinatura do plano
    aparece nas seções que ele listou; cada seção tem esqueleto, celular e animação próprios
    (`references/ritmo-e-animacao.md`); assimetria pedida no plano leva `data-assimetrico="motivo"`
    no contêiner (o `gate-simetria.mjs` a trata como aviso); carrossel no celular é composição, com

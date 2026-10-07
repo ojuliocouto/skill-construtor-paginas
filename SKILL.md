@@ -265,7 +265,7 @@ Testes: `scripts/test-*.py` e `scripts/test-*.cjs` (lista e comando no `README.m
 | `caminhos/criar.md`, `caminhos/clonar.md`, `caminhos/clonar-elevar.md`, `caminhos/melhorar.md`, `caminhos/editar.md` | o fluxo de cada caminho, sempre |
 | `pesquisa-de-referencias.md` | passo b: como achar, capturar, ler e registrar |
 | `plano.md` | passo b2: a etapa PLANO, o modelo do `PLANO.md` e o que o gate cobra |
-| `references/ritmo-e-animacao.md` | momento assinatura, esqueleto por seção e a prova de animação (`anim.mjs`, `prancha.py`) |
+| `references/ritmo-e-animacao.md`, `references/receitas-de-movimento.md` | momento assinatura, esqueleto, prova de animação; repertório de receitas da v7 |
 | `references/imagem.md` | foto real antes de ilustração, foto que não contradiz o texto, repetição, nitidez, aviso |
 | `references/densidade-servico-local.md` | os 7 itens de copy de serviço local, passo d |
 | `references/vh-estavel.md`, `references/sticky-e-sobreposicao.md`, `references/texto-em-linhas.md` | `--vh` medido, sticky fora do grid com bloco largo, divisão em linhas e `li > span` |

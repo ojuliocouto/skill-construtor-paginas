@@ -34,6 +34,13 @@ começa com o tipo, antes dos dois pontos ("barras que crescem: do horário de a
 fechamento"), ligada ao conteúdo da seção. No máximo 2 seções com o mesmo tipo; `assinatura` fica
 fora da conta.
 
+**Escolha no repertório.** O tipo de cada linha é o nome de uma receita de
+`references/receitas-de-movimento.md` (HTML, CSS e JS da v7, com reserva sem script e com
+movimento reduzido; a página `references/receitas/demo.html` mostra todas funcionando). Se
+nenhuma serve, a linha declara `criação nova: <motivo>` e a prova de pixels vale igual. A
+gramática de base do repertório (uma curva, uma escala de duração, cada item entrando quando ele
+chega na tela, estado escondido só atrás de `.js`) vale também para a criação nova.
+
 ## Prova de animação: três quadros por seção
 
 1. Escreva o `secoes.json` (nome, seletor, modo e tipo de cada seção; o formato está no cabeçalho
