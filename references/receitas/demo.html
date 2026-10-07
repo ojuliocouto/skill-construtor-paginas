@@ -432,6 +432,57 @@ img, svg { display: block; max-width: 100%; }
 <footer class="rodape"><div class="moldura">Repertório de movimento da skill construtor-paginas. Todo texto desta página é fictício.</div></footer>
 <div class="barra" data-barra><a href="#topo" class="botao">Falar com a equipe</a></div>
 
+<script data-modulo="texto-em-linhas">
+(function () {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var nos = Array.prototype.slice.call(document.querySelectorAll('[data-linhas]'));
+  var originais = [], larguras = [], tempo = null;
+  function linhasVisuais(el) {
+    var r = document.createRange(), tops = [];
+    r.selectNodeContents(el);
+    Array.prototype.forEach.call(r.getClientRects(), function (c) { if (c.width > 0 && !tops.some(function (t) { return Math.abs(t - c.top) < 4; })) tops.push(c.top); });
+    return tops.length;
+  }
+  function dividir(n, k) {
+    if (originais[k] === undefined) originais[k] = n.textContent.trim();
+    n.classList.remove('dividido');
+    n.textContent = '';
+    var palavras = originais[k].split(/\s+/), spans = [];
+    palavras.forEach(function (w, i) { var sp = document.createElement('span'); sp.textContent = w; n.appendChild(sp); spans.push(sp); if (i < palavras.length - 1) n.appendChild(document.createTextNode(' ')); });
+    var grupos = [], topo = null;
+    spans.forEach(function (sp) { var t = sp.offsetTop; if (topo === null || Math.abs(t - topo) > 4) { grupos.push([]); topo = t; } grupos[grupos.length - 1].push(sp.textContent); });
+    n.textContent = '';
+    var item = n.closest('[data-escada] > *'), base = item ? Array.prototype.indexOf.call(item.parentNode.children, item) * 0.45 : 0;
+    grupos.forEach(function (g, i) {
+      var l = document.createElement('span'); l.className = 'linha';
+      l.textContent = g.join(' '); l.style.setProperty('--d', (base + i * 0.14) + 's');
+      n.appendChild(l); if (i < grupos.length - 1) n.appendChild(document.createTextNode(' '));
+    });
+    n.classList.add('dividido');
+  }
+  function cabe(n) { return Array.prototype.every.call(n.querySelectorAll('.linha'), function (l) { return linhasVisuais(l) === 1; }); }
+  function dividirTodas() {
+    nos.forEach(function (n, k) {
+      var visivel = n.classList.contains('visivel');
+      dividir(n, k);
+      if (!cabe(n)) dividir(n, k);
+      if (!cabe(n)) { n.classList.remove('dividido'); n.textContent = originais[k]; }
+      if (visivel) n.classList.add('visivel');
+      larguras[k] = n.offsetWidth;
+    });
+  }
+  function agendar() { clearTimeout(tempo); tempo = setTimeout(dividirTodas, 150); }
+  dividirTodas();
+  if (document.fonts) {
+    document.fonts.ready.then(dividirTodas);
+    document.fonts.addEventListener('loadingdone', agendar);
+  }
+  if (window.ResizeObserver) {
+    var ro = new ResizeObserver(function () { if (nos.some(function (n, k) { return n.offsetWidth !== larguras[k]; })) agendar(); });
+    nos.forEach(function (n) { ro.observe(n); });
+  } else window.addEventListener('resize', agendar);
+})();
+</script>
 <script>
 (function () {
   var reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -476,6 +527,7 @@ img, svg { display: block; max-width: 100%; }
   }
   medirLinhaDoTempo();
   window.addEventListener('resize', medirLinhaDoTempo);
+  if (document.fonts) document.fonts.ready.then(function () { medirLinhaDoTempo(); aoRolar(); });
   function progressoAssinatura() {
     var av = colunas.rolagem;
     if (!av || !passos) return;
@@ -487,41 +539,6 @@ img, svg { display: block; max-width: 100%; }
     aplicar(av, p);
     passos.style.setProperty('--enche', p.toFixed(3));
     each(listaPassos, function (s) { if (reduz || s.getBoundingClientRect().top < vh * 0.62) s.classList.add('ativo'); else s.classList.remove('ativo'); });
-  }
-
-  var linhasOriginais = [];
-  function dividirLinhas() {
-    each(document.querySelectorAll('[data-linhas]'), function (n, k) {
-      if (linhasOriginais[k] === undefined) linhasOriginais[k] = n.textContent.trim();
-      var texto = linhasOriginais[k];
-      n.classList.remove('dividido');
-      n.textContent = '';
-      var palavras = texto.split(/\s+/), spans = [];
-      palavras.forEach(function (w, i) { var sp = document.createElement('span'); sp.textContent = w; n.appendChild(sp); spans.push(sp); if (i < palavras.length - 1) n.appendChild(document.createTextNode(' ')); });
-      var grupos = [], topo = null;
-      spans.forEach(function (sp) { var t = sp.offsetTop; if (topo === null || Math.abs(t - topo) > 4) { grupos.push([]); topo = t; } grupos[grupos.length - 1].push(sp.textContent); });
-      n.textContent = '';
-      var item = n.closest('[data-escada] > *'), base = item ? Array.prototype.indexOf.call(item.parentNode.children, item) * 0.45 : 0;
-      grupos.forEach(function (g, i) {
-        var l = document.createElement('span'); l.className = 'linha';
-        l.textContent = g.join(' '); l.style.setProperty('--d', (base + i * 0.14) + 's');
-        n.appendChild(l); if (i < grupos.length - 1) n.appendChild(document.createTextNode(' '));
-      });
-      n.classList.add('dividido');
-    });
-  }
-  if (!reduz) {
-    dividirLinhas();
-    var larguraAnterior = window.innerWidth, tempo;
-    window.addEventListener('resize', function () {
-      if (window.innerWidth === larguraAnterior) return;
-      larguraAnterior = window.innerWidth; clearTimeout(tempo);
-      tempo = setTimeout(function () {
-        var vis = Array.prototype.map.call(document.querySelectorAll('[data-linhas]'), function (n) { return n.classList.contains('visivel'); });
-        dividirLinhas();
-        each(document.querySelectorAll('[data-linhas]'), function (n, i) { if (vis[i]) n.classList.add('visivel'); });
-      }, 150);
-    });
   }
 
   each(document.querySelectorAll('.faixa .revela-lado'), function (f, i) { f.style.setProperty('--d', (i * 0.16) + 's'); });

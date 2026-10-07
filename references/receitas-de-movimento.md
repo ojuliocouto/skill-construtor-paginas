@@ -220,6 +220,8 @@ function progressoAssinatura() {
 // Altura da linha: até o centro do último marco
 var marcos = passos.querySelectorAll('.marco'), ultimo = marcos[marcos.length - 1];
 passos.style.setProperty('--altura-linha', Math.max(0, ultimo.offsetTop + ultimo.parentNode.offsetTop - 14) + 'px');
+// A medida depende da fonte: refaça quando ela chegar (o mesmo defeito do texto em linhas)
+if (document.fonts) document.fonts.ready.then(function () { /* repita as duas linhas acima e chame quadro() */ });
 // Estado 3: ao entrar na tela, alinha sozinha em 2,0 s (curva 1 - (1 - k)^2)
 function alinharSozinha(col) {
   if (!col || reduz) return;
@@ -246,6 +248,16 @@ barato: atualizar só quando `p` mudou mais de 0,002, e manter menos de 30 peça
 na sua vez. Já documentada em `references/texto-em-linhas.md` (regras de quebra e gate).
 **Quando NÃO usar:** em parágrafo longo; em texto que o `gate-texto.mjs` não consegue medir;
 dentro de `li > span` sem o CSS do arquivo de regras.
+**Cuidado (defeito medido na v7, 06/10/2026):** o script da v7 dividia o texto uma vez, antes de a
+fonte da página chegar, e nunca media de novo. Em 1440 px, em 3 cargas seguidas, o item "Você parou
+a academia porque doeu, e ficou com medo de voltar." saía em 3 trechos, mas o primeiro ("Você parou
+a academia porque") não cabia nos 515 px reais e quebrava de novo, deixando "porque" sozinho numa
+linha. A receita abaixo corrige: (1) divide de novo quando a fonte termina de carregar
+(`document.fonts.ready` e o evento `loadingdone`); (2) divide de novo quando a LARGURA do elemento
+muda (`ResizeObserver`, com espera de 150 ms), restaurando o texto original antes de medir; (3)
+confere que cada trecho gerado tem uma linha visual só e, se não tem, divide mais uma vez e, em
+último caso, volta ao texto inteiro sem movimento. A prova é o `scripts/test-linhas.cjs`
+(vermelho com o código da v7, verde com este) em 1440, 390 e 360 px.
 **Origem na v7:** `_app.js:118-147`, `_input.css:333-334`.
 
 ```html
@@ -261,13 +273,21 @@ dentro de `li > span` sem o CSS do arquivo de regras.
 ```
 
 ```js
-var linhasOriginais = [];
-function dividirLinhas() {
-  each(document.querySelectorAll('[data-linhas]'), function (n, k) {
-    if (linhasOriginais[k] === undefined) linhasOriginais[k] = n.textContent.trim();
-    var texto = linhasOriginais[k];
-    n.classList.remove('dividido'); n.textContent = '';
-    var palavras = texto.split(/\s+/), spans = [];
+(function () {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var nos = Array.prototype.slice.call(document.querySelectorAll('[data-linhas]'));
+  var originais = [], larguras = [], tempo = null;
+  function linhasVisuais(el) {
+    var r = document.createRange(), tops = [];
+    r.selectNodeContents(el);
+    Array.prototype.forEach.call(r.getClientRects(), function (c) { if (c.width > 0 && !tops.some(function (t) { return Math.abs(t - c.top) < 4; })) tops.push(c.top); });
+    return tops.length;
+  }
+  function dividir(n, k) {
+    if (originais[k] === undefined) originais[k] = n.textContent.trim();
+    n.classList.remove('dividido');
+    n.textContent = '';
+    var palavras = originais[k].split(/\s+/), spans = [];
     palavras.forEach(function (w, i) { var sp = document.createElement('span'); sp.textContent = w; n.appendChild(sp); spans.push(sp); if (i < palavras.length - 1) n.appendChild(document.createTextNode(' ')); });
     var grupos = [], topo = null;
     spans.forEach(function (sp) { var t = sp.offsetTop; if (topo === null || Math.abs(t - topo) > 4) { grupos.push([]); topo = t; } grupos[grupos.length - 1].push(sp.textContent); });
@@ -279,20 +299,36 @@ function dividirLinhas() {
       n.appendChild(l); if (i < grupos.length - 1) n.appendChild(document.createTextNode(' '));
     });
     n.classList.add('dividido');
-  });
-}
-if (!reduz) {
-  dividirLinhas();
-  // ao mudar a LARGURA, divida de novo (150 ms de espera) e devolva a classe visivel a quem já estava visível
-}
-// io.observe(cada [data-linhas])
+  }
+  function cabe(n) { return Array.prototype.every.call(n.querySelectorAll('.linha'), function (l) { return linhasVisuais(l) === 1; }); }
+  function dividirTodas() {
+    nos.forEach(function (n, k) {
+      var visivel = n.classList.contains('visivel');
+      dividir(n, k);
+      if (!cabe(n)) dividir(n, k);
+      if (!cabe(n)) { n.classList.remove('dividido'); n.textContent = originais[k]; }
+      if (visivel) n.classList.add('visivel');
+      larguras[k] = n.offsetWidth;
+    });
+  }
+  function agendar() { clearTimeout(tempo); tempo = setTimeout(dividirTodas, 150); }
+  dividirTodas();
+  if (document.fonts) {
+    document.fonts.ready.then(dividirTodas);
+    document.fonts.addEventListener('loadingdone', agendar);
+  }
+  if (window.ResizeObserver) {
+    var ro = new ResizeObserver(function () { if (nos.some(function (n, k) { return n.offsetWidth !== larguras[k]; })) agendar(); });
+    nos.forEach(function (n) { ro.observe(n); });
+  } else window.addEventListener('resize', agendar);
+})();
 ```
 
 Duração 0,95 s por linha, 0,14 s entre linhas, 0,45 s entre itens da lista.
 **Reserva:** sem script e com movimento reduzido o texto nunca é dividido, então o `.dividido`
 (que esconde) nunca existe. Texto inteiro, no lugar, sem movimento.
 **Custo no celular:** baixo depois de dividido; a divisão mede `offsetTop` de cada palavra
-(reflow), então rode uma vez e de novo só quando a largura mudar.
+(reflow), então roda na carga, quando a fonte chega e quando a largura muda, nunca a cada rolagem.
 
 ---
 

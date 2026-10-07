@@ -78,6 +78,24 @@ class Receitas(unittest.TestCase):
         self.assertIn("/ 2000", r["assinatura-em-tres-estados"])
 
 
+class TextoEmLinhas(unittest.TestCase):
+    """O defeito da v7 (trecho gerado que quebra de novo) não pode voltar na receita nem no demo."""
+
+    def test_receita_e_demo_medem_depois_da_fonte_e_na_mudanca_de_largura(self):
+        r = receitas()["texto-em-linhas"]
+        d = ler(DEMO)
+        for texto in (r, d):
+            for item in ("document.fonts.ready", "loadingdone", "ResizeObserver", "getClientRects"):
+                self.assertIn(item, texto, item)
+        for item in ("515 px", "porque", "defeito medido na v7", "test-linhas.cjs"):
+            self.assertIn(item, re.sub(r"\s+", " ", r), item)
+        self.assertIn("**Cuidado", r)
+
+    def test_fixture_da_v7_e_a_fonte_sintetica_existem(self):
+        for nome in ("linhas-v7.js", "larga.ttf"):
+            self.assertTrue((SCRIPTS / "fixtures" / nome).exists(), nome)
+
+
 class Demo(unittest.TestCase):
     def setUp(self):
         self.html = ler(DEMO)
@@ -129,7 +147,7 @@ class Demo(unittest.TestCase):
 
 class Travessao(unittest.TestCase):
     def test_nenhum_arquivo_novo_tem_travessao(self):
-        novos = [MD, DEMO, SCRIPTS / "provar-receitas.mjs", SCRIPTS / "test-receitas.py", SCRIPTS / "test-receitas-navegador.cjs"]
+        novos = [MD, DEMO, SCRIPTS / "provar-receitas.mjs", SCRIPTS / "test-receitas.py", SCRIPTS / "test-receitas-navegador.cjs", SCRIPTS / "test-linhas.cjs", SCRIPTS / "fixtures" / "linhas-v7.js"]
         ruins = [p.name for p in novos if p.exists() and re.search("[\u2014\u2013]", ler(p))]
         self.assertEqual(ruins, [])
 
