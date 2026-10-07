@@ -29,6 +29,13 @@ teste('roteiro da página é válido, e o fixo mais o pior caso da rolagem cabe 
   assert.ok(fixo >= 3 && pior <= 90, `fixo ${fixo} s, pior caso ${pior} s`);
 });
 
+teste('roteiro do demo (painel de cor): válido, com clique no [data-painel] e ao menos 6 prints', () => {
+  const demo = require('./roteiro-demo-receitas.json');
+  assert.deepEqual(roteiro.validarRoteiro(demo).erros, []);
+  assert.ok(demo.passos.some((p) => p.acao === 'clicar' && /data-painel/.test(p.seletor)), 'sem o clique no link com painel');
+  assert.ok(demo.passos.filter((p) => p.acao === 'print' && /painel cobrindo/.test(p.nome)).length === 1, 'sem o quadro do painel cobrindo a tela');
+});
+
 teste('a faixa desta skill é de 10 a 90 s (a do criador-dash era de 10 a 15)', () => {
   assert.deepEqual(roteiro.FAIXA_S, { min: 10, max: 90 });
 });

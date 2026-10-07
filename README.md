@@ -132,7 +132,7 @@ references/
   pesquisa-de-referencias.md   how to find, capture, read and record references
   plano.md                     the PLAN step, the PLANO.md template and what its gate checks
   ritmo-e-animacao.md          signature moment, section skeletons and the animation proof
-  receitas-de-movimento.md     14 motion recipes extracted from the approved page (HTML, CSS, JS, no-JS and reduced-motion fallbacks)
+  receitas-de-movimento.md     15 motion recipes extracted from the approved page (HTML, CSS, JS, no-JS and reduced-motion fallbacks)
   receitas/demo.html           one self-contained page that shows every recipe working (opens from disk or over HTTP)
   imagem.md                    real photo before illustration, repetition, sharpness, notice
   densidade-servico-local.md   the 7 copy items of a local-service page
@@ -158,7 +158,7 @@ hooks/pagina-skill-inject.py   optional trigger hook
 
 ## What is new in 3.5.3
 
-- **Motion recipes** (`references/receitas-de-movimento.md`): the animations of the page the owner approved, as copyable recipes with the exact curve (`cubic-bezier(.2,.8,.2,1)`), durations and delays, the `.no-js` and reduced-motion fallbacks and the mobile cost. The PLAN's animation column now picks a recipe by name or declares `criação nova: <reason>`. `references/receitas/demo.html` runs all of them; `scripts/provar-receitas.mjs` proves in Chromium that every block changes pixels, that nothing is hidden with JavaScript off, and that reduced motion shows the same text. The line-by-line text recipe re-splits after the font loads and when the width changes (`scripts/test-linhas.cjs` reproduces the defect with the original code).
+- **Motion recipes** (`references/receitas-de-movimento.md`): the animations of the page the owner approved, as copyable recipes with the exact curve (`cubic-bezier(.2,.8,.2,1)`), durations and delays, the `.no-js` and reduced-motion fallbacks and the mobile cost. The PLAN's animation column now picks a recipe by name or declares `criação nova: <reason>`. `references/receitas/demo.html` runs all of them; `scripts/provar-receitas.mjs` proves in Chromium that every block changes pixels, that nothing is hidden with JavaScript off, and that reduced motion shows the same text. The colour-panel navigation recipe (the effect the owner liked in a prototype) is hardened: it only intercepts plain clicks on marked same-page links, covers 100% of the window, always releases the page (3 s ceiling), keeps focus, URL and the back button working, and is proved by `scripts/provar-painel.mjs`. The line-by-line text recipe re-splits after the font loads and when the width changes (`scripts/test-linhas.cjs` reproduces the defect with the original code).
 - **Motion lens aligned with the approved page**: the motion-auditor and AI-tell 2 now reject the SAME generic fade applied to everything, not the number of revealed items; one curve and one duration scale, each item entering when it reaches the screen, plus moments tied to the content.
 - **Scroll proof video** (`scripts/gravar-video.js`, `scripts/video/`, `roteiro-pagina.json`): records desktop and mobile from top to bottom at reading pace with Playwright's native recorder (no ffmpeg of your own, no OS-specific tool), plus a contact sheet per profile. Duration band 10 to 90 s in this skill. `gate-etapas.py registrar 5` now requires the two `.webm` files.
 
@@ -185,6 +185,7 @@ python3 scripts/test-gate-plano.py
 python3 scripts/test-secoes.py
 python3 scripts/test-animacao.py
 python3 scripts/test-receitas.py
+node scripts/test-painel.cjs
 node scripts/test-receitas-navegador.cjs
 node scripts/test-linhas.cjs
 node scripts/test-roteiro-de-video.cjs

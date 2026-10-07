@@ -48,10 +48,11 @@ class Receitas(unittest.TestCase):
     def test_toda_receita_tem_os_campos_obrigatorios(self):
         for nome, corpo in receitas().items():
             self.assertIn(f"`data-receita`: `{nome}`", corpo, f"{nome}: identificador")
-            for campo in ("**Quando usar:**", "**Quando NÃO usar:**", "**Origem na v7:**", "**Reserva:**", "**Custo no celular:**"):
+            for campo in ("**Quando usar:**", "**Quando NÃO usar:**", "**Reserva:**", "**Custo no celular:**"):
                 self.assertIn(campo, corpo, f"{nome}: falta {campo}")
-            origem = re.search(r"\*\*Origem na v7:\*\*[^\n]*(?:\n[^\n*][^\n]*)*", corpo).group(0)
-            self.assertRegex(origem, r"_(app\.js|input\.css|heroi\.html):\d+", f"{nome}: origem sem arquivo:linha")
+            achada = re.search(r"\*\*Origem (?:na v7|no protótipo v8):\*\*[^\n]*(?:\n[^\n*][^\n]*)*", corpo)
+            self.assertTrue(achada, f"{nome}: falta a origem")
+            self.assertRegex(achada.group(0), r"_(app\.js|input\.css|heroi\.html|efeitos\.js):\d+", f"{nome}: origem sem arquivo:linha")
             self.assertIn("```html", corpo, f"{nome}: sem HTML mínimo")
             self.assertIn("```css", corpo, f"{nome}: sem CSS")
             self.assertTrue("```js" in corpo or "Sem JS" in corpo, f"{nome}: sem JS nem a declaração 'Sem JS'")
@@ -106,7 +107,7 @@ class Demo(unittest.TestCase):
         self.assertEqual(sorted(no_md - no_demo), [], "receita sem bloco no demo")
         self.assertEqual(sorted(no_demo - no_md), [], "bloco no demo sem receita no md")
         for nome in no_demo:
-            self.assertRegex(self.html, rf'data-receita="{nome}"[^>]*data-gatilho="(carga|entrar|rolagem|clique|hover)"', nome)
+            self.assertRegex(self.html, rf'data-receita="{nome}"[^>]*data-gatilho="(carga|entrar|rolagem|clique|hover|navegacao)"', nome)
 
     def test_cada_bloco_mostra_o_nome_da_receita(self):
         for nome in receitas():
@@ -117,7 +118,7 @@ class Demo(unittest.TestCase):
     def test_autocontido_sem_biblioteca_nem_dado_externo(self):
         self.assertNotRegex(self.html, r"<script[^>]+src=")
         self.assertNotRegex(self.html, r'<link[^>]+rel="stylesheet"')
-        self.assertNotRegex(self.html, r'(?:src|href)="https?://')
+        self.assertNotRegex(self.html, r'(?:src|href)="https?://(?!exemplo\.invalid/)')  # só o link externo de prova, em domínio reservado
         self.assertNotIn("@import", self.html)
 
     def test_bloco_de_movimento_reduzido(self):
@@ -147,7 +148,7 @@ class Demo(unittest.TestCase):
 
 class Travessao(unittest.TestCase):
     def test_nenhum_arquivo_novo_tem_travessao(self):
-        novos = [MD, DEMO, SCRIPTS / "provar-receitas.mjs", SCRIPTS / "test-receitas.py", SCRIPTS / "test-receitas-navegador.cjs", SCRIPTS / "test-linhas.cjs", SCRIPTS / "fixtures" / "linhas-v7.js"]
+        novos = [MD, DEMO, SCRIPTS / "provar-receitas.mjs", SCRIPTS / "test-receitas.py", SCRIPTS / "test-receitas-navegador.cjs", SCRIPTS / "provar-painel.mjs", SCRIPTS / "test-painel.cjs", SCRIPTS / "test-linhas.cjs", SCRIPTS / "fixtures" / "linhas-v7.js"]
         ruins = [p.name for p in novos if p.exists() and re.search("[\u2014\u2013]", ler(p))]
         self.assertEqual(ruins, [])
 

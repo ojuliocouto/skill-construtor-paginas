@@ -152,6 +152,20 @@ const GATILHOS = {
     const depois = await alvo.screenshot();
     return { p, antes, depois };
   },
+  async navegacao(ctx, nome) {
+    // O "depois" é o quadro com o painel cobrindo a tela (fase "cobre"); o "antes" é a página parada.
+    const p = await ctx.newPage();
+    await p.goto(URL_ALVO, { waitUntil: 'load' });
+    await espera(300);
+    const alvo = p.locator('[data-receita="' + nome + '"] [data-painel]').first();
+    await alvo.scrollIntoViewIfNeeded();
+    await espera(700);
+    const antes = await p.screenshot({ scale: 'css' });
+    await alvo.click();
+    await p.waitForFunction(() => { const e = document.querySelector('.painel-cor'); return e && e.getAttribute('data-fase') === 'cobre'; }, null, { timeout: 4000, polling: 16 });
+    const depois = await p.screenshot({ scale: 'css' });
+    return { p, antes, depois };
+  },
   async hover(ctx, nome) {
     const p = await ctx.newPage();
     await p.goto(URL_ALVO, { waitUntil: 'load' });

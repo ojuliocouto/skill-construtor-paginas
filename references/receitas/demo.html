@@ -8,7 +8,7 @@
 <meta name="description" content="Demonstração das receitas de movimento da skill construtor-paginas, com texto fictício.">
 <script>document.documentElement.classList.replace('no-js','js')</script>
 <style>
-:root { --fundo: #f4f1ea; --papel: #fffdf8; --areia: #e4dccb; --tinta: #3b3f3a; --escuro: #1f2622; --verde: #4f7a63; --claro: #cfe3d6; --gutter: clamp(16px, 4.4vw, 64px); }
+:root { --fundo: #f4f1ea; --papel: #fffdf8; --areia: #e4dccb; --tinta: #3b3f3a; --escuro: #1f2622; --verde: #4f7a63; --claro: #cfe3d6; --gutter: clamp(16px, 4.4vw, 64px); --marca: var(--verde); }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
@@ -173,6 +173,11 @@ img, svg { display: block; max-width: 100%; }
 /* botao-com-seta */
 .acoes-botao { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 16px; }
 
+/* painel-de-cor */
+.painel-cor { position: fixed; inset: 0; z-index: 200; background: var(--marca); transform: translateY(100%); visibility: hidden; pointer-events: none; }
+.painel-cor.ativo { visibility: visible; pointer-events: auto; }
+.destino { min-height: 100vh; }
+
 /* barra-fixa-do-celular */
 .barra { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(244,241,234,.96); border-top: 1px solid rgba(79,122,99,.3); transform: translateY(110%); visibility: hidden; transition: none; }
 .barra.mostra { transform: none; visibility: visible; transition: transform .35s ease, visibility 0s; }
@@ -191,6 +196,7 @@ img, svg { display: block; max-width: 100%; }
   .contador.pulsa { animation: none; }
   .botao, .botao svg, .faq summary svg { transition: none; }
   .barra { transition: none; }
+  .painel-cor { display: none; }
 }
 </style>
 </head>
@@ -418,6 +424,16 @@ img, svg { display: block; max-width: 100%; }
     </div>
   </section>
 
+  <section class="bloco" data-receita="painel-de-cor" data-gatilho="navegacao">
+    <div class="moldura">
+      <p class="selo">Receita: <code>painel-de-cor</code></p>
+      <h2>Painel de cor na navegação interna</h2>
+      <p class="nota">Ao clicar no botão, um painel na cor da marca sobe e cobre a tela em 0,8 s, a página troca de posição por baixo e o painel sai por cima em 0,8 s. Só o botão marcado com <code>data-painel</code> usa o painel.</p>
+      <div class="acoes-botao"><a href="#alvo-painel" class="botao" data-painel>Ir para o destino <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4v12M5 11l5 5 5-5"/></svg></a></div>
+      <p class="nota">Para comparar, estes passam direto: <a id="link-direto" href="#alvo-painel">link comum para o mesmo destino</a>, <a id="link-nova-aba" href="#alvo-painel" target="_blank" rel="noopener">em nova aba</a> e <a id="link-externo" href="https://exemplo.invalid/">link externo</a>.</p>
+    </div>
+  </section>
+
   <section class="bloco" data-receita="barra-fixa-do-celular" data-gatilho="rolagem">
     <div class="moldura">
       <p class="selo">Receita: <code>barra-fixa-do-celular</code></p>
@@ -425,6 +441,12 @@ img, svg { display: block; max-width: 100%; }
       <p class="nota">Depois que o topo sai da tela, e enquanto nenhum botão da página está à vista, a barra de baixo entra em 0,35 s. Aqui ela também aparece em tela larga, para a demonstração.</p>
       <p class="nota">Texto fictício para dar altura ao bloco e deixar a barra aparecer sem nenhum outro botão por perto. Role um pouco até ela subir.</p>
       <div style="height:min(70vh,520px)"></div>
+    </div>
+  </section>
+  <section class="bloco destino" id="alvo-painel" aria-labelledby="titulo-alvo">
+    <div class="moldura">
+      <h2 id="titulo-alvo">Destino do painel</h2>
+      <p class="nota">Aqui o foco chega depois do painel. O endereço ganha <code>#alvo-painel</code> e o botão voltar da janela devolve a rolagem de antes.</p>
     </div>
   </section>
 </main>
@@ -481,6 +503,56 @@ img, svg { display: block; max-width: 100%; }
     var ro = new ResizeObserver(function () { if (nos.some(function (n, k) { return n.offsetWidth !== larguras[k]; })) agendar(); });
     nos.forEach(function (n) { ro.observe(n); });
   } else window.addEventListener('resize', agendar);
+})();
+</script>
+<script data-modulo="painel-de-cor">
+(function () {
+  var reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var CURVA = 'cubic-bezier(.77,0,.175,1)', SOBE = 800, SEGURA = 450, SAI = 800, TETO = 3000;
+  var painel = document.createElement('div');
+  painel.className = 'painel-cor'; painel.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(painel);
+  var ocupado = false, relogio = null, animacoes = [], movido = false;
+  function irPara(alvo, hash) {
+    if (location.hash !== hash && history.pushState) history.pushState(null, '', hash);
+    try { alvo.scrollIntoView({ behavior: 'instant', block: 'start' }); } catch (e) { alvo.scrollIntoView(); }
+    var titulo = alvo.getAttribute('aria-labelledby') && document.getElementById(alvo.getAttribute('aria-labelledby'));
+    var foco = titulo || alvo;
+    if (!foco.hasAttribute('tabindex')) foco.setAttribute('tabindex', '-1');
+    foco.focus({ preventScroll: true });
+    movido = true;
+  }
+  function soltar() {
+    clearTimeout(relogio);
+    animacoes.forEach(function (a) { try { a.cancel(); } catch (e) {} });
+    animacoes = [];
+    painel.classList.remove('ativo'); painel.removeAttribute('data-fase');
+    ocupado = false;
+  }
+  function animar(de, para, ms) { var a = painel.animate([{ transform: de }, { transform: para }], { duration: ms, easing: CURVA, fill: 'forwards' }); animacoes.push(a); return a; }
+  document.addEventListener('click', function (e) {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target.closest && e.target.closest('a[data-painel]');
+    if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+    var u = new URL(a.href, location.href);
+    if (u.origin !== location.origin || u.pathname !== location.pathname || u.search !== location.search || u.hash.length < 2) return;
+    var hash = u.hash, alvo = document.getElementById(decodeURIComponent(hash.slice(1)));
+    if (!alvo) return;
+    e.preventDefault();
+    if (reduz || !painel.animate) { irPara(alvo, hash); return; }
+    if (ocupado) return;
+    ocupado = true; movido = false;
+    painel.setAttribute('data-fase', 'sobe'); painel.classList.add('ativo');
+    relogio = setTimeout(function () { if (!movido) irPara(alvo, hash); soltar(); }, TETO);
+    animar('translateY(100%)', 'translateY(0)', SOBE).onfinish = function () {
+      painel.setAttribute('data-fase', 'cobre');
+      irPara(alvo, hash);
+      setTimeout(function () {
+        painel.setAttribute('data-fase', 'sai');
+        animar('translateY(0)', 'translateY(-100%)', SAI).onfinish = soltar;
+      }, SEGURA);
+    };
+  });
 })();
 </script>
 <script>

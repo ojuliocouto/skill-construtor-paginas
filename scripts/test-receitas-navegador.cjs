@@ -45,7 +45,7 @@ function concluir(status, saidaTexto, saida) {
   let m = {};
   try { m = JSON.parse(fs.readFileSync(path.join(saida, 'medidas.json'), 'utf8')); } catch { /* falha abaixo */ }
   const blocos = m.blocos || [];
-  checar(blocos.length === 28, '14 receitas medidas em 2 telas (' + blocos.length + ')');
+  checar(blocos.length === 30, '15 receitas medidas em 2 telas (' + blocos.length + ')');
   checar(blocos.length > 0 && blocos.every((b) => b.ok && b.mudou >= m.minimo_mudou), 'todo bloco muda de pixel');
   checar(m.sem_script && m.sem_script.escondidos && m.sem_script.escondidos.length === 0, 'sem script nada fica escondido');
   checar(m.movimento_reduzido && m.movimento_reduzido.texto_igual === true, 'movimento reduzido mostra o mesmo texto');
