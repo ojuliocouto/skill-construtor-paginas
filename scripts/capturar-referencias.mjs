@@ -92,7 +92,7 @@ try {
       Object.assign(entrada, {
         tipo,
         titulo,
-        prints: { dobra: path.relative(path.resolve(projeto), dobra), meio: path.relative(path.resolve(projeto), meio) },
+        prints: { dobra: path.relative(path.resolve(projeto), dobra).split(path.sep).join('/'), meio: path.relative(path.resolve(projeto), meio).split(path.sep).join('/') },
         altura_pagina: altura,
         capturado_em: new Date().toISOString().slice(0, 19),
       });
@@ -116,6 +116,6 @@ try {
   await browser.close();
   fs.writeFileSync(manifesto, JSON.stringify(doc, null, 2) + '\n');
 }
-console.log(`\n${urls.length - falhas.length} de ${urls.length} capturada(s). Manifesto: ${path.relative(process.cwd(), manifesto) || manifesto}`);
+console.log(`\n${urls.length - falhas.length} de ${urls.length} capturada(s). Manifesto: ${path.relative(process.cwd(), manifesto).split(path.sep).join('/') || manifesto}`);
 console.log('Agora ABRA cada PNG e escreva faz_bem, principio e lido:true. Depois: node scripts/py.mjs gate-referencias.py --projeto <dir>');
 process.exit(falhas.length ? 1 : 0);

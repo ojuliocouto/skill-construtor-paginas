@@ -52,7 +52,7 @@ def checar(dist, pedido):
         return [f"nenhum HTML em {dist}"], avisos
     for p in paginas:
         t = p.read_text(encoding="utf-8", errors="replace")
-        nome = p.relative_to(dist)
+        nome = p.relative_to(dist).as_posix()
         if "window.RASTREIO" not in t:
             erros.append(f"{nome}: falta o bloco window.RASTREIO (references/rastreamento.md)")
         else:

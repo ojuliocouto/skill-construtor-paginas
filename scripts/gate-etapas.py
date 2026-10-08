@@ -42,7 +42,7 @@ def videos_da_prova(projeto, doc):
         with p.open("rb") as f:
             if f.read(4).hex() != "1a45dfa3":
                 raise ValueError(f"Etapa 5: {p.name} não é um WebM (cabeçalho EBML ausente).")
-        achados[str(p.relative_to(projeto))] = digest(p)
+        achados[p.relative_to(projeto).as_posix()] = digest(p)
     return achados
 
 
@@ -136,7 +136,7 @@ def validar(projeto, arquivo, etapa, campos, perfil):
         p = (projeto / nome).resolve()
         if not p.is_relative_to(projeto) or p == arquivo or p.name == REGISTRO:
             raise ValueError("A evidência precisa estar dentro do projeto e não pode ser o próprio registro.")
-        hashes[str(p.relative_to(projeto))] = digest(p)
+        hashes[p.relative_to(projeto).as_posix()] = digest(p)
     return hashes
 
 
@@ -177,7 +177,7 @@ def main():
             if not arquivo.is_relative_to(projeto):
                 raise ValueError("O JSON precisa estar dentro do projeto.")
             hashes = validar(projeto, arquivo, args.etapa, etapas[args.etapa], args.perfil)
-            hashes[str(arquivo.relative_to(projeto))] = digest(arquivo)
+            hashes[arquivo.relative_to(projeto).as_posix()] = digest(arquivo)
             # Corrigir uma etapa invalida as seguintes; um resultado antigo não prova a versão nova.
             registro = {e: registro[e] for e in ordem[:indice]}
             registro[args.etapa] = {"hashes": hashes}

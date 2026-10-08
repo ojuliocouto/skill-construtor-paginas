@@ -63,6 +63,8 @@ PAD_SHELL = [
     (re.compile(r"""(subprocess\.\w+|spawnSync|spawn|execFileSync|execFile)\(\s*\[?\s*["'](grep|sed|awk|cat|ls|rm|cp|mv|kill|open|chmod|find|tar|which)["']"""),
      "programa de Unix chamado por subprocesso"),
     (re.compile(r"""\bexecSync\(\s*[`"']"""), "execSync com string"),
+    (re.compile(r"\bstr\(\s*[\w.\[\]]+\.relative_to\(|os\.path\.relpath\(|\{[^}]*\.relative_to\([^)]*\)\}"), "caminho relativo sem as_posix() (no Windows sai com barra invertida; use .as_posix())"),
+    (re.compile(r"\bpath\.relative\((?!.*\.split\(path\.sep\)\.join)"), "path.relative sem trocar a barra invertida (.split(path.sep).join('/'))"),
     (re.compile(r"\bcpSync\("), "cpSync (no Node 22 do Windows falha com acento no caminho: copie com laço próprio)"),
     (re.compile(r"""(?<![\w.])import\(\s*(?!['"`]|pathToFileURL|require\(['"]node:url['"]\)\.pathToFileURL|new URL)"""), "import() dinâmico com caminho de arquivo (no Windows precisa de pathToFileURL(caminho).href)"),
     (re.compile(r"import\.meta\.url\)?\.pathname|new URL\([^)]*import\.meta\.url[^)]*\)\.pathname"), "caminho de módulo por .pathname (use fileURLToPath)"),
@@ -168,6 +170,10 @@ RUINS = {
     "grep.py": "import subprocess\nsubprocess.run(['grep', '-r', 'x', '.'])\n",
     "pkill.md": "```bash\npkill -f wrangler\n```\n",
     "exec.mjs": "import { execSync } from 'node:child_process';\nexecSync('ls -la');\n",
+    "relative-to.py": "rel = str(p.relative_to(raiz))\n",
+    "relpath.py": "import os\nrel = os.path.relpath(a, b)\n",
+    "relative-fstring.py": "print(f'{p.relative_to(dist)}: erro')\n",
+    "relative-js.mjs": "const rel = path.relative(base, arq);\n",
     "cpsync.mjs": "import fs from 'node:fs';\nfs.cpSync(a, b, { recursive: true });\n",
     "import-dinamico.mjs": "const m = await import(path.join(aqui, 'x.mjs'));\n",
     "pathname.mjs": "const aqui = new URL('.', import.meta.url).pathname;\n",
@@ -186,6 +192,8 @@ BONS = {
     "open-url.md": "Abra https://exemplo.com no navegador.\nAbra o arquivo com o app.\n",
     "spawn-ok.mjs": "import { spawnSync } from 'node:child_process';\nspawnSync(process.execPath, ['a.js']);\n",
     "import-ok.mjs": "const m = await import(pathToFileURL(p).href);\nconst n = await import('node:fs');\n",
+    "relative-ok.py": "rel = p.relative_to(raiz).as_posix()\npartes = set(p.relative_to(raiz).parts)\n",
+    "relative-ok.mjs": "const rel = path.relative(base, arq).split(path.sep).join('/');\n",
     "url-ok.mjs": "import { fileURLToPath } from 'node:url';\nconst aqui = fileURLToPath(new URL('.', import.meta.url));\n",
 }
 

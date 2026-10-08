@@ -139,7 +139,7 @@ def main() -> int:
             | set(RE_TOKEN.findall(texto))
         for c in candidatas - CONHECIDOS:
             if escapar(c) not in css:
-                mortas.setdefault(c, []).append(str(f.relative_to(raiz)))
+                mortas.setdefault(c, []).append(f.relative_to(raiz).as_posix())
 
     print('GATE DE CLASSE MORTA')
     print('=' * 72)
