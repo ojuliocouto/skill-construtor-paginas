@@ -13,3 +13,7 @@ Uma linha horizontal no desktop (vertical no celular) com um marco por etapa e o
 ## Armadilha
 
 Numeração 01/02/03 gigante nos marcos; linha que segue além do último passo; mais de 5 etapas.
+
+## Título ao lado de marcos verticais
+
+Se o plano pede o título à esquerda e os marcos empilhados à direita (a assinatura em três estados faz isso), declare `data-assimetrico="motivo escrito"` na seção: a regra de simetria (`gate-simetria.mjs`) reprova esse par por padrão e passa a avisar quando o atributo está lá. Sem o atributo, reprova.

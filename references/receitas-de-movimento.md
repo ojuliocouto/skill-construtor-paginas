@@ -159,6 +159,7 @@ peça a peça com a rolagem, a região acende, o marco do passo ativa e a linha 
 entrar no fecho, ela se alinha sozinha em 2,0 s.
 **Quando NÃO usar:** se o assunto não tem um objeto que muda de estado (não invente: use outra
 receita); por cima de foto de pessoa (fica AO LADO); em mais de uma assinatura por página.
+**Layout e gate:** a coluna fixa ao lado dos passos verticais é o par "título/coluna à esquerda + lista vertical à direita" que a regra de simetria reprova por padrão (`references/preferencias-de-design.md`). Quando o plano pede esta receita, declare `data-assimetrico="coluna fixa da assinatura ao lado dos passos, pedida no plano"` na `<section>`: o `gate-simetria.mjs` passa a avisar em vez de reprovar, com o motivo no relatório. Sem o atributo, reprova.
 **Origem na v7:** `_app.js:8-14, 30, 44` (estado 1), `55-66, 93-116` (estado 2), `231-239`
 (estado 3); `_input.css:104-109, 116-117, 173, 180-181, 200, 371`. Na v7 as peças eram vértebras
 montadas pelo script; aqui elas já vêm no HTML (`data-dx`, `data-rot`, `data-cy`), então a página
@@ -208,6 +209,11 @@ function aplicar(c, p) { // p de 0 (torto) a 1 (alinhado)
   });
   c.fio.setAttribute('points', pts.join(' '));
 }
+// Uma coluna por <svg data-coluna>: "rolagem" (estado 2) e, se houver, "sozinha" (estado 3)
+var colunas = {};
+each(document.querySelectorAll('svg[data-coluna]'), function (svg) { colunas[svg.getAttribute('data-coluna')] = montar(svg); });
+if (colunas.rolagem) aplicar(colunas.rolagem, reduz ? 1 : 0);
+if (colunas.sozinha) aplicar(colunas.sozinha, reduz ? 1 : 0);
 // Estado 2: presa à rolagem dos passos
 var passos = document.querySelector('.passos'), listaPassos = passos.querySelectorAll('.passo');
 function progressoAssinatura() {
@@ -229,7 +235,9 @@ function alinharSozinha(col) {
   var passo = function (ts) { if (!t0) t0 = ts; var k = Math.min(1, (ts - t0) / 2000); aplicar(col, 1 - Math.pow(1 - k, 2)); if (k < 1) window.requestAnimationFrame(passo); };
   window.requestAnimationFrame(passo);
 }
-// Chame progressoAssinatura() dentro do quadro() da rolagem, io.observe(svg.entra-pecas) e io.observe(bloco do estado 3)
+// Chame progressoAssinatura() dentro do quadro() da rolagem, io.observe(svg.entra-pecas) e io.observe(bloco do estado 3):
+// ao entrar, alinharSozinha(colunas.sozinha). A versão que roda, com o quadro() e o observador, é o
+// script de references/receitas/demo.html (procure por "montar(svg)").
 ```
 
 **Reserva:** sem script a pilha aparece alinhada e sem inclinação (as peças estão no HTML) e a
@@ -338,6 +346,7 @@ Duração 0,95 s por linha, 0,14 s entre linhas, 0,45 s entre itens da lista.
 
 **Quando usar:** em tela larga, seção com título curto ao lado de uma lista longa: o título fica
 preso enquanto os itens passam.
+**Layout e gate:** título fixo ao lado de uma lista longa é o par "título à esquerda + lista vertical à direita" que a regra de simetria reprova por padrão. Quando o plano pede esta receita, declare `data-assimetrico="título fixo ao lado da lista, pedido no plano"` na seção (o gate vira aviso).
 **Quando NÃO usar:** no celular (coluna única, sem fixo); dentro de grid que termina depois do
 bloco de largura total (o título nunca solta). Regras e medidas em
 `references/sticky-e-sobreposicao.md`.
@@ -700,8 +709,8 @@ corpo. Movimento reduzido: `.barra { transition: none; }` (aparece sem deslizar)
 
 `data-receita`: `painel-de-cor`. Nome: **Painel de cor na navegação interna** (a 15ª receita; aprovada pelo dono em protótipo com "Gostei muito desse").
 
-**Quando usar:** página com 2 ou mais links internos de destaque, como o botão do topo que leva para a oferta ou o botão do fim que volta ao formulário. Ao clicar, um painel na cor da marca sobe e cobre a tela em 0,8 s, a página troca de posição por baixo e o painel sai por cima em 0,8 s (mais uma pausa de 0,45 s coberto). Cada clique custa cerca de 2,1 s.
-**Quando NÃO usar:** em link de menu que o visitante clica várias vezes seguidas (1,8 s por clique cansa: use só no botão principal, com `data-painel` nele e em mais nenhum); em página com um link interno só; em link para outra página ou para fora; quando o destino está na própria tela (o painel cobre um movimento que ninguém precisava).
+**Quando usar:** página com 2 ou mais links internos de destaque, como o botão do topo que leva para a oferta ou o botão do fim que volta ao formulário. Ao clicar, um painel na cor da marca sobe e cobre a tela em 0,8 s, a página troca de posição por baixo e o painel sai por cima em 0,8 s (mais uma pausa de 0,15 s coberto: 0,8 + 0,15 + 0,8 = 1,75 s). Cada clique custa cerca de 1,8 s.
+**Quando NÃO usar:** em link de menu que o visitante clica várias vezes seguidas (cerca de 1,8 s por clique cansa: use só no botão principal, com `data-painel` nele e em mais nenhum); em página com um link interno só; em link para outra página ou para fora; quando o destino está na própria tela (o painel cobre um movimento que ninguém precisava).
 **Origem no protótipo v8:** `pagina-studio-v8-proto/_efeitos.js:76-106` e `_input.css:556-557` (o painel sobe em 0,77 s e sai em 0,79 s). Endurecido aqui: opt-in por `data-painel`, só clique simples em link da mesma página, `pushState` antes da rolagem (o botão voltar devolve a posição), foco no destino, pausa coberta que dá um quadro "cobre" mensurável, teto de tempo e cor pelo token `--marca`.
 
 ```html
