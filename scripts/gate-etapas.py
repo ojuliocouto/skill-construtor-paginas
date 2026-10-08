@@ -34,7 +34,7 @@ def videos_da_prova(projeto, doc):
     """Etapa 5: a prova leva o vídeo da rolagem (gravar-video.js) junto dos prints, em desktop e celular."""
     v = doc.get("video")
     if not isinstance(v, dict) or not all(str(v.get(k) or "").strip() for k in ("desktop", "mobile")):
-        raise ValueError(f"Etapa 5: video é {{desktop, mobile}}, os dois .webm gravados por {comando('gravar-video.js')} (prova junto dos prints).")
+        raise ValueError(f"Etapa 5: `video` é {{desktop, mobile}}, os dois .webm gravados por {comando('gravar-video.js')} (prova junto dos prints).")
     achados = {}
     for perfil in ("desktop", "mobile"):
         p = (projeto / str(v[perfil])).resolve()
@@ -110,7 +110,7 @@ def validar(projeto, arquivo, etapa, campos, perfil):
     if perfil == "paginas" and etapa == "2":
         secoes = doc["secoes"]
         if not isinstance(secoes, list) or len(secoes) < 3 or not all(isinstance(s, dict) and all(str(s.get(k) or "").strip() for k in ("secao", "tratamento", "referencia")) for s in secoes):
-            raise ValueError("Etapa 2: secoes é uma lista de {secao, tratamento, referencia}, uma linha por seção (3 ou mais).")
+            raise ValueError("Etapa 2: `secoes` é uma lista de {`secao`, `tratamento`, `referencia`}, uma linha por seção (3 ou mais).")
         norm = [normalizar(s["tratamento"]) for s in secoes]
         for i in range(len(norm) - 2):
             if norm[i] == norm[i + 1] == norm[i + 2]:
@@ -122,7 +122,7 @@ def validar(projeto, arquivo, etapa, campos, perfil):
         for ic in doc.get("icones") or []:
             desenha = str((ic or {}).get("desenha") or "").strip() if isinstance(ic, dict) else ""
             if not desenha:
-                raise ValueError("Etapa 2: icones é uma lista de {secao, desenha}.")
+                raise ValueError("Etapa 2: `icones` é uma lista de {`secao`, `desenha`}.")
             if re.search(GENERICOS, normalizar(desenha)):
                 raise ValueError(f"Etapa 2: ícone de biblioteca ('{desenha}'): desenhe o assunto da seção.")
     if perfil == "paginas" and etapa == "3":

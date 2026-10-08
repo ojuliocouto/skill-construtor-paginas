@@ -96,7 +96,7 @@ def montar(pasta, sec, quadros, medidas):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--pasta", required=True, help="a mesma --saida do anim.mjs")
-    ap.add_argument("--secoes", required=True, help="secoes.json (nome, titulo, tipo)")
+    ap.add_argument("--secoes", required=True, help="seções.json (nome, título, tipo)")
     ap.add_argument("--so", help="refaz só esta seção e mantém as outras do medidas.json")
     ap.add_argument("--limiar", type=int, default=12, help="níveis de cinza (de 255) para um pixel contar como mudado")
     a = ap.parse_args()

@@ -52,14 +52,14 @@ REGISTRO = ".wave-auditoria.json"
 # comparacao-referencias, que sempre se aplica.
 LENTES = {
     "design-critic": "taste e anti-slop: tells visuais de IA, cara de template",
-    "assets-auditor": "imagem, mockup e video reais (nao so texto, gradiente e SVG)",
+    "assets-auditor": "imagem, mockup e vídeo reais (não só texto, gradiente e SVG)",
     "visual-auditor": "hierarquia, paleta, espacamento e grid de desktop",
     "motion-auditor": "scroll reveal, hover, entrada do heroi, microinteracao",
     "responsive-auditor": "as 12 telas: overflow, CTA na dobra, toque 44px, texto legivel",
     "cro-auditor": "CTA, formulario, oferta, message match, Hook/Story/Offer",
     "a11y-auditor": "foco, label, alt, ARIA, contraste 4.5:1, zero emoji",
     "content-auditor": "dado inventado, claim sem fonte, travessao, consistencia de contato",
-    "comparacao-referencias": "a pagina esta no nivel das referencias printadas no passo b?",
+    "comparacao-referencias": "a página está no nível das referências printadas no passo b?",
 }
 LENTE_REFERENCIAS = "comparacao-referencias"
 GOSTOS = ("bonito", "correto")
@@ -70,26 +70,26 @@ GATES = {
     "oclusao": "gate-oclusao.mjs (texto coberto ou cortado)",
     "responsivo": "gate-responsivo.mjs (12 telas)",
     "uso-ferramentas": "uso-ferramentas.py (ferramenta viva foi usada)",
-    "sem-kicker": "gate-sem-kicker.py (toda pagina sem kicker em caixa alta e sem numero decorativo)",
-    "classes-mortas": "gate-classes-mortas.py (classe do codigo que nao existe no CSS gerado)",
+    "sem-kicker": "gate-sem-kicker.py (toda página sem kicker em caixa alta e sem número decorativo)",
+    "classes-mortas": "gate-classes-mortas.py (classe do código que não existe no CSS gerado)",
     "referencias": "gate-referencias.py (6 prints reais lidos, 2 de cada tipo)",
     # Auditoria da v3 (02/10/2026): os quatro desenhos e afirmacoes que passaram por todos os
     # gates anteriores e derrubaram a pagina para 5,5 viraram medida.
     "simetria": "gate-simetria.mjs (itens paralelos em caixas iguais, colunas que terminam juntas)",
-    "texto": "gate-texto.mjs (viuva em titulo e subtitulo de 320 a 1440, item em minuscula, italico colorido repetido)",
+    "texto": "gate-texto.mjs (viúva em título e subtítulo de 320 a 1440, item em minúscula, itálico colorido repetido)",
     "verdade": "gate-verdade.py (toda promessa com linha do briefing, inclusive nas metas)",
-    "publicacao": "gate-publicacao.py (dist/ so com o que a pagina usa)",
+    "publicacao": "gate-publicacao.py (dist/ só com o que a página usa)",
     # Auditoria da v4 (02/10/2026, nota 6,5): defeitos que so aparecem na visita real ou fora
     # das telas e dos elementos que os gates mediam.
     "movimento": "gate-movimento.mjs (visita de 8 s parada no topo: nada anima fora da tela)",
-    "composicao": "gate-composicao.mjs (mesmo esqueleto em mais de 2 secoes seguidas, icone de biblioteca)",
-    "imagens": "gate-imagens.py (licenca com versao e link, direito de imagem, aviso no og-image)",
+    "composicao": "gate-composicao.mjs (mesmo esqueleto em mais de 2 seções seguidas, ícone de biblioteca)",
+    "imagens": "gate-imagens.py (licença com versão e link, direito de imagem, aviso no og-image)",
     # Etapa PLANO (03/10/2026): o aluno aprova visual, secoes, copy, pixel e codigo antes do codigo.
-    "plano": "gate-plano.py (PLANO.md com as 7 secoes, 3 direcoes com previa e tudo aprovado)",
+    "plano": "gate-plano.py (PLANO.md com as 7 seções, 3 direções com prévia e tudo aprovado)",
     "rastreamento": "gate-rastreamento.py (pixel e eventos que o plano pediu ligados na dist/)",
     # Padrao da v7 (04/10/2026): o que separou a v7 da v6, a "correta e generica", virou medida.
-    "ritmo": "gate-ritmo.mjs (nenhuma secao vizinha com o mesmo esqueleto, no maximo 1 titulo centralizado com cartoes)",
-    "animacao": "gate-animacao.py (cada secao muda 2% ou mais dos pixels em 1440 e 390, no maximo 2 com o mesmo tipo de animacao)",
+    "ritmo": "gate-ritmo.mjs (nenhuma seção vizinha com o mesmo esqueleto, no máximo 1 título centralizado com cartões)",
+    "animacao": "gate-animacao.py (cada seção muda 2% ou mais dos pixels em 1440 e 390, no máximo 2 com o mesmo tipo de animação)",
 }
 
 # Quem auditou. Nota de autoavaliacao (quem construiu olhando o proprio trabalho) NAO libera
@@ -146,20 +146,20 @@ def cmd_registrar(args):
               file=sys.stderr)
         return 2
     if args.lente == LENTE_REFERENCIAS and args.veredito == "nao_aplicavel":
-        print("ERRO: a comparacao com as referencias sempre se aplica. No CLONAR, a referencia e a "
-              "pagina original; nos outros caminhos, os prints do passo b.", file=sys.stderr)
+        print("ERRO: a comparação com as referências sempre se aplica. No CLONAR, a referência e a "
+              "página original; nos outros caminhos, os prints do passo b.", file=sys.stderr)
         return 2
     gosto = getattr(args, "gosto", None)
     if args.lente == LENTE_REFERENCIAS:
         # Auditoria da v5 (03/10/2026): 7,0 e "correta, mas vazia; o dono nao chamaria de foda".
         # A regua do dono depois da SobrAI e a pergunta "isso e bonito ou so esta correto?".
         if gosto not in GOSTOS:
-            print("ERRO: a comparacao com as referencias responde --gosto bonito|correto: a pagina "
-                  "e bonita no nivel das referencias, ou so esta correta? Diga por que nos achados.",
+            print("ERRO: a comparação com as referências responde --gosto bonito|correto: a página "
+                  "é bonita no nível das referências, ou só está correta? Diga por que nos achados.",
                   file=sys.stderr)
             return 2
         if gosto == "correto" and args.veredito == "aprovado":
-            print("ERRO: pagina so correta nao aprova a comparacao com as referencias. Registre "
+            print("ERRO: página só correta não aprova a comparação com as referências. Registre "
                   "--veredito reprovado e volte ao plano visual.", file=sys.stderr)
             return 2
     if args.veredito != "nao_aplicavel" and (args.nota is None):
@@ -167,7 +167,7 @@ def cmd_registrar(args):
         return 2
     if len((args.achados or "").strip()) < 25:
         print("ERRO: --achados precisa dizer o que foi OLHADO e o que foi encontrado "
-              "(>= 25 caracteres). 'ok' nao e auditoria.", file=sys.stderr)
+              "(>= 25 caracteres). 'ok' não e auditoria.", file=sys.stderr)
         return 2
     d = carregar(args.projeto)
     d["lentes"][args.lente] = {
@@ -257,25 +257,25 @@ def cmd_checar(args):
     # respondem a mesma.
     if reprovadas:
         print(f"  SINAL: lente(s) com veredito REPROVADO: {', '.join(reprovadas)}")
-        print("         Reprovacao de lente e insumo do CICLO, nao trava do master.")
+        print("         Reprovacao de lente e insumo do CICLO, não trava do master.")
     if baixas:
         print("  SINAL: nota abaixo de %.1f: %s" % (PISO_NOTA, ", ".join(f"{l} ({n})" for l, n in baixas)))
     if notas and media < PISO_MEDIA:
-        print(f"  SINAL: media {media:.2f} abaixo do piso {PISO_MEDIA}. Quem decide se isso entrega")
+        print(f"  SINAL: média {media:.2f} abaixo do piso {PISO_MEDIA}. Quem decide se isso entrega")
         print("         e `wave.py rodada`, e a nota vai DECLARADA na entrega.")
 
     if problemas:
         for p in problemas:
             print("  BLOQUEIA: " + p)
-        print("\n  A ENTREGA ESTA BLOQUEADA. O master nao julga se a pagina esta bonita: ele")
-        print("  julga se o PROCESSO aconteceu. Lente que nao rodou nao vira 'passou por")
-        print("  omissao', e foi assim que uma pagina saiu testada em uma unica resolucao.\n")
+        print("\n  A ENTREGA ESTA BLOQUEADA. O master não julga se a página está bonita: ele")
+        print("  julga se o PROCESSO aconteceu. Lente que não rodou não vira 'passou por")
+        print("  omissao', e foi assim que uma página saiu testada em uma única resolucao.\n")
         return 1
 
     print(f"  Todas as {len(LENTES)} lentes rodaram. Media {media:.2f}. Todos os gates verdes.")
     if na:
-        print(f"  {len(na)} marcada(s) como nao aplicavel (o motivo esta no registro): {', '.join(na)}")
-    print("  Processo completo. A decisao de entregar volta a ser sua.\n")
+        print(f"  {len(na)} marcada(s) como não aplicável (o motivo está no registro): {', '.join(na)}")
+    print("  Processo completo. A decisão de entregar volta a ser sua.\n")
     return 0
 
 
@@ -298,7 +298,7 @@ def cmd_checar(args):
 # Entao a porta de saida tem TRES criterios, e o que manda e o primeiro:
 #
 #   1. ZERO CRITICO CONFIRMADO. Inegociavel, em qualquer rodada. Critico e o que quebra
-#      uso, mente pro visitante ou expoe o cliente. Isso nao se negocia com media.
+#      uso, mente pro visitante ou expoe o cliente. Isso nao se negocia com média.
 #   2. NENHUMA REGRESSAO. Nenhuma lente pode ter caido em relacao a rodada anterior. Se
 #      caiu, a correcao quebrou outra coisa e a rodada nao conta como avanco.
 #   3. CONVERGENCIA ou PISO. Ou a media chegou ao piso (8,0), ou duas rodadas seguidas
@@ -337,8 +337,8 @@ def cmd_rodada(args):
     pend = getattr(args, "pendencias_do_usuario", 0) or 0
     altos_informados = getattr(args, "altos", None)
     if pend and (altos_informados is None or pend > altos_informados):
-        print("ERRO: --pendencias-do-usuario conta altos que dependem do cliente, entao precisa de "
-              "--altos e nao pode ser maior que ele.")
+        print("ERRO: --pendencias-do-usuario conta altos que dependem do cliente, então precisa de "
+              "--altos e não pode ser maior que ele.")
         return 2
     altos_reais = None if altos_informados is None else altos_informados - pend
     # Fechar o ciclo sem os gates permitia imprimir ENTREGA para um processo incompleto.
@@ -349,16 +349,16 @@ def cmd_rodada(args):
     extra_pedida = bool(getattr(args, "rodada_extra_pedida", False))
     if len(hist) >= TETO_RODADAS:
         if not extra_pedida:
-            print(f"ERRO: o ciclo ja fechou em {len(hist)} rodada(s), o teto e {TETO_RODADAS}. Terceira rodada so "
+            print(f"ERRO: o ciclo já fechou em {len(hist)} rodada(s), o teto é {TETO_RODADAS}. Terceira rodada só "
                   "se a pessoa pedir, com --rodada-extra-pedida. Entregue com a nota real e as ressalvas.",
                   file=sys.stderr)
             return 2
         if len(hist) >= TETO_RODADAS + RODADAS_EXTRAS_MAX:
-            print(f"ERRO: nao existe rodada alem de {TETO_RODADAS + RODADAS_EXTRAS_MAX}, nem a pedido. "
+            print(f"ERRO: não existe rodada além de {TETO_RODADAS + RODADAS_EXTRAS_MAX}, nem a pedido. "
                   "Entregue com a nota real e as ressalvas.", file=sys.stderr)
             return 2
     if not set(LENTES).issubset(lentes):
-        print(f"ERRO: so {len(lentes)} de {len(LENTES)} lentes registradas. "
+        print(f"ERRO: só {len(lentes)} de {len(LENTES)} lentes registradas. "
               "Rode a wave inteira antes de fechar a rodada.", file=sys.stderr)
         return 2
 
@@ -377,10 +377,10 @@ def cmd_rodada(args):
     hist.append(atual)
     salvar(args.projeto, d)
 
-    print(f"\nRODADA {atual['n']}  media {media:.2f}  criticos confirmados: {args.criticos}")
+    print(f"\nRODADA {atual['n']}  média {media:.2f}  críticos confirmados: {args.criticos}")
     print("=" * 74)
     for r in hist:
-        print(f"  rodada {r['n']}: media {r['media']:.2f}, {r['criticos']} critico(s)")
+        print(f"  rodada {r['n']}: média {r['media']:.2f}, {r['criticos']} crítico(s)")
 
     # 2. REGRESSAO = achado NOVO causado por correcao minha, nao nota que caiu.
     #
@@ -400,7 +400,7 @@ def cmd_rodada(args):
     # trava.
     regrediu = []
     if getattr(args, "regressoes", 0):
-        regrediu = [f"{args.regressoes} achado(s) confirmado(s) causado(s) por correcao da rodada anterior"]
+        regrediu = [f"{args.regressoes} achado(s) confirmado(s) causado(s) por correção da rodada anterior"]
     caiu = []
     if len(hist) >= 2:
         ant = hist[-2]["notas"]
@@ -419,30 +419,30 @@ def cmd_rodada(args):
 
     if caiu:
         print("-" * 74)
-        print("  SINAL (nao trava): notas que cairam em relacao a rodada anterior:")
+        print("  SINAL (não trava): notas que cairam em relacao a rodada anterior:")
         for c in caiu:
             print(f"    - {c}")
-        print("  Auditor de cada rodada e sorteado de novo: nota que cai pode ser regua mais fina,")
-        print("  nao pagina pior. O que trava e achado NOVO causado por correcao (--regressoes).")
+        print("  Auditor de cada rodada é sorteado de novo: nota que cai pode ser régua mais fina,")
+        print("  não é página pior. O que trava é achado NOVO causado por correção (--regressoes).")
 
     print("-" * 74)
     ref = lentes.get(LENTE_REFERENCIAS, {})
     if ref.get("veredito") == "reprovado":
-        print("  VOLTA PRO PLANO VISUAL (passo c): a lente comparacao-referencias reprovou. A pagina")
-        print("  nao esta no nivel das referencias printadas no passo b, e isso nao se resolve com")
-        print("  nota alta nas outras lentes. Refaca o plano a partir das referencias e reconstrua.\n")
+        print("  VOLTA PRO PLANO VISUAL (passo c): a lente comparacao-referencias reprovou. A página")
+        print("  não está no nível das referências printadas no passo b, e isso não se resolve com")
+        print("  nota alta nas outras lentes. Refaca o plano a partir das referências e reconstrua.\n")
         return 1
     if ref.get("gosto") != "bonito":
-        print("  VOLTA PRO PLANO VISUAL (passo c): a comparacao-referencias nao respondeu que a pagina")
-        print(f"  e bonita no nivel das referencias (resposta: {ref.get('gosto') or 'nenhuma'}). Correta nao")
-        print("  basta: o dono reprovou pagina com 9,05 nas lentes chamando de FEIA.\n")
+        print("  VOLTA PRO PLANO VISUAL (passo c): a comparacao-referencias não respondeu que a página")
+        print(f"  é bonita no nível das referências (resposta: {ref.get('gosto') or 'nenhuma'}). Correta não")
+        print("  basta: o dono reprovou página com 9,05 nas lentes chamando de FEIA.\n")
         return 1
     teto_efetivo = TETO_RODADAS + (RODADAS_EXTRAS_MAX if any(r.get("rodada_extra_pedida") for r in hist) else 0)
     no_teto = len(hist) >= teto_efetivo
     if no_teto and args.criticos > 0:
-        print(f"  NÃO ENTREGAR: crítico aberto. {args.criticos} critico(s) confirmado(s) na rodada {len(hist)}, a ultima do ciclo.")
-        print("  O teto de rodadas fecha o ciclo, nao afrouxa critico. Corrija o critico, refaca os gates que ele")
-        print("  toca e peca a pessoa uma rodada extra (--rodada-extra-pedida) ou entregue so depois de resolvido.\n")
+        print(f"  NÃO ENTREGAR: crítico aberto. {args.criticos} crítico(s) confirmado(s) na rodada {len(hist)}, a última do ciclo.")
+        print("  O teto de rodadas fecha o ciclo, não afrouxa crítico. Corrija o crítico, refaca os gates que ele")
+        print("  toca e peça à pessoa uma rodada extra (--rodada-extra-pedida) ou entregue só depois de resolvido.\n")
         return 1
     if no_teto and regrediu:
         print("  NÃO ENTREGAR: regressão aberta. A correção quebrou outra coisa e o ciclo não tem mais rodada:")
@@ -451,41 +451,41 @@ def cmd_rodada(args):
         print("  Conserte a regressão antes de entregar.\n")
         return 1
     if args.criticos > 0:
-        print(f"  CONTINUA: {args.criticos} critico(s) confirmado(s). Critico nao negocia com media.")
-        print("  Corrija os criticos e rode a wave de novo.\n")
+        print(f"  CONTINUA: {args.criticos} crítico(s) confirmado(s). Crítico não negocia com média.")
+        print("  Corrija os críticos e rode a wave de novo.\n")
         return 1
     if regrediu:
-        print("  CONTINUA: houve REGRESSAO, a correcao quebrou outra coisa:")
+        print("  CONTINUA: houve REGRESSAO, a correção quebrou outra coisa:")
         for r in regrediu:
             print(f"    - {r}")
-        print("  Conserte a regressao antes de seguir.\n")
+        print("  Conserte a regressão antes de seguir.\n")
         return 1
     vai_entregar = ((media >= PISO_MEDIA and all(n >= PISO_NOTA for n in notas)) or secou or convergiu
                     or no_teto)
     auto = sorted(l for l, v in lentes.items()
                   if v.get("veredito") != "nao_aplicavel" and v.get("origem") not in ORIGENS_INDEPENDENTES)
     if vai_entregar and auto:
-        print(f"  AUDITORIA INDEPENDENTE PENDENTE: {len(auto)} lente(s) registradas como autoavaliacao")
-        print(f"  ({', '.join(auto[:4])}{'...' if len(auto) > 4 else ''}). Nota de quem construiu nao libera entrega.")
-        print("  Rode a rodada com um subagente auditor independente (ou em outra sessao, sem o historico")
+        print(f"  AUDITORIA INDEPENDENTE PENDENTE: {len(auto)} lente(s) registradas como autoavaliação")
+        print(f"  ({', '.join(auto[:4])}{'...' if len(auto) > 4 else ''}). Nota de quem construiu não libera entrega.")
+        print("  Rode a rodada com um subagente auditor independente (ou em outra sessão, sem o historico")
         print("  da construcao) e registre cada lente com --origem subagente ou sessao-independente.\n")
         return 1
     if media >= PISO_MEDIA and all(n >= PISO_NOTA for n in notas):
-        print(f"  ENTREGA: media {media:.2f} no piso e nenhuma lente abaixo de {PISO_NOTA}.\n")
+        print(f"  ENTREGA: média {media:.2f} no piso e nenhuma lente abaixo de {PISO_NOTA}.\n")
         return 0
     if secou:
-        print("  ENTREGA COM NOTA DECLARADA: zero critico e zero ALTO confirmados. O que sobrou")
-        print(f"  e acabamento, e acabamento nao segura entrega. A media {media:.2f} vai escrita na")
+        print("  ENTREGA COM NOTA DECLARADA: zero crítico e zero ALTO confirmados. O que sobrou")
+        print(f"  é acabamento, e acabamento não segura entrega. A média {media:.2f} vai escrita na")
         print("  entrega, com a lista do que ficou aberto.")
         if pend:
-            print(f"  {pend} alto(s) dependem de dado que so o cliente tem: vao em PENDENCIAS DECLARADAS,")
-            print("  um por linha, com o que falta e onde entra na pagina. A pagina nao recebe trafego")
+            print(f"  {pend} alto(s) dependem de dado que só o cliente tem: vão em PENDENCIAS DECLARADAS,")
+            print("  um por linha, com o que falta e onde entra na página. A página não recebe trafego")
             print("  enquanto o destino do lead estiver entre eles.")
         print()
         return 0
     if no_teto:
-        print(f"  ENTREGA COM RESSALVAS: rodada {len(hist)}, a ultima do ciclo (teto {teto_efetivo}), sem critico e sem regressao.")
-        print(f"  Nota real: media {media:.2f}. Ela vai escrita na entrega, com o que sobrou:")
+        print(f"  ENTREGA COM RESSALVAS: rodada {len(hist)}, a última do ciclo (teto {teto_efetivo}), sem crítico e sem regressão.")
+        print(f"  Nota real: média {media:.2f}. Ela vai escrita na entrega, com o que sobrou:")
         print(f"    - altos abertos: {altos_informados if altos_informados is not None else 'nao informado'}"
               + (f" ({pend} dependem de dado do cliente)" if pend else "") + f"; {altos_reais if altos_reais is not None else '?'} alto(s) de verdade")
         fracas = [f"{k} (nota {v.get('nota')}{', reprovada' if v.get('veredito') == 'reprovado' else ''})"
@@ -494,16 +494,16 @@ def cmd_rodada(args):
         if fracas:
             print("    - lentes abaixo do piso ou reprovadas: " + ", ".join(fracas))
         print("    - o texto dos achados de cada lente esta em .wave-auditoria.json; copie para a entrega.")
-        print("  Nao existe terceira rodada sozinha: so se a pessoa pedir (--rodada-extra-pedida).\n")
+        print("  Não existe terceira rodada sozinha: só se a pessoa pedir (--rodada-extra-pedida).\n")
         return 0
     if convergiu:
-        print(f"  ENTREGA COM NOTA DECLARADA: zero critico, zero regressao, e a media parou de")
-        print(f"  subir (ultimos ganhos: {ganho:+.2f}). Insistir aqui caça canto minusculo.")
+        print(f"  ENTREGA COM NOTA DECLARADA: zero crítico, zero regressão, e a média parou de")
+        print(f"  subir (últimos ganhos: {ganho:+.2f}). Insistir aqui caça canto minúsculo.")
         print(f"  A nota {media:.2f} VAI NA ENTREGA, escrita. Nota declarada e honesta;")
         print("  nota escondida atras de 'auditado' e que e nota do.\n")
         return 0
     faltam = teto_efetivo - len(hist)
-    print(f"  CONTINUA: sem critico, mas a media ({media:.2f}) ainda sobe e o piso e {PISO_MEDIA}.")
+    print(f"  CONTINUA: sem crítico, mas a média ({media:.2f}) ainda sobe e o piso é {PISO_MEDIA}.")
     ganho_texto = f"{ganho:+.2f}" if ganho is not None else "primeira rodada, sem comparação"
     print(f"  Ganho da última rodada: {ganho_texto}. Restam {faltam} rodada(s) até o teto.\n")
     return 1
@@ -513,7 +513,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--projeto", default=os.getcwd())
     ap.add_argument("--caminho", default="criar", choices=CAMINHOS,
-                    help="clonar (clone fiel) dispensa o gate de referencias; os outros exigem")
+                    help="clonar (clone fiel) dispensa o gate de referências; os outros exigem")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     r = sub.add_parser("registrar", help="registra o resultado de UMA lente")
@@ -522,11 +522,11 @@ def main():
     r.add_argument("--veredito", choices=["aprovado", "reprovado", "nao_aplicavel"], required=True)
     r.add_argument("--achados", required=True, help="o que foi olhado e o que foi encontrado")
     r.add_argument("--gosto", choices=GOSTOS, default=None,
-                   help="so na comparacao-referencias, obrigatorio: a pagina e bonita no nivel das "
-                        "referencias, ou so esta correta? 'correto' reprova e volta ao plano visual")
+                   help="só na comparacao-referencias, obrigatório: a página é bonita no nível das "
+                        "referências, ou só está correta? 'correto' reprova e volta ao plano visual")
     r.add_argument("--origem", choices=ORIGENS, default="autoavaliacao",
-                   help="quem auditou: subagente independente, outra sessao, outra pessoa ou "
-                        "autoavaliacao (padrao). Autoavaliacao nunca libera entrega")
+                   help="quem auditou: subagente independente, outra sessão, outra pessoa ou "
+                        "autoavaliação (padrão). Autoavaliação nunca libera entrega")
     r.set_defaults(func=cmd_registrar)
 
     g = sub.add_parser("gate", help="registra o resultado de um gate executavel")
@@ -540,21 +540,21 @@ def main():
 
     ro = sub.add_parser("rodada", help="fecha a rodada e decide: roda de novo ou entrega?")
     ro.add_argument("--criticos", type=int, required=True,
-                    help="quantos achados CRITICOS sobreviveram a verificacao adversarial")
+                    help="quantos achados CRÍTICOS sobreviveram a verificação adversarial")
     ro.add_argument("--altos", type=int, default=None,
-                    help="quantos achados ALTOS sobreviveram. Zero critico + zero alto fecha o "
+                    help="quantos achados ALTOS sobreviveram. Zero crítico + zero alto fecha o "
                          "ciclo mesmo sem o piso de media: o que sobra e acabamento")
     ro.add_argument("--pendencias-do-usuario", dest="pendencias_do_usuario", type=int, default=0,
-                    help="quantos dos --altos so somem com dado que apenas o cliente tem (numero do "
-                         "WhatsApp, foto do espaco, credencial). Nao contam como alto, vao declarados "
-                         "na entrega e nunca apagam critico")
+                    help="quantos dos --altos só somem com dado que apenas o cliente tem (número do "
+                         "WhatsApp, foto do espaço, credencial). Não contam como alto, vão declarados "
+                         "na entrega e nunca apagam crítico")
     ro.add_argument("--regressoes", type=int, default=0,
                     help="quantos achados confirmados desta rodada foram CAUSADOS por uma "
-                         "correcao da rodada anterior. E isto que trava o ciclo, nao nota que "
-                         "caiu: cada rodada sorteia auditor novo e a nota nao e calibrada")
+                         "correção da rodada anterior. E isto que trava o ciclo, não nota que "
+                         "caiu: cada rodada sorteia auditor novo e a nota não e calibrada")
     ro.add_argument("--rodada-extra-pedida", dest="rodada_extra_pedida", action="store_true",
                     help="a PESSOA pediu uma terceira rodada. Fica registrada no historico; a terceira "
-                         "tambem fecha sempre e nunca existe quarta")
+                         "também fecha sempre e nunca existe quarta")
     ro.set_defaults(func=cmd_rodada)
 
     args = ap.parse_args()

@@ -24,13 +24,13 @@ def parse_args():
         description="Servidor estatico com gzip, para medir Lighthouse de forma honesta.",
         epilog=f"Exemplo: {comando('servidor-gzip.py')} ./public 8900",
     )
-    p.add_argument("raiz", nargs="?", default=".", help="diretorio a servir (default: .)")
+    p.add_argument("raiz", nargs="?", default=".", help="diretório a servir (default: .)")
     p.add_argument("porta", nargs="?", default="8900", help="porta TCP (default: 8900)")
     args = p.parse_args()
     try:
         porta = int(args.porta)
     except ValueError:
-        p.error(f"porta invalida: '{args.porta}' (precisa ser um numero inteiro)")
+        p.error(f"porta inválida: '{args.porta}' (precisa ser um número inteiro)")
     return args.raiz, porta
 
 

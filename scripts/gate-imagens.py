@@ -84,10 +84,10 @@ COLUNAS = {
     "autor": ("autor",),
     "titulo": ("titulo",),
     "licenca": ("licenca",),
-    "link": ("link da licenca",),
+    "link": ("link da licença",),
     "alteracao": ("alteracao",),
     "pessoa": ("pessoa identificavel",),
-    "autorizacao": ("autorizacao de imagem",),
+    "autorizacao": ("autorização de imagem",),
     "aviso": ("aviso de ilustrativa",),
 }
 
@@ -109,7 +109,7 @@ def ler_tabela(md):
             mapa = {}
             for chave, nomes in COLUNAS.items():
                 for j, c in enumerate(cab):
-                    if c in nomes:
+                    if c in [norm(n) for n in nomes]:
                         mapa[chave] = j
                         break
             itens = []
@@ -139,11 +139,11 @@ def eh_cc(licenca):
 
 
 def do_cliente(item):
-    return any(k in norm(item.get("origem", "") + " " + item.get("licenca", "")) for k in ("do cliente", "da cliente", "propria do cliente"))
+    return any(norm(k) in norm(item.get("origem", "") + " " + item.get("licenca", "")) for k in ("do cliente", "da cliente", "própria do cliente"))
 
 
 def propria(item):
-    return any(k in norm(item.get("origem", "")) for k in ("ilustracao propria", "desenho proprio", "ilustracoes proprias"))
+    return any(norm(k) in norm(item.get("origem", "")) for k in ("ilustração própria", "desenho próprio", "ilustrações próprias"))
 
 
 def titulo_da_url(origem):
@@ -480,7 +480,7 @@ def avaliar(projeto, dist=None, trafego_real=False, url=None):
             if link and link not in hrefs:
                 problemas.append(f"{nome}: a página não tem link para a licença ({link})")
             alterada = norm(it["alteracao"]) not in ("", "nenhuma", "nao", "-")
-            if alterada and re.search(r"BY-?\s?SA", licenca, re.I) and "mesma licenca" not in texto_n:
+            if alterada and re.search(r"BY-?\s?SA", licenca, re.I) and norm("mesma licença") not in texto_n:
                 problemas.append(f"{nome}: versão alterada de CC BY-SA sem \"mesma licença\" escrito no crédito da página")
         slug = titulo_da_url(it.get("origem", ""))
         titulo = it.get("titulo", "").strip()

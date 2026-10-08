@@ -155,7 +155,7 @@ def checar(projeto, minimo=MINIMO):
         return [], [f"manifesto ilegível: {e}"]
     refs = doc.get("referencias") if isinstance(doc, dict) else None
     if not isinstance(refs, list):
-        return [], ['manifesto sem a lista "referencias"']
+        return [], ['manifesto sem a lista `referencias`']
     urls, vistos, validas, gerais = set(), {}, [], []
     for i, ref in enumerate(refs, 1):
         erros = conferir_referencia(projeto, ref, urls, vistos)

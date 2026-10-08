@@ -118,7 +118,7 @@ def main() -> int:
     if not css_arquivos:
         print(f'  ERRO: nenhum .css encontrado em {dir_css}.')
         print('  Rode o build ANTES do gate: o CSS gerado e a fonte da verdade aqui.')
-        print('  Pagina HTML com Tailwind: compile com npx tailwindcss@3 -i _input.css -o tailwind-compiled.css')
+        print('  Página HTML com Tailwind: compile com npx tailwindcss@3 -i _input.css -o tailwind-compiled.css')
         return 1
     css = '\n'.join(b for _, b in em_linha) if em_linha else \
         '\n'.join(p.read_text(encoding='utf-8', errors='replace') for p in css_arquivos)
@@ -128,7 +128,7 @@ def main() -> int:
         + sorted(dir_fonte.rglob('*.vue')) + sorted(dir_fonte.rglob('*.svelte')) \
         + sorted(raiz.glob('*.html'))
     if not fontes:
-        print(f'  ERRO: nenhum arquivo de codigo em {dir_fonte}.')
+        print(f'  ERRO: nenhum arquivo de código em {dir_fonte}.')
         return 1
 
     mortas = {}
@@ -147,12 +147,12 @@ def main() -> int:
     print(f'  arquivos:    {len(fontes)}')
 
     if not mortas:
-        print('  PASSA: nenhuma classe do codigo esta ausente do CSS gerado.')
+        print('  PASSA: nenhuma classe do código está ausente do CSS gerado.')
         return 0
 
     print()
-    print(f'  REPROVA: {len(mortas)} classe(s) existem no codigo e NAO existem no CSS.')
-    print('  Elas nao produzem estilo nenhum, e o build nao reclama.')
+    print(f'  REPROVA: {len(mortas)} classe(s) existem no código e NÃO existem no CSS.')
+    print('  Elas não produzem estilo nenhum, e o build não reclama.')
     print()
     for classe, arquivos in sorted(mortas.items()):
         print(f'    {classe}')
@@ -161,10 +161,10 @@ def main() -> int:
     print()
     print('  Causa quase sempre a mesma: valor fora da escala do framework')
     print('  (opacidade /97 quando a escala vai de 5 em 5, outline-3 quando a escala')
-    print('  e 0/1/2/4/8) ou token de tema que existe em OUTRO projeto e nao neste.')
+    print('  e 0/1/2/4/8) ou token de tema que existe em OUTRO projeto e não neste.')
     print()
-    print('  Depois de corrigir, MEÇA O PIXEL, nao so o arquivo: getComputedStyle no')
-    print('  elemento, ou recorte da regiao. Foi confiar no assert da troca que deixou')
+    print('  Depois de corrigir, MEÇA O PIXEL, não só o arquivo: getComputedStyle no')
+    print('  elemento, ou recorte da região. Foi confiar no assert da troca que deixou')
     print('  uma barra fixa sem fundo passar por uma auditoria inteira.')
     return 1
 

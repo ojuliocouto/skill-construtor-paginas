@@ -168,11 +168,10 @@ def ler_tabela(texto):
 
 
 def ler_padroes(texto):
-    i = texto.lower().find("## não afirmar")
-    if i < 0:
-        i = texto.lower().find("## nao afirmar")
-    if i < 0:
+    m = re.search(r"(?im)^##[ \t]*n[aã]o afirmar", texto)
+    if not m:
         return []
+    i = m.start()
     fim = texto.find("\n## ", i + 3)
     bloco = texto[i:] if fim < 0 else texto[i:fim]
     return re.findall(r"`([^`]+)`", bloco)
