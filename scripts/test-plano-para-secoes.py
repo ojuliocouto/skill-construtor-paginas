@@ -1,8 +1,9 @@
 """A23: o PLANO diz que a tabela de composição "vira" o secoes.json da prova de animação; este script a gera.
 
-Dois jeitos de provar: uma tabela embutida aqui (roda em qualquer máquina) e o PLANO.md e o index.html REAIS do
-projeto de teste do aluno (Ateliê Veio), que só se leem quando existem (a suíte se declara pulada sem eles). O
-`secoes.json` que o aluno escreveu à mão no projeto é o gabarito do que o script tem de produzir sozinho.
+Dois jeitos de provar: uma tabela embutida aqui e o caso do projeto de teste do aluno (Ateliê Veio, negócio
+fictício), COPIADO para `scripts/fixtures/atelie/` (a tabela do PLANO, o esqueleto de `<section>` do index.html e o
+`secoes.json` que o aluno escreveu à mão, que é o gabarito do que o script tem de produzir sozinho). O teste só usa
+o que está dentro do repositório.
 """
 import importlib.util
 import json
@@ -17,7 +18,7 @@ spec = importlib.util.spec_from_file_location("p2s", AQUI / "plano-para-secoes.p
 p2s = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(p2s)
 
-REAL = pathlib.Path(__file__).resolve().parents[4] / "pagina-teste-355"
+REAL = AQUI / "fixtures" / "atelie"
 
 PLANO = """# PLANO: Estúdio
 
@@ -85,14 +86,12 @@ class Gera(unittest.TestCase):
             self.assertIn("PREENCHER", (AQUI / "anim.mjs").read_text(encoding="utf-8"))
 
 
-@unittest.skipUnless((REAL / "PLANO.md").is_file() and (REAL / "index.html").is_file() and (REAL / "prova" / "anim" / "secoes.json").is_file(),
-                     "PULADO: sem o projeto de teste do aluno (pagina-teste-355) ao lado")
 class ComOProjetoReal(unittest.TestCase):
     def test_gera_o_mesmo_que_o_aluno_escreveu_a_mao(self):
         plano = (REAL / "PLANO.md").read_text(encoding="utf-8-sig")
         html = (REAL / "index.html").read_text(encoding="utf-8-sig")
         lista, _ = p2s.gerar(plano, html)
-        mao = json.loads((REAL / "prova" / "anim" / "secoes.json").read_text(encoding="utf-8-sig"))
+        mao = json.loads((REAL / "secoes.json").read_text(encoding="utf-8-sig"))
         campos = ("seletor", "titulo", "tipo", "modo", "clique")
         recorte = lambda s: {k: s[k] for k in campos if k in s}
         self.assertEqual([recorte(s) for s in lista], [recorte(s) for s in mao])

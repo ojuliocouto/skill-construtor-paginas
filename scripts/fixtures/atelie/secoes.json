@@ -1,0 +1,11 @@
+[
+ {"nome":"01-primeira-dobra","seletor":".heroi","titulo":"Primeira dobra","tipo":"abertura-do-topo","modo":"heroi"},
+ {"nome":"02-para-quem","seletor":"#para-quem","titulo":"Para quem é","tipo":"texto-em-linhas"},
+ {"nome":"03-madeira","seletor":"#madeira","titulo":"Madeira e acabamento","tipo":"foto-que-desliza"},
+ {"nome":"04-depoimentos","seletor":"#depoimentos","titulo":"Depoimentos","tipo":"revelar-ao-entrar"},
+ {"nome":"05-precos","seletor":"#oferta","titulo":"Móveis e preços","tipo":"traco-que-se-desenha"},
+ {"nome":"06-como-funciona","seletor":"#como-funciona","titulo":"Como funciona","tipo":"assinatura","modo":"rolagem"},
+ {"nome":"07-garantia","seletor":"#garantia","titulo":"Garantia","tipo":"barras-que-crescem"},
+ {"nome":"08-duvidas","seletor":"#duvidas","titulo":"Dúvidas","tipo":"pergunta-que-abre","clique":"#duvidas summary"},
+ {"nome":"09-fecho","seletor":"#fecho","titulo":"Fecho","tipo":"assinatura"}
+]

@@ -72,6 +72,16 @@ PAD_SHELL = [
 ]
 
 
+# Teste da skill só usa o que está DENTRO do repositório (CI e clone de aluno não têm a pasta do dono).
+EH_TESTE = re.compile(r"(^|[\\/])(test-[^\\/]+|[^\\/]+\.test\.[a-z]+)$")
+PAD_FORA_DO_REPO = [
+    (re.compile(r"/Users/[A-Za-z]|/home/[a-z]+/|[A-Za-z]:\\+Users|pagina-teste-355|skill-de-aluno|sandbox-aluno"),
+     "teste referencia caminho absoluto de usuário ou pasta de projeto fora do repositório (copie o que precisa para scripts/fixtures/)"),
+    (re.compile(r"\.parents\[\s*([2-9]|\d\d)\s*\]|\.parent\.parent\.parent|['\"]\.\.['\"]\s*,\s*['\"]\.\.['\"]"),
+     "teste sobe mais níveis do que a raiz do repositório (scripts/ está a 1 nível da raiz)"),
+]
+
+
 def _eh_comentario(nome, linha):
     s = linha.lstrip()
     if nome.endswith(".py"):
@@ -126,6 +136,10 @@ def varrer_texto(nome, texto):
         if ehcodigo and _eh_comentario(nome, linha):
             continue
         pos = f"{nome}:{i + 1}"
+        if EH_TESTE.search(nome):
+            for rx, rotulo in PAD_FORA_DO_REPO:
+                if rx.search(linha):
+                    achados.append(f"{pos}: {rotulo}")
         if not _tem_marca_mac(linhas, i):
             for rx, rotulo in PADROES_MAC:
                 if rx.search(linha):
@@ -194,6 +208,11 @@ RUINS = {
     "relative-js.mjs": "const rel = path.relative(base, arq);\n",
     "cpsync.mjs": "import fs from 'node:fs';\nfs.cpSync(a, b, { recursive: true });\n",
     "import-dinamico.mjs": "const m = await import(path.join(aqui, 'x.mjs'));\n",
+    "test-usuario.py": "RAIZ = '/Users/fulano/projetos/x'\n",
+    "test-projeto-do-dono.py": "REAL = pathlib.Path(__file__).parent / 'pagina-teste-355'\n",
+    "test-sobe.py": "REAL = pathlib.Path(__file__).resolve().parents[4] / 'x'\n",
+    "test-sobe-js.cjs": "const raiz = path.join(__dirname, '..', '..', 'x');\n",
+    "x.test.mjs": "const r = '/home/ana/projeto';\n",
     "pathname.mjs": "const aqui = new URL('.', import.meta.url).pathname;\n",
 }
 BONS = {
@@ -212,6 +231,8 @@ BONS = {
     "import-ok.mjs": "const m = await import(pathToFileURL(p).href);\nconst n = await import('node:fs');\n",
     "relative-ok.py": "rel = p.relative_to(raiz).as_posix()\npartes = set(p.relative_to(raiz).parts)\n",
     "relative-ok.mjs": "const rel = path.relative(base, arq).split(path.sep).join('/');\n",
+    "test-raiz.py": "RAIZ = pathlib.Path(__file__).resolve().parents[1]\nQ = pathlib.Path(__file__).resolve().parent / 'fixtures'\n",
+    "nao-teste.py": "SRC = '/Users/fulano/x'\n",
     "url-ok.mjs": "import { fileURLToPath } from 'node:url';\nconst aqui = fileURLToPath(new URL('.', import.meta.url));\n",
 }
 
