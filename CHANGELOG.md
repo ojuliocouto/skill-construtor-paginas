@@ -1,5 +1,30 @@
 # Changelog
 
+## 3.5.4 (08/10/2026): um auditor nas nove lentes, pacote de evidência pronto e teto de 2 rodadas
+
+O dono da skill perguntou "esses 9 revisores são necessários?", a regra dele é teto de 2 rodadas de
+corrigir e auditar, e a skill roda ao vivo em aula, onde a página demorar a ficar pronta é o problema.
+As 9 lentes continuam existindo como critérios; mudou quantos agentes rodam e quantas rodadas.
+
+### Alterado
+- A rodada de auditoria é UM subagente auditor independente que percorre as 9 lentes numa passada e
+  devolve um bloco por lente. Uma lente por subagente virou modo opcional (auditoria profunda pedida
+  pela pessoa). O registro no `wave.py` segue um por lente, com a origem certa; autoavaliação não libera entrega.
+- `wave.py rodada`: o teto cai de 4 para 2. Depois da segunda rodada o ciclo fecha SEMPRE: aprovado,
+  `ENTREGA COM RESSALVAS` (achados que sobraram e nota real) ou `NÃO ENTREGAR: crítico aberto`
+  (também para regressão aberta). Crítico, regressão, lente de referências reprovada e auditoria
+  independente pendente não foram afrouxados. Terceira rodada só com `--rodada-extra-pedida`, registrada
+  no histórico; a terceira também fecha e não existe quarta.
+- A rodada 2 é de conferência (`references/auditores.md`, "Rodada 2"): cada achado corrigido ou não,
+  regressão, e mais nada; não reabre as 9 lentes.
+- `references/auditores.md`, `caminhos/criar.md`, `clonar.md`, `melhorar.md`, `gate-etapas.md`, `SKILL.md` e `README.md` alinhados.
+
+### Adicionado
+- `scripts/pacote-auditoria.py` (+ `test-pacote-auditoria.py`): junta e confere o pacote do auditor (URL, `dist/`,
+  briefing, PLANO, sustentação, referências, prints dos gates, pranchas do vídeo de prova), avisa de captura
+  anterior à última mudança da página e sai 1 se faltar item obrigatório. O auditor lê, não captura de novo.
+- Testes de texto em `test-docs.py` (nenhum arquivo manda nove subagentes por rodada nem teto de 4) e de ciclo em `test-wave.py`.
+
 ## 3.5.3 (06/10/2026): receitas de movimento, lente alinhada e vídeo de prova
 
 O dono disse da página aprovada: "as animações da página ficaram foda, todas as páginas criadas com

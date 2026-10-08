@@ -41,10 +41,10 @@ Everything else (21st.dev, Stitch, Higgsfield, image generators, brand kits, ext
 | d. Copy | section copy using only facts from the briefing (short local-service model included) | `gate-etapas.py registrar 3` |
 | e. Build | in the order approved in the PLAN, with the tracking snippet when the PLAN asked for it; HTML + compiled Tailwind by default (React only when the project truly needs it), hero first and checked against the plan, freely licensed images chosen by what the references taught, license recorded | `gate-etapas.py registrar 4` |
 | f. Mechanical gates | no uppercase kicker or decorative numbers, dead utility classes, 12 real viewports (including one-line buttons up to 768 px and a button within 2 screens on phones), occluded text, symmetry of parallel items and columns (`gate-simetria.mjs`), on-screen text (widows, lowercase starts, repeated colored italics: `gate-texto.mjs`), every promise backed by a briefing line (`gate-verdade.py`), a publish folder with nothing but the page, no internal code comments and site icons generated from the current identity (`montar-dist.py` + `gate-publicacao.py` + `gerar-icones.mjs`), composition (no repeated section skeleton, no wireframe-looking drawings, a timeline that ends at its last marker, a person in the first screen when the audience is people, accent strokes at 3:1: `gate-composicao.mjs`), rhythm (`gate-ritmo.mjs`), per-section animation proof (`anim.mjs` + `prancha.py` + `gate-animacao.py`: at least 2% of pixels change between start and end in 1440 and 390, at most 2 sections share an animation type), images (`gate-imagens.py`: licenses, no repeated photo across sections by perceptual hash and source, sharpness of 100 or more, 60% photo in the first screen, "imagem ilustrativa" visible in the first screen), sticky overlap (`sobreposicao.mjs`), the pixel and the 5 events the PLAN asked for, bound by `data-evento` (`gate-rastreamento.py`), motion seen on a real visit (nothing finishes animating before it enters the screen at 300 px/s, no smooth scroll under reduced motion: `gate-movimento.mjs`), page identity, tool usage, references | each exit code recorded in `wave.py gate` |
-| g. Auditors | 9 lenses: `design-critic`, `assets-auditor`, `visual-auditor`, `motion-auditor`, `responsive-auditor`, `cro-auditor`, `a11y-auditor`, `content-auditor`, `comparacao-referencias`, run by an independent auditor subagent when the environment allows. The reference lens also answers, with `--gosto bonito|correto`, whether the page is beautiful or merely correct; "correct" sends it back to the visual plan. A self-review score never releases delivery | `wave.py checar` (every lens and gate ran) and `wave.py rodada` (the review cycle, which answers AUDITORIA INDEPENDENTE PENDENTE while any lens is `--origem autoavaliacao`) |
+| g. Auditors | 9 lenses: `design-critic`, `assets-auditor`, `visual-auditor`, `motion-auditor`, `responsive-auditor`, `cro-auditor`, `a11y-auditor`, `content-auditor`, `comparacao-referencias`, passed in one pass by a single independent auditor subagent when the environment allows, on an evidence package gathered once (`pacote-auditoria.py`), with a cap of 2 rounds. The reference lens also answers, with `--gosto bonito|correto`, whether the page is beautiful or merely correct; "correct" sends it back to the visual plan. A self-review score never releases delivery | `wave.py checar` (every lens and gate ran) and `wave.py rodada` (the review cycle, which answers AUDITORIA INDEPENDENTE PENDENTE while any lens is `--origem autoavaliacao`) |
 | h. Proof | desktop 1440 and mobile 390 screenshots read by the agent, a scroll video (desktop and mobile) with its contact sheets read, main interaction clicked, delivery block | `gate-etapas.py registrar 5` |
 
-- **Auditors run as independent subagents when the environment allows it** (one per lens, in parallel, none seeing the others). When it does not, the same checks run sequentially, one lens at a time, and the record says it was a self-review.
+- **One independent auditor subagent covers the 9 lenses in a single pass** (since 3.5.4; one subagent per lens is an optional mode, only when the user asks for a deep audit). Before calling it, the main session gathers the evidence package once (URL, `dist/`, briefing, PLAN, the screenshots the gates already made, the video proof sheets, the references) and `scripts/pacote-auditoria.py` checks it is complete, so the auditor does not capture the screens again. The cycle has a cap of 2 rounds: round 2 only re-checks the round 1 findings (fixed, not fixed, regression) and nothing else. After it the cycle always closes: approved, `ENTREGA COM RESSALVAS` (leftover findings and the real score are written in the delivery) or `NÃO ENTREGAR: crítico aberto`. A third round only happens if the user asks (`--rodada-extra-pedida`). When no subagent is available, the same checks run sequentially, one lens at a time, and the record says it was a self-review, which never releases delivery.
 - **The `comparacao-referencias` lens** puts the page next to the strongest references, axis by axis. If it fails, the cycle refuses to close no matter how high the other scores are, and the agent goes back to the visual plan.
 
 ## What it is not
@@ -125,7 +125,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.3)
+SKILL.md                       router (v3.5.4)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -156,6 +156,13 @@ data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
 
+## What is new in 3.5.4
+
+- One independent auditor now runs the 9 lenses in a single pass instead of one subagent per lens (the 9 lenses stay as criteria; registration in `wave.py` is still one record per lens).
+- `scripts/pacote-auditoria.py` gathers and checks the evidence package once (exit 1 if a required item is missing or older than the last page change); the auditor reads it and does not capture screens again.
+- `wave.py rodada` caps the cycle at 2 rounds and always closes after the second one; critical, regression, false content and pending independent audit are never relaxed. A third round only with `--rodada-extra-pedida`.
+- Round 2 is a conference of the round 1 findings, not a new audit.
+
 ## What is new in 3.5.3
 
 - **Motion recipes** (`references/receitas-de-movimento.md`): the animations of the page the owner approved, as copyable recipes with the exact curve (`cubic-bezier(.2,.8,.2,1)`), durations and delays, the `.no-js` and reduced-motion fallbacks and the mobile cost. The PLAN's animation column now picks a recipe by name or declares `criação nova: <reason>`. `references/receitas/demo.html` runs all of them; `scripts/provar-receitas.mjs` proves in Chromium that every block changes pixels, that nothing is hidden with JavaScript off, and that reduced motion shows the same text. The colour-panel navigation recipe (the effect the owner liked in a prototype) is hardened: it only intercepts plain clicks on marked same-page links, covers 100% of the window, always releases the page (3 s ceiling), keeps focus, URL and the back button working, and is proved by `scripts/provar-painel.mjs`. The line-by-line text recipe re-splits after the font loads and when the width changes (`scripts/test-linhas.cjs` reproduces the defect with the original code).
@@ -171,6 +178,7 @@ python3 scripts/test-checar-ferramentas.py
 python3 scripts/test-uso-ferramentas.py
 python3 scripts/test-gate-referencias.py
 python3 scripts/test-wave.py
+python3 scripts/test-pacote-auditoria.py
 python3 scripts/test-gate-etapas.py
 python3 scripts/test-gate-sem-kicker.py
 python3 scripts/test-classes-mortas.py
