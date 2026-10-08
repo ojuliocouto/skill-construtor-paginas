@@ -22,6 +22,28 @@ Total mínimo: 6. Mais de 10 vira ruído.
 - o que NÃO serve: tela de Dribbble ou Behance (não é página, ninguém rolou), loja de template,
   print de outra IA, página fora do ar
 
+**Quando a busca só devolve classificado, loja e marketplace** (acontece em ofício e comércio local:
+marcenaria, serralheria, conserto, atelier): troque a pergunta. Em vez de procurar o serviço,
+procure quem o reúne e abra o site OFICIAL de cada nome que aparecer. Lugares por tipo de negócio,
+sem lista fixa de endereços (site muda, cai e bloqueia; o que vale é o caminho):
+- **Quem faz, não quem vende:** `fabricante de <produto>`, `<ofício> artesanal`, `<ofício> sob medida
+  atelier` e o mesmo em inglês (`<craft> workshop`, `<craft> studio`, `<maker> portfolio`). Termos de
+  quem faz, não de quem compra (`marcenaria` e `ateliê`, não `comprar móvel`).
+- **Quem reconhece o bom:** páginas de prêmio, mostra e feira do setor (premiados e expositores têm
+  site próprio, quase sempre cuidado); associação, sindicato, guilda ou conselho do ofício, com a
+  lista de associados ou membros; revistas e blogs de arquitetura e decoração, que citam o autor
+  com link.
+- **Quem lista com o endereço oficial:** Wikipedia e Wikidata (lista de empresas do setor, campo
+  "site oficial"), Google Maps e Google Business do bairro (o botão "site" leva ao oficial),
+  diretórios de profissionais da área (o perfil aponta para o site do profissional).
+- **Perfil de rede social:** o link da bio de quem faz bem leva ao site.
+- Para o tipo `design`, a galeria do parágrafo acima já resolve; filtre pelo tipo de página.
+
+Rode a captura nas candidatas e olhe o `estado` que ela imprime ANTES de gastar leitura: só
+`ok` entra. `bloqueada` (403, desafio de navegador), `quebrada` (erro, sem estilo, vazia) e
+`coberta` (modal que não fecha) saem; troque a URL, não force. Sites grandes de marca costumam
+bloquear robô: prefira o site de quem faz, pequeno e cuidado.
+
 **Critério para ficar:** a página tem algo que a nossa precisa fazer melhor (abrir com imagem
 forte, escrever pouco e claro, conduzir a uma ação só, passar cuidado e confiança) e faz isso
 com acabamento. Página bonita que não ensina nada para o nosso caso não entra.
@@ -33,10 +55,23 @@ node <dir-da-skill>/scripts/capturar-referencias.mjs --projeto <dir> --tipo mesm
 node <dir-da-skill>/scripts/capturar-referencias.mjs --projeto <dir> --tipo design <url> <url> ...
 ```
 
-O script abre cada URL no Chromium headless (1440x900), grava a primeira dobra e uma seção do
-meio em `<dir>/referencias/` e atualiza `referencias/referencias.json`. Ele não clica em banner
-de cookie nem aceita termos: se um banner cobrir o print, anote na leitura. Página que pede
-login fica de fora. URL que não carregar: troque por outra, não force.
+O script abre cada URL no Chromium headless (1440x900), tenta fechar o aviso de cookies por um
+botão comum (recusar, fechar ou aceitar, nessa ordem), grava a primeira dobra e uma seção do meio
+em `<dir>/referencias/` e atualiza `referencias/referencias.json`. Cada URL sai com um estado e o
+motivo (também gravado em `captura` no manifesto):
+
+| Estado | Quando | O que fazer |
+|---|---|---|
+| `ok` | página renderizada de verdade | ler os dois PNG |
+| `bloqueada` | HTTP 401, 403 ou 429, ou texto de bloqueio (Forbidden, "Just a moment", captcha) dominando a página | trocar a URL |
+| `quebrada` | HTTP 400 ou mais, página sem folha de estilo aplicada, ou vazia | trocar a URL |
+| `coberta` | modal ou aviso cobrindo mais de 40% da janela mesmo depois de tentar fechar | trocar a URL, ou escolher uma página sem modal de região |
+
+O código de saída é diferente de zero enquanto houver menos de 6 referências `ok` no manifesto.
+`node <dir-da-skill>/scripts/capturar-referencias.mjs --projeto <dir> --limpar-ruins` tira do
+manifesto o que não é `ok` e move os PNG para `descartados/referencias/`. O gate reprova a
+referência que ficar no manifesto marcada como ruim. Página que pede login fica de fora. Página
+curta de verdade (cabe numa janela) pode ter o print do meio igual ao da dobra.
 
 ## Como ler (o trabalho de verdade)
 

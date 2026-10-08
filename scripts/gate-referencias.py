@@ -15,6 +15,9 @@ O que conta como referência válida, uma por uma:
     com pelo menos 320x300, que não está em branco e que não é cópia de outro print
   - a leitura escrita: o que a página faz bem em composição, tipografia, imagem e ritmo
     (cada item com frase de verdade) e o PRINCÍPIO que se leva dela (nunca frase nem layout)
+  - se veio de capturar-referencias.mjs, `captura.estado` precisa ser "ok" (bloqueada, quebrada
+    ou coberta reprovam, com o motivo); página curta de verdade (altura_pagina até 910 px) pode
+    ter o print do meio igual ao da dobra
   - "lido": true, marcado por quem abriu os dois PNGs com os próprios olhos
 
 O gate não sabe se a leitura é boa. Ele garante que ela existe e que os prints são reais;
@@ -34,6 +37,9 @@ import zlib
 from pathlib import Path
 from urllib.parse import urlparse
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lancador import comando  # noqa: E402
+
 MANIFESTO = Path("referencias") / "referencias.json"
 MINIMO = 6
 MINIMO_POR_TIPO = 2
@@ -42,6 +48,7 @@ EIXOS = ("composicao", "tipografia", "imagem", "ritmo")
 MIN_EIXO = 20
 MIN_PRINCIPIO = 30
 MIN_LARGURA, MIN_ALTURA = 320, 300
+ALTURA_JANELA = 900
 
 
 def ler_png(caminho):
@@ -72,7 +79,7 @@ def ler_png(caminho):
     return largura, altura, distintos
 
 
-def conferir_print(projeto, rel, vistos):
+def conferir_print(projeto, rel, vistos, igual_permitido=None):
     if not rel or not isinstance(rel, str):
         return "print não informado"
     p = Path(rel)
@@ -90,9 +97,9 @@ def conferir_print(projeto, rel, vistos):
     if distintos < 12:
         return f"print em branco ou chapado ({rel})"
     h = hashlib.sha256(p.read_bytes()).hexdigest()
-    if h in vistos:
+    if h in vistos and vistos[h] != igual_permitido:
         return f"print repetido ({rel} é cópia de {vistos[h]})"
-    vistos[h] = rel
+    vistos.setdefault(h, rel)
     return None
 
 
@@ -112,8 +119,17 @@ def conferir_referencia(projeto, ref, urls, vistos):
     if ref.get("tipo") not in TIPOS:
         problemas.append(f"tipo precisa ser {' ou '.join(TIPOS)}")
     prints = ref.get("prints") if isinstance(ref.get("prints"), dict) else {}
+    # Página curta de verdade (cabe numa janela de 900 px) tem o meio igual à dobra: não é cópia.
+    altura = ref.get("altura_pagina")
+    curta = isinstance(altura, (int, float)) and not isinstance(altura, bool) and 0 < altura <= ALTURA_JANELA + 10
+    estado = (ref.get("captura") or {}).get("estado") if isinstance(ref.get("captura"), dict) else None
+    if estado is not None and estado != "ok":
+        motivo = str((ref.get("captura") or {}).get("motivo") or "").strip()
+        problemas.append(f"captura {estado}" + (f" ({motivo})" if motivo else "") +
+                         ": referência ruim, não conta; capture outra e tire esta com --limpar-ruins")
     for nome in ("dobra", "meio"):
-        erro = conferir_print(projeto, prints.get(nome), vistos)
+        permitido = prints.get("dobra") if (nome == "meio" and curta) else None
+        erro = conferir_print(projeto, prints.get(nome), vistos, permitido)
         if erro:
             problemas.append(f"{nome}: {erro}")
     faz_bem = ref.get("faz_bem") if isinstance(ref.get("faz_bem"), dict) else {}
@@ -132,7 +148,7 @@ def checar(projeto, minimo=MINIMO):
     projeto = Path(projeto).resolve()
     alvo = projeto / MANIFESTO
     if not alvo.is_file():
-        return [], [f"manifesto ausente: {MANIFESTO} (rode scripts/capturar-referencias.mjs)"]
+        return [], [f"manifesto ausente: {MANIFESTO} (rode {comando('capturar-referencias.mjs')})"]
     try:
         doc = json.loads(alvo.read_text(encoding="utf-8-sig"))
     except (json.JSONDecodeError, OSError) as e:
