@@ -21,6 +21,11 @@ nomes neutros pelos do assunto é o caminho curto; o que não pode mudar é a gr
 - **Cada item entra quando ELE chega na tela**, nunca o grupo inteiro de uma vez. Observador
   (`IntersectionObserver`) com `threshold: 0.18` e `rootMargin: '0px 0px -6% 0px'`; ao entrar, o
   item ganha a classe `visivel` e deixa de ser observado.
+- **Animação presa ao tempo se cancela ou vai direto ao estado final quando a seção sai da janela.** Temporizador
+  (`setTimeout`, laço de `requestAnimationFrame`) e classe trocada pela rolagem em máquina lenta terminam DEPOIS que a
+  pessoa saiu: o `gate-movimento.mjs` conta transição ou animação que começa com a seção fora da tela. Cada receita com
+  tempo confere, a cada passo, se a seção ainda está na janela; se saiu, aplica o estado final de uma vez, sem transição
+  (`vagas-que-se-preenchem`, `assinatura-em-tres-estados`, `texto-em-linhas` e o painel já fazem isso).
 - **Todo estado escondido fica atrás de `.js`.** O `<html>` nasce `class="no-js"` e um script de
   uma linha no `<head>` troca por `js`. Sem script, a página inteira aparece. Regra do gate:
   `opacity: 0`, `transform` de entrada e `clip-path` só em seletor que começa com `.js`.
@@ -227,6 +232,7 @@ sem script mostra a pilha, e o script só inclina e alinha.
 .passos::after { content: ""; position: absolute; left: 7px; top: 14px; width: 1.5px; background: var(--claro); height: calc(var(--altura-linha, 0px) * var(--enche, 0)); }
 .passo .marco { transition: background-color .25s ease, border-color .25s ease, transform .25s ease; }
 .passo.ativo .marco { background: var(--claro); border-color: var(--claro); transform: scale(1.15); }
+.passo.instantaneo .marco { transition: none; }
 ```
 
 ```js
@@ -268,7 +274,12 @@ function progressoAssinatura() {
   } else if (!reduz) { var r = passos.getBoundingClientRect(); p = Math.min(1, Math.max(0, (vh * 0.62 - r.top) / Math.max(1, r.height - vh * 0.3))); }
   aplicar(colunas.rolagem, p);
   passos.style.setProperty('--enche', p.toFixed(3));
-  each(listaPassos, function (s) { if (reduz || s.getBoundingClientRect().top < vh * 0.62) s.classList.add('ativo'); else s.classList.remove('ativo'); });
+  each(listaPassos, function (s) {
+    var r = s.getBoundingClientRect();
+    // passo fora da janela (o quadro de rolagem atrasou numa máquina lenta) muda sem transição
+    s.classList.toggle('instantaneo', r.bottom < 0 || r.top > vh);
+    if (reduz || r.top < vh * 0.62) s.classList.add('ativo'); else s.classList.remove('ativo');
+  });
 }
 // Altura da linha: até o centro do último marco
 var marcos = passos.querySelectorAll('.marco'), ultimo = marcos[marcos.length - 1];
@@ -279,7 +290,13 @@ if (document.fonts) document.fonts.ready.then(function () { /* repita as duas li
 function alinharSozinha(col) {
   if (!col || reduz) return;
   var t0 = null;
-  var passo = function (ts) { if (!t0) t0 = ts; var k = Math.min(1, (ts - t0) / 2000); aplicar(col, 1 - Math.pow(1 - k, 2)); if (k < 1) window.requestAnimationFrame(passo); };
+  var passo = function (ts) {
+    if (!t0) t0 = ts;
+    var rc = col.svg.getBoundingClientRect();
+    var k = (rc.bottom < 0 || rc.top > window.innerHeight) ? 1 : Math.min(1, (ts - t0) / 2000); // saiu da janela: vai ao estado final
+    aplicar(col, 1 - Math.pow(1 - k, 2));
+    if (k < 1) window.requestAnimationFrame(passo);
+  };
   window.requestAnimationFrame(passo);
 }
 // Chame progressoAssinatura() dentro do quadro() da rolagem, io.observe(svg.entra-pecas) e io.observe(bloco do estado 3):
@@ -506,17 +523,23 @@ mesmo da quantidade de marcas.
 .vagas i { width: 46px; height: 14px; border-radius: 7px; border: 1.5px solid var(--verde); background: transparent; transition: background-color .35s ease, transform .35s ease; }
 .vagas i.cheia, .no-js .vagas i { background: var(--verde); }
 .vagas i.cheia { transform: scaleY(1.15); }
+.vagas.sem-transicao i { transition: none; }
 .contador { display: inline-block; }
+.contador.pronto { color: var(--verde); }
 .contador.pulsa { animation: pulsa .7s cubic-bezier(.2,.8,.2,1); color: var(--verde); transition: color .6s ease; }
 @keyframes pulsa { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
 ```
 
 ```js
 function contar(h) {
-  var alvo = h.querySelector('[data-contador]'), vagas = document.querySelectorAll('.vagas i');
-  if (reduz) { each(vagas, function (v) { v.classList.add('cheia'); }); return; }
+  var alvo = h.querySelector('[data-contador]'), bloco = document.querySelector('.vagas'), vagas = bloco.querySelectorAll('i');
+  var fora = function () { var r = h.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight; };
+  // a pessoa saiu da seção no meio da contagem: vai direto ao estado final, sem transição nem pulso
+  var final = function () { bloco.classList.add('sem-transicao'); each(vagas, function (v) { v.classList.add('cheia'); }); if (alvo) alvo.classList.add('pronto'); };
+  if (reduz) { final(); return; }
   var n = 0;
   var tick = function () {
+    if (fora()) { final(); return; }
     if (vagas[n]) vagas[n].classList.add('cheia');
     n += 1;
     if (n < vagas.length) setTimeout(tick, 300); else if (alvo) { alvo.classList.add('pulsa'); }

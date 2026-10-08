@@ -47,6 +47,10 @@ const valor = (nome, padrao) => { const i = args.indexOf(nome); return i >= 0 &&
 const URL_ALVO = valor('--url');
 const ESPERA = Number(valor('--espera', '8000'));
 const MINIMO_SECOES = 2;
+// Ferramentas de prova (segunda leva da 3.5.6): `--cpu 4` reduz a CPU 4x pelo CDP (máquina lenta do CI) e `--so-celular`
+// roda só a visita do celular, para repetir o gate muitas vezes sem pagar o resto.
+const CPU = Number(valor('--cpu', '1'));
+const SO_CELULAR = args.includes('--so-celular');
 if (!URL_ALVO) {
   console.error('uso: node gate-movimento.mjs --url <url> [--espera 8000]');
   process.exit(2);
@@ -54,7 +58,7 @@ if (!URL_ALVO) {
 const TELAS = [
   ['desktop comum', 1440, 900, false],
   ['iphone padrao', 390, 844, true],
-];
+].filter(([nome]) => !SO_CELULAR || nome === 'iphone padrao');
 
 /** Instalado antes de qualquer script da página: registra cada animação com a posição da seção. */
 function escuta() {
@@ -141,6 +145,7 @@ for (const [nome, w, h, mob] of TELAS) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
   await ctx.addInitScript(escuta);
   const page = await ctx.newPage();
+  if (CPU > 1) await (await ctx.newCDPSession(page)).send('Emulation.setCPUThrottlingRate', { rate: CPU });
   try { await page.goto(URL_ALVO, { waitUntil: 'load', timeout: 45000 }); }
   catch { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
   const secoes = await page.evaluate(() => [...document.querySelectorAll('section, footer')].map((s, i) => {
@@ -185,7 +190,7 @@ for (const [nome, w, h, mob] of TELAS) {
 }
 // 3. Item por item, numa rolagem contínua a 300 px/s.
 console.log(`por item: rolagem contínua a ${VELOCIDADE} px/s`);
-for (const [nome, w, h, mob] of TELAS_ITEM) {
+for (const [nome, w, h, mob] of (SO_CELULAR ? [] : TELAS_ITEM)) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
   await ctx.addInitScript(escutaItens);
   const page = await ctx.newPage();

@@ -85,6 +85,7 @@ img, svg { display: block; max-width: 100%; }
 .passo:last-child { padding-bottom: 0; min-height: 0; }
 .passo .marco { position: absolute; left: 0; top: 8px; width: 16px; height: 16px; border-radius: 6px; border: 1.5px solid #8ea296; background: var(--escuro); transition: background-color .4s ease, border-color .4s ease, transform .4s ease; }
 .passo.ativo .marco { background: var(--claro); border-color: var(--claro); transform: scale(1.15); }
+.passo.instantaneo .marco { transition: none; }
 .passo h3 { font-size: clamp(1.4rem, 2.2vw, 2rem); line-height: 1.1; }
 .passo p { margin: 10px 0 0; color: #d8e3dc; max-width: 32rem; }
 .alinha-sozinha { margin-top: clamp(48px, 7vw, 96px); display: grid; gap: 28px; align-items: center; justify-items: start; }
@@ -134,6 +135,8 @@ img, svg { display: block; max-width: 100%; }
 .vagas i { width: 46px; height: 14px; border-radius: 7px; border: 1.5px solid var(--verde); background: transparent; transition: background-color .35s ease, transform .35s ease; }
 .vagas i.cheia, .no-js .vagas i { background: var(--verde); }
 .vagas i.cheia { transform: scaleY(1.15); }
+.vagas.sem-transicao i { transition: none; }
+.contador.pronto { color: var(--verde); }
 .contador { display: inline-block; }
 .contador.pulsa { animation: pulsa .7s cubic-bezier(.2,.8,.2,1); color: var(--verde); transition: color .6s ease; }
 @keyframes pulsa { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
@@ -632,7 +635,12 @@ img, svg { display: block; max-width: 100%; }
     }
     aplicar(av, p);
     passos.style.setProperty('--enche', p.toFixed(3));
-    each(listaPassos, function (s) { if (reduz || s.getBoundingClientRect().top < vh * 0.62) s.classList.add('ativo'); else s.classList.remove('ativo'); });
+    each(listaPassos, function (s) {
+    var r = s.getBoundingClientRect();
+    // passo fora da janela (o quadro de rolagem atrasou numa máquina lenta) muda sem transição
+    s.classList.toggle('instantaneo', r.bottom < 0 || r.top > vh);
+    if (reduz || r.top < vh * 0.62) s.classList.add('ativo'); else s.classList.remove('ativo');
+  });
   }
 
   each(document.querySelectorAll('.faixa .revela-lado'), function (f, i) { f.style.setProperty('--d', (i * 0.16) + 's'); });
@@ -646,10 +654,13 @@ img, svg { display: block; max-width: 100%; }
   }
 
   function contar(h) {
-    var alvo = h.querySelector('[data-contador]'), vagas = document.querySelectorAll('.vagas i');
-    if (reduz) { each(vagas, function (v) { v.classList.add('cheia'); }); return; }
+    var alvo = h.querySelector('[data-contador]'), bloco = document.querySelector('.vagas'), vagas = bloco.querySelectorAll('i');
+    var fora = function () { var r = h.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight; };
+    var final = function () { bloco.classList.add('sem-transicao'); each(vagas, function (v) { v.classList.add('cheia'); }); if (alvo) alvo.classList.add('pronto'); };
+    if (reduz) { final(); return; }
     var n = 0;
     var tick = function () {
+      if (fora()) { final(); return; }
       if (vagas[n]) vagas[n].classList.add('cheia');
       n += 1;
       if (n < vagas.length) setTimeout(tick, 300);
@@ -707,7 +718,8 @@ img, svg { display: block; max-width: 100%; }
     var t0 = null;
     var passo = function (ts) {
       if (!t0) t0 = ts;
-      var k = Math.min(1, (ts - t0) / 2000);
+      var rc = col.svg.getBoundingClientRect();
+      var k = (rc.bottom < 0 || rc.top > window.innerHeight) ? 1 : Math.min(1, (ts - t0) / 2000); // saiu da janela: vai ao estado final
       aplicar(col, 1 - Math.pow(1 - k, 2));
       if (k < 1) window.requestAnimationFrame(passo);
     };

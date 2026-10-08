@@ -47,7 +47,8 @@ const rodar = (script, args) => new Promise((resolve) => {
 servidor.listen(0, '127.0.0.1', async () => {
   const base = `http://127.0.0.1:${servidor.address().port}`;
   const mov = await rodar('gate-movimento.mjs', ['--url', base + '/demo.html']);
-  checa('gate-movimento passa no demo (desktop e celular)', mov.code === 0, mov.texto.split('\n').filter((l) => /FALHA|fora da tela/.test(l)).slice(0, 2).join(' | '));
+  checa('gate-movimento passa no demo (desktop e celular)', mov.code === 0, mov.code === 0 ? '' : 'saída inteira do gate abaixo');
+  if (mov.code !== 0) console.log(mov.texto.split('\n').map((l) => '    | ' + l).join('\n'));
   const daAssinatura = (txt) => txt.split('\n').filter((l) => /FALHA/.test(l) && /encaixe|traço fino|destaque|contraste|Assinatura em três|Título que fica|lista vertical ao lado|passos/i.test(l));
   const escuro = await rodar('gate-composicao.mjs', ['--url', base + '/demo.html']);
   checa('gate-composicao: nenhuma falha da assinatura em fundo escuro', daAssinatura(escuro.texto).length === 0 && /menor contraste de traço fino ou destaque: \d/.test(escuro.texto), daAssinatura(escuro.texto).slice(0, 2).join(' | '));
