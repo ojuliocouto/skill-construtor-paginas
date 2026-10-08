@@ -105,10 +105,17 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/italicos') corpo = curta + '<h2>Outro <em style="color:#24525A">título</em></h2><h2>Mais <em style="color:#24525A">um</em></h2>';
   // gate-movimento (auditoria da v4): um setTimeout de 3 s revelava todas as seções com a página
   // parada no topo; a visita que lê o topo por 8 s chegava em seções já reveladas e paradas.
-  const secoesMov = (extra, comMovimento = true) => '<style>.js .revela{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}.js .revela.visivel{opacity:1;transform:none}.alta{min-height:1000px}</style><script>document.documentElement.classList.add("js")</script>'
+  // Rede de segurança da receita-base (A28): `.js` posto no <head> e retirado se o script principal não confirmar em 5 s.
+  const REDE = '<script>(function(d){d.classList.add("js");setTimeout(function(){if(!d.hasAttribute("data-js-ok"))d.classList.remove("js")},5000)})(document.documentElement)</script>';
+  const OK = 'document.documentElement.setAttribute("data-js-ok","");';
+  const secoesMov = (extra, comMovimento = true) => '<style>.js .revela{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}.js .revela.visivel{opacity:1;transform:none}.alta{min-height:1000px}</style>'+REDE+''
     + texto + [1, 2, 3].map((i) => `<section class="alta"><h2 class="${comMovimento ? 'revela' : ''}">Seção ${i}</h2><p class="${comMovimento ? 'revela' : ''}">Texto da seção ${i} que entra ao rolar a página.</p></section>`).join('')
-    + '<script>var els=document.querySelectorAll(".revela");var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("visivel");io.unobserve(e.target)}})});els.forEach(function(e){io.observe(e)});' + extra + '</script>';
+    + '<script>'+OK+'var els=document.querySelectorAll(".revela");var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("visivel");io.unobserve(e.target)}})});els.forEach(function(e){io.observe(e)});' + extra + '</script>';
   if (rota === '/movimento-ok') corpo = secoesMov('');
+  // A28: sem a rede de segurança (só `js` no head, sem temporizador) o conteúdo fica invisível quando o script principal falha.
+  if (rota === '/script-sem-rede') corpo = secoesMov('').replace(REDE, '<script>document.documentElement.classList.add("js")</script>');
+  // rede lenta demais: o temporizador existe, mas só dispara aos 9 s (o gate espera 6 s)
+  if (rota === '/script-rede-lenta') corpo = secoesMov('').replace('},5000)', '},9000)');
   if (rota === '/movimento-temporizador') corpo = secoesMov('setTimeout(function(){els.forEach(function(e){e.classList.add("visivel")})},3000);');
   if (rota === '/movimento-parado') corpo = secoesMov('', false);
   // ===== Auditoria da v5 (03/10/2026, nota 7,0: "correta, mas vazia") =====
@@ -130,9 +137,9 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/passos-sem-caixa') corpo = texto + '<section><h2>Como marcar</h2><ol style="list-style:none;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:24px">' + passo('Chame', false) + passo('Combine', false) + passo('Faça', false) + '</ol></section>';
   if (rota === '/passos-em-caixas') corpo = texto + '<section><h2>Como marcar</h2><ol style="list-style:none;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:24px">' + passo('Chame', true) + passo('Combine', true) + passo('Faça', true) + '</ol></section>';
   // gate-movimento: revelação por GRUPO; a 300 px/s no celular, a 3a caixa chegava parada.
-  if (rota === '/movimento-grupo') corpo = '<style>.js .grupo>*{opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s}.js .grupo.visivel>*{opacity:1;transform:none}.js .grupo.visivel>*:nth-child(2){transition-delay:.1s}.js .grupo.visivel>*:nth-child(3){transition-delay:.2s}.js .grupo.visivel>*:nth-child(4){transition-delay:.3s}.alta{min-height:1000px}.item{height:420px;background:#eee;margin:16px 0}</style><script>document.documentElement.classList.add("js")</script>'
+  if (rota === '/movimento-grupo') corpo = '<style>.js .grupo>*{opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s}.js .grupo.visivel>*{opacity:1;transform:none}.js .grupo.visivel>*:nth-child(2){transition-delay:.1s}.js .grupo.visivel>*:nth-child(3){transition-delay:.2s}.js .grupo.visivel>*:nth-child(4){transition-delay:.3s}.alta{min-height:1000px}.item{height:420px;background:#eee;margin:16px 0}</style>'+REDE+''
     + texto + '<section class="alta"><h2 class="revela">Antes</h2></section><section><h2 class="revela">Grupo</h2><div class="grupo"><div class="item">Um</div><div class="item">Dois</div><div class="item">Três</div><div class="item">Quatro</div></div></section><section class="alta"><h2 class="revela">Depois</h2></section>'
-    + '<style>.js .revela{opacity:0;transition:opacity .5s}.js .revela.visivel{opacity:1}</style><script>var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("visivel");io.unobserve(e.target)}})});document.querySelectorAll(".grupo, .revela").forEach(function(e){io.observe(e)})</script>';
+    + '<style>.js .revela{opacity:0;transition:opacity .5s}.js .revela.visivel{opacity:1}</style><script>'+OK+'var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("visivel");io.unobserve(e.target)}})});document.querySelectorAll(".grupo, .revela").forEach(function(e){io.observe(e)})</script>';
   // movimento reduzido: a v5 mantinha html{scroll-behavior:smooth} para quem pediu menos movimento.
   if (rota === '/rolagem-suave') corpo = '<style>html{scroll-behavior:smooth}</style>' + secoesMov('');
   if (rota === '/rolagem-suave-ok') corpo = '<style>html{scroll-behavior:smooth}@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}</style>' + secoesMov('');
@@ -244,6 +251,10 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['texto-minuscula', 'gate-texto.mjs', ['--url', url + '/minuscula'], 1, /min[uú]scula: <dd> "at[eé] 4/],
     ['texto-italicos', 'gate-texto.mjs', ['--url', url + '/italicos'], 1, /it[aá]lico colorido/],
     ['movimento-positivo', 'gate-movimento.mjs', ['--url', url + '/movimento-ok'], 0],
+    ['movimento-script-bloqueado-bom', 'gate-movimento.mjs', ['--url', url + '/movimento-ok', '--so-prova-script'], 0, /script bloqueado: 0 elemento/],
+    ['movimento-script-sem-rede-reprova', 'gate-movimento.mjs', ['--url', url + '/script-sem-rede', '--so-prova-script'], 1, /script bloqueado: \d+ elemento\(s\) com texto ou imagem invis[ií]vel/],
+    ['movimento-script-demora-sem-rede-reprova', 'gate-movimento.mjs', ['--url', url + '/script-sem-rede', '--so-prova-script'], 1, /script que demora 7 s: \d+ elemento/],
+    ['movimento-script-rede-lenta-reprova-na-demora', 'gate-movimento.mjs', ['--url', url + '/script-rede-lenta', '--so-prova-script'], 1, /script que demora 7 s: \d+ elemento/],
     ['movimento-temporizador', 'gate-movimento.mjs', ['--url', url + '/movimento-temporizador'], 1, /fora da tela/],
     ['movimento-parado', 'gate-movimento.mjs', ['--url', url + '/movimento-parado'], 1, /animam ao chegar/],
     ['identidade-320', 'screenshot-prova.js', [url + '/ok', path.join(pasta, 'identidade-320'), '--com-320'], 0, /topo +mobile320: scrollY 0/],

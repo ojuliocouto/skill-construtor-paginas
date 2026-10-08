@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Repertório de movimento</title>
 <meta name="description" content="Demonstração das receitas de movimento da skill construtor-paginas, com texto fictício.">
-<script>document.documentElement.classList.replace('no-js','js')</script>
+<script>(function (d) { d.classList.replace('no-js', 'js'); setTimeout(function () { if (!d.hasAttribute('data-js-ok')) d.classList.replace('js', 'no-js'); }, 5000); })(document.documentElement)</script>
 <style>
 :root { --fundo: #f4f1ea; --papel: #fffdf8; --areia: #e4dccb; --tinta: #3b3f3a; --escuro: #1f2622; --verde: #4f7a63; --claro: #cfe3d6; --gutter: clamp(16px, 4.4vw, 64px); --marca: var(--verde); }
 * { box-sizing: border-box; }
@@ -573,6 +573,7 @@ img, svg { display: block; max-width: 100%; }
 </script>
 <script>
 (function () {
+  document.documentElement.setAttribute('data-js-ok', '');   // confirma à rede de segurança do <head>
   var reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var raiz = document.documentElement, larguraVh = window.innerWidth;
   raiz.style.setProperty('--vh', (window.innerHeight / 100) + 'px');

@@ -54,6 +54,18 @@ há um teste-mutante que prova que o que é ruim continua reprovando.
 - **A25** o `--click` do `screenshot-prova.js` não sai da página: navegação externa é bloqueada, registrada ("o clique
   levaria a <url>") e conta como clique que funciona.
 
+### Terceira leva (CI real e achados A26 a A29)
+- **CI (macOS e Ubuntu, `test-assinatura-demo`)** causa reproduzida com CPU a 20x: "Vagas que se preenchem" animava fora da tela, porque
+  os temporizadores seguiam depois que a pessoa saía. A regra para todas as receitas: animação presa ao tempo vai ao estado final
+  quando a seção sai da janela (vagas, alinhar sozinha, marcos dos passos). `gate-movimento.mjs` ganhou `--cpu` e `--so-celular`.
+- **A26** lente `comparacao-referencias` reprovada lista os eixos abaixo (`--eixos-abaixo`) e manda corrigir a página; refazer o plano é ciclo novo.
+- **A27** briefing pronto do auditor com orçamento (`auditoria/briefing-do-auditor.md`, gerado pelo `pacote-auditoria.py`); `wave.py registrar`
+  guarda `--duracao-min` e `--chamadas` e `wave.py rodada` avisa quando passa do orçamento (15 min e 30 chamadas; 8 min e 15).
+- **A28** `gate-movimento.mjs` prova "script bloqueado" e "script que demora 7 s" (desktop e celular) e a receita-base traz a rede de
+  segurança (`.js` por script no `<head>` com temporizador e `onerror`); o demo usa. `gate-imagens.py` reprova foto de banco com nome de
+  pessoa em alt, legenda ou depoimento, salvo o campo `Negócio fictício de teste: sim` no briefing.
+- **A29** `gerar-og-image.mjs`: og:image 1200x630 com título, foto, faixa "Imagem ilustrativa" e a fonte da marca de `fonts/`.
+
 ### Ainda não provado
 - Windows e Linux reais continuam como na 3.5.5. Nenhuma das correções acima foi rodada fora do macOS.
 

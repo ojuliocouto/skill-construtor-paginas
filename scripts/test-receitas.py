@@ -136,7 +136,10 @@ class Demo(unittest.TestCase):
                 ruins.append(seletor[-60:])
         self.assertEqual(ruins, [], "estado escondido fora de .js")
         self.assertIn('class="no-js"', self.html)
-        self.assertIn("replace('no-js','js')", self.html)
+        self.assertRegex(self.html, r"classList\.replace\('no-js',\s*'js'\)")
+        # A28: o demo usa a rede de segurança (temporizador que retira .js se o principal não confirmar) e o principal confirma
+        self.assertRegex(self.html, r"setTimeout\(function \(\) \{ if \(!d\.hasAttribute\('data-js-ok'\)\) d\.classList\.replace\('js', 'no-js'\)")
+        self.assertIn("setAttribute('data-js-ok', '')", self.html)
 
     def test_sem_kicker_nem_numero_decorativo(self):
         r = subprocess.run([sys.executable, str(SCRIPTS / "gate-sem-kicker.py"), str(DEMO)], capture_output=True, text=True, encoding="utf-8")
@@ -301,6 +304,18 @@ class NumerosDoTexto(unittest.TestCase):
         self.assertIn(f"cerca de {total:.1f} s".replace(".", ","), prosa)
         self.assertNotIn("2,1 s", prosa)
         self.assertNotIn("0,45 s", prosa)
+
+
+class RedeDeSeguranca(unittest.TestCase):
+    """A28: a receita-base traz a rede de segurança pronta."""
+
+    def test_regras_gerais_trazem_o_head_com_temporizador_e_o_onerror(self):
+        topo = ler(MD).split("## Receita: ", 1)[0]
+        self.assertIn("data-js-ok", topo)
+        self.assertIn("setTimeout(function () { if (!d.hasAttribute('data-js-ok'))", topo)
+        self.assertIn("onerror=\"document.documentElement.classList.replace('js','no-js')\"", topo)
+        self.assertIn("script bloqueado", topo)
+        self.assertIn("script que demora 7 s", topo)
 
 
 class EstadoFinalDaEntrada(unittest.TestCase):

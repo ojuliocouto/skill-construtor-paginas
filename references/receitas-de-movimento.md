@@ -43,8 +43,19 @@ Base mínima, comum a todas:
 ```html
 <html lang="pt-BR" class="no-js">
 <head>
-  <script>document.documentElement.classList.replace('no-js','js')</script>
+  <!-- rede de segurança: a classe .js só vale enquanto o script principal der sinal de vida -->
+  <script>(function (d) { d.classList.replace('no-js', 'js'); setTimeout(function () { if (!d.hasAttribute('data-js-ok')) d.classList.replace('js', 'no-js'); }, 5000); })(document.documentElement)</script>
+  <!-- script externo: se falhar ao carregar, devolve a página ao estado sem script na hora -->
+  <script src="app.js" defer onerror="document.documentElement.classList.replace('js','no-js')"></script>
 ```
+
+**Rede de segurança (conteúdo nunca fica invisível se o script não roda).** Todo estado escondido está atrás de `.js`, e a
+classe `.js` é posta por um script em linha no `<head>`. Se o script principal NÃO carregar (rede, bloqueio, erro) ou
+demorar, a página ficaria com `opacity: 0` para sempre. Por isso o script do `<head>` também arma um temporizador de 5 s:
+se o principal não confirmar (a PRIMEIRA linha dele é `document.documentElement.setAttribute('data-js-ok', '')`), a classe
+`.js` é retirada e a página volta a aparecer inteira. O `onerror` do `<script src>` faz o mesmo na hora, quando o arquivo
+nem chega. O `gate-movimento.mjs` prova isso em desktop e celular: `script bloqueado` e `script que demora 7 s`.
+O demo usa essa rede.
 
 ```css
 html { scroll-behavior: smooth; }

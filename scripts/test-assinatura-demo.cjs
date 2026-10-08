@@ -30,12 +30,14 @@ const demo = fs.readFileSync(path.join(__dirname, '..', 'references', 'receitas'
 const claro = demo
   .replace('.assin { background: var(--escuro) !important; color: var(--papel); }', '.assin { background: var(--papel) !important; color: var(--escuro); }')
   .replace(/class="coluna( entra-pecas)?"/g, (m) => m.replace('class="coluna', 'class="coluna sobre-claro'));
+// o demo SEM a rede de segurança (o <head> antigo, só troca a classe): o gate tem que reprovar este
+const semRede = demo.replace(/<script>\(function \(d\) \{ d\.classList\.replace\('no-js', 'js'\);[^\n]*<\/script>/, "<script>document.documentElement.classList.replace('no-js','js')</script>");
 let falhas = 0;
 const checa = (nome, ok, detalhe = '') => { console.log(`${ok ? 'OK   ' : 'FALHA'} ${nome}${detalhe ? ' -> ' + detalhe : ''}`); if (!ok) falhas++; };
 
 const servidor = http.createServer((req, res) => {
   res.setHeader('content-type', 'text/html; charset=utf-8');
-  res.end(req.url.startsWith('/claro') ? claro : demo);
+  res.end(req.url.startsWith('/claro') ? claro : req.url.startsWith('/sem-rede') ? semRede : demo);
 });
 const rodar = (script, args) => new Promise((resolve) => {
   const f = spawn(process.execPath, [path.join(__dirname, script), ...args]);
@@ -50,6 +52,16 @@ servidor.listen(0, '127.0.0.1', async () => {
   checa('gate-movimento passa no demo (desktop e celular)', mov.code === 0, mov.code === 0 ? '' : 'saída inteira do gate abaixo');
   if (mov.code !== 0) console.log(mov.texto.split('\n').map((l) => '    | ' + l).join('\n'));
   const daAssinatura = (txt) => txt.split('\n').filter((l) => /FALHA/.test(l) && /encaixe|traço fino|destaque|contraste|Assinatura em três|Título que fica|lista vertical ao lado|passos/i.test(l));
+  // A28: a rede de segurança do <head> do demo faz o conteúdo aparecer sem o script (e o gate pega o demo sem ela)
+  const sr = await rodar('gate-movimento.mjs', ['--url', base + '/demo.html', '--so-prova-script']);
+  checa('gate-movimento: o demo com a rede de segurança passa em script bloqueado e script que demora 7 s', sr.code === 0, sr.code === 0 ? '' : sr.texto.split('\n').filter((l) => /FALHA/.test(l)).slice(0, 2).join(' | '));
+  const sem = await rodar('gate-movimento.mjs', ['--url', base + '/sem-rede.html', '--so-prova-script']);
+  checa('gate-movimento: o demo SEM a rede de segurança reprova (o gate pega o defeito)', sem.code === 1 && /script bloqueado: \d+ elemento/.test(sem.texto), String(sem.code));
+  // CI lento (o defeito real: "Vagas que se preenchem" animando fora da tela): repete o celular com a CPU a 4x
+  for (let i = 1; i <= 3; i++) {
+    const lento = await rodar('gate-movimento.mjs', ['--url', base + '/demo.html', '--so-celular', '--cpu', '4']);
+    checa(`gate-movimento no celular com a CPU a 4x, repetição ${i} de 3`, lento.code === 0, lento.code === 0 ? '' : lento.texto.split('\n').filter((l) => /FALHA/.test(l)).slice(0, 2).join(' | '));
+  }
   const escuro = await rodar('gate-composicao.mjs', ['--url', base + '/demo.html']);
   checa('gate-composicao: nenhuma falha da assinatura em fundo escuro', daAssinatura(escuro.texto).length === 0 && /menor contraste de traço fino ou destaque: \d/.test(escuro.texto), daAssinatura(escuro.texto).slice(0, 2).join(' | '));
   const claroR = await rodar('gate-composicao.mjs', ['--url', base + '/claro.html']);

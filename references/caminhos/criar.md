@@ -45,6 +45,14 @@ faltar vira lista de pendências do cliente e não aparece na página até ser c
 interativo: as cinco de interpretação saem como `SUPOSICAO`, o preço fica PENDENTE e o botão leva
 para a conversa.
 
+**Modelo do `evidencias/briefing.md`: um campo próprio para o teste fictício.** Quando o negócio é inventado para testar a
+skill, o briefing traz, numa linha sozinha, `Negócio fictício de teste: sim`. Sem essa linha o negócio é real, e o
+`gate-imagens.py` REPROVA foto de banco cujo `alt`, legenda ou bloco de depoimento atribui um nome próprio de pessoa
+("Marina Coutinho, Icaraí" ao lado de um retrato de banco afirma que aquela é a Marina). Com a linha, o gate deixa passar e
+imprime "permitido porque o briefing declara teste fictício". Frase solta no texto ("é um negócio fictício") não vale: tem de
+ser o campo, com "sim". Em projeto real, o retrato de banco leva alt ilustrativo e nenhum nome, ou entra a foto do cliente
+com autorização.
+
 Grave `evidencias/briefing.md` e `evidencias/etapa-0.json` (campos em `references/gate-etapas.md`):
 `node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir> registrar 0 --arquivo evidencias/etapa-0.json`
 
@@ -293,7 +301,9 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    Favicon: recorte quadrado primeiro, depois redimensione. **O ícone é a identidade ATUAL:** o
    plano declara `Ícone do site: <motivo>`, o motivo é desenhado em `icones/icone.svg` (com o
    mesmo `data-motivo`, e a página desenha esse motivo em algum `data-desenho`) e os PNG saem de
-   `node <dir-da-skill>/scripts/gerar-icones.mjs --projeto <dir>`. A v5 publicou o favicon da v3
+   `node <dir-da-skill>/scripts/gerar-icones.mjs --projeto <dir>`. **A og:image sai de um comando** (1200x630, o título, a foto e a
+   faixa "Imagem ilustrativa" quando a foto é de banco, com a fonte da marca de `fonts/`; sem fonte, usa a do sistema e diz que é reserva):
+   `node <dir-da-skill>/scripts/gerar-og-image.mjs --projeto <dir> --titulo "<título>" --foto imagens/hero.jpg --ilustrativa`. A v5 publicou o favicon da v3
    (md5 igual), com um motivo que a página já tinha abandonado. Se o motivo do ícone mudar aqui, o `plano-visual.md` muda e os registros dele caem (ver o aviso do passo c): refaça
    na ordem que a mensagem do gate mostra.
 5. **Fora do domínio final, a página nasce `noindex`:** `<meta name="robots" content="noindex,
