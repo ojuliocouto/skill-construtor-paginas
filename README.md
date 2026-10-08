@@ -171,6 +171,7 @@ Fixes from an end-to-end test where a student built a real page with the skill a
 - **Icon line in the PLAN.** `Ícone do site: <motivo>` is in the PLAN model, required by `gate-plano.py` and by the stage 2 registration.
 - **Commands and text.** The "next command" the scripts print carries the full skill path (`scripts/lancador.py`); every script message has correct accents (`test-acentuacao.py`).
 - **Motion recipes.** Colour-panel text matches the code (0.8 + 0.15 + 0.8 = 1.75 s); the signature recipe now defines `colunas`; the pair "title + vertical list" declares `data-assimetrico`; the opening recipe keeps its final state with `.pronto`; tests check that no recipe JS uses an undefined name and that times in the text exist in the code.
+- **Second round (A14 to A25).** Credit blocks no longer hide commercial promises; the skip-to-content link is not an action button; fixed-space failures name the elements; `data-assinatura` marks the signature drawing; the contrast gate ignores invisible strokes; the signature recipe has a phone variant and no CSS transition outliving the section; the credits model has a 44 px link pattern; failed registrations tell what to redo in order; `plano-para-secoes.py` builds `secoes.json` from the PLAN; `baixar-fontes.mjs` downloads Google Fonts (latin subset, woff2); the `--click` proof never leaves the test page.
 - **Proof screenshot waits for the entrance** (up to 4 s, says how long) and freezes finished entrances so the full-page print does not restart them.
 
 ## What is new in 3.5.5

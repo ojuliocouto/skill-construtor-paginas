@@ -29,6 +29,31 @@ há um teste-mutante que prova que o que é ruim continua reprovando.
 - **A13** `screenshot-prova.js` espera a animação de entrada (teto de 4 s, diz quanto esperou) e congela as entradas
   terminadas antes do print de página inteira, que reiniciava a animação; a receita abertura-do-topo fixa o estado final com `.pronto`.
 
+### Segunda leva (achados A14 a A25 e o aperto do A5)
+- **A5 (aperto)** bloco marcado como crédito só isenta frase com cara de crédito; R$, %, "garantia", "dias", "clientes",
+  "nota", "grátis" e afins dentro dele voltam a exigir linha (`gate-verdade.py`).
+- **A14** o link de pular (fora da janela, `clip`, `clip-path`, 1 px) não conta como botão de ação nem como espaço fixo
+  (`gate-responsivo.mjs`); dois botões visíveis continuam reprovando.
+- **A15** a mensagem do espaço fixo diz QUAIS elementos somou (seletor e altura); o limite de 15% não mudou. A receita da
+  assinatura traz a variante de celular (coluna fora do sticky abaixo de 900 px, estado 2 ao subir a coluna).
+- **A16** `data-assinatura` no SVG do momento assinatura (marcador da receita) e `data-icone-repetido-ok` entram no texto
+  (`ritmo-e-animacao.md` e a receita); o mesmo desenho fora da assinatura continua reprovando (`gate-composicao.mjs`).
+- **A17** o gate de contraste não mede o que está invisível (opacity 0 acima do SVG, visibility, display); cores do exemplo
+  da assinatura passam em fundo escuro e claro, conferidas no demo.
+- **A18** `data-assimetrico` no HTML de exemplo da assinatura e do título fixo (e conferência em teste).
+- **A19** a fórmula do limite de colunas (80 px) está no `criar.md` e a falha diz qual elemento mediu em cada coluna.
+- **A20** a receita da assinatura anima a cor da peça no mesmo laço do JS (sem transição de CSS); o demo passa no
+  `gate-movimento.mjs` (antes reprovava no celular) e isso virou teste (`test-assinatura-demo.cjs`).
+- **A21** o modelo de créditos traz o padrão de link com 44 px de alvo sem buraco entre linhas (medido em 390 e 360).
+- **A22** a mensagem do `uso-ferramentas.py` e a do `gate-etapas.py` dizem o que refazer, em ordem, com o caminho completo;
+  o `criar.md` avisa nos passos em que isso acontece.
+- **A23** `plano-para-secoes.py` gera o `secoes.json` da prova de animação a partir da tabela do PLANO (o que não dá para
+  inferir sai `PREENCHER` e o `anim.mjs` recusa); testado com o PLANO real do projeto de teste.
+- **A24** `baixar-fontes.mjs` baixa a fonte do Google Fonts (só o latino, woff2, variável quando existir) e imprime o
+  `@font-face`; testado com resposta gravada.
+- **A25** o `--click` do `screenshot-prova.js` não sai da página: navegação externa é bloqueada, registrada ("o clique
+  levaria a <url>") e conta como clique que funciona.
+
 ### Ainda não provado
 - Windows e Linux reais continuam como na 3.5.5. Nenhuma das correções acima foi rodada fora do macOS.
 
