@@ -40,8 +40,10 @@ Os critérios continuam todos; muda quantos agentes rodam e quantas rodadas.
    devolve o schema abaixo: um bloco por lente. O registro continua um por lente (as 9 notas e
    vereditos), com `--origem subagente`.
 
-   **Cole o BRIEFING PRONTO no prompt do auditor.** O `pacote-auditoria.py` o gera já preenchido, com os caminhos do
-   pacote, em `auditoria/briefing-do-auditor.md`. O texto (a versão gerada traz os caminhos e o número da rodada):
+   **Cole o BRIEFING PRONTO no prompt do auditor.** O `pacote-auditoria.py` o gera já preenchido, em `auditoria/briefing-do-auditor.md`: a pasta do projeto (caminho absoluto), todos os
+   caminhos do pacote (todas as referências, as telas de 360 e 320 e as pranchas de animação), as 9 lentes, os arquivos de critério
+   (`auditores.md`, `preferencias-de-design.md`, `anti-vibe-coding.md`), o schema de retorno (com `gosto` e `eixos_abaixo` na lente
+   de referências) e o orçamento. Colar o arquivo basta. O texto (a versão gerada traz os caminhos e o número da rodada):
 
    > Você é o auditor independente. Refute, não revise: ache o que está errado e diga onde, com a medida.
    > **Orçamento desta rodada:** rodada 1, 15 minutos e no máximo 30 chamadas de ferramenta; rodada 2, 8 minutos e 15 chamadas.

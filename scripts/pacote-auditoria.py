@@ -71,26 +71,86 @@ def itens_obrigatorios(raiz, caminho, rodada):
 
 
 def opcionais(raiz):
+    """Listadas se existirem. 3.5.8 (N19): TODAS as referências (dobra e meio), as telas de 360 e 320 e as pranchas de animação por seção."""
     cand = [raiz / "plano-visual.md"]
     achados = [p for p in cand if p.is_file()]
     achados += achar_todos(raiz, "comparativo-*.jpg")[:3]
-    return achados
+    if (raiz / "referencias").is_dir():
+        achados += achar_todos(raiz / "referencias", "*-dobra.png") + achar_todos(raiz / "referencias", "*-meio.png")
+    for nome in ("prova-mobile360.png", "prova-mobile320.png"):
+        f = achar(raiz, nome)
+        if f:
+            achados.append(f)
+    achados += [p for p in achar_todos(raiz, "*.png") if p.parent.name == "anim"]
+    vistos, unicos = set(), []
+    for p in achados:
+        if p not in vistos:
+            vistos.add(p)
+            unicos.append(p)
+    return unicos
 
 
 ORCAMENTO = {1: (15, 30), 2: (8, 15)}
 
 
-def briefing_do_auditor(rodada, url, itens, caminho):
-    """Texto pronto para colar no prompt do auditor, com os caminhos do pacote e o orçamento da rodada (A27)."""
+SKILL_RAIZ = Path(__file__).resolve().parent.parent
+SCHEMA_LENTE = """```json
+{
+  "lente": "string",
+  "aprovado": true,
+  "score": 8.5,
+  "achados": [
+    { "item": "string", "severidade": "critico|alto|medio|baixo", "evidencia": "string", "fix": "string" }
+  ]
+}
+```
+Evidência é obrigatória e verificável (print, medida em px, contraste, alvo de toque, trecho com linha ou passo de reprodução); achado sem evidência é descartado. O fix nunca viola a regra da skill (nada de depoimento inventado, urgência falsa ou dado fora do briefing).
+Na lente `comparacao-referencias` o bloco leva mais dois campos: `"gosto": "bonito|correto"` (a página é bonita ou só correta?) e `"eixos_abaixo": ["composicao", "tipografia", "imagem", "ritmo"]` (só os eixos que ficaram abaixo das referências; vazio se nenhum)."""
+SCHEMA_RODADA_2 = """```json
+{
+  "rodada": 2,
+  "achados": [
+    { "achado": "string (o item da rodada 1, com a lente)", "estado": "corrigido|não corrigido|regressão", "evidencia": "string" }
+  ]
+}
+```"""
+
+
+def lentes_da_skill():
+    """As 9 lentes do wave.py (a fonte única), com o critério de cada uma em uma linha."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("wave_lentes", Path(__file__).resolve().parent / "wave.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return dict(m.LENTES)
+
+
+def briefing_do_auditor(rodada, url, itens, caminho, raiz=None):
+    """Texto pronto para colar no prompt do auditor: pasta do projeto, lentes, critérios, schema, todos os caminhos do pacote e o orçamento (A27, N19)."""
     minutos, chamadas = ORCAMENTO[rodada]
     lista = "\n".join(f"- `{rel}`" for rel in sorted(itens)) or "- (pacote vazio: rode o pacote-auditoria.py de novo)"
     conferencia = (
         "\nEsta é a RODADA 2: é só conferência dos achados da rodada 1 (`auditoria/achados-rodada-1.*`), item por item: "
         "corrigido, não corrigido, regressão. Não reabra as 9 lentes.\n" if rodada == 2 else "")
+    pasta = Path(raiz).resolve().as_posix() if raiz else "(pasta do projeto)"
+    ref = SKILL_RAIZ / "references"
+    criterios = [ref / "auditores.md", ref / "preferencias-de-design.md", ref / "anti-vibe-coding.md"]
+    local = ref / "preferencias-dono-ea.md"
+    if local.is_file():
+        criterios.append(local)
+    lentes = "\n".join(f"- `{n}`: {d}" for n, d in lentes_da_skill().items())
+    criterios_txt = "\n".join(f"- `{c.as_posix()}`" for c in criterios)
+    schema = SCHEMA_RODADA_2 if rodada == 2 else SCHEMA_LENTE
     return f"""# Briefing do auditor, rodada {rodada} (caminho {caminho})
 
 Você é o auditor independente. Refute, não revise: ache o que está errado e diga onde, com a medida.
 {conferencia}
+## Pasta do projeto
+
+`{pasta}`
+
+Os caminhos do pacote abaixo são relativos a esta pasta.
+
 ## Pacote (já pronto: LEIA, não capture de novo)
 
 Página servida: {url}
@@ -99,15 +159,27 @@ Página servida: {url}
 
 O manifesto está em `auditoria/pacote.json`.
 
+## Critérios (leia antes de julgar)
+
+{criterios_txt}
+
+Em `auditores.md`, cada lente tem a sua seção com o que reprova. As lentes:
+
+{lentes}
+
 ## Orçamento desta rodada
 
 - **{minutos} minutos** e no máximo **{chamadas} chamadas de ferramenta** (rodada 1: 15 minutos e 30 chamadas; rodada 2: 8 minutos e 15 chamadas).
 - **Proibido recapturar o que já está no pacote** (telas, pranchas, vídeo). Só abra a página para o que print não mostra:
   interação, foco, hover, script bloqueado. No máximo **6 capturas próprias**.
 - O que não deu tempo de olhar volta como **"não verificado"**, por lente, em vez de estourar o tempo.
-- A resposta é o **schema** (um bloco por lente), sem relatório longo.
+- A resposta é o **schema** abaixo ({'um item por achado da rodada 1' if rodada == 2 else 'um bloco por lente'}), sem relatório longo.
 - No fim, informe a duração em minutos e o número de chamadas que gastou: a sessão principal os registra com
   `wave.py registrar ... --duracao-min <minutos> --chamadas <n>`, e o `wave.py rodada` avisa se passou do orçamento.
+
+## Schema de retorno
+
+{schema}
 """
 
 
@@ -185,7 +257,7 @@ def main():
         "completo": completo, "faltando": falta, "velhos": velhos, "itens": itens,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    (saida / "briefing-do-auditor.md").write_text(briefing_do_auditor(args.rodada, args.url, itens, args.caminho), encoding="utf-8")
+    (saida / "briefing-do-auditor.md").write_text(briefing_do_auditor(args.rodada, args.url, itens, args.caminho, raiz), encoding="utf-8")
     print("=" * 74)
     if completo:
         print("  PACOTE COMPLETO. Cole auditoria/briefing-do-auditor.md no prompt do auditor (ele traz os caminhos e o orçamento):")
