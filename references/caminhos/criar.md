@@ -392,6 +392,13 @@ põe a página ao lado das referências mais fortes do passo b) são CRITÉRIOS.
 subagente auditor independente que as percorre numa passada só** e devolve um bloco por lente.
 Uma lente por subagente é modo opcional, só se a pessoa pedir auditoria profunda.
 
+**Briefing pronto, com orçamento.** O `pacote-auditoria.py` grava `auditoria/briefing-do-auditor.md`: cole-o no prompt do
+auditor. Ele traz os caminhos do pacote e o orçamento (rodada 1: 15 minutos e 30 chamadas de ferramenta; rodada 2: 8 minutos
+e 15 chamadas), proíbe recapturar o que já está no pacote (só abre a página para interação, foco, hover e script bloqueado,
+no máximo 6 capturas próprias), manda devolver "não verificado" por lente o que não deu tempo, e pede só o schema. Informe a
+duração e as chamadas no `wave.py registrar` (`--duracao-min`, `--chamadas`); o `wave.py rodada` avisa se passou. (A auditoria
+real levou 51 minutos e 113 chamadas sem esse teto.)
+
 **Antes de chamar o auditor, junte o pacote de evidência UMA vez** (ele não captura as telas de
 novo). Gere o que ainda não existir, nesta ordem, e confira:
 
@@ -418,7 +425,7 @@ deu média 7,78 e "tells 0"; o auditor independente deu 5,5 e cinco achados grav
 `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> registrar <lente> --veredito <aprovado|reprovado> --nota <0-10> --origem <subagente|sessao-independente|pessoa|autoavaliacao> --achados "<o que olhou e achou>"`
 A `comparacao-referencias` responde também, com `--gosto bonito|correto`, a pergunta do dono
 depois da SobrAI (9,05 nas lentes e "que página FEIA"): **isso é bonito ou só está correto?**
-"correto" não aprova e a rodada volta ao plano visual; sem resposta, a rodada também volta.
+"correto" não aprova e a rodada não entrega: corrija os eixos abaixo das referências (`--eixos-abaixo`); sem resposta, a rodada também não entrega.
 `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> checar`
 `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`
 
@@ -428,8 +435,9 @@ em `auditoria/achados-rodada-1.json`) e fecha a rodada 2, que é de CONFERÊNCIA
 "Rodada 2"): o mesmo auditor confere se cada achado foi corrigido, se a correção quebrou outra
 coisa, e mais nada; não reabre as 9 lentes. Depois dela o ciclo fecha SEMPRE: aprovado, ENTREGA COM
 RESSALVAS (achados que sobraram e nota real, na entrega) ou NÃO ENTREGAR: crítico aberto. Terceira
-rodada só se a pessoa pedir (`--rodada-extra-pedida`, registrada). **Lente `comparacao-referencias` reprovada = volta ao passo c**, refaz o plano a partir
-das referências e reconstrói; não se compensa com nota nas outras lentes. Fechado o ciclo, o
+rodada só se a pessoa pedir (`--rodada-extra-pedida`, registrada). **Lente `comparacao-referencias` reprovada NÃO manda reconstruir sozinha** (o teto é 2 rodadas e a segunda é
+conferência): o `wave.py rodada` lista os eixos abaixo das referências e você os corrige na página, entre as rodadas;
+refazer o plano visual e reconstruir é um ciclo novo, só se a pessoa pedir. Não se compensa com nota nas outras lentes. Fechado o ciclo, o
 passe de gosto: tells antes e depois, o depois é 0.
 
 ## h. Prova e entrega

@@ -77,6 +77,40 @@ def opcionais(raiz):
     return achados
 
 
+ORCAMENTO = {1: (15, 30), 2: (8, 15)}
+
+
+def briefing_do_auditor(rodada, url, itens, caminho):
+    """Texto pronto para colar no prompt do auditor, com os caminhos do pacote e o orçamento da rodada (A27)."""
+    minutos, chamadas = ORCAMENTO[rodada]
+    lista = "\n".join(f"- `{rel}`" for rel in sorted(itens)) or "- (pacote vazio: rode o pacote-auditoria.py de novo)"
+    conferencia = (
+        "\nEsta é a RODADA 2: é só conferência dos achados da rodada 1 (`auditoria/achados-rodada-1.*`), item por item: "
+        "corrigido, não corrigido, regressão. Não reabra as 9 lentes.\n" if rodada == 2 else "")
+    return f"""# Briefing do auditor, rodada {rodada} (caminho {caminho})
+
+Você é o auditor independente. Refute, não revise: ache o que está errado e diga onde, com a medida.
+{conferencia}
+## Pacote (já pronto: LEIA, não capture de novo)
+
+Página servida: {url}
+
+{lista}
+
+O manifesto está em `auditoria/pacote.json`.
+
+## Orçamento desta rodada
+
+- **{minutos} minutos** e no máximo **{chamadas} chamadas de ferramenta** (rodada 1: 15 minutos e 30 chamadas; rodada 2: 8 minutos e 15 chamadas).
+- **Proibido recapturar o que já está no pacote** (telas, pranchas, vídeo). Só abra a página para o que print não mostra:
+  interação, foco, hover, script bloqueado. No máximo **6 capturas próprias**.
+- O que não deu tempo de olhar volta como **"não verificado"**, por lente, em vez de estourar o tempo.
+- A resposta é o **schema** (um bloco por lente), sem relatório longo.
+- No fim, informe a duração em minutos e o número de chamadas que gastou: a sessão principal os registra com
+  `wave.py registrar ... --duracao-min <minutos> --chamadas <n>`, e o `wave.py rodada` avisa se passou do orçamento.
+"""
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--projeto", default=".")
@@ -127,9 +161,11 @@ def main():
         "completo": completo, "faltando": falta, "velhos": velhos, "itens": itens,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    (saida / "briefing-do-auditor.md").write_text(briefing_do_auditor(args.rodada, args.url, itens, args.caminho), encoding="utf-8")
     print("=" * 74)
     if completo:
-        print("  PACOTE COMPLETO. Passe auditoria/pacote.json ao auditor: ele lê, não captura de novo.\n")
+        print("  PACOTE COMPLETO. Cole auditoria/briefing-do-auditor.md no prompt do auditor (ele traz os caminhos e o orçamento):")
+        print("  ele lê o pacote, não captura de novo.\n")
         return 0
     if falta:
         print(f"  PACOTE INCOMPLETO: FALTA {', '.join(falta)}. Gere o que falta uma vez e rode de novo.")

@@ -62,6 +62,9 @@ LENTES = {
     "comparacao-referencias": "a página está no nível das referências printadas no passo b?",
 }
 LENTE_REFERENCIAS = "comparacao-referencias"
+EIXOS = ("composicao", "tipografia", "imagem", "ritmo")
+# Orçamento do auditor independente (A27, auditoria real: 51 min, 113 chamadas, mais de 200 arquivos na rodada 1).
+ORCAMENTO = {1: (15, 30), 2: (8, 15)}
 GOSTOS = ("bonito", "correto")
 
 # Gates EXECUTAVEIS que precisam estar verdes. Nao dependem de julgamento: rodam e saem 0 ou 1.
@@ -160,8 +163,17 @@ def cmd_registrar(args):
             return 2
         if gosto == "correto" and args.veredito == "aprovado":
             print("ERRO: página só correta não aprova a comparação com as referências. Registre "
-                  "--veredito reprovado e volte ao plano visual.", file=sys.stderr)
+                  "--veredito reprovado e corrija os eixos abaixo das referências na página (--eixos-abaixo).", file=sys.stderr)
             return 2
+    eixos_txt = getattr(args, "eixos_abaixo", None)
+    eixos = [e.strip() for e in (eixos_txt or "").split(",") if e.strip()]
+    if any(e not in EIXOS for e in eixos):
+        print(f"ERRO: --eixos-abaixo aceita {', '.join(EIXOS)} (separados por vírgula).", file=sys.stderr)
+        return 2
+    dur, cham = getattr(args, "duracao_min", None), getattr(args, "chamadas", None)
+    if (dur is not None and (not math.isfinite(dur) or dur < 0)) or (cham is not None and cham < 0):
+        print("ERRO: --duracao-min e --chamadas não podem ser negativos.", file=sys.stderr)
+        return 2
     if args.veredito != "nao_aplicavel" and (args.nota is None):
         print("ERRO: lente que rodou precisa de --nota", file=sys.stderr)
         return 2
@@ -179,6 +191,12 @@ def cmd_registrar(args):
     }
     if gosto:
         d["lentes"][args.lente]["gosto"] = gosto
+    if eixos:
+        d["lentes"][args.lente]["eixos_abaixo"] = eixos
+    if dur is not None:
+        d["lentes"][args.lente]["duracao_min"] = dur
+    if cham is not None:
+        d["lentes"][args.lente]["chamadas"] = cham
     salvar(args.projeto, d)
     print(f"lente registrada: {args.lente} -> {args.veredito} [{d['lentes'][args.lente]['origem']}]"
           + (f" (nota {args.nota})" if args.nota is not None else ""))
@@ -381,6 +399,16 @@ def cmd_rodada(args):
     print("=" * 74)
     for r in hist:
         print(f"  rodada {r['n']}: média {r['media']:.2f}, {r['criticos']} crítico(s)")
+    # A27: aviso (não reprovação) quando o auditor passou do orçamento da rodada.
+    gastos = [v for v in lentes.values() if v.get("duracao_min") is not None or v.get("chamadas") is not None]
+    if gastos:
+        dur = max((v.get("duracao_min") or 0) for v in gastos)
+        cham = max((v.get("chamadas") or 0) for v in gastos)
+        max_min, max_cham = ORCAMENTO.get(atual["n"], ORCAMENTO[2])
+        if dur > max_min or cham > max_cham:
+            print(f"  AVISO: a rodada {atual['n']} passou do orçamento do auditor: {dur:g} min e {cham} chamadas contra "
+                  f"{max_min} min e {max_cham} chamadas. Não reprova, mas o briefing manda devolver 'não verificado' por lente "
+                  "em vez de estourar o tempo e proíbe recapturar o que já está no pacote.")
 
     # 2. REGRESSAO = achado NOVO causado por correcao minha, nao nota que caiu.
     #
@@ -427,15 +455,17 @@ def cmd_rodada(args):
 
     print("-" * 74)
     ref = lentes.get(LENTE_REFERENCIAS, {})
-    if ref.get("veredito") == "reprovado":
-        print("  VOLTA PRO PLANO VISUAL (passo c): a lente comparacao-referencias reprovou. A página")
-        print("  não está no nível das referências printadas no passo b, e isso não se resolve com")
-        print("  nota alta nas outras lentes. Refaca o plano a partir das referências e reconstrua.\n")
-        return 1
-    if ref.get("gosto") != "bonito":
-        print("  VOLTA PRO PLANO VISUAL (passo c): a comparacao-referencias não respondeu que a página")
-        print(f"  é bonita no nível das referências (resposta: {ref.get('gosto') or 'nenhuma'}). Correta não")
-        print("  basta: o dono reprovou página com 9,05 nas lentes chamando de FEIA.\n")
+    if ref.get("veredito") == "reprovado" or ref.get("gosto") != "bonito":
+        # A26: o teto é 2 rodadas e a segunda é só conferência, então reprovar esta lente NÃO manda reconstruir sozinha.
+        # Lista os eixos abaixo das referências e manda corrigir esses eixos na página (cabe entre as rodadas).
+        eixos = ref.get("eixos_abaixo") or list(EIXOS)
+        quais = "os eixos abaixo das referências" if ref.get("eixos_abaixo") else "os 4 eixos (o auditor não disse quais ficaram abaixo; releia os achados da lente)"
+        print("  ABAIXO DAS REFERÊNCIAS: a comparacao-referencias não respondeu que a página é bonita no nível")
+        print(f"  das referências printadas no passo b (veredito: {ref.get('veredito')}, resposta: {ref.get('gosto') or 'nenhuma'}).")
+        print(f"  EIXOS a corrigir: {', '.join(eixos)} ({quais}).")
+        print("  Corrija esses eixos na página (cabe na correção entre as rodadas), refaça os gates que a correção toca")
+        print("  e feche a rodada de conferência. Nota alta nas outras lentes não compensa, e correta não basta.")
+        print("  Refazer o plano visual e reconstruir é um ciclo novo: só se você pedir (custa mais que a rodada 2).\n")
         return 1
     teto_efetivo = TETO_RODADAS + (RODADAS_EXTRAS_MAX if any(r.get("rodada_extra_pedida") for r in hist) else 0)
     no_teto = len(hist) >= teto_efetivo
@@ -524,6 +554,11 @@ def main():
     r.add_argument("--gosto", choices=GOSTOS, default=None,
                    help="só na comparacao-referencias, obrigatório: a página é bonita no nível das "
                         "referências, ou só está correta? 'correto' reprova e volta ao plano visual")
+    r.add_argument("--eixos-abaixo", dest="eixos_abaixo", default=None,
+                   help="só na comparacao-referencias reprovada: os eixos abaixo das referências (`composicao`, `tipografia`, `imagem`, `ritmo`)")
+    r.add_argument("--duracao-min", dest="duracao_min", type=float, default=None,
+                   help="minutos que o auditor levou na rodada (a maior duração entre as lentes vale no aviso de orçamento)")
+    r.add_argument("--chamadas", type=int, default=None, help="chamadas de ferramenta do auditor na rodada")
     r.add_argument("--origem", choices=ORIGENS, default="autoavaliacao",
                    help="quem auditou: subagente independente, outra sessão, outra pessoa ou "
                         "autoavaliação (padrão). Autoavaliação nunca libera entrega")

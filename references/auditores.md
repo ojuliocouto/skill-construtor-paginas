@@ -39,6 +39,20 @@ Os critérios continuam todos; muda quantos agentes rodam e quantas rodadas.
    pacote, só abre a página para o que as capturas não mostram (interação, foco, hover) e
    devolve o schema abaixo: um bloco por lente. O registro continua um por lente (as 9 notas e
    vereditos), com `--origem subagente`.
+
+   **Cole o BRIEFING PRONTO no prompt do auditor.** O `pacote-auditoria.py` o gera já preenchido, com os caminhos do
+   pacote, em `auditoria/briefing-do-auditor.md`. O texto (a versão gerada traz os caminhos e o número da rodada):
+
+   > Você é o auditor independente. Refute, não revise: ache o que está errado e diga onde, com a medida.
+   > **Orçamento desta rodada:** rodada 1, 15 minutos e no máximo 30 chamadas de ferramenta; rodada 2, 8 minutos e 15 chamadas.
+   > **Proibido recapturar o que já está no pacote** (telas, pranchas, vídeo). Só abra a página para o que print não mostra:
+   > interação, foco, hover, script bloqueado, e no máximo 6 capturas próprias.
+   > O que não deu tempo de olhar volta como **"não verificado"**, por lente, em vez de estourar o tempo.
+   > A resposta é o schema, sem relatório longo. No fim, diga a duração em minutos e o número de chamadas.
+
+   Registre o gasto: `wave.py registrar <lente> ... --duracao-min <minutos> --chamadas <n>` (em qualquer lente, a maior vale).
+   O `wave.py rodada` AVISA (não reprova) quando a rodada passou do orçamento. Motivo: o auditor único da auditoria real levou
+   51 minutos, 113 chamadas e mais de 200 arquivos de evidência recapturando telas por conta própria.
    **Modo opcional, auditoria profunda:** uma lente por subagente (com a tool `Workflow`, uma
    chamada `parallel`; com `Agent`/`Task`, um por lente) só quando a pessoa pedir auditoria
    profunda, com essas palavras ou equivalentes. Nunca por padrão.
@@ -83,8 +97,10 @@ Os critérios continuam todos; muda quantos agentes rodam e quantas rodadas.
 
 1. Zero crítico confirmado. Inegociável.
 2. Nenhuma regressão (achado causado pela correção da rodada anterior).
-3. A lente `comparacao-referencias` não pode estar reprovada: se estiver, o ciclo manda voltar
-   ao plano visual (passo c), com qualquer nota nas outras.
+3. A lente `comparacao-referencias` não pode estar reprovada: se estiver, a entrega não sai, com qualquer nota nas
+   outras. Reprovar essa lente NÃO manda reconstruir sozinha (o teto é 2 rodadas e a segunda é só conferência): o
+   `wave.py rodada` lista os eixos abaixo das referências e manda corrigir esses eixos na página, entre as rodadas.
+   Refazer o plano visual e reconstruir é um ciclo novo, só se a pessoa pedir.
 4. Auditoria independente: nota de autoavaliação não libera (AUDITORIA INDEPENDENTE PENDENTE).
 5. Depois disso, fecha quando a gravidade secou (zero crítico e zero alto), ou a média chegou a
    8,0 com nenhuma lente abaixo de 7, ou **bateu o teto de 2 rodadas**.
@@ -229,7 +245,9 @@ página? Alguém de fora diz o que cada desenho é sem ler o texto? Existe um mo
 surpreende? A ordem das seções é a de qualquer landing ou a das referências?
 **Reprova se:** a resposta honesta é não, se dois ou mais eixos ficaram abaixo, ou se a página
 é só correta (`--gosto correto`). Reprovada,
-não se corrige na lente: volta ao plano visual (passo c), com o que faltou escrito. No caminho
+registre os eixos abaixo (`--eixos-abaixo composicao,tipografia,imagem,ritmo`, só os que ficaram abaixo): a correção é desses
+eixos, na página, entre as rodadas, com o que faltou escrito nos achados. Voltar ao plano visual (passo c) e reconstruir é
+um ciclo novo, que a pessoa decide ("refazer o plano e reconstruir custa mais que a rodada 2"). No caminho
 CLONAR a referência é a página original. Esta lente não aceita "não aplicável".
 
 ## Passe de gosto (último ato antes da entrega)

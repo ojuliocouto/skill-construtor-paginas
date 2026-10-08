@@ -260,7 +260,7 @@ class TetoDeDuasRodadas(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("AUDITORIA INDEPENDENTE PENDENTE", texto)
 
-    def test_segunda_rodada_com_referencias_reprovada_volta_ao_plano(self):
+    def test_segunda_rodada_com_referencias_reprovada_corrige_eixos_e_nao_entrega(self):
         self.preparar()
         d = wave.carregar(self.projeto)
         d["lentes"]["comparacao-referencias"]["veredito"] = "reprovado"
@@ -268,7 +268,8 @@ class TetoDeDuasRodadas(unittest.TestCase):
         self.rodar()
         code, texto = self.rodar()
         self.assertEqual(code, 1)
-        self.assertIn("VOLTA PRO PLANO VISUAL", texto)
+        self.assertIn("EIXOS a corrigir", texto)
+        self.assertNotIn("VOLTA PRO PLANO VISUAL", texto)
 
     def test_terceira_rodada_sem_pedido_e_recusada_e_nao_grava(self):
         self.preparar()
@@ -302,6 +303,115 @@ class TetoDeDuasRodadas(unittest.TestCase):
         import subprocess, sys
         fonte = pathlib.Path(__file__).with_name("wave.py").read_text(encoding="utf-8")
         self.assertIn("--rodada-extra-pedida", fonte)
+
+
+class TerceiraLeva(unittest.TestCase):
+    """A26 (lente de referências não manda reconstruir sozinha) e A27 (orçamento do auditor)."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.projeto = self.temp.name
+
+    def montar(self, ref_reprovada=False, eixos=None, duracao=None, chamadas=None, rodadas_antes=0):
+        lentes = {n: {"nota": 9, "veredito": "aprovado", "origem": "subagente", "gosto": "bonito",
+                      "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES}
+        if ref_reprovada:
+            lentes["comparacao-referencias"].update(veredito="reprovado", gosto="correto")
+            if eixos:
+                lentes["comparacao-referencias"]["eixos_abaixo"] = eixos
+        if duracao is not None:
+            lentes["cro-auditor"]["duracao_min"] = duracao
+        if chamadas is not None:
+            lentes["cro-auditor"]["chamadas"] = chamadas
+        dados = {"lentes": lentes, "gates": {n: {"exit": 0, "detalhe": "Controle positivo"} for n in wave.GATES}}
+        if rodadas_antes:
+            dados["rodadas"] = [{"n": i + 1, "media": 7.0, "criticos": 0, "altos": 1, "notas": {}} for i in range(rodadas_antes)]
+        wave.salvar(self.projeto, dados)
+
+    def rodar(self):
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, criticos=0, altos=0, regressoes=0, pendencias_do_usuario=0))
+        return code, saida.getvalue()
+
+    # --- A26
+    def test_lente_de_referencias_reprovada_lista_os_eixos_e_manda_corrigir_a_pagina(self):
+        self.montar(ref_reprovada=True, eixos=["tipografia", "imagem"])
+        code, out = self.rodar()
+        self.assertEqual(code, 1)
+        self.assertIn("tipografia", out)
+        self.assertIn("imagem", out)
+        self.assertNotIn("composicao", out.split("EIXOS")[-1] if "EIXOS" in out else "")
+        self.assertRegex(out.lower(), r"corrija esses eixos na página")
+        self.assertNotRegex(out, r"(?i)refa[cç]a o plano a partir das refer[eê]ncias e reconstrua")
+        self.assertRegex(out.lower(), r"ciclo novo: só se você pedir")
+
+    def test_lente_reprovada_sem_eixos_pede_os_quatro_e_continua_barrando_a_entrega(self):
+        self.montar(ref_reprovada=True)
+        code, out = self.rodar()
+        self.assertEqual(code, 1)
+        for eixo in ("composicao", "tipografia", "imagem", "ritmo"):
+            self.assertIn(eixo, out)
+
+    def test_registrar_aceita_e_valida_eixos_abaixo(self):
+        base = dict(projeto=self.projeto, lente="comparacao-referencias", veredito="reprovado", nota=5.0, origem="subagente",
+                    gosto="correto", achados="Comparei a dobra com Kins, Tia e Parsley lado a lado")
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(wave.cmd_registrar(argparse.Namespace(**base, eixos_abaixo="tipografia,imagem")), 0)
+            self.assertEqual(wave.cmd_registrar(argparse.Namespace(**base, eixos_abaixo="cor")), 2)
+        self.assertEqual(wave.carregar(self.projeto)["lentes"]["comparacao-referencias"]["eixos_abaixo"], ["tipografia", "imagem"])
+
+    def test_o_que_ja_barrava_continua_barrando(self):
+        # crítico, regressão e auditoria independente pendente seguem barrando a entrega
+        self.montar()
+        for kw in (dict(criticos=2, regressoes=0), dict(criticos=0, regressoes=1)):
+            with contextlib.redirect_stdout(io.StringIO()):
+                code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, altos=0, pendencias_do_usuario=0, **kw))
+            self.assertEqual(code, 1, kw)
+            self.montar()
+
+    # --- A27
+    def registrar(self, **extra):
+        base = dict(projeto=self.projeto, lente="cro-auditor", veredito="aprovado", nota=8.0, origem="subagente",
+                    achados="Li o pacote e conferi o botão principal nas duas telas", gosto=None)
+        base.update(extra)
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return wave.cmd_registrar(argparse.Namespace(**base))
+
+    def test_registrar_guarda_duracao_e_chamadas(self):
+        self.assertEqual(self.registrar(duracao_min=12.5, chamadas=22), 0)
+        l = wave.carregar(self.projeto)["lentes"]["cro-auditor"]
+        self.assertEqual((l["duracao_min"], l["chamadas"]), (12.5, 22))
+        self.assertEqual(self.registrar(duracao_min=-1, chamadas=3), 2)
+        self.assertEqual(self.registrar(duracao_min=5, chamadas=-3), 2)
+
+    def test_rodada_1_acima_do_orcamento_avisa_sem_reprovar(self):
+        self.montar(duracao=51, chamadas=113)
+        code, out = self.rodar()
+        self.assertIn("AVISO", out)
+        self.assertIn("51", out)
+        self.assertIn("113", out)
+        self.assertRegex(out, r"15 min")
+        self.assertRegex(out, r"30 chamadas")
+        self.assertNotIn("ERRO", out)
+
+    def test_dentro_do_orcamento_nao_avisa(self):
+        self.montar(duracao=14, chamadas=30)
+        _, out = self.rodar()
+        self.assertNotIn("orçamento", out)
+
+    def test_rodada_2_tem_orcamento_menor(self):
+        self.montar(duracao=10, chamadas=20, rodadas_antes=1)
+        _, out = self.rodar()
+        self.assertIn("orçamento", out)
+        self.assertRegex(out, r"8 min")
+        self.assertRegex(out, r"15 chamadas")
+
+    def test_sem_informar_nada_nao_avisa_nem_quebra(self):
+        self.montar()
+        code, out = self.rodar()
+        self.assertNotIn("orçamento", out)
 
 
 if __name__ == "__main__":

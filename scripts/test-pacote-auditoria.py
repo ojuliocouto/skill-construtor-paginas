@@ -60,6 +60,34 @@ class Pacote(unittest.TestCase):
         self.assertTrue(m["completo"])
         self.assertIn("videos/prancha-desktop.png", m["itens"])
 
+    def test_gera_o_briefing_do_auditor_com_os_caminhos_e_o_orcamento(self):
+        # A27: o auditor levou 51 min e 113 chamadas porque ninguém lhe deu orçamento nem lhe disse o que NÃO fazer
+        montar_completo(self.raiz)
+        code, saida = rodar(self.raiz)
+        self.assertEqual(code, 0, saida)
+        b = (self.raiz / "auditoria/briefing-do-auditor.md").read_text(encoding="utf-8")
+        for trecho in ("15 minutos", "30 chamadas", "Proibido recapturar", "6 capturas próprias", "não verificado",
+                       "schema", URL, "`provas/prova-desktop.png`", "`videos/prancha-mobile.png`", "--duracao-min", "--chamadas"):
+            self.assertIn(trecho, b, trecho)
+        self.assertNotIn("RODADA 2", b)
+        self.assertIn("briefing-do-auditor.md", saida)
+
+    def test_briefing_da_rodada_2_tem_orcamento_menor_e_e_so_conferencia(self):
+        montar_completo(self.raiz)
+        tocar(self.raiz / "auditoria/achados-rodada-1.json", "{}", 1_000_100)
+        code, saida = rodar(self.raiz, "--rodada", "2")
+        self.assertEqual(code, 0, saida)
+        b = (self.raiz / "auditoria/briefing-do-auditor.md").read_text(encoding="utf-8")
+        self.assertIn("8 minutos", b)
+        self.assertIn("15 chamadas", b)
+        self.assertIn("RODADA 2", b)
+        self.assertIn("Não reabra as 9 lentes", b)
+
+    def test_pacote_incompleto_tambem_grava_o_briefing_mas_nao_manda_chamar(self):
+        code, saida = rodar(self.raiz)
+        self.assertEqual(code, 1)
+        self.assertNotIn("Cole auditoria/briefing", saida)
+
     def test_sem_prancha_do_video_falha_e_diz_qual(self):
         montar_completo(self.raiz)
         (self.raiz / "videos/prancha-mobile.png").rename(self.raiz / "videos/outro.png")
