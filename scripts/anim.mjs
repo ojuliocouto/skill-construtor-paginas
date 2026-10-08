@@ -25,14 +25,14 @@
  * Saída: <saida>/quadros/<nome>-desk-1..3.png e <nome>-mob-1..3.png. Segue com o prancha.py.
  */
 import { createRequire } from 'node:module';
-import { execSync } from 'node:child_process';
+import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
 function carregarPlaywright() {
   try { return require('playwright'); } catch {
-    try { return require(path.join(execSync('npm root -g', { encoding: 'utf8' }).trim(), 'playwright')); }
+    try { return require(path.join(raizGlobalNpm(), 'playwright')); }
     catch { console.error('playwright nao encontrado: npm i -g playwright && npx playwright install chromium'); process.exit(1); }
   }
 }
@@ -46,7 +46,7 @@ if (!URL_ALVO || !SAIDA || !JSON_SECOES) {
   process.exit(2);
 }
 let secoes;
-try { secoes = JSON.parse(fs.readFileSync(JSON_SECOES, 'utf8')); } catch (e) { console.error('secoes.json ilegível: ' + e.message); process.exit(2); }
+try { secoes = JSON.parse(fs.readFileSync(JSON_SECOES, 'utf8').replace(/^\uFEFF/, '')); } catch (e) { console.error('secoes.json ilegível: ' + e.message); process.exit(2); }
 if (!Array.isArray(secoes) || !secoes.every((s) => s.nome && s.seletor)) { console.error('secoes.json: cada seção precisa de "nome" e "seletor"'); process.exit(2); }
 const quadros = path.join(SAIDA, 'quadros');
 fs.mkdirSync(quadros, { recursive: true });

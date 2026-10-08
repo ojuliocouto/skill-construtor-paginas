@@ -26,7 +26,7 @@ class GateTells(unittest.TestCase):
             (raiz / nome).write_text(html, encoding='utf-8')
             if css is not None:
                 (raiz / 'estilo.css').write_text(css, encoding='utf-8')
-            r = subprocess.run([sys.executable, str(SCRIPT), str(raiz / nome)], capture_output=True, text=True)
+            r = subprocess.run([sys.executable, str(SCRIPT), str(raiz / nome)], capture_output=True, text=True, encoding="utf-8")
             return r.returncode, r.stdout
 
     def test_pagina_limpa_passa(self):

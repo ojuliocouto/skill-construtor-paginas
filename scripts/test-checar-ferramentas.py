@@ -10,7 +10,7 @@ o que tem que reprovar.
 Nao depende do ambiente: o unico caso que exigiria ferramenta instalada e pulado com aviso
 quando ela nao esta la.
 
-    python3 scripts/test-checar-ferramentas.py
+    node scripts/py.mjs test-checar-ferramentas.py
 """
 import importlib.util
 import pathlib
@@ -71,7 +71,7 @@ checa("todo `skills add` instala global, sem pergunta e por copia (-g -y --copy)
 ok, _ = chk.roda("comando-que-nao-existe-xyz", timeout=5)
 checa("binario ausente vira ok=False (nao excecao)", ok is False)
 
-ok, saida = chk.roda("python3 -c \"import time; time.sleep(5)\"", timeout=1)
+ok, saida = chk.roda([sys.executable, "-c", "import time; time.sleep(5)"], timeout=1)
 checa("timeout vira ok=False, com a saida explicando", ok is False and "timeout" in saida.lower(), saida[:40])
 
 # As quatro classificacoes: sao elas que separam "responde" de "esta configurado".
@@ -96,10 +96,10 @@ checa("Higgsfield e opcional (nunca bloqueia o aluno)", crit.get("Higgsfield CLI
 checa("Playwright continua critico", crit.get("Playwright") is True, str(crit.get("Playwright")))
 
 # v3 (02/10/2026): a skill depende de frontend-design, auditores e pesquisa de referencias.
-# Critico e EXATAMENTE python3, node, Playwright e a skill frontend-design. Nada mais bloqueia.
+# Critico e EXATAMENTE Python, node, Playwright e a skill frontend-design. Nada mais bloqueia.
 criticos_v3 = {k for k, v in crit.items() if v}
-checa("criticos da v3 sao so python3, node, Playwright e frontend-design",
-      criticos_v3 == {"python3", "node", "Playwright", "skill frontend-design"}, str(sorted(criticos_v3)))
+checa("criticos da v3 sao so Python, node, Playwright e frontend-design",
+      criticos_v3 == {"Python", "node", "Playwright", "skill frontend-design"}, str(sorted(criticos_v3)))
 for opcional in ("skill design-taste-frontend", "Banco de design", "Assets sem chave (Openverse)", "stitch",
                  "skill high-end-visual-design", "skill animate"):
     checa(f"{opcional} e opcional na v3", crit.get(opcional) is False, str(crit.get(opcional)))
@@ -109,7 +109,7 @@ for opcional in ("skill design-taste-frontend", "Banco de design", "Assets sem c
 checa("Pillow e numpy sao opcionais, com aviso", crit.get("Pillow e numpy") is False, str(crit.get("Pillow e numpy")))
 pn = [l for l in chk.checagens(False) if l[0] == "Pillow e numpy"]
 checa("o verificador checa Pillow e numpy e diz como instalar",
-      len(pn) == 1 and "pip install pillow numpy" in pn[0][5] and pn[0][3] in (True, False), str(pn))
+      len(pn) == 1 and "-m pip install" in pn[0][5] and "pillow numpy" in pn[0][5] and pn[0][3] in (True, False), str(pn))
 
 # frontend-design ausente tem que reprovar (exit 1); opcional ausente nunca reprova.
 orig_skill = chk.skill_existe

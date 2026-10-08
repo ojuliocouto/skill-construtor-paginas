@@ -39,14 +39,14 @@
  * Uso: node scripts/gate-composicao.mjs --url <url> [--publico "<público do briefing>" | --projeto <dir>]
  */
 import { createRequire } from 'node:module';
-import { execSync } from 'node:child_process';
+import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
 function carregarPlaywright() {
   try { return require('playwright'); } catch {
-    try { return require(path.join(execSync('npm root -g', { encoding: 'utf8' }).trim(), 'playwright')); }
+    try { return require(path.join(raizGlobalNpm(), 'playwright')); }
     catch { console.error('playwright nao encontrado: npm i -g playwright && npx playwright install chromium'); process.exit(1); }
   }
 }
@@ -62,7 +62,7 @@ const valor = (nome) => { const i = args.indexOf(nome); return i >= 0 && args[i 
 let PUBLICO = valor('--publico');
 const PROJETO = valor('--projeto');
 if (!PUBLICO && PROJETO) {
-  try { PUBLICO = JSON.parse(fs.readFileSync(path.join(PROJETO, 'evidencias', 'etapa-0.json'), 'utf8')).briefing.publico; }
+  try { PUBLICO = JSON.parse(fs.readFileSync(path.join(PROJETO, 'evidencias', 'etapa-0.json'), 'utf8').replace(/^\uFEFF/, '')).briefing.publico; }
   catch {
     try { PUBLICO = (fs.readFileSync(path.join(PROJETO, 'evidencias', 'briefing.md'), 'utf8').match(/Para quem:\s*(.+)/i) || [])[1] || null; } catch { PUBLICO = null; }
   }

@@ -25,7 +25,7 @@ Item mais velho que dist/index.html conta como VELHO (foi capturado antes da úl
 página) e reprova: o auditor não pode julgar a versão anterior.
 
 Uso:
-    python3 scripts/pacote-auditoria.py --projeto <dir> --url http://localhost:8765/ [--rodada 1|2] [--caminho criar|clonar|...]
+    node scripts/py.mjs pacote-auditoria.py --projeto <dir> --url http://localhost:8765/ [--rodada 1|2] [--caminho criar|clonar|...]
 """
 import argparse
 import datetime

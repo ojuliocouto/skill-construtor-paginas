@@ -35,7 +35,7 @@ Reprova (exit 1) se:
      é argumento de venda de serviço e vai no corpo da página. A v5 citava a fisioterapeuta
      Carla Mendes só no rodapé.
 
-Uso: python3 scripts/gate-verdade.py --projeto <dir> [--html index.html]
+Uso: node scripts/py.mjs gate-verdade.py --projeto <dir> [--html index.html]
 """
 import argparse
 import re
@@ -166,15 +166,15 @@ def checar(projeto, html_nome="index.html"):
     faltam = [n for n in (html_nome, "evidencias/briefing.md", "evidencias/sustentacao.md") if not (r / n).is_file()]
     if faltam:
         return [f"arquivo ausente: {n}" for n in faltam]
-    briefing = (r / "evidencias" / "briefing.md").read_text(encoding="utf-8")
-    sust = (r / "evidencias" / "sustentacao.md").read_text(encoding="utf-8")
+    briefing = (r / "evidencias" / "briefing.md").read_text(encoding="utf-8-sig")
+    sust = (r / "evidencias" / "sustentacao.md").read_text(encoding="utf-8-sig")
     tabela = ler_tabela(sust)
     padroes = ler_padroes(sust)
     if not tabela:
         return ["evidencias/sustentacao.md sem a tabela 'Frase da página | Linha do briefing que sustenta'"]
 
     leitor = Leitor()
-    leitor.feed((r / html_nome).read_text(encoding="utf-8"))
+    leitor.feed((r / html_nome).read_text(encoding="utf-8-sig"))
     leitor._descarrega()
     visiveis = [f for b in leitor.blocos for f in frases(b)] + [f for a in leitor.alts for f in frases(a)]
     metas = [("title", f) for f in frases(leitor.titulo)] + [(k, f) for k, v in leitor.metas.items() for f in frases(v)]
@@ -227,7 +227,7 @@ def checar(projeto, html_nome="index.html"):
             if rx.search(frase):
                 problemas.append(f"afirma o que está pendente (`{p}`) em {origem}: \"{frase}\"")
 
-    pagina = (r / html_nome).read_text(encoding="utf-8")
+    pagina = (r / html_nome).read_text(encoding="utf-8-sig")
     corpo_n = norm(texto_do_corpo(pagina))
     for nome in dict.fromkeys(m.group(1).strip() for m in DONO.finditer(briefing)):
         if norm(nome) not in corpo_n:

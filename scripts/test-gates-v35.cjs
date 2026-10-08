@@ -23,7 +23,7 @@ fs.writeFileSync(path.join(pasta, 'fazer-fotos.py'), [
   'Image.fromarray(ruido).save(pasta + "/foto-nitida.jpg", quality=95)',
   'Image.fromarray(np.full((600, 900, 3), 128, dtype=np.uint8)).save(pasta + "/foto-lisa.jpg", quality=95)',
 ].join('\n'));
-execFileSync('python3', [path.join(pasta, 'fazer-fotos.py'), pasta]);
+execFileSync(process.execPath, [path.join(__dirname, 'py.mjs'), path.join(pasta, 'fazer-fotos.py'), pasta]);
 
 const head = '<title>Página de controle</title><meta name="viewport" content="width=device-width,initial-scale=1">';
 const estilo = '<style>body{margin:0;font:18px Arial;background:#fff;color:#111}section{padding:48px 32px;min-height:220px}h1,h2,h3{margin:0 0 16px}p{max-width:600px;line-height:1.6;margin:0 0 12px}ul{margin:0;padding:0;list-style:none}li{padding:10px 0}a,button{display:inline-block;padding:16px;background:#111;color:#fff;border:0;font:18px Arial}</style>';
@@ -117,7 +117,7 @@ const servidor = http.createServer((req, res) => {
 
 function rodar(nome, script, args, esperado, padrao) {
   return new Promise((resolve) => {
-    const filho = spawn(script.endsWith('.py') ? 'python3' : process.execPath, [script, ...args], { cwd: pasta });
+    const filho = spawn(process.execPath, script.endsWith('.py') ? [path.join(__dirname, 'py.mjs'), script, ...args] : [script, ...args], { cwd: pasta });
     let saida = '';
     filho.stdout.on('data', (d) => { saida += d; });
     filho.stderr.on('data', (d) => { saida += d; });

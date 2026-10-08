@@ -15,7 +15,7 @@ regra ("até 15%", "máximo 4 px", "pelo menos 35%") não é medida e fica de fo
 Reprova (exit 1): medida sem arquivo citado; arquivo citado inexistente ou só imagem; número
 que não está no arquivo citado; medida anterior à dist/.
 
-Uso: python3 scripts/gate-relatorio.py --relatorio <md> [--base <dir>] [--dist <dir>/dist]
+Uso: node scripts/py.mjs gate-relatorio.py --relatorio <md> [--base <dir>] [--dist <dir>/dist]
 """
 import argparse
 import re
@@ -73,7 +73,7 @@ def checar(relatorio, base=None, dist=None):
         tempos = [p.stat().st_mtime for p in Path(dist).rglob("*") if p.is_file()]
         fim_dist = max(tempos) if tempos else None
     em_codigo = False
-    for n, linha in enumerate(relatorio.read_text(encoding="utf-8").splitlines(), 1):
+    for n, linha in enumerate(relatorio.read_text(encoding="utf-8-sig").splitlines(), 1):
         if linha.strip().startswith("```"):
             em_codigo = not em_codigo
             continue

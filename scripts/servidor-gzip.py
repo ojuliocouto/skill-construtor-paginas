@@ -1,6 +1,6 @@
 """Servidor estatico COM gzip, pra medir Lighthouse de forma honesta.
 
-O `python3 -m http.server` nao comprime nada, e o Lighthouse acusou ~2700ms de
+O `http.server` simples do Python nao comprime nada, e o Lighthouse acusou ~2700ms de
 economia possivel so em compressao de texto. Isso inflava o LCP das duas
 versoes e escondia a diferenca real entre elas. Cloudflare Pages (onde a pagina
 vive) serve com Brotli/gzip, entao medir sem compressao compara um cenario que
@@ -19,7 +19,7 @@ import sys
 def parse_args():
     p = argparse.ArgumentParser(
         description="Servidor estatico com gzip, para medir Lighthouse de forma honesta.",
-        epilog="Exemplo: python3 servidor-gzip.py ./public 8900",
+        epilog="Exemplo: node scripts/py.mjs servidor-gzip.py ./public 8900",
     )
     p.add_argument("raiz", nargs="?", default=".", help="diretorio a servir (default: .)")
     p.add_argument("porta", nargs="?", default="8900", help="porta TCP (default: 8900)")

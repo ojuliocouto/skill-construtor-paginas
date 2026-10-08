@@ -21,7 +21,7 @@ apontar?". O gate de elevacao (SKILL.md, secao CLONAR + ELEVAR) cobra os EIXOS q
 nomeados um a um. Este script so entrega a imagem que torna a pergunta respondivel.
 
 Uso:
-    python3 scripts/lado-a-lado.py <png-original> <png-sua-versao> <saida.jpg> [--rotulos "Original,V2"]
+    node scripts/py.mjs lado-a-lado.py <png-original> <png-sua-versao> <saida.jpg> [--rotulos "Original,V2"]
 """
 import argparse
 import sys
@@ -29,15 +29,16 @@ import sys
 try:
     from PIL import Image, ImageDraw, ImageFont
 except ImportError:
-    print("precisa do Pillow: pip3 install --user Pillow", file=sys.stderr)
+    print(f"precisa do Pillow: \"{sys.executable}\" -m pip install Pillow", file=sys.stderr)
     sys.exit(2)
 
 FAIXA = 46  # altura da tarja de rotulo
 
 
 def fonte(tam):
+    # Os dois primeiros sao do macOS; os outros o Pillow procura nas pastas de fontes do Windows e do Linux.
     for c in ("/System/Library/Fonts/Supplemental/Arial Bold.ttf",
-              "/System/Library/Fonts/Helvetica.ttc"):
+              "/System/Library/Fonts/Helvetica.ttc", "arialbd.ttf", "DejaVuSans-Bold.ttf"):
         try:
             return ImageFont.truetype(c, tam)
         except OSError:

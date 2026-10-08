@@ -14,19 +14,24 @@ alguma coisa e conferir se voltou.
 
 Versao 3 (02/10/2026): a skill depende de TRES coisas, a skill `frontend-design`, os
 auditores adversariais e a pesquisa de referencias reais. Critico passa a ser so o que essas
-tres precisam pra rodar: python3, node, Playwright com o Chromium baixado (prints das
+tres precisam pra rodar: Python, node, Playwright com o Chromium baixado (prints das
 referencias e prova de entrega) e a skill `frontend-design` instalada. Todo o resto
 (21st.dev, Stitch, Higgsfield, skills de acabamento, banco de design, Openverse) e OPCIONAL:
 nunca bloqueia e, por padrao, nem e checado, porque checar MCP por `claude mcp list` leva
 ate um minuto e o aluno nao precisa de nada disso.
 
 Uso:
-    python3 scripts/checar-ferramentas.py              # criticos + opcionais locais rapidos
-    python3 scripts/checar-ferramentas.py --opcionais  # tambem MCPs, Higgsfield e rede
-    python3 scripts/checar-ferramentas.py --json       # para consumo por agente
+    node scripts/py.mjs checar-ferramentas.py              # criticos + opcionais locais rapidos
+    node scripts/py.mjs checar-ferramentas.py --opcionais  # tambem MCPs, Higgsfield e rede
+    node scripts/py.mjs checar-ferramentas.py --json       # para consumo por agente
+
+Funciona em Windows, macOS e Linux: cada "RESOLVER:" vem com o comando do SISTEMA de quem roda
+(winget no Windows, brew no macOS, apt ou dnf no Linux), e o aviso de Pillow traz o Python exato
+que esta rodando este script, que e o mesmo que o py.mjs usa nos outros scripts.
 """
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -35,12 +40,14 @@ import urllib.request
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import plataforma  # noqa: E402  (sistema(), como_instalar(): o comando certo por sistema)
 
-# QUEM BLOQUEIA (v3). Critico e so o que as tres dependencias da skill precisam: python3 e
+# QUEM BLOQUEIA (v3). Critico e so o que as tres dependencias da skill precisam: Python e
 # node rodam os gates, o Playwright com Chromium tira os prints das referencias e a prova de
 # entrega, e a `frontend-design` faz o plano visual. Todo o resto e opcional e nunca bloqueia.
 CRITICIDADE = {
-    "python3": True,
+    "Python": True,
     "node": True,
     "Playwright": True,
     "skill frontend-design": True,
@@ -64,15 +71,45 @@ URL_21ST = "https://21st.dev/api/mcp"
 
 def roda(cmd, timeout=25, env=None):
     """Executa e devolve (ok, saida). Nunca levanta: timeout e binario ausente viram ok=False.
-    cmd em texto roda pelo shell; cmd em lista roda direto (igual em Windows, macOS e Linux)."""
+    Sem shell em nenhum caso: cmd em texto vira lista e o programa e resolvido por shutil.which
+    (que acha npm.cmd, claude.cmd etc. no Windows). Igual em Windows, macOS e Linux."""
     try:
-        p = subprocess.run(cmd, shell=isinstance(cmd, str), capture_output=True, text=True,
-                           timeout=timeout, env=env)
-        return p.returncode == 0, (p.stdout + p.stderr).strip()
+        argv = list(cmd) if isinstance(cmd, (list, tuple)) else shlex.split(cmd, posix=(plataforma.sistema() != "windows"))
+        achado = shutil.which(argv[0])
+        if not achado:
+            return False, f"programa nao encontrado: {argv[0]}"
+        argv[0] = achado
+        p = subprocess.run(argv, capture_output=True, text=True, timeout=timeout, env=env,
+                           encoding="utf-8", errors="replace")
+        return p.returncode == 0, ((p.stdout or "") + (p.stderr or "")).strip()
     except subprocess.TimeoutExpired:
         return False, f"timeout depois de {timeout}s"
-    except Exception as e:  # binario ausente, permissao, etc
+    except Exception as e:  # permissao, caminho invalido, etc
         return False, repr(e)
+
+
+def comando_pip(pacotes):
+    """Instala `pacotes` no MESMO Python que esta rodando este script (o que o py.mjs escolheu).
+    `pip` solto pode apontar pra outro Python; `-m pip` com o executavel certo nao erra."""
+    exe = sys.executable or "python"
+    if plataforma.sistema() == "windows":
+        return f'"{exe}" -m pip install {pacotes}'
+    return f'"{exe}" -m pip install --user {pacotes}'
+
+
+def como_instalar_playwright():
+    base = "npm install -g playwright   e depois   npx playwright install chromium"
+    if plataforma.sistema() == "linux":
+        return base + "   (se o Chromium abrir e fechar na hora: npx playwright install --with-deps chromium)"
+    return base
+
+
+def como_instalar_ffmpeg():
+    return {
+        "windows": "winget install -e --id Gyan.FFmpeg   (abra um terminal novo depois)",
+        "macos": "brew install ffmpeg",  # macOS
+        "linux": "Debian/Ubuntu: sudo apt install ffmpeg  |  Fedora: sudo dnf install ffmpeg (precisa do repositório RPM Fusion)",
+    }[plataforma.sistema()]
 
 
 def estado_mcp(nome):
@@ -84,7 +121,7 @@ def estado_mcp(nome):
       falhou             -> nao conecta
       tools_falharam     -> conecta mas nao entrega as tools (foi o caso do Stitch)
     """
-    ok, saida = roda("claude mcp list", timeout=45)
+    ok, saida = roda(["claude", "mcp", "list"], timeout=45)
     if not ok and not saida:
         return "indeterminado", "nao consegui rodar `claude mcp list`"
     for linha in saida.splitlines():
@@ -189,12 +226,13 @@ def skill_existe(nome):
 # (rotulo, papel, critico, ok, detalhe, como_resolver). Item opcional lento e nao checado
 # sai com ok=None: nao e verde nem vermelho, e o uso-ferramentas.py nao o cobra.
 def checagens(opcionais=False):
-    yield ("python3", "roda os gates e o registro dos auditores", CRITICIDADE["python3"],
-           sys.version_info >= (3, 8), sys.version.split()[0], "instale o Python 3.8 ou mais novo")
+    yield ("Python", "roda os gates e o registro dos auditores", CRITICIDADE["Python"],
+           sys.version_info >= (3, 8), sys.version.split()[0] + " em " + (sys.executable or "?"),
+           "instale o Python 3.8 ou mais novo: " + plataforma.como_instalar("python"))
 
-    ok, saida = roda("node --version")
+    ok, saida = roda(["node", "--version"])
     yield ("node", "roda o Playwright, os prints e os gates visuais", CRITICIDADE["node"], ok,
-           saida.splitlines()[0] if saida else "", "instale o Node 18 ou mais novo (https://nodejs.org)")
+           saida.splitlines()[0] if saida else "", "instale o Node 18 ou mais novo: " + plataforma.como_instalar("node"))
 
     # NODE_PATH vai pelo env (e nao na frente do comando): o cmd.exe do Windows nao entende VAR="x" cmd.
     global_npm = os.path.join(os.path.expanduser("~"), ".npm-global", "lib", "node_modules")
@@ -203,7 +241,7 @@ def checagens(opcionais=False):
                      env={**os.environ, "NODE_PATH": os.pathsep.join(caminhos)})
     yield ("Playwright", "prints das referencias e prova de entrega (Chromium baixado)",
            CRITICIDADE["Playwright"], ok, saida.splitlines()[0][:110] if saida else "",
-           "npm i -g playwright && npx playwright install chromium")
+           como_instalar_playwright())
 
     yield ("skill frontend-design", "plano visual antes do codigo (passo c do CRIAR)",
            CRITICIDADE["skill frontend-design"], skill_existe("frontend-design"), "",
@@ -214,13 +252,13 @@ def checagens(opcionais=False):
         import numpy, PIL  # noqa: F401
         tem_pn, det_pn = True, f"Pillow {PIL.__version__}, numpy {numpy.__version__}"
     except ImportError:
-        tem_pn, det_pn = False, "ausentes"
+        tem_pn, det_pn = False, "ausentes neste Python: " + (sys.executable or "?")
     yield ("Pillow e numpy", "repeticao e nitidez de foto (gate-imagens) e a prancha de animacao (opcional)",
-           CRITICIDADE["Pillow e numpy"], tem_pn, det_pn, "pip install pillow numpy")
+           CRITICIDADE["Pillow e numpy"], tem_pn, det_pn, comando_pip("pillow numpy"))
 
-    ok, saida = roda("ffprobe -version")
+    ok, saida = roda(["ffprobe", "-version"])
     yield ("ffmpeg/ffprobe", "gate de video (so em pagina com video)", CRITICIDADE["ffmpeg/ffprobe"], ok,
-           saida.splitlines()[0] if saida else "", "brew install ffmpeg")
+           saida.splitlines()[0] if saida else "", como_instalar_ffmpeg())
 
     TASTE = "npx skills add Leonxlnx/taste-skill -g -y --copy"
     for s, papel, fix in [
@@ -231,7 +269,7 @@ def checagens(opcionais=False):
     ]:
         yield (f"skill {s}", papel, CRITICIDADE[f"skill {s}"], skill_existe(s), "", fix)
 
-    ok, saida = roda(f'python3 "{RAIZ}/scripts/search.py" "dark premium" --domain style -n 1')
+    ok, saida = roda([sys.executable, str(RAIZ / "scripts" / "search.py"), "dark premium", "--domain", "style", "-n", "1"])
     yield ("Banco de design", "consulta opcional de estilo, paleta e fonte", CRITICIDADE["Banco de design"],
            ok and "results" in saida.lower(), "", "conferir data/*.csv no repo")
 
@@ -252,13 +290,14 @@ def checagens(opcionais=False):
     yield ("stitch", "wireframe no Stitch (opcional)", CRITICIDADE["stitch"], est == "conectado",
            f"{est}: {det[:110]}", "opcional. Confira quem esta na porta do proxy antes de reiniciar")
 
-    ok, saida = roda("higgsfield account status")
+    ok, saida = roda(["higgsfield", "account", "status"])
     yield ("Higgsfield CLI", "video gerado (opcional, conta paga)", CRITICIDADE["Higgsfield CLI"],
            ok and "plan" in saida.lower(), saida.splitlines()[0][:110] if saida else "",
            "opcional. npm i -g @higgsfield/cli && higgsfield auth login && higgsfield workspace set <id>")
 
-    ok, saida = roda(
-        f'env -u PEXELS_API_KEY python3 "{RAIZ}/scripts/assets-search.py" "office" --type openverse -n 1')
+    env_sem_chave = {k: v for k, v in os.environ.items() if k != "PEXELS_API_KEY"}
+    ok, saida = roda([sys.executable, str(RAIZ / "scripts" / "assets-search.py"), "office",
+                      "--type", "openverse", "-n", "1"], env=env_sem_chave)
     yield ("Assets sem chave (Openverse)", "busca de foto com licenca aberta (opcional)",
            CRITICIDADE["Assets sem chave (Openverse)"], ok and ("Imagem:" in saida or "http" in saida), "",
            "checar rede; a rota nao precisa de chave")

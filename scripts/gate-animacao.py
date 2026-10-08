@@ -16,7 +16,7 @@ Lê o `medidas.json` que o `prancha.py` grava (a % de pixels que mudou entre os 
   3. seção sem tipo declarado;
   4. com `--plano`: menos pranchas que linhas na tabela Seção | Desktop | Celular | Animação.
 
-Uso: python3 scripts/gate-animacao.py --pasta <saida do anim.mjs> [--plano <dir>/PLANO.md] [--minimo 2]
+Uso: node scripts/py.mjs gate-animacao.py --pasta <saida do anim.mjs> [--plano <dir>/PLANO.md] [--minimo 2]
 """
 import argparse
 import importlib.util
@@ -38,7 +38,7 @@ def secoes_do_plano(caminho):
     spec = importlib.util.spec_from_file_location("gate_plano", AQUI / "gate-plano.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    return mod.linhas_da_composicao(Path(caminho).read_text(encoding="utf-8")) or []
+    return mod.linhas_da_composicao(Path(caminho).read_text(encoding="utf-8-sig")) or []
 
 
 def avaliar(medidas, minimo=MINIMO_PADRAO, plano=None):
@@ -82,7 +82,7 @@ def main():
         print(f"  FALHA: falta {arq}: rode anim.mjs e depois prancha.py")
         print("\n  REPROVA: sem prova de animação.\n")
         return 1
-    medidas = json.loads(arq.read_text(encoding="utf-8"))
+    medidas = json.loads(arq.read_text(encoding="utf-8-sig"))
     plano = secoes_do_plano(a.plano) if a.plano else None
     problemas, secoes = avaliar(medidas, a.minimo, plano)
     print(f"{'seção':<22}{'desktop (início->fim)':<24}{'celular (início->fim)':<24}tipo")

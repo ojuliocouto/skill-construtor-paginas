@@ -19,7 +19,7 @@
 // no projeto, no NODE_PATH ou no root global do npm (funciona em qualquer máquina;
 // caminho absoluto cravado aqui só funcionaria na máquina de quem escreveu).
 import { createRequire } from "node:module";
-import { execSync } from "node:child_process";
+import { raizGlobal as raizGlobalNpm } from "./npm-global.cjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -393,7 +393,7 @@ function carregarPlaywright() {
     return require("playwright");
   } catch {
     try {
-      const rootGlobal = execSync("npm root -g", { encoding: "utf8" }).trim();
+      const rootGlobal = raizGlobalNpm();
       return require(path.join(rootGlobal, "playwright"));
     } catch {
       console.error(

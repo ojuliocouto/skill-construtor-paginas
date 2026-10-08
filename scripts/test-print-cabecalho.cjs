@@ -14,11 +14,12 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { spawn, execSync } = require('node:child_process');
+const { spawn } = require('node:child_process');
+const { raizGlobal } = require('./npm-global.cjs');
 
 function playwright() {
   try { return require('playwright'); } catch {
-    return require(path.join(execSync('npm root -g', { encoding: 'utf8' }).trim(), 'playwright'));
+    return require(path.join(raizGlobal(), 'playwright'));
   }
 }
 

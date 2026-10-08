@@ -38,7 +38,7 @@ class Prancha(unittest.TestCase):
     def rodar(self, pasta, secoes):
         (pasta / "secoes.json").write_text(json.dumps(secoes), encoding="utf-8")
         return subprocess.run([sys.executable, str(PRANCHA), "--pasta", str(pasta), "--secoes", str(pasta / "secoes.json")],
-                              capture_output=True, text=True)
+                              capture_output=True, text=True, encoding="utf-8")
 
     def test_mede_o_percentual_de_pixels_que_mudaram(self):
         with tempfile.TemporaryDirectory() as t:
@@ -100,7 +100,7 @@ class GateAnimacao(unittest.TestCase):
             if plano is not None:
                 (pasta / "PLANO.md").write_text(plano, encoding="utf-8")
                 args += ["--plano", str(pasta / "PLANO.md")]
-            r = subprocess.run(args, capture_output=True, text=True)
+            r = subprocess.run(args, capture_output=True, text=True, encoding="utf-8")
             return r.returncode, r.stdout + r.stderr
 
     def test_todas_animam_e_tipos_variados_passa(self):
@@ -161,7 +161,7 @@ class GateAnimacao(unittest.TestCase):
 
     def test_sem_medidas_reprova(self):
         with tempfile.TemporaryDirectory() as t:
-            r = subprocess.run([sys.executable, str(GATE), "--pasta", t], capture_output=True, text=True)
+            r = subprocess.run([sys.executable, str(GATE), "--pasta", t], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(r.returncode, 1, r.stdout)
             self.assertIn("prancha.py", r.stdout + r.stderr)
 

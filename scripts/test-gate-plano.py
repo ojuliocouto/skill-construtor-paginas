@@ -143,7 +143,7 @@ class GatePlano(unittest.TestCase):
             texto = montar(raiz, sem=sem)
             if mutar:
                 (raiz / "PLANO.md").write_text(mutar(texto), encoding="utf-8")
-            r = subprocess.run([sys.executable, str(GATE), "--projeto", str(raiz)], capture_output=True, text=True)
+            r = subprocess.run([sys.executable, str(GATE), "--projeto", str(raiz)], capture_output=True, text=True, encoding="utf-8")
             return r.returncode, r.stdout + r.stderr
 
     def test_plano_completo_passa(self):
@@ -342,7 +342,7 @@ class GatePlano(unittest.TestCase):
 
     def test_sem_plano_reprova(self):
         with tempfile.TemporaryDirectory() as pasta:
-            r = subprocess.run([sys.executable, str(GATE), "--projeto", pasta], capture_output=True, text=True)
+            r = subprocess.run([sys.executable, str(GATE), "--projeto", pasta], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(r.returncode, 1, r.stdout)
 
 
@@ -371,7 +371,7 @@ class GateRastreamento(unittest.TestCase):
             dist.mkdir()
             (dist / "index.html").write_text(html, encoding="utf-8")
             r = subprocess.run([sys.executable, str(RASTREIO), "--dist", str(dist), "--pedido", pedido],
-                               capture_output=True, text=True)
+                               capture_output=True, text=True, encoding="utf-8")
             return r.returncode, r.stdout + r.stderr
 
     def test_pagina_ligada_passa(self):
@@ -415,7 +415,7 @@ class GateRastreamento(unittest.TestCase):
             (raiz / "dist" / "index.html").write_text(PAGINA.format(snippet=""), encoding="utf-8")
             (raiz / "PLANO.md").write_text("Pixel pedido: Meta e GA4\n", encoding="utf-8")
             r = subprocess.run([sys.executable, str(RASTREIO), "--dist", str(raiz / "dist"), "--plano",
-                                str(raiz / "PLANO.md")], capture_output=True, text=True)
+                                str(raiz / "PLANO.md")], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(r.returncode, 1, r.stdout)
 
     def test_snippet_da_referencia_passa_no_gate_e_sem_comentario(self):

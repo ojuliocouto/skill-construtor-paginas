@@ -27,7 +27,7 @@
 // extrai-identidade.mjs ja documenta. createRequire segue a resolucao CommonJS e acha o
 // playwright no projeto, no NODE_PATH ou no root global do npm, em qualquer maquina.
 import { createRequire } from 'node:module';
-import { execSync } from 'node:child_process';
+import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
@@ -36,7 +36,7 @@ function carregarPlaywright() {
     return require('playwright');
   } catch {
     try {
-      const rootGlobal = execSync('npm root -g', { encoding: 'utf8' }).trim();
+      const rootGlobal = raizGlobalNpm();
       return require(path.join(rootGlobal, 'playwright'));
     } catch {
       console.error('playwright nao encontrado: npm i -g playwright && npx playwright install chromium');

@@ -21,8 +21,8 @@ O gate não sabe se a leitura é boa. Ele garante que ela existe e que os prints
 a lente "comparacao-referencias" dos auditores é quem cobra se a página ficou no nível.
 
 Uso:
-    python3 scripts/gate-referencias.py --projeto <dir>
-    python3 scripts/gate-referencias.py --projeto <dir> --json
+    node scripts/py.mjs gate-referencias.py --projeto <dir>
+    node scripts/py.mjs gate-referencias.py --projeto <dir> --json
 Formato do manifesto: references/pesquisa-de-referencias.md
 """
 import argparse
@@ -134,7 +134,7 @@ def checar(projeto, minimo=MINIMO):
     if not alvo.is_file():
         return [], [f"manifesto ausente: {MANIFESTO} (rode scripts/capturar-referencias.mjs)"]
     try:
-        doc = json.loads(alvo.read_text(encoding="utf-8"))
+        doc = json.loads(alvo.read_text(encoding="utf-8-sig"))
     except (json.JSONDecodeError, OSError) as e:
         return [], [f"manifesto ilegível: {e}"]
     refs = doc.get("referencias") if isinstance(doc, dict) else None

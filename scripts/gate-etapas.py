@@ -1,7 +1,7 @@
 """Bloqueia avanço sem artefatos de etapas anteriores ou após sua alteração.
 
-Uso: python3 scripts/gate-etapas.py --projeto DIR registrar ETAPA --arquivo JSON
-     python3 scripts/gate-etapas.py --projeto DIR checar ETAPA
+Uso: node scripts/py.mjs gate-etapas.py --projeto DIR registrar ETAPA --arquivo JSON
+     node scripts/py.mjs gate-etapas.py --projeto DIR checar ETAPA
 O JSON contém campos obrigatórios e uma lista `arquivos` de evidências do projeto.
 Valida presença, sequência e integridade. Julgamento de qualidade continua nas lentes.
 
@@ -81,7 +81,7 @@ def digest(p):
 
 
 def validar(projeto, arquivo, etapa, campos, perfil):
-    doc = json.loads(arquivo.read_text())
+    doc = json.loads(arquivo.read_text(encoding="utf-8-sig"))
     if not isinstance(doc, dict):
         raise ValueError("A evidência da etapa precisa ser um objeto JSON.")
     for campo in campos:
@@ -120,7 +120,7 @@ def validar(projeto, arquivo, etapa, campos, perfil):
                 raise ValueError(f"Etapa 2: ícone de biblioteca ('{desenha}'): desenhe o assunto da seção.")
     if perfil == "paginas" and etapa == "3":
         alvo = (projeto / str(doc["sustentacao"])).resolve()
-        if not alvo.is_relative_to(projeto) or not alvo.is_file() or "|" not in alvo.read_text(encoding="utf-8"):
+        if not alvo.is_relative_to(projeto) or not alvo.is_file() or "|" not in alvo.read_text(encoding="utf-8-sig"):
             raise ValueError("Etapa 3: sustentacao aponta para a tabela 'frase da página -> linha do briefing' (evidencias/sustentacao.md).")
     if "passe_de_gosto" in campos:
         passe = doc["passe_de_gosto"]
@@ -164,7 +164,7 @@ def main():
         if args.etapa not in etapas:
             raise ValueError("Etapa desconhecida para este perfil.")
         alvo = projeto / REGISTRO
-        registro = json.loads(alvo.read_text()) if alvo.exists() else {}
+        registro = json.loads(alvo.read_text(encoding="utf-8-sig")) if alvo.exists() else {}
         if not isinstance(registro, dict):
             raise ValueError("Registro de etapas inválido.")
         ordem = list(etapas)
@@ -181,7 +181,7 @@ def main():
             # Corrigir uma etapa invalida as seguintes; um resultado antigo não prova a versão nova.
             registro = {e: registro[e] for e in ordem[:indice]}
             registro[args.etapa] = {"hashes": hashes}
-            alvo.write_text(json.dumps(registro, ensure_ascii=False, indent=2))
+            alvo.write_text(json.dumps(registro, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"PASSA: etapa {args.etapa}, sequência e integridade conferidas.")
         return 0
     except (OSError, ValueError, KeyError, TypeError) as e:

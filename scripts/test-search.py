@@ -34,7 +34,7 @@ class BuscaPortugues(unittest.TestCase):
 
     def test_cli_mostra_a_traducao(self):
         r = subprocess.run([sys.executable, str(AQUI / "search.py"), "clínica acolhedora", "--domain", "color"],
-                           capture_output=True, text=True)
+                           capture_output=True, text=True, encoding="utf-8")
         self.assertEqual(r.returncode, 0)
         self.assertIn("clinic", r.stdout.lower())
 

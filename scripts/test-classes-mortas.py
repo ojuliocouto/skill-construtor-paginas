@@ -10,12 +10,12 @@ class Classes(unittest.TestCase):
         with tempfile.TemporaryDirectory() as pasta:
             raiz = pathlib.Path(pasta)
             (raiz / 'dist').mkdir()
-            (raiz / 'index.html').write_text('<p class="bg-marca/97">Controle</p>')
+            (raiz / 'index.html').write_text('<p class="bg-marca/97">Controle</p>', encoding="utf-8")
             script = pathlib.Path(__file__).with_name('gate-classes-mortas.py')
             for css, esperado in [(None, 1), ('.outra{color:red}', 1), ('.bg-marca\\/97{background:red}', 0)]:
                 if css is not None:
-                    (raiz / 'dist/app.css').write_text(css)
-                r = subprocess.run([sys.executable, str(script), '--projeto', pasta], capture_output=True, text=True)
+                    (raiz / 'dist/app.css').write_text(css, encoding="utf-8")
+                r = subprocess.run([sys.executable, str(script), '--projeto', pasta], capture_output=True, text=True, encoding="utf-8")
                 self.assertEqual(r.returncode, esperado, r.stdout)
 
     def test_pagina_html_sem_dist_le_css_da_raiz(self):
@@ -24,10 +24,10 @@ class Classes(unittest.TestCase):
         for css, esperado in [(None, 1), ('.outra{color:red}', 1), ('.bg-marca\\/97{background:red}', 0)]:
             with self.subTest(css=css), tempfile.TemporaryDirectory() as pasta:
                 raiz = pathlib.Path(pasta)
-                (raiz / 'index.html').write_text('<p class="bg-marca/97">Controle</p>')
+                (raiz / 'index.html').write_text('<p class="bg-marca/97">Controle</p>', encoding="utf-8")
                 if css is not None:
-                    (raiz / 'tailwind-compiled.css').write_text(css)
-                r = subprocess.run([sys.executable, str(script), '--projeto', pasta], capture_output=True, text=True)
+                    (raiz / 'tailwind-compiled.css').write_text(css, encoding="utf-8")
+                r = subprocess.run([sys.executable, str(script), '--projeto', pasta], capture_output=True, text=True, encoding="utf-8")
                 self.assertEqual(r.returncode, esperado, r.stdout)
 
     def test_dist_com_css_em_linha(self):
@@ -38,9 +38,9 @@ class Classes(unittest.TestCase):
             with self.subTest(css=css), tempfile.TemporaryDirectory() as pasta:
                 raiz = pathlib.Path(pasta)
                 (raiz / 'dist').mkdir()
-                (raiz / 'index.html').write_text('<p class="bg-marca/97">Controle</p>')
-                (raiz / 'dist' / 'index.html').write_text(f'<style>{css}</style><p class="bg-marca/97">Controle</p>')
-                r = subprocess.run([sys.executable, str(script), '--projeto', pasta], capture_output=True, text=True)
+                (raiz / 'index.html').write_text('<p class="bg-marca/97">Controle</p>', encoding="utf-8")
+                (raiz / 'dist' / 'index.html').write_text(f'<style>{css}</style><p class="bg-marca/97">Controle</p>', encoding="utf-8")
+                r = subprocess.run([sys.executable, str(script), '--projeto', pasta], capture_output=True, text=True, encoding="utf-8")
                 self.assertEqual(r.returncode, esperado, r.stdout)
 
     def test_wave_aceita_o_gate(self):

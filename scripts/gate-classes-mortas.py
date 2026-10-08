@@ -33,7 +33,7 @@ classe utilitaria precisa das duas.
 =================================================================================
 
 USO
-    python3 gate-classes-mortas.py [--projeto DIR] [--css DIR] [--fonte DIR]
+    node scripts/py.mjs gate-classes-mortas.py [--projeto DIR] [--css DIR] [--fonte DIR]
 
     --projeto  raiz do projeto (padrao: diretorio atual)
     --css      onde procurar o CSS gerado (padrao: <projeto>/dist; sem dist/, a raiz do

@@ -20,7 +20,8 @@
  *   (opcional; sem a flag, nada de CDP é usado)
  */
 import { createRequire } from "node:module";
-import { execFileSync, execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
+import { raizGlobal as raizGlobalNpm } from "./npm-global.cjs";
 import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
@@ -53,7 +54,7 @@ function carregarPlaywright() {
     return require("playwright");
   } catch {
     try {
-      return require(join(execSync("npm root -g", { encoding: "utf8" }).trim(), "playwright"));
+      return require(join(raizGlobalNpm(), "playwright"));
     } catch {
       console.error(
         "FALHA: playwright nao encontrado. Instale com:\n" +

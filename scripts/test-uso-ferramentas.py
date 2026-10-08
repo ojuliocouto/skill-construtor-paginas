@@ -39,7 +39,7 @@ class GateUso(unittest.TestCase):
     def test_plano_alterado_depois_do_registro_reprova(self):
         # Auditoria da v4: o plano da v3 foi revisado sem reacionar a frontend-design e o gate
         # aceitou o registro antigo. Registro guarda o hash; arquivo mudado pede novo registro.
-        (self.projeto / "plano-visual.md").write_text("plano da v3")
+        (self.projeto / "plano-visual.md").write_text("plano da v3", encoding="utf-8")
         with contextlib.redirect_stdout(io.StringIO()):
             uso.cmd_registrar(argparse.Namespace(projeto=self.projeto, ferramenta="skill frontend-design", arquivo="plano-visual.md",
                                                  no_codigo=None, em=None, sem_artefato=False, detalhe="plano em duas passadas"))
@@ -47,7 +47,7 @@ class GateUso(unittest.TestCase):
         registros["Playwright"] = self.registro()
         estados = {"Playwright": True, "skill frontend-design": True}
         self.assertEqual(self.checar(estados, registros), 0)
-        (self.projeto / "plano-visual.md").write_text("plano revisado na v4 sem reacionar a skill")
+        (self.projeto / "plano-visual.md").write_text("plano revisado na v4 sem reacionar a skill", encoding="utf-8")
         self.assertEqual(self.checar(estados, registros), 1)
 
     def test_negativo_sem_uso(self):

@@ -15,7 +15,7 @@
  * navegador falhar. Usa o Chromium do Playwright.
  */
 import { createRequire } from 'node:module';
-import { execSync } from 'node:child_process';
+import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -23,7 +23,7 @@ import { pathToFileURL } from 'node:url';
 const require = createRequire(import.meta.url);
 function carregarPlaywright() {
   try { return require('playwright'); } catch {
-    try { return require(path.join(execSync('npm root -g', { encoding: 'utf8' }).trim(), 'playwright')); }
+    try { return require(path.join(raizGlobalNpm(), 'playwright')); }
     catch { console.error('FALHA: playwright não encontrado: npm i -g playwright && npx playwright install chromium'); process.exit(1); }
   }
 }

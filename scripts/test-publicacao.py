@@ -91,7 +91,7 @@ class Publicacao(unittest.TestCase):
     def test_gate_reprova_arquivo_que_a_pagina_nao_usa(self):
         with contextlib.redirect_stdout(io.StringIO()):
             montar.main(["--projeto", str(self.proj)])
-        (self.proj / "dist" / "imagens" / "sobra.png").write_text("x")
+        (self.proj / "dist" / "imagens" / "sobra.png").write_text("x", encoding="utf-8")
         code, out = rodar_gate(self.proj / "dist")
         self.assertEqual(code, 1)
         self.assertIn("sobra.png", out)
@@ -103,11 +103,11 @@ class Publicacao(unittest.TestCase):
 
     def test_css_em_linha_remove_o_bloqueio_e_reescreve_url(self):
         (self.proj / "css").mkdir()
-        (self.proj / "css" / "a.css").write_text("body{background:url('../imagens/fundo.webp')}")
-        (self.proj / "index.html").write_text(HTML.replace("estilo.css", "css/a.css"))
+        (self.proj / "css" / "a.css").write_text("body{background:url('../imagens/fundo.webp')}", encoding="utf-8")
+        (self.proj / "index.html").write_text(HTML.replace("estilo.css", "css/a.css"), encoding="utf-8")
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(montar.main(["--projeto", str(self.proj), "--css-em-linha"]), 0)
-        html = (self.proj / "dist" / "index.html").read_text()
+        html = (self.proj / "dist" / "index.html").read_text(encoding="utf-8")
         self.assertNotIn('rel="stylesheet"', html)
         self.assertIn("<style>", html)
         self.assertIn("url('imagens/fundo.webp')", html)

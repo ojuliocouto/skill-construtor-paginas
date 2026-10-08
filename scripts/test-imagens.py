@@ -258,11 +258,11 @@ class GateImagensV35(unittest.TestCase):
         raiz = self.projeto([self.sec("topo", "foto1-800.jpg", texto="Imagem ilustrativa de banco de imagens.")],
                             [linha("img/foto1-800.jpg", "https://unsplash.com/photos/o1", pessoa="sim", autorizacao="não")],
                             {"foto1-800.jpg": (1, True)})
-        r = subprocess.run([sys.executable, str(AQUI / "gate-imagens.py"), "--projeto", str(raiz)], capture_output=True, text=True)
+        r = subprocess.run([sys.executable, str(AQUI / "gate-imagens.py"), "--projeto", str(raiz)], capture_output=True, text=True, encoding="utf-8")
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertIn("AVISO", r.stdout)
         self.assertIn("tráfego real", r.stdout)
-        r2 = subprocess.run([sys.executable, str(AQUI / "gate-imagens.py"), "--projeto", str(raiz), "--trafego-real"], capture_output=True, text=True)
+        r2 = subprocess.run([sys.executable, str(AQUI / "gate-imagens.py"), "--projeto", str(raiz), "--trafego-real"], capture_output=True, text=True, encoding="utf-8")
         self.assertEqual(r2.returncode, 1, r2.stdout)
 
 

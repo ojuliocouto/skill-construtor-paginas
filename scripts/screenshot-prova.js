@@ -239,9 +239,7 @@ async function main() {
     ({ chromium } = require('playwright'));
   } catch (e) {
     try {
-      const rootGlobal = require('child_process')
-        .execSync('npm root -g', { encoding: 'utf8' })
-        .trim();
+      const rootGlobal = require('./npm-global.cjs').raizGlobal();
       ({ chromium } = require(path.join(rootGlobal, 'playwright')));
     } catch (e2) {
       console.error('FALHA: playwright nao encontrado. Rodar: npm install -g playwright && npx playwright install chromium');
