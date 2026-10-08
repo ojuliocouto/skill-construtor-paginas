@@ -14,7 +14,8 @@ voltar a aparecer:
   4. `python3` ou `pip3` solto (no Windows muitas vezes não existe; a convenção é
      `node .../scripts/py.mjs <script>.py`, que acha o Python da máquina);
   5. shell=True, bash -c, sh -c, pkill, lsof, grep/sed/awk/cat/ls/rm/cp/mv/kill/open/chmod
-     chamados como programa por subprocess, execSync com string.
+     chamados como programa por subprocess, execSync com string, cpSync (quebra no Windows com
+     acento no caminho) e caminho de módulo por .pathname (use fileURLToPath).
 
 Como o teste se prova: ele primeiro roda o varredor em exemplos RUINS plantados (têm que ser
 reprovados) e em exemplos BONS (têm que passar), e só então varre os arquivos de verdade.
@@ -62,6 +63,8 @@ PAD_SHELL = [
     (re.compile(r"""(subprocess\.\w+|spawnSync|spawn|execFileSync|execFile)\(\s*\[?\s*["'](grep|sed|awk|cat|ls|rm|cp|mv|kill|open|chmod|find|tar|which)["']"""),
      "programa de Unix chamado por subprocesso"),
     (re.compile(r"""\bexecSync\(\s*[`"']"""), "execSync com string"),
+    (re.compile(r"\bcpSync\("), "cpSync (no Node 22 do Windows falha com acento no caminho: copie com laço próprio)"),
+    (re.compile(r"import\.meta\.url\)?\.pathname|new URL\([^)]*import\.meta\.url[^)]*\)\.pathname"), "caminho de módulo por .pathname (use fileURLToPath)"),
 ]
 
 
@@ -164,6 +167,8 @@ RUINS = {
     "grep.py": "import subprocess\nsubprocess.run(['grep', '-r', 'x', '.'])\n",
     "pkill.md": "```bash\npkill -f wrangler\n```\n",
     "exec.mjs": "import { execSync } from 'node:child_process';\nexecSync('ls -la');\n",
+    "cpsync.mjs": "import fs from 'node:fs';\nfs.cpSync(a, b, { recursive: true });\n",
+    "pathname.mjs": "const aqui = new URL('.', import.meta.url).pathname;\n",
 }
 BONS = {
     "mac-marcado.md": "No macOS:\n\n```bash\nbrew install node\n```\n",
@@ -178,6 +183,7 @@ BONS = {
     "comentario.py": "# brew install x e /tmp e open('a')\nx = 1\n",
     "open-url.md": "Abra https://exemplo.com no navegador.\nAbra o arquivo com o app.\n",
     "spawn-ok.mjs": "import { spawnSync } from 'node:child_process';\nspawnSync(process.execPath, ['a.js']);\n",
+    "url-ok.mjs": "import { fileURLToPath } from 'node:url';\nconst aqui = fileURLToPath(new URL('.', import.meta.url));\n",
 }
 
 

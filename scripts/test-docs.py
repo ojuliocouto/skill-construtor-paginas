@@ -205,7 +205,7 @@ class Estrutura(unittest.TestCase):
     def test_v354_pacote_de_evidencia_com_lista_e_comando(self):
         for p in (REF / "auditores.md", CRIAR):
             t = self._compacto(p)
-            self.assertIn("scripts/pacote-auditoria.py", t, p.name)
+            self.assertIn("py.mjs pacote-auditoria.py", t, p.name)
             for item in ("dist/", "PLANO.md", "prancha-desktop.png", "prancha-mobile.png", "referencias/", "briefing"):
                 self.assertIn(item, t, f"{p.name}: pacote sem {item}")
             self.assertRegex(t.lower(), r"n[aã]o captura(m)? de novo|n[aã]o capturam? (as telas )?de novo|sem capturar de novo", p.name)
@@ -233,9 +233,10 @@ class Estrutura(unittest.TestCase):
         self.assertIn("```json", ler(REF / "auditores.md").split("Rodada 2", 1)[1])
 
     def test_v354_versao_e_registro_de_mudancas(self):
-        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.4$")
+        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.5$")
         self.assertIn("## 3.5.4", ler(RAIZ / "CHANGELOG.md"))
-        self.assertIn("3.5.4", ler(RAIZ / "README.md"))
+        self.assertIn("## 3.5.5", ler(RAIZ / "CHANGELOG.md"))
+        self.assertIn("3.5.5", ler(RAIZ / "README.md"))
         self.assertIn("pacote-auditoria.py", ler(RAIZ / "README.md"))
         self.assertIn("pacote-auditoria.py", ler(SKILL))
 
@@ -342,7 +343,7 @@ class Travadas(unittest.TestCase):
         ruins = []
         for p, t in textos("SKILL.md", "README.md", "references/*.md", "references/caminhos/*.md"):
             for n, linha in enumerate(t.splitlines(), 1):
-                if re.match(r'\s*[A-Z]+="(python3|node|npx)\b', linha) or re.search(r'\$[A-Z]+ (registrar|gate|checar|rodada|dispensar)\b', linha):
+                if re.match(r'\s*[A-Z]+="(py|python|node|npx)\b', linha) or re.search(r'\$[A-Z]+ (registrar|gate|checar|rodada|dispensar)\b', linha):
                     ruins.append(f"{p.name}:{n}: {linha.strip()[:70]}")
         self.assertEqual(ruins, [])
 

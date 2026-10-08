@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.5.4
+version: 3.5.5
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -104,7 +104,7 @@ seção do meio:
 Depois de ABRIR cada PNG, escreva o que ela faz bem em composição, tipografia, imagem e ritmo, e
 o princípio que se leva dela (nunca frase nem layout idêntico). Gate:
 
-`python3 <dir-da-skill>/scripts/gate-referencias.py --projeto <dir>`
+`node <dir-da-skill>/scripts/py.mjs gate-referencias.py --projeto <dir>`
 
 Método completo: `references/pesquisa-de-referencias.md`.
 
@@ -193,14 +193,14 @@ pendências. Faltou uma linha do bloco = gate pulado = não entregue.
 
 ## Antes de começar e depois de terminar
 
-**Windows e Linux:** leia `references/sistemas.md` antes do primeiro comando (Git Bash no
-Windows, e todo `python3 <script>` roda por `node <dir-da-skill>/scripts/py.mjs <script>`).
+**Windows, macOS e Linux:** leia `references/sistemas.md` antes do primeiro comando (Git Bash no
+Windows; todo comando Python roda por `node <dir-da-skill>/scripts/py.mjs <script>.py`).
 
 **Primeiro comando, em qualquer caminho:**
 
-`python3 <dir-da-skill>/scripts/checar-ferramentas.py`
+`node <dir-da-skill>/scripts/py.mjs checar-ferramentas.py`
 
-Crítico, e só isto: python3, node, Playwright com o Chromium baixado e a skill `frontend-design`
+Crítico, e só isto: Python 3, node, Playwright com o Chromium baixado e a skill `frontend-design`
 instalada. Faltando crítico, conduza a instalação (o comando sai pronto na tela) em vez de só
 avisar. Opcional ausente não bloqueia nada. `--opcionais` também checa os MCPs e a rede.
 

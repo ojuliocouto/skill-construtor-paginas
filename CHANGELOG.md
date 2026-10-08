@@ -1,5 +1,33 @@
 # Changelog
 
+## 3.5.5 (08/10/2026): Windows, macOS e Linux, com trava e teste em máquina real
+
+A skill é usada ao vivo por alunos, muitos em Windows, e só tinha o mínimo (`py.mjs` e `sistemas.md`).
+Esta versão não muda nenhum gate nem limite: é só portabilidade.
+
+### Adicionado
+- `scripts/test-portabilidade.py`: a trava, com cinco regras. Reprova (1) comando que só existe no Mac fora de trecho
+  marcado como macOS; (2) pasta temporária fixa em vez de `tempfile`; (3) texto aberto, lido ou escrito sem codificação
+  explícita; (4) o nome do Python do Mac solto no comando; (5) shell no código (chamada por shell, utilitário de Unix
+  como programa, `execSync` com texto, `cpSync`). Varre `.py`, `.mjs`, `.cjs`, `.js` e `.md`; antes de varrer a skill,
+  prova a si mesma em exemplos ruins e bons plantados. No primeiro uso apontou 290 ocorrências.
+- `scripts/plataforma.py` (sistema, programa no PATH, comando sem shell, instruções de instalação por sistema) e
+  `scripts/npm-global.cjs` (pasta global do npm sem shell, para achar o Playwright global no Windows).
+- `scripts/rodar-testes.mjs`: a suíte inteira num comando, igual nos três sistemas, com `--so-portateis`.
+- `.github/workflows/portabilidade.yml`: a suíte em `windows-latest`, `ubuntu-latest` e `macos-latest` (Node 22,
+  Python 3.12) e, no Windows, os testes portáteis numa pasta com acento e espaço. `.gitattributes` com LF.
+
+### Alterado
+- Todo comando Python dos textos é `node <dir-da-skill>/scripts/py.mjs <script>.py`.
+- Leitura e escrita de texto em UTF-8 em todos os scripts (leitura aceita BOM), `subprocess` sem shell,
+  busca de trecho do `uso-ferramentas.py` em Python puro (não depende de `grep`), Playwright global achado sem `execSync`.
+- `checar-ferramentas.py`: sem shell, o rótulo do Python deixou de ter o nome do Mac e virou "Python", e cada "RESOLVER" traz o comando do sistema de
+  quem rodou (winget, brew, apt ou dnf), com o Python exato que está sem Pillow.
+- `references/sistemas.md` reescrito: o que muda por sistema, instalação de cada pré-requisito e erros conhecidos com a saída.
+
+### Ainda não provado
+- Windows e Linux reais: o workflow está pronto, o primeiro resultado dele ainda não foi registrado aqui.
+
 ## 3.5.4 (08/10/2026): um auditor nas nove lentes, pacote de evidência pronto e teto de 2 rodadas
 
 O dono da skill perguntou "esses 9 revisores são necessários?", a regra dele é teto de 2 rodadas de
@@ -228,7 +256,7 @@ memória, e nunca de página de verdade.
 | Step 0.5 "3 referências" pelo `github-search.py` (repositórios, não páginas) | Passo b: 6 a 10 páginas reais printadas e lidas (`capturar-referencias.mjs`), cobradas pelo `gate-referencias.py` |
 | `frontend-design` como uma entre oito skills de design | `frontend-design` é dependência crítica e escreve o `plano-visual.md` antes do código |
 | 8 lentes de auditoria | 9 lentes: entra `comparacao-referencias`, que reprovada manda voltar ao plano visual |
-| Crítico: Playwright, `design-taste-frontend`, banco de design, Openverse, gate de tells | Crítico: python3, node, Playwright com Chromium e a skill `frontend-design` |
+| Crítico: Playwright, `design-taste-frontend`, banco de design, Openverse, gate de tells | Crítico: Python 3, node, Playwright com Chromium e a skill `frontend-design` |
 | 21st.dev, Stitch, Higgsfield, nanobanana, brandkit, animate, high-end-visual-design, magicui e shadcn espalhados pelo fluxo | Seção "Ferramentas opcionais" no fim do SKILL.md; nenhuma bloqueia, o `uso-ferramentas.py` não cobra |
 | React obrigatório em página de venda | HTML + Tailwind compilado como padrão; React só quando o caso pede |
 | Etapas do `gate-etapas.py`: 0 entender, 1 copy, 2 direção, 3 build, 4 verificar, 5 medir | 0 briefing, 1 referências (roda o gate de referências), 2 plano visual, 3 copy, 4 construção, 5 entrega |
