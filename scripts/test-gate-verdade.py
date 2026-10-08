@@ -233,6 +233,26 @@ class V356(unittest.TestCase):
         code, out = self.rodar(self.projeto(self.CORPO + "<p>Garantia de 10 anos, CC BY 2.0.</p>"))
         self.assertEqual(code, 1, out)
 
+    # Aperto do A5 (segunda leva): marcar um bloco como crédito NÃO isenta promessa comercial.
+    def test_mutante_promessa_dentro_de_bloco_creditos_reprova(self):
+        corpo = self.CORPO + '<p class="creditos">Garantia de 10 anos e 500 clientes atendidos</p>'
+        code, out = self.rodar(self.projeto(corpo))
+        self.assertEqual(code, 1, out)
+        self.assertIn("500 clientes", out)
+
+    def test_mutante_promessa_com_data_credito_e_id_reprova(self):
+        for marca in ('data-credito', 'id="creditos"'):
+            corpo = self.CORPO + f'<footer><p {marca}>Visita grátis, R$ 150 e entrega em 7 dias.</p></footer>'
+            code, out = self.rodar(self.projeto(corpo))
+            self.assertEqual(code, 1, marca + out)
+
+    def test_credito_de_foto_de_verdade_com_numero_continua_passando(self):
+        c = ('<footer><ul class="creditos"><li>Oficina: “Woodworking workshop (Unsplash)” por s w wengenroad, '
+             '<a rel="license" href="https://creativecommons.org/publicdomain/zero/1.0/">CC0 1.0</a>, via Wikimedia Commons. '
+             'Imagem recortada a partir do original.</li><li>Foto 2019 de Ana Souza, CC BY-SA 4.0.</li></ul></footer>')
+        code, out = self.rodar(self.projeto(self.CORPO + c))
+        self.assertEqual(code, 0, out)
+
     # A5b: rótulo curto herda a promessa já sustentada da MESMA seção, com o mesmo número e unidade
     BARRA = '<section><h2>Garantia de 5 anos na estrutura</h2><p>Garantia de 5 anos na estrutura.</p><span class="valor">{}</span></section>'
 

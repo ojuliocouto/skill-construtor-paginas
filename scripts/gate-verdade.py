@@ -90,6 +90,13 @@ def e_credito(attrs):
     return any(re.fullmatch(r"cr[eé]ditos?(?:-[\w-]+)?", c.lower()) for c in (attrs.get("class") or "").split())
 
 
+# Dentro de um bloco de crédito, só fica isenta a frase com cara de crédito (licença, autor, fonte,
+# título da obra). Sinal de promessa comercial a traz de volta para a conferência (segunda leva da 3.5.6):
+# marcar um bloco como crédito não pode ser porta dos fundos para promessa sem sustentação.
+SINAL_COMERCIAL = re.compile(
+    r"r\$|%|garant|\banos?\s+de\b|\bdias?\b|\bhoras?\b|\bmeses\b|clientes?\b|entregue|avalia[cç]|\bnota\b|gr[aá]tis|gratuit|"
+    r"desconto|resultado|\bvagas?\b|certificad|reembolso|sem custo|sem compromisso|imediat|mesmo dia|atendid|promo[cç]", re.I)
+
 # Linha que é só o identificador de uma licença (nada além dele): não promete nada.
 SO_LICENCA = re.compile(r"cc(?:0|[ -]by(?:[ -](?:sa|nc|nd))*)\s*\d(?:\.\d)?", re.I)
 
@@ -100,6 +107,7 @@ class Leitor(HTMLParser):
         self.pilha, self.blocos, self.buf, self.metas, self.alts = [], [], [], {}, []
         self.titulo, self._no_title = "", False
         self.secao, self.secoes = "", []
+        self.cbuf, self.creditos = [], []
 
     def _oculto(self):
         return any(o for _, o, _c in self.pilha)
@@ -113,6 +121,10 @@ class Leitor(HTMLParser):
             self.blocos.append(t)
             self.secoes.append(self.secao)
         self.buf = []
+        c = re.sub(r"\s+", " ", "".join(self.cbuf)).strip()
+        if c:
+            self.creditos.append(c)
+        self.cbuf = []
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
@@ -150,8 +162,8 @@ class Leitor(HTMLParser):
         if self._no_title:
             self.titulo += data
             return
-        if not self._oculto() and not self._credito():
-            self.buf.append(data)
+        if not self._oculto():
+            (self.cbuf if self._credito() else self.buf).append(data)
 
 
 def ler_tabela(texto):
@@ -342,6 +354,11 @@ def checar(projeto, html_nome="index.html", relatorio=None):
             visiveis.append(f)
             secao_da.setdefault(norm(f), sec)
     visiveis += [f for a in leitor.alts for f in frases(a)]
+    for bloco in leitor.creditos:
+        for f in frases(bloco):
+            if SINAL_COMERCIAL.search(f):
+                visiveis.append(f)
+                secao_da.setdefault(norm(f), "bloco marcado como crédito")
     metas = [("title", f) for f in frases(leitor.titulo)] + [(k, f) for k, v in leitor.metas.items() for f in frases(v)]
 
     def linha_da(frase):

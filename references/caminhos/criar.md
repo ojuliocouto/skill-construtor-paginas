@@ -171,7 +171,9 @@ final. A copy final, as respostas da FAQ, os rótulos de barra e qualquer frase 
 entram nela quando entram na página; a tabela da seção d do PLANO fica como foto do plano e
 deixa de ser a fonte. A citação pode ser copiada do briefing tal e qual, inclusive com ponto e
 vírgula ou quebra de linha no meio. O crédito de imagem (bloco com `data-credito`, `id="creditos"`
-ou classe `creditos`) não é promessa e não entra na tabela. Quando falta linha, o gate imprime a
+ou classe `creditos`) não é promessa e não entra na tabela, desde que a frase tenha cara de crédito (licença, autor,
+fonte, título da obra). Frase ali dentro com R$, %, "garantia", "dias", "clientes", "nota", "grátis" e afins continua
+exigindo linha: marcar um bloco como crédito não é porta dos fundos. Quando falta linha, o gate imprime a
 linha pronta pra colar, por seção; a citação você preenche com o briefing, nunca com palavra sua.
 
 No passo d a página ainda não existe, então o gate roda sem `index.html` e confere SÓ a tabela
