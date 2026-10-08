@@ -117,6 +117,9 @@ def main():
     ap.add_argument("--url", default=None, help="endereço http(s) da página servida (obrigatório)")
     ap.add_argument("--rodada", type=int, choices=(1, 2), default=1)
     ap.add_argument("--caminho", choices=CAMINHOS, default="criar")
+    ap.add_argument("--briefing-reflete-pedido", dest="reflete", choices=("sim", "nao"), default=None,
+                    help="item obrigatório do checklist (A33): o evidencias/briefing.md reflete o ÚLTIMO pedido da pessoa? "
+                         "Dispensado quando existe evidencias/pedidos.md (a data decide e o pacote avisa)")
     args = ap.parse_args()
     raiz = Path(args.projeto).resolve()
     if not raiz.is_dir():
@@ -151,6 +154,27 @@ def main():
         rel = arq.relative_to(raiz).as_posix()
         itens.setdefault(rel, {"bytes": arq.stat().st_size, "modificado": datetime.datetime.fromtimestamp(arq.stat().st_mtime).isoformat(timespec="seconds")})
         print(f"  [opcional] {rel}")
+
+    # A33: o briefing reflete o último pedido da pessoa? Com `evidencias/pedidos.md` (registro de pedidos) a data decide e o
+    # pacote AVISA; sem o registro, a pergunta é obrigatória (--briefing-reflete-pedido sim|nao).
+    avisos = []
+    if args.caminho == "criar":
+        briefing_arq = raiz / "evidencias" / "briefing.md"
+        pedidos = raiz / "evidencias" / "pedidos.md"
+        if pedidos.is_file() and briefing_arq.is_file():
+            if briefing_arq.stat().st_mtime < pedidos.stat().st_mtime:
+                avisos.append("evidencias/briefing.md é mais antigo que o último pedido registrado (evidencias/pedidos.md): releia o briefing contra o que foi pedido por último antes de chamar o auditor")
+            print("  [ACHOU ] briefing reflete o último pedido  (conferido pela data do evidencias/pedidos.md)")
+        elif args.reflete == "sim":
+            print("  [ACHOU ] briefing reflete o último pedido  sim (declarado)")
+        elif args.reflete == "nao":
+            print("  [FALTA ] briefing reflete o último pedido  não: releia o briefing contra o que a pessoa pediu por último e atualize antes de chamar o auditor")
+            falta.append("briefing reflete o último pedido (resposta: não). Releia o briefing e atualize")
+        else:
+            print("  [FALTA ] briefing reflete o último pedido  sem resposta: rode de novo com --briefing-reflete-pedido sim|nao")
+            falta.append("briefing reflete o último pedido da pessoa (--briefing-reflete-pedido sim|nao, ou registre os pedidos em evidencias/pedidos.md)")
+    for av in avisos:
+        print(f"  [AVISO ] {av}")
 
     completo = not falta and not velhos
     saida = raiz / "auditoria"

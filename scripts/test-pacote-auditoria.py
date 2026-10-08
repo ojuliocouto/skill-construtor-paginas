@@ -36,8 +36,10 @@ def montar_completo(raiz, t=1_000_000):
     tocar(raiz / "videos/prancha-mobile.png", b"\x89PNG", t + 10)
 
 
-def rodar(raiz, *extra, url=URL):
+def rodar(raiz, *extra, url=URL, reflete="sim"):
     args = [sys.executable, str(SCRIPT), "--projeto", str(raiz)]
+    if reflete and "--briefing-reflete-pedido" not in extra:
+        args += ["--briefing-reflete-pedido", reflete]
     if url:
         args += ["--url", url]
     r = subprocess.run(args + list(extra), capture_output=True, text=True, encoding="utf-8")
@@ -87,6 +89,34 @@ class Pacote(unittest.TestCase):
         code, saida = rodar(self.raiz)
         self.assertEqual(code, 1)
         self.assertNotIn("Cole auditoria/briefing", saida)
+
+    # A33: o briefing reflete o último pedido da pessoa? Obrigatório no checklist do pacote.
+    def test_sem_a_resposta_do_briefing_o_pacote_fica_incompleto(self):
+        montar_completo(self.raiz)
+        code, saida = rodar(self.raiz, reflete=None)
+        self.assertEqual(code, 1, saida)
+        self.assertIn("briefing reflete o último pedido", saida)
+        self.assertIn("--briefing-reflete-pedido", saida)
+
+    def test_resposta_nao_tambem_barra_e_manda_reler_o_briefing(self):
+        montar_completo(self.raiz)
+        code, saida = rodar(self.raiz, reflete="nao")
+        self.assertEqual(code, 1, saida)
+        self.assertIn("Releia o briefing", saida)
+
+    def test_briefing_mais_velho_que_o_ultimo_pedido_registrado_avisa(self):
+        montar_completo(self.raiz)
+        tocar(self.raiz / "evidencias/pedidos.md", "- o cliente trocou o prazo", 1_000_500)   # depois do briefing (1_000_000)
+        code, saida = rodar(self.raiz, reflete=None)
+        self.assertIn("AVISO", saida)
+        self.assertIn("evidencias/briefing.md é mais antigo que o último pedido registrado", saida)
+
+    def test_briefing_mais_novo_que_o_pedido_nao_avisa_e_dispensa_a_pergunta(self):
+        montar_completo(self.raiz)
+        tocar(self.raiz / "evidencias/pedidos.md", "- o cliente trocou o prazo", 999_000)
+        code, saida = rodar(self.raiz, reflete=None)
+        self.assertEqual(code, 0, saida)
+        self.assertNotIn("mais antigo que o último pedido", saida)
 
     def test_sem_prancha_do_video_falha_e_diz_qual(self):
         montar_completo(self.raiz)

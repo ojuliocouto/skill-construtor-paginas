@@ -9,6 +9,7 @@ Perfil `paginas` (v3, caminho CRIAR): 0 briefing, 1 referências (roda o
 gate-referencias.py), 2 plano visual, 3 copy, 4 construção, 5 entrega.
 """
 import argparse
+import datetime
 import hashlib
 import importlib.util
 import json
@@ -190,16 +191,73 @@ def conferir(projeto, registro, etapas):
                                  "evidência de uma ferramenta, registre de novo com uso-ferramentas.py.")
 
 
+BRIEFING_NOMES = {"briefing.md", "briefing.txt"}
+
+
+def revalidar(projeto, registro, etapas, perfil, motivo):
+    """Mudança de briefing no meio (A32). Caminho curto, que NÃO pula etapa.
+
+    Para cada etapa registrada, em ordem: se nada mudou, fica como está; se SÓ o arquivo do briefing mudou, o gate da etapa
+    (`validar`) roda de novo sobre o JSON registrado e, passando, a etapa é re-registrada com o motivo gravado; se QUALQUER
+    outra evidência mudou (inclusive o JSON da etapa), a etapa continua exigindo o gate dela (`registrar`) e nada é gravado.
+    Devolve (registro novo, linhas do relatório); levanta ValueError quando bloqueia."""
+    novo, linhas = {e: dict(v) for e, v in registro.items()}, []
+    for e in [x for x in etapas if x in registro]:
+        hashes = registro[e].get("hashes") or {}
+        mudou = [n for n, h in hashes.items() if digest(projeto / n) != h]
+        if not mudou:
+            linhas.append(f"  etapa {e}: intacta (nada mudou nos arquivos dela)")
+            continue
+        fora = [n for n in mudou if Path(n).name not in BRIEFING_NOMES]
+        jsons = [n for n in hashes if n.endswith(".json")]
+        if fora or not jsons:
+            alvo = (jsons[-1] if jsons else f"evidencias/etapa-{e}.json")
+            raise ValueError(f"Etapa {e}: a evidência mudou além do briefing ({', '.join(fora or mudou)}); esta etapa continua exigindo o gate dela. "
+                             f"Refaça e registre: {comando('gate-etapas.py')} --projeto {projeto.as_posix()} registrar {e} --arquivo {alvo}")
+        arquivo = (projeto / jsons[-1]).resolve()
+        refeitos = validar(projeto, arquivo, e, etapas[e], perfil)       # o gate da etapa roda de novo
+        refeitos[jsons[-1]] = digest(arquivo)
+        novo[e] = {**novo[e], "hashes": refeitos, "revalidada": {"motivo": motivo, "arquivos": mudou,
+                                                                 "quando": datetime.datetime.now().isoformat(timespec="seconds")}}
+        linhas.append(f"  etapa {e}: revalidada (só o briefing mudou: {', '.join(mudou)}; o gate da etapa rodou de novo e passou)")
+        if "sustentacao" in (json.loads(arquivo.read_text(encoding="utf-8-sig")) if arquivo.is_file() else {}):
+            linhas.append(f"    atenção: a copy depende do briefing: rode {comando('gate-verdade.py')} --projeto {projeto.as_posix()} para conferir a tabela contra o briefing novo")
+    return novo, linhas
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--projeto", type=Path, required=True)
     ap.add_argument("--perfil", choices=["paginas", "dash"], default="paginas")
-    ap.add_argument("comando", choices=["registrar", "checar"])
-    ap.add_argument("etapa")
+    ap.add_argument("comando", choices=["registrar", "checar", "revalidar"])
+    ap.add_argument("etapa", nargs="?")
     ap.add_argument("--arquivo", type=Path)
+    ap.add_argument("--motivo", default=None, help="só no revalidar: por que o briefing mudou (fica gravado em cada etapa revalidada)")
     args = ap.parse_args()
     projeto = args.projeto.resolve()
     etapas = PAGINAS if args.perfil == "paginas" else DASH
+    if args.comando == "revalidar":
+        if len((args.motivo or "").strip()) < 15:
+            print("ERRO: revalidar exige --motivo com pelo menos 15 caracteres (o que o cliente pediu de diferente).", file=sys.stderr)
+            return 2
+        try:
+            alvo = projeto / REGISTRO
+            registro = json.loads(alvo.read_text(encoding="utf-8-sig")) if alvo.exists() else {}
+            if not isinstance(registro, dict) or not registro:
+                raise ValueError("Não há etapa registrada para revalidar.")
+            novo, linhas = revalidar(projeto, registro, etapas, args.perfil, args.motivo.strip())
+        except (OSError, ValueError, KeyError, TypeError) as e:
+            print(f"BLOQUEIA: {e}")
+            return 1
+        print("REVALIDAR (mudança de briefing)\n" + "\n".join(linhas))
+        if novo == registro:
+            print("  nada mudou: não há o que revalidar.")
+            return 0
+        alvo.write_text(json.dumps(novo, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"PASSA: etapas revalidadas em ordem; motivo gravado: {args.motivo.strip()}")
+        return 0
+    if args.etapa is None:
+        ap.error("registrar e checar pedem a etapa")
     try:
         if args.etapa not in etapas:
             raise ValueError("Etapa desconhecida para este perfil.")

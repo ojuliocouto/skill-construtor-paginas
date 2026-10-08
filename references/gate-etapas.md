@@ -74,3 +74,8 @@ caso: volte ao plano visual (etapa 2), registre de novo e siga dali.
 `evidencias/briefing.md` pode ter a linha `Negócio fictício de teste: sim`. É o único jeito de o `gate-imagens.py` aceitar nome de pessoa
 ao lado de foto de banco (alt, legenda ou depoimento); o gate imprime "permitido porque o briefing declara teste fictício".
 Sem a linha, ou com `não`, esse nome reprova.
+
+## Revalidar (mudança de briefing no meio)
+
+`gate-etapas.py revalidar --motivo "<texto>"` percorre as etapas registradas em ordem. Intacta: fica. Só o briefing mudou: o gate da etapa roda de novo
+e ela é re-registrada com o motivo. Outra evidência mudou: bloqueia e manda `registrar` aquela etapa (o gate dela continua obrigatório).

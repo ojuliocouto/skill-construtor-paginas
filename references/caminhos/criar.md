@@ -402,6 +402,12 @@ põe a página ao lado das referências mais fortes do passo b) são CRITÉRIOS.
 subagente auditor independente que as percorre numa passada só** e devolve um bloco por lente.
 Uma lente por subagente é modo opcional, só se a pessoa pedir auditoria profunda.
 
+**Checklist do pacote, obrigatório (A33): o briefing reflete o último pedido da pessoa?** Antes de chamar o auditor, releia o
+`evidencias/briefing.md` contra o que foi pedido POR ÚLTIMO e responda `--briefing-reflete-pedido sim|nao` (sem a resposta, ou com
+`nao`, o pacote fica incompleto). Se você registra os pedidos em `evidencias/pedidos.md` (um por linha, o arquivo é tocado a cada
+pedido novo), a data decide: briefing mais antigo que o último pedido dá AVISO e a pergunta é dispensada. Motivo: no teste real o
+cliente mudou o pedido no meio e o auditor conferiu a página contra um briefing velho.
+
 **Briefing pronto, com orçamento.** O `pacote-auditoria.py` grava `auditoria/briefing-do-auditor.md`: cole-o no prompt do
 auditor. Ele traz os caminhos do pacote e o orçamento (rodada 1: 15 minutos e 30 chamadas de ferramenta; rodada 2: 8 minutos
 e 15 chamadas), proíbe recapturar o que já está no pacote (só abre a página para interação, foco, hover e script bloqueado,
@@ -414,7 +420,7 @@ novo). Gere o que ainda não existir, nesta ordem, e confira:
 
 1. Prints: `node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/provas --com-360 --com-320` (os gates do passo f já geram parte).
 2. Vídeo de prova: `node <dir-da-skill>/scripts/gravar-video.js http://localhost:8765/ --saida <dir>/videos` (passo h, item 3b, que reaproveita estes arquivos).
-3. `node <dir-da-skill>/scripts/py.mjs pacote-auditoria.py --projeto <dir> --url http://localhost:8765/`
+3. `node <dir-da-skill>/scripts/py.mjs pacote-auditoria.py --projeto <dir> --url http://localhost:8765/` `--briefing-reflete-pedido sim|nao`
 
 O pacote tem: a URL, a `dist/`, o briefing (`evidencias/briefing.md`), o `PLANO.md`, a tabela de
 sustentação, a pasta `referencias/` (síntese e `*-dobra.png`), as capturas dos gates
@@ -485,3 +491,12 @@ passe de gosto: tells antes e depois, o depois é 0.
 Registre a sessão em `references/sessions/AAAA-MM-DD-<projeto>.md` e o projeto em
 `references/projects/<projeto>.md` (locais, fora do Git; modelos em `EXAMPLE.md`). Medição
 real (mapa de calor, conversão) só depois de tráfego: primeira leitura em 48 horas.
+
+## Mudança de briefing no meio do trabalho (A32)
+
+Se o cliente pediu outra coisa depois de etapas já registradas, não refaça tudo nem pule etapa: atualize o `evidencias/briefing.md` e rode
+`node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir> revalidar --motivo "<o que mudou no pedido>"`. Em ordem, para cada
+etapa registrada: se nada mudou, fica; se SÓ o briefing mudou, o gate da etapa roda de novo sobre o JSON dela e, passando, ela é
+re-registrada com o motivo gravado (`revalidada`); se QUALQUER outra evidência mudou (a tabela de sustentação, o plano, o próprio JSON),
+a etapa continua exigindo o gate dela (`registrar`) e nada é gravado. Revalidar NÃO é atalho: a copy que depende do briefing pede
+`gate-verdade.py` de novo (o comando avisa). O motivo tem 15 caracteres no mínimo.

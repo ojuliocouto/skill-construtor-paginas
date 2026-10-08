@@ -226,6 +226,79 @@ class Etapas(unittest.TestCase):
         (self.pasta / m).write_bytes(bytes.fromhex('1a45dfa3') + b'\x01' * 64)
         self.assertEqual(self.rodar('checar', '5'), 1, 'trocar o vídeo depois de registrar invalida a etapa')
 
+    # A32: mudança de briefing no meio do trabalho, com o caminho curto `revalidar --motivo`
+    def montar_0_e_3(self):
+        """Etapa 0 registrada pelo CLI e a 3 (copy) registrada com o validar real; o briefing é evidência das duas."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('ge2', SCRIPT)
+        ge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ge)
+        self.ge = ge
+        self.assertEqual(self.rodar('registrar', '0', '--arquivo', 'etapa.json'), 0)
+        (self.pasta / 'sustentacao.md').write_text('| Frase | Linha |\n|---|---|\n| a | "x" |\n', encoding='utf-8')
+        doc3 = {'copy': 'copy.md', 'aprovacao': 'x', 'sustentacao': 'sustentacao.md', 'arquivos': ['briefing.txt', 'sustentacao.md']}
+        (self.pasta / 'etapa-3.json').write_text(json.dumps(doc3), encoding='utf-8')
+        h = ge.validar(self.pasta.resolve(), (self.pasta / 'etapa-3.json').resolve(), '3', ge.PAGINAS['3'], 'paginas')
+        h['etapa-3.json'] = ge.digest(self.pasta / 'etapa-3.json')
+        reg = json.loads((self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8'))
+        reg['3'] = {'hashes': h}
+        (self.pasta / '.etapas-verificadas.json').write_text(json.dumps(reg), encoding='utf-8')
+
+    def revalidar(self, motivo='o cliente trocou o preço e o prazo da oferta'):
+        args = [sys.executable, str(SCRIPT), '--projeto', str(self.pasta), 'revalidar']
+        if motivo is not None:
+            args += ['--motivo', motivo]
+        r = subprocess.run(args, capture_output=True, text=True, encoding='utf-8')
+        return r.returncode, r.stdout + r.stderr
+
+    def test_revalidar_so_o_briefing_mudou_revalida_em_ordem_e_grava_o_motivo(self):
+        self.montar_0_e_3()
+        (self.pasta / 'briefing.txt').write_text('Documento de controle: o cliente trocou o preço', encoding='utf-8')
+        self.assertEqual(self.rodar('checar', '0'), 1, 'antes: a mudança derruba a etapa 0')
+        code, out = self.revalidar()
+        self.assertEqual(code, 0, out)
+        self.assertIn('etapa 0', out.lower())
+        self.assertIn('etapa 3', out.lower())
+        self.assertIn('revalidada', out)
+        reg = json.loads((self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8'))
+        self.assertEqual(set(reg), {'0', '3'}, 'não perde as etapas seguintes')
+        self.assertIn('o cliente trocou o preço', reg['0']['revalidada']['motivo'])
+        self.assertIn('o cliente trocou o preço', reg['3']['revalidada']['motivo'])
+        self.assertEqual(self.rodar('checar', '0'), 0)
+
+    def test_revalidar_nao_e_atalho_outra_evidencia_mudou_e_a_etapa_continua_exigindo_o_gate(self):
+        self.montar_0_e_3()
+        (self.pasta / 'briefing.txt').write_text('briefing novo do cliente com outro preço', encoding='utf-8')
+        (self.pasta / 'sustentacao.md').write_text('| Frase | Linha |\n|---|---|\n| b | "y" |\n', encoding='utf-8')
+        antes = (self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8')
+        code, out = self.revalidar()
+        self.assertEqual(code, 1, out)
+        self.assertIn('sustentacao.md', out)
+        self.assertRegex(out, r'registrar 3')
+        self.assertEqual((self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8'), antes, 'nada foi gravado quando bloqueia')
+
+    def test_revalidar_json_da_etapa_mudado_tambem_bloqueia(self):
+        self.montar_0_e_3()
+        (self.pasta / 'briefing.txt').write_text('briefing novo', encoding='utf-8')
+        d = json.loads((self.pasta / 'etapa-3.json').read_text(encoding='utf-8'))
+        d['aprovacao'] = 'outra'
+        (self.pasta / 'etapa-3.json').write_text(json.dumps(d), encoding='utf-8')
+        code, out = self.revalidar()
+        self.assertEqual(code, 1, out)
+        self.assertIn('etapa-3.json', out)
+
+    def test_revalidar_exige_motivo_de_verdade(self):
+        self.montar_0_e_3()
+        (self.pasta / 'briefing.txt').write_text('briefing novo', encoding='utf-8')
+        self.assertEqual(self.revalidar(motivo=None)[0], 2)
+        self.assertEqual(self.revalidar(motivo='mudou')[0], 2)
+
+    def test_revalidar_sem_nada_mudado_diz_que_nao_ha_o_que_revalidar(self):
+        self.montar_0_e_3()
+        code, out = self.revalidar()
+        self.assertEqual(code, 0)
+        self.assertIn('nada mudou', out.lower())
+
     def registrar_fake(self, etapa):
         """Grava direto no registro as etapas anteriores, só para testar a 5 em sequência."""
         import hashlib
