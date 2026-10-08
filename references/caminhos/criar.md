@@ -391,6 +391,7 @@ Conferências que nenhum script faz sozinho, e que a lente content-auditor cobra
   do JSON-LD e cada alt contra o briefing
 - comentário no código que afirma comportamento ("fica sólido", "aparece") só depois de medido
 - edição por script com `assert` da troca e medida no navegador: build verde não prova pixel
+- **edição por script e gates na mesma linha: ligue com `&&`, nunca com `;` nem em linhas soltas.** Se o `assert` da troca falha, o `&&` para ali; sem ele os gates rodam em cima da página velha e a rodada inteira (minutos) mede o que você já tinha. Ex.: `python edita.py && bash gates-todos.sh`
 
 Lighthouse quando houver Chromium (pendência declarada quando não houver). SEO abaixo de 90
 sob `noindex` é esperado se a única auditoria reprovada for `is-crawlable`.
@@ -462,7 +463,7 @@ passe de gosto: tells antes e depois, o depois é 0.
    Android 360 e o menor suportado, 320, página inteira em scrollY 0), servindo a `dist/`. Nunca por script próprio: cabeçalho fixo no meio do print é artefato de rolagem.
 2. **Leia os PNGs com os próprios olhos** (Read): a página inteira para ritmo e composição, e
    recortes 1:1 para texto, rótulo e borda. Screenshot reduzido não aprova detalhe.
-3. A interação principal clicada nos dois viewports.
+3. A interação principal clicada nos dois viewports (`--click "<seletor>"`). Botão que é link de WhatsApp ou outro link externo: o clique é capturado e a navegação cancelada, então o teste não sai da página e o print de depois mostra a página; o destino aparece na saída ("o clique levaria a ..."). Confira o número dígito por dígito pelo `href`. Navegação feita por script (`location.href`) também é barrada, mas aí o print de depois não é tirado.
 3b. **Vídeo da rolagem, junto dos prints** (já gravado no passo g para o pacote do auditor: reaproveite
    se a página não mudou depois, refaça se mudou): com a página servida, grave desktop e celular do topo ao
    fim em ritmo de leitura:
@@ -470,6 +471,12 @@ passe de gosto: tells antes e depois, o depois é 0.
    (usa o `roteiro-pagina.json` da pasta de scripts: abre, espera a abertura, rola meia janela a cada 1,5 s e
    tira 7 quadros; leva de 30 a 70 s). **Leia as duas pranchas** (`prancha-desktop.png` e
    `prancha-mobile.png`): o vídeo prova o movimento, a prancha prova o que apareceu em cada ponto.
+   **Roteiro próprio** (`--roteiro arquivo.json`): o roteiro padrão só rola a página; efeito que pede clique ou mouse (painel de cor
+   de tela inteira, hover do botão) só aparece num roteiro seu. Página com `[data-painel]`: parta do `roteiro-demo-receitas.json` da pasta de scripts da skill, que já
+   clica. O gravador confere tudo de uma vez e recusa o roteiro que quebra qualquer limite: `abrir` é o primeiro passo;
+   `esperar` de 0 a 10000 ms; `rolar_pagina` com `passo` de 0,2 a 1, `espera_ms` de 300 a 3000, `max_passos` de 1 a 45 e `prints` de 0 a 8;
+   no mínimo 6 prints no roteiro; `duracao_minima_s` de 10 a 15; duração prevista de 10 a 90 s (com `rolar_pagina` vale o pior caso:
+   `max_passos` x (`espera_ms` + 300 ms) + 1,2 s). A mensagem de recusa repete essa lista de limites.
    Sem a rolagem chegar ao fim da página, a gravação reprova. Os dois `.webm` entram em
    `video` na etapa 5; etapa sem vídeo não registra.
 4. Re-registrar a etapa 4 depois dos auditores é esperado (`references/gate-etapas.md`); depois:
