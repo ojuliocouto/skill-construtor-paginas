@@ -225,7 +225,11 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
 2. **Imagens:** material real do cliente primeiro. Sem ele, banco com licença livre (Openverse
    pelo `scripts/assets-search.py "<tema em inglês>" --type photo`, Unsplash, Pexels,
    Wikimedia Commons), escolhida pelo que as referências ensinaram (assunto, luz,
-   enquadramento), nunca a primeira que aparece. Registre cada uma em `imagens/LICENCAS.md`,
+   enquadramento), nunca a primeira que aparece. **Escolha olhando a folha de contato, não
+   abrindo resultado por resultado:** acrescente `--folha <dir>/prova/fotos.png` à busca
+   (`node <dir-da-skill>/scripts/py.mjs assets-search.py "<tema em inglês>" --type photo -n 8 --folha <dir>/prova/fotos.png`)
+   e abra o PNG: UMA imagem em grade com todas as miniaturas e o número de cada uma, o mesmo
+   número da lista em texto (que traz a licença e o crédito). Registre cada uma em `imagens/LICENCAS.md`,
    na tabela com as colunas `Arquivo publicado | Origem | Autor | Título | Licença | Link da
    licença | Alteração | Pessoa identificável | Autorização de imagem | Aviso de ilustrativa`,
    uma linha também para o og-image. **Licença com nome, versão e link** ("CC BY-SA 3.0" com
@@ -331,7 +335,22 @@ Grave `evidencias/etapa-4.json` e registre: `node <dir-da-skill>/scripts/py.mjs 
 Sirva com compressão (medir sem gzip inverte o resultado) e mate o servidor no fim:
 `node <dir-da-skill>/scripts/py.mjs servidor-gzip.py <dir> 8765`
 
-Rode cada gate e registre o exit REAL na wave:
+**Caminho padrão: um comando só, todos os gates em paralelo.**
+`node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir>`
+Ele monta a `dist/`, serve cada gate de tela numa porta própria (com compressão), roda os gates
+abaixo juntos (teto de navegadores pela máquina; `--paralelo N` muda), grava a saída de cada um em
+`gates/<nome>-r<N>.txt` e imprime UM relatório: PASSA ou REPROVA por gate, o tempo de cada um, a
+mensagem de falha inteira e o total. Sai com 1 se qualquer gate reprova. Não substitui nem afrouxa
+gate nenhum: chama os mesmos scripts, com os mesmos argumentos listados abaixo. O fluxo:
+1. rode tudo e leia o relatório consolidado inteiro, até o fim;
+2. corrija TUDO o que reprovou, de todos os gates, antes de rodar de novo (um gate por vez foi o que custou 37 min);
+3. rode só os que reprovaram: `node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir> --reprovados` (ou `--so texto,ritmo`);
+4. repita 2 e 3 até passar, e no fim faça UMA rodada completa (o comando sem `--so` nem `--reprovados`): correção de um gate pode ter quebrado outro;
+5. só então registre o exit REAL de cada gate na wave (o comando não registra nem aprova nada).
+Negócio de produto físico: `--produto-fisico`. Gates opcionais, que dependem de passos anteriores:
+`--com animacao` (depois do `anim.mjs` e da prancha), `--com video --publico <dir>`, `--com sobreposicao --fixo "<sel>" --contra "<sel>"`.
+
+Os comandos individuais ficam como referência (e para rodar um gate sozinho). Rode cada gate e registre o exit REAL na wave:
 
 `node <dir-da-skill>/scripts/py.mjs gate-sem-kicker.py <dir>/index.html` (kicker, 01/02/03, número gigante)
 `node <dir-da-skill>/scripts/py.mjs gate-classes-mortas.py --projeto <dir>` (classe que não existe no CSS)
