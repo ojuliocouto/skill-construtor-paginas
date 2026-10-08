@@ -13,6 +13,7 @@ Uso:
   node scripts/py.mjs assets-search.py --type illustrations         # undraw/storyset
   node scripts/py.mjs assets-search.py --type icons                 # lordicon/animated
   node scripts/py.mjs assets-search.py --type openverse "team"      # FOTOS REAIS SEM CHAVE (licenca CC)
+  node scripts/py.mjs assets-search.py "team" --type photo --folha prova/fotos.png   # + UMA imagem com todas as miniaturas numeradas
   node scripts/py.mjs assets-search.py --type sem-chave             # todas as rotas sem chave
   node scripts/py.mjs assets-search.py --presets                    # listar presets
 
@@ -203,7 +204,7 @@ def format_videos(items: list, query: str) -> str:
             lines.append(f"     Download ({f_width}x{f_height}): {file_url}")
         if preview:
             lines.append(f"     Preview img: {preview}")
-        lines.append(f"     Licença: Pexels License (uso gratuito, sem atribuicao obrigatoria)")
+        lines.append(f"     Licença: Pexels License (uso gratuito, sem atribuição obrigatória)")
         lines.append(f"")
         lines.append(f"     USO RÁPIDO:")
         lines.append(f"     <vídeo autoPlay loop muted playsInline className=\"absolute inset-0 w-full h-full object-cover\">")
@@ -344,7 +345,7 @@ def _monta_credito(item: dict) -> str:
     if item["licenca_url"]:
         pedacos.append("licença %s (%s)" % (item["licenca"], item["licenca_url"]))
     else:
-        pedacos.append("licenca %s" % item["licenca"])
+        pedacos.append("licença %s" % item["licenca"])
     return ", ".join(pedacos)
 
 
@@ -352,7 +353,7 @@ def _normaliza_item_openverse(bruto: dict) -> dict:
     codigo = (bruto.get("license") or "").strip().lower()
     item = {
         "id": bruto.get("id", ""),
-        "titulo": (bruto.get("title") or "Sem titulo").strip(),
+        "titulo": (bruto.get("title") or "Sem título").strip(),
         "url": (bruto.get("url") or "").strip(),
         "thumbnail": (bruto.get("thumbnail") or "").strip(),
         "autor": (bruto.get("creator") or "autor desconhecido").strip(),
@@ -561,7 +562,7 @@ def _normaliza_item_commons(pagina: dict):
     codigo = re.sub(r"[ ]+", "-", licenca.lower())
     item = {
         "id": str(pagina.get("pageid") or ""),
-        "titulo": titulo or "Sem titulo",
+        "titulo": titulo or "Sem título",
         "url": url,
         "thumbnail": url_commons_na_largura(url, 500, info.get("width") or 0),
         "autor": _sem_html(artista) or "autor desconhecido",
@@ -705,7 +706,7 @@ def format_openverse(items: list, query: str, veio_de_fallback: bool = False,
     linhas.append("")
 
     for i, item in enumerate(items, 1):
-        dimensao = "%sx%s" % (item["largura"], item["altura"]) if item["largura"] else "dimensao não informada"
+        dimensao = "%sx%s" % (item["largura"], item["altura"]) if item["largura"] else "dimensão não informada"
         linhas.append("  %d. %s" % (i, item["titulo"]))
         linhas.append("     %s | Por: %s | Licença: %s" % (dimensao, item["autor"], item["licenca"]))
         linhas.append("     Imagem:  %s" % item["url"])
@@ -720,12 +721,12 @@ def format_openverse(items: list, query: str, veio_de_fallback: bool = False,
         if item["licenca_url"]:
             linhas.append("     Licença: %s" % item["licenca_url"])
         linhas.append("")
-        linhas.append("     CREDITO %s:" % ("OBRIGATORIO" if item["exige_credito"] else "recomendado"))
+        linhas.append("     CRÉDITO %s:" % ("OBRIGATÓRIO" if item["exige_credito"] else "recomendado"))
         linhas.append("     %s" % item["credito"])
         if "-ND" in item["licenca"].upper():
             linhas.append("     ATENÇÃO ND: não pode recortar, filtrar nem sobrepor texto nessa foto.")
         linhas.append("")
-        linhas.append("     USO RÁPIDO (já com o credito junto da imagem):")
+        linhas.append("     USO RÁPIDO (já com o crédito junto da imagem):")
         linhas.append('     <figure class="relative">')
         linhas.append(
             '       <img src="%s" alt="%s" loading="lazy" class="w-full h-full object-cover" />'
@@ -744,9 +745,9 @@ def format_openverse(items: list, query: str, veio_de_fallback: bool = False,
         linhas.append("")
 
     linhas.append(barra)
-    linhas.append("  ATRIBUICAO: em licença CC BY, CC BY-SA e CC BY-ND o credito e OBRIGATÓRIO.")
-    linhas.append("  Não e cortesia, e condicao da licença. Sem credito o uso e irregular.")
-    linhas.append("  Onde por: legenda da foto, ou uma seção 'Creditos' no rodape da página.")
+    linhas.append("  ATRIBUIÇÃO: em licença CC BY, CC BY-SA e CC BY-ND o crédito é OBRIGATÓRIO.")
+    linhas.append("  Não é cortesia, é condição da licença. Sem crédito o uso é irregular.")
+    linhas.append("  Onde pôr: legenda da foto, ou uma seção 'Créditos' no rodapé da página.")
     linhas.append("  Modelo pronto e o que NÃO fazer: references/assets-sem-chave.md")
     linhas.append("")
     linhas.append("  Baixe e otimize antes de publicar (hotlink de terceiro cai):")
@@ -766,7 +767,7 @@ def print_aviso_fallback_openverse(motivo: str) -> None:
                 "  AVISO: caindo na Openverse (%s)." % motivo,
                 "  A Openverse devolve FOTO REAL sem nenhuma chave de API.",
                 "  Contrapartida: a licença Creative Commons exige creditar o autor.",
-                "  O credito de cada foto já vem pronto na saida abaixo.",
+                "  O crédito de cada foto já vem pronto na saída abaixo.",
                 "  Detalhes: references/assets-sem-chave.md",
                 "",
             ]
@@ -778,7 +779,7 @@ def print_aviso_fallback_openverse(motivo: str) -> None:
 def buscar_fotos_com_fallback(query: str, limit: int = 6, orientation: str = "landscape") -> dict:
     """Busca fotos e NUNCA volta vazia por falta de chave.
 
-    Com PEXELS_API_KEY: usa o Pexels (sem obrigacao de credito).
+    Com PEXELS_API_KEY: usa o Pexels (sem obrigação de crédito).
     Sem chave, ou com chave que nao achou nada: cai na Openverse.
 
     Devolve {"fonte": "pexels" | "openverse" | "commons", "itens": [...]}. Se a Openverse nao
@@ -813,7 +814,7 @@ def show_sem_chave_resources() -> str:
     linhas.append("  1. OPENVERSE: fotos reais, licença Creative Commons (a melhor rota)")
     linhas.append(f"     {comando('assets-search.py')} \"team meeting office\" --type openverse -n 6")
     linhas.append(f"     {comando('assets-search.py')} \"sua busca\" --type photo   # cai aqui sozinho")
-    linhas.append("     Credito ao autor OBRIGATÓRIO (CC BY / BY-SA). Sai pronto na busca.")
+    linhas.append("     Crédito ao autor OBRIGATÓRIO (CC BY / BY-SA). Sai pronto na busca.")
     linhas.append("")
 
     linhas.append("  2. PICSUM: JPEG real, sem tema, otimo pra mockup e placeholder")
@@ -826,7 +827,7 @@ def show_sem_chave_resources() -> str:
     linhas.append("  3. UNDRAW: ilustrações SVG tematicas, cor customizavel")
     linhas.append("     https://undraw.co/illustrations")
     linhas.append(f"     {comando('assets-search.py')} --type illustrations \"team work\"")
-    linhas.append("     Sem obrigação de credito. Boas pra seção de features e vazio de dados.")
+    linhas.append("     Sem obrigação de crédito. Boas pra seção de features e vazio de dados.")
     linhas.append("")
 
     linhas.append("  4. GRADIENTE E PATTERN SVG (background, nunca sozinho como 'imagem')")
@@ -1061,6 +1062,149 @@ def show_background_resources() -> str:
     return "\n".join(lines)
 
 
+# ─── FOLHA DE CONTATO (3.5.8): todas as miniaturas numa imagem só ─────────────
+#
+# Quem escolhe a foto não deveria abrir resultado por resultado (21 min no teste de 3.5.6). Com
+# `--folha arquivo.png` o script baixa a miniatura de cada resultado e monta UMA grade com o número
+# de cada item, o mesmo número da lista em texto. Respeita a pausa entre chamadas e o HTTP 429 do
+# resto do script: espera o Retry-After (teto TETO_ESPERA_COMMONS) e tenta UMA vez; se não vier,
+# a célula fica com o número e o aviso "sem miniatura", e a folha sai mesmo assim.
+
+PAUSA_MINIATURA_COMMONS = PAUSA_COMMONS   # a Commons limita quem baixa muita miniatura de uma vez
+PAUSA_MINIATURA = 0.3                     # as outras rotas: educação com o servidor de terceiro
+FOLHA_CELULA = (400, 300)                 # largura x altura de cada miniatura na grade
+FOLHA_MARGEM = 12
+
+
+def urls_das_miniaturas(items: list, tipo: str) -> list:
+    """Uma URL de miniatura (ou "") por item, na ordem da lista: o índice + 1 é o número impresso."""
+    urls = []
+    for item in items:
+        if tipo == "pexels-foto":
+            src = item.get("src") or {}
+            urls.append(src.get("medium") or src.get("small") or src.get("large") or "")
+        elif tipo == "pexels-video":
+            fotos = item.get("video_pictures") or []
+            urls.append((fotos[0].get("picture") if fotos and isinstance(fotos[0], dict) else "") or item.get("image") or "")
+        else:
+            urls.append(item.get("thumbnail") or item.get("url") or "")
+    return urls
+
+
+def _baixar_miniatura(url: str):
+    """Bytes da miniatura, ou (None, motivo). Pausa antes; em HTTP 429 espera o Retry-After e tenta uma vez."""
+    commons = "wikimedia.org" in url or "wikipedia.org" in url
+    cabecalhos = {"User-Agent": COMMONS_USER_AGENT if commons else USER_AGENT, "Accept": "image/*"}
+    motivo = ""
+    for tentativa in (1, 2):
+        time.sleep(PAUSA_MINIATURA_COMMONS if commons else PAUSA_MINIATURA)
+        try:
+            with _abrir_url(urllib.request.Request(url, headers=cabecalhos), timeout=25) as resp:
+                return resp.read(), ""
+        except urllib.error.HTTPError as e:
+            if e.code == 429 and tentativa == 1:
+                try:
+                    espera = int(float((e.headers or {}).get("Retry-After", "5")))
+                except (TypeError, ValueError):
+                    espera = 5
+                espera = max(1, min(espera, TETO_ESPERA_COMMONS))
+                print("AVISO miniatura: HTTP 429 (limite de chamadas). Espero %d s e tento uma vez." % espera, file=sys.stderr)
+                time.sleep(espera)
+                continue
+            motivo = "HTTP %s" % e.code
+            break
+        except Exception as e:  # rede de terceiro: uma miniatura que falha não derruba a folha
+            motivo = str(getattr(e, "reason", e))[:60]
+            break
+    return None, motivo
+
+
+def _numero_grande(numero: int, altura: int = 72):
+    """Imagem RGBA com o número em branco sobre fundo escuro, feita só com a fonte padrão da PIL.
+
+    A fonte padrão é um bitmap minúsculo: desenha pequeno e amplia (NEAREST) até a altura pedida. Assim
+    o número sai legível em qualquer versão da PIL e em qualquer sistema, sem depender de fonte instalada.
+    """
+    from PIL import Image, ImageDraw, ImageFont
+    fonte = ImageFont.load_default()
+    texto = str(numero)
+    caixa = ImageDraw.Draw(Image.new("L", (1, 1))).textbbox((0, 0), texto, font=fonte)
+    larg, alt = max(1, caixa[2] - caixa[0]), max(1, caixa[3] - caixa[1])
+    pequeno = Image.new("L", (larg + 4, alt + 4), 0)
+    ImageDraw.Draw(pequeno).text((2 - caixa[0], 2 - caixa[1]), texto, fill=255, font=fonte)
+    escala = max(1, altura // (alt + 4))
+    grande = pequeno.resize(((larg + 4) * escala, (alt + 4) * escala), Image.NEAREST)
+    fundo = Image.new("RGBA", grande.size, (20, 20, 20, 235))
+    fundo.paste((255, 255, 255, 255), mask=grande)
+    return fundo
+
+
+def montar_folha(miniaturas: list, destino: str, colunas: int = 0) -> dict:
+    """Monta a grade. `miniaturas` = lista de bytes ou None, na ordem dos itens (número = posição + 1).
+
+    Devolve {"arquivo", "colunas", "linhas", "sem_miniatura": [números]}. Exige a Pillow.
+    """
+    import io
+    from PIL import Image, ImageDraw, ImageFont
+    total = len(miniaturas)
+    if total == 0:
+        raise ValueError("nenhum resultado para montar a folha")
+    colunas = colunas or (min(total, 3) if total <= 6 else 4)
+    linhas = (total + colunas - 1) // colunas
+    cw, ch = FOLHA_CELULA
+    m = FOLHA_MARGEM
+    folha = Image.new("RGB", (colunas * (cw + m) + m, linhas * (ch + m) + m), (235, 235, 235))
+    sem = []
+    for idx, dados in enumerate(miniaturas):
+        x = m + (idx % colunas) * (cw + m)
+        y = m + (idx // colunas) * (ch + m)
+        celula = Image.new("RGB", (cw, ch), (60, 60, 60))
+        ok = False
+        if dados:
+            try:
+                img = Image.open(io.BytesIO(dados))
+                img.load()
+                img = img.convert("RGB")
+                img.thumbnail((cw, ch))
+                celula.paste(img, ((cw - img.width) // 2, (ch - img.height) // 2))
+                ok = True
+            except Exception:
+                ok = False
+        if not ok:
+            sem.append(idx + 1)
+            d = ImageDraw.Draw(celula)
+            d.text((cw // 2 - 36, ch // 2 - 5), "sem miniatura", fill=(230, 230, 230), font=ImageFont.load_default())
+        folha.paste(celula, (x, y))
+        etiqueta = _numero_grande(idx + 1)
+        folha.paste(etiqueta, (x, y), etiqueta)
+    pasta = os.path.dirname(os.path.abspath(destino))
+    os.makedirs(pasta, exist_ok=True)
+    folha.save(destino, "PNG")
+    return {"arquivo": destino, "colunas": colunas, "linhas": linhas, "sem_miniatura": sem}
+
+
+def gerar_folha(items: list, tipo: str, destino: str) -> None:
+    """Baixa as miniaturas e grava a folha; avisa no stdout (uma linha) ou no stderr (se faltar a Pillow)."""
+    try:
+        import PIL  # noqa: F401
+    except ImportError:
+        print("AVISO --folha: precisa da Pillow (pip install pillow). A lista em texto acima continua valendo.", file=sys.stderr)
+        return
+    if not items:
+        print("AVISO --folha: a busca não devolveu resultados, então não há folha para montar.", file=sys.stderr)
+        return
+    baixadas = []
+    for url in urls_das_miniaturas(items, tipo):
+        dados, motivo = _baixar_miniatura(url) if url else (None, "sem URL de miniatura")
+        baixadas.append(dados)
+        if dados is None:
+            print("AVISO --folha: sem miniatura no item %d (%s)." % (len(baixadas), motivo), file=sys.stderr)
+    r = montar_folha(baixadas, destino)
+    falta = (" Sem miniatura nos números: %s." % ", ".join(str(n) for n in r["sem_miniatura"])) if r["sem_miniatura"] else ""
+    print("\nFolha de contato: %s (%d miniaturas em %d x %d; o número de cada uma é o da lista acima).%s"
+          % (destino, len(baixadas), r["colunas"], r["linhas"], falta))
+
+
 # ─── NO API KEY ───────────────────────────────────────────────────────────────
 
 def print_no_api_key(com_saida_alternativa: bool = True):
@@ -1083,7 +1227,7 @@ def print_no_api_key(com_saida_alternativa: bool = True):
             "",
             "  A Openverse devolve fotos reais com licença Creative Commons.",
             "  Nesse caso creditar o autor NÃO é opcional.",
-            "  Modelo de credito pronto: references/assets-sem-chave.md",
+            "  Modelo de crédito pronto: references/assets-sem-chave.md",
             "",
         ]
     print("\n".join(linhas), file=sys.stderr)
@@ -1112,6 +1256,7 @@ Exemplos:
   node scripts/py.mjs assets-search.py tech-dark
   node scripts/py.mjs assets-search.py "minimal white" --type video --orientation landscape
   node scripts/py.mjs assets-search.py "office team" --type photo -n 5
+  node scripts/py.mjs assets-search.py "office team" --type photo -n 8 --folha prova/fotos.png   # folha de contato numerada
   node scripts/py.mjs assets-search.py "team meeting office" --type openverse -n 5
   node scripts/py.mjs assets-search.py --type sem-chave
   node scripts/py.mjs assets-search.py "loading" --type lottie
@@ -1137,11 +1282,13 @@ Exemplos:
     parser.add_argument("--autor", default="", help="Commons: estreita a busca pelo nome do autor (ex.: Shixart1985)")
     parser.add_argument("--categoria", default="", help='Commons: estreita a busca pela categoria do acervo (ex.: "Wooden furniture")')
     parser.add_argument("--sem-filtro", action="store_true", help="Commons: não descarta prova policial, casa de boneca, reboque e museu")
+    parser.add_argument("--folha", default="", metavar="ARQUIVO.png",
+        help="Fotos e vídeos: baixa as miniaturas dos resultados e monta UMA imagem em grade com o número de cada item (o mesmo da lista)")
 
     args = parser.parse_args()
 
     if args.presets:
-        print("\nPresets de vídeo disponiveis:\n")
+        print("\nPresets de vídeo disponíveis:\n")
         for key, val in PRESET_QUERIES.items():
             print(f"  {key:20s} -> \"{val}\"")
         print()
@@ -1176,13 +1323,19 @@ Exemplos:
     if args.type == "video":
         items = search_videos(query, limit=args.limit, orientation=args.orientation)
         print(format_videos(items, query))
+        if args.folha:
+            gerar_folha(items, "pexels-video", args.folha)
     elif args.type in ("openverse", "cc"):
         items = search_openverse(query, limit=args.limit, orientation=args.orientation)
         print(format_openverse(items, query))
+        if args.folha:
+            gerar_folha(items, "openverse", args.folha)
     elif args.type == "commons":
         items = search_commons(query, limit=args.limit, orientation=args.orientation, autor=args.autor,
                                categoria=args.categoria, filtrar_acervo=not args.sem_filtro)
         print(format_openverse(items, query, fonte="Wikimedia Commons"))
+        if args.folha:
+            gerar_folha(items, "commons", args.folha)
     elif args.type == "photo":
         resultado = buscar_fotos_com_fallback(
             query, limit=args.limit, orientation=args.orientation
@@ -1193,6 +1346,8 @@ Exemplos:
                                    motivo=resultado.get("motivo", "")))
         else:
             print(format_photos(resultado["itens"], query))
+        if args.folha:
+            gerar_folha(resultado["itens"], "pexels-foto" if resultado["fonte"] == "pexels" else "openverse", args.folha)
 
 
 if __name__ == "__main__":
