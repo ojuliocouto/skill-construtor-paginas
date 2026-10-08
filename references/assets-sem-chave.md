@@ -38,6 +38,34 @@ ser usado em página de cliente. Cada resultado sai com:
 Busque em inglês e com termos concretos. `team meeting office` traz resultado
 bom; `inovação disruptiva` não traz nada.
 
+### Segunda rota: Wikimedia Commons (quando a Openverse não responde)
+
+A Openverse às vezes não responde (rede da escola ou do escritório, proxy, a própria API fora do ar:
+`Connection reset by peer`). O script não para: na mesma busca `--type photo` (ou `--type openverse`) ele
+tenta a **Wikimedia Commons**, que também dispensa chave, e diz qual rota respondeu:
+
+```text
+Rota que respondeu: Wikimedia Commons (a Openverse não respondeu (...))
+```
+
+```bash
+# a mesma busca; a rota é escolhida sozinha
+node scripts/py.mjs assets-search.py "woodworking workshop" --type photo -n 6
+# pedir a Commons direto
+node scripts/py.mjs assets-search.py "woodworking workshop" --type commons -n 6
+```
+
+- **Mesma saída e mesmos campos de licença:** URL da imagem (1280 px), autor com link, rótulo e link da
+  licença, página de origem, crédito pronto e `<figure>` para colar.
+- **Só entra licença que uma página de cliente pode usar:** CC0, CC BY, CC BY-SA e domínio público. NC, ND,
+  GFDL e "uso livre" de cada país são descartadas. Crédito segue obrigatório em CC BY e CC BY-SA.
+- **Pausa e limite:** o script espera 1 s antes de chamar e, em HTTP 429 (limite da Commons), espera o
+  `Retry-After` (no máximo 30 s) e tenta **uma** vez. Se ainda der 429, devolve vazio e diz para esperar um
+  minuto: insistir só alonga o bloqueio.
+- **O acervo é diferente:** a Commons tem muita foto de ofício, lugar e objeto, e pouca de gente "natural,
+  30 a 55 anos". Para rosto de depoimento, a foto do cliente continua sendo o caminho.
+- A suíte testa essa rota com a resposta gravada (`scripts/fixtures/commons-resposta.json`), sem internet.
+
 ### O script já descarta link morto
 
 A Openverse indexa acervos de terceiros (Flickr, StockSnap). Foto apagada na
