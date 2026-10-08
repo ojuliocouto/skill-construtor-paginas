@@ -332,13 +332,28 @@ sob `noindex` é esperado se a única auditoria reprovada for `is-crawlable`.
 
 ## g. Auditores
 
-As 9 lentes de `references/auditores.md`: as 8 de sempre mais a `comparacao-referencias`, que
-põe a página ao lado das referências mais fortes do passo b.
+As 9 lentes de `references/auditores.md` (as 8 de sempre mais a `comparacao-referencias`, que
+põe a página ao lado das referências mais fortes do passo b) são CRITÉRIOS. **A rodada é UM
+subagente auditor independente que as percorre numa passada só** e devolve um bloco por lente.
+Uma lente por subagente é modo opcional, só se a pessoa pedir auditoria profunda.
 
-**A rodada de auditores roda com um subagente auditor independente quando o ambiente permite**
-(Agent ou Task com o tipo `auditor`, ou um subagente comum com o mandato de refutar): ele
-recebe a URL, a `dist/`, o briefing, a tabela de sustentação, a pasta `referencias/` e as
-preferências, e nunca o histórico da construção. Cada lente se registra com `--origem subagente`.
+**Antes de chamar o auditor, junte o pacote de evidência UMA vez** (ele não captura as telas de
+novo). Gere o que ainda não existir, nesta ordem, e confira:
+
+1. Prints: `node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/provas --com-360 --com-320` (os gates do passo f já geram parte).
+2. Vídeo de prova: `node <dir-da-skill>/scripts/gravar-video.js http://localhost:8765/ --saida <dir>/videos` (passo h, item 3b, que reaproveita estes arquivos).
+3. `python3 <dir-da-skill>/scripts/pacote-auditoria.py --projeto <dir> --url http://localhost:8765/`
+
+O pacote tem: a URL, a `dist/`, o briefing (`evidencias/briefing.md`), o `PLANO.md`, a tabela de
+sustentação, a pasta `referencias/` (síntese e `*-dobra.png`), as capturas dos gates
+(`prova-desktop.png` e `prova-mobile.png`) e as pranchas do vídeo (`prancha-desktop.png` e
+`prancha-mobile.png`). O script lista o que achou e o que falta, avisa se a captura é anterior à
+última mudança da `dist/` e sai 1 se faltar item obrigatório: sem pacote completo, não chame o auditor.
+
+O auditor é um subagente independente (Agent ou Task com o tipo `auditor`, ou um subagente comum com o
+mandato de refutar): recebe o pacote (`auditoria/pacote.json`) e as preferências, e nunca o
+histórico da construção. Cada lente se registra com `--origem subagente`, uma por lente (as 9
+notas e vereditos), com o veredito que o auditor deu.
 **Nota de autoavaliação não libera entrega:** sem subagente, a checagem em sequência serve para
 achar e corrigir defeito, mas fica registrada com `--origem autoavaliacao` e o `wave.py rodada`
 responde AUDITORIA INDEPENDENTE PENDENTE até uma rodada de outra sessão (sem o histórico, com
@@ -352,8 +367,13 @@ depois da SobrAI (9,05 nas lentes e "que página FEIA"): **isso é bonito ou só
 `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> checar`
 `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`
 
-Saiu CONTINUA: corrige, refaz os gates do passo f que a correção toca, roda de novo as lentes
-com achado. **Lente `comparacao-referencias` reprovada = volta ao passo c**, refaz o plano a partir
+**Teto de 2 rodadas.** Saiu CONTINUA na rodada 1: corrige, refaz os gates do passo f que a
+correção toca, junta o pacote de novo (`pacote-auditoria.py --rodada 2`, depois de salvar os achados
+em `auditoria/achados-rodada-1.json`) e fecha a rodada 2, que é de CONFERÊNCIA (`references/auditores.md`,
+"Rodada 2"): o mesmo auditor confere se cada achado foi corrigido, se a correção quebrou outra
+coisa, e mais nada; não reabre as 9 lentes. Depois dela o ciclo fecha SEMPRE: aprovado, ENTREGA COM
+RESSALVAS (achados que sobraram e nota real, na entrega) ou NÃO ENTREGAR: crítico aberto. Terceira
+rodada só se a pessoa pedir (`--rodada-extra-pedida`, registrada). **Lente `comparacao-referencias` reprovada = volta ao passo c**, refaz o plano a partir
 das referências e reconstrói; não se compensa com nota nas outras lentes. Fechado o ciclo, o
 passe de gosto: tells antes e depois, o depois é 0.
 
@@ -364,7 +384,8 @@ passe de gosto: tells antes e depois, o depois é 0.
 2. **Leia os PNGs com os próprios olhos** (Read): a página inteira para ritmo e composição, e
    recortes 1:1 para texto, rótulo e borda. Screenshot reduzido não aprova detalhe.
 3. A interação principal clicada nos dois viewports.
-3b. **Vídeo da rolagem, junto dos prints:** com a página servida, grave desktop e celular do topo ao
+3b. **Vídeo da rolagem, junto dos prints** (já gravado no passo g para o pacote do auditor: reaproveite
+   se a página não mudou depois, refaça se mudou): com a página servida, grave desktop e celular do topo ao
    fim em ritmo de leitura:
    `node <dir-da-skill>/scripts/gravar-video.js http://localhost:8765/ --saida <dir>/videos`
    (usa o `roteiro-pagina.json` da pasta de scripts: abre, espera a abertura, rola meia janela a cada 1,5 s e

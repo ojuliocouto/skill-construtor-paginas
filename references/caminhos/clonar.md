@@ -45,9 +45,10 @@ sem estar no delta declarado: volta.
 
 ## 5. Gates e auditores
 
-Os gates mecânicos do passo f do CRIAR e as 9 lentes de `references/auditores.md`, com
-`--caminho clonar` no wave (o gate de referências não se aplica; a lente
-`comparacao-referencias` compara com a original):
+Os gates mecânicos do passo f do CRIAR e as 9 lentes de `references/auditores.md`, passadas por
+UM auditor independente com o pacote de evidência (`pacote-auditoria.py --caminho clonar`, que
+não exige PLANO nem briefing) e teto de 2 rodadas, com `--caminho clonar` no wave (o gate de
+referências não se aplica; a lente `comparacao-referencias` compara com a original):
 
 `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> --caminho clonar checar`
 `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> --caminho clonar rodada --criticos <N> --altos <N> --regressoes <N>`

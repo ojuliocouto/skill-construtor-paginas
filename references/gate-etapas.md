@@ -58,7 +58,7 @@ hora de registrar a etapa 5 o gate responde `BLOQUEIA: Etapa 4: evidência mudou
 Revalide esta etapa e as seguintes.` Isso é esperado e NÃO quer dizer refazer a construção: a
 página mudou de propósito, e o gate só pede que o registro aponte a versão nova.
 
-Depois da última rodada dos auditores:
+Depois da última rodada dos auditores (a segunda, ou a extra se a pessoa pediu):
 
 1. Atualize `evidencias/etapa-4.json` se o `primeiro_bloco` ou as `imagens` mudaram.
 2. `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir-do-projeto> registrar 4 --arquivo evidencias/etapa-4.json`
