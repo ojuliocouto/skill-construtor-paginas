@@ -171,8 +171,8 @@ def main():
             print("  [FALTA ] briefing reflete o último pedido  não: releia o briefing contra o que a pessoa pediu por último e atualize antes de chamar o auditor")
             falta.append("briefing reflete o último pedido (resposta: não). Releia o briefing e atualize")
         else:
-            print("  [FALTA ] briefing reflete o último pedido  sem resposta: rode de novo com --briefing-reflete-pedido sim|nao")
-            falta.append("briefing reflete o último pedido da pessoa (--briefing-reflete-pedido sim|nao, ou registre os pedidos em evidencias/pedidos.md)")
+            print("  [FALTA ] briefing reflete o último pedido  sem resposta: rode de novo com --briefing-reflete-pedido `sim|nao`")
+            falta.append("briefing reflete o último pedido da pessoa (--briefing-reflete-pedido `sim|nao`, ou registre os pedidos em evidencias/pedidos.md)")
     for av in avisos:
         print(f"  [AVISO ] {av}")
 
