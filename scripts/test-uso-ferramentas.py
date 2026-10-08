@@ -50,6 +50,21 @@ class GateUso(unittest.TestCase):
         (self.projeto / "plano-visual.md").write_text("plano revisado na v4 sem reacionar a skill", encoding="utf-8")
         self.assertEqual(self.checar(estados, registros), 1)
 
+    def test_arquivo_mudado_diz_o_que_refazer_na_ordem(self):
+        # A22 (segunda leva): a mensagem traz os comandos, na ordem, com o caminho completo da skill.
+        (self.projeto / "plano-visual.md").write_text("v1", encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()):
+            uso.cmd_registrar(argparse.Namespace(projeto=self.projeto, ferramenta="skill frontend-design", arquivo="plano-visual.md",
+                                                 no_codigo=None, em=None, sem_artefato=False, detalhe="plano"))
+        (self.projeto / "plano-visual.md").write_text("v2", encoding="utf-8")
+        ok, motivo = uso.evidencia_vale(uso.carregar(self.projeto)["skill frontend-design"]["evidencia"], self.projeto,
+                                        ferramenta="skill frontend-design")
+        self.assertFalse(ok)
+        self.assertIn("plano-visual.md", motivo)
+        self.assertRegex(motivo, r"1\).*acione.*skill frontend-design.*2\).*uso-ferramentas\.py registrar skill frontend-design --arquivo plano-visual\.md")
+        self.assertIn("/scripts/py.mjs", motivo)
+        self.assertRegex(motivo, r"gate-etapas\.py --projeto <dir> registrar <N> --arquivo evidencias/etapa-<N>\.json")
+
     def test_negativo_sem_uso(self):
         self.assertEqual(self.checar({"Playwright": True}, {}), 1)
 

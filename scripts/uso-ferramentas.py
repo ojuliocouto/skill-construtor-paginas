@@ -37,6 +37,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lancador import comando  # noqa: E402
+
 RAIZ = Path(__file__).resolve().parent.parent
 REGISTRO = ".ferramentas-usadas.json"
 
@@ -127,7 +130,7 @@ def salvar(projeto, dados):
         json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def evidencia_vale(ev, projeto):
+def evidencia_vale(ev, projeto, ferramenta=None):
     """Confere a evidencia DE NOVO, agora. Registro cujo artefato sumiu nao conta.
 
     Devolve (ok, motivo)."""
@@ -152,7 +155,12 @@ def evidencia_vale(ev, projeto):
         # arquivo daquela hora; arquivo mudado pede a ferramenta de novo e um registro novo.
         esperado = ev.get("sha256")
         if esperado and hashlib.sha256(alvo.read_bytes()).hexdigest() != esperado:
-            return False, f"o arquivo mudou depois do registro ({valor}): acione a ferramenta de novo na versão revisada e registre"
+            nome = ferramenta or "<ferramenta>"
+            return False, (f"o arquivo mudou depois do registro ({valor}). Refaça nesta ordem: "
+                           f"1) acione de novo a ferramenta '{nome}' na versão revisada do arquivo; "
+                           f"2) registre: {comando('uso-ferramentas.py')} registrar {nome} --arquivo {valor} --detalhe \"o que a ferramenta fez na versão nova\"; "
+                           f"3) se o arquivo também é evidência de uma etapa, refaça o registro das etapas dele em ordem crescente: "
+                           f"{comando('gate-etapas.py')} --projeto <dir> registrar <N> --arquivo evidencias/etapa-<N>.json")
         return True, f"arquivo presente ({valor})"
     if tipo == "codigo":
         base = Path(ev.get("em") or projeto)
@@ -229,7 +237,7 @@ def cmd_registrar(args):
     else:
         print("ERRO: escolha --arquivo, --no-codigo ou --sem-artefato", file=sys.stderr)
         return 2
-    ok, motivo = evidencia_vale(ev, projeto)
+    ok, motivo = evidencia_vale(ev, projeto, ferramenta=args.ferramenta)
     if not ok:
         print(f"ERRO: a evidência não confere AGORA, entao não registro: {motivo}", file=sys.stderr)
         return 1
@@ -303,7 +311,7 @@ def cmd_checar(args):
                 continue
             dispensadas.append((f, reg.get("motivo", "")))
             continue
-        ok, motivo = evidencia_vale(reg.get("evidencia"), projeto)
+        ok, motivo = evidencia_vale(reg.get("evidencia"), projeto, ferramenta=f)
         if ok:
             ok_list.append((f, motivo, reg.get("detalhe", "")))
         else:

@@ -154,7 +154,18 @@ def conferir(projeto, registro, etapas):
             raise ValueError(f"Etapa {etapa} não registrada. Conclua e registre antes de avançar.")
         for nome, esperado in item["hashes"].items():
             if digest(projeto / nome) != esperado:
-                raise ValueError(f"Etapa {etapa}: evidência mudou ({nome}). Revalide esta etapa e as seguintes.")
+                # A22: diz exatamente o que refazer, na ordem: esta etapa e as registradas depois dela.
+                ordem = list(registro)
+                afetadas = [e for e in ordem if e >= etapa] or [etapa]
+                passos = []
+                for e in afetadas:
+                    hs = (registro.get(e) or {}).get("hashes") or {}
+                    json_da_etapa = list(hs)[-1] if hs else f"evidencias/etapa-{e}.json"
+                    passos.append(f"{comando('gate-etapas.py')} --projeto {projeto.as_posix()} registrar {e} --arquivo {json_da_etapa}")
+                raise ValueError(f"Etapa {etapa}: evidência mudou ({nome}). Revalide esta etapa e as seguintes. "
+                                 f"Se a mudança foi de propósito, refaça, nesta ordem: " + " ; ".join(passos)
+                                 + ". Antes, confira o JSON de cada etapa (ele aponta para o arquivo mudado) e, se o arquivo é "
+                                 "evidência de uma ferramenta, registre de novo com uso-ferramentas.py.")
 
 
 def main():

@@ -49,6 +49,18 @@ class Etapas(unittest.TestCase):
         self.assertEqual(self.rodar('registrar', '2', '--arquivo', 'etapa.json'), 1,
                          'plano visual registrado sem a etapa de referencias')
 
+    def test_evidencia_mudada_diz_o_que_refazer_na_ordem(self):
+        # A22 (segunda leva): a mensagem lista, na ordem, o registro das etapas afetadas, com o caminho completo.
+        import io, contextlib
+        self.assertEqual(self.rodar('registrar', '0', '--arquivo', 'etapa.json'), 0)
+        (self.pasta / 'briefing.txt').write_text('mudou', encoding="utf-8")
+        r = subprocess.run([sys.executable, str(SCRIPT), '--projeto', str(self.pasta), 'checar', '0'], capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn('briefing.txt', r.stdout)
+        self.assertRegex(r.stdout, r'refaça, nesta ordem')
+        self.assertRegex(r.stdout, r'gate-etapas\.py.* registrar 0 --arquivo etapa\.json')
+        self.assertIn('/scripts/py.mjs', r.stdout.replace('\\', '/'))
+
     def test_artefato_ausente_reprova(self):
         self.doc['arquivos'] = ['inexistente.txt']
         self.assertEqual(self.rodar('registrar', '0', '--arquivo', 'etapa.json'), 1)
