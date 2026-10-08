@@ -26,6 +26,11 @@ nomes neutros pelos do assunto é o caminho curto; o que não pode mudar é a gr
   pessoa saiu: o `gate-movimento.mjs` conta transição ou animação que começa com a seção fora da tela. Cada receita com
   tempo confere, a cada passo, se a seção ainda está na janela; se saiu, aplica o estado final de uma vez, sem transição
   (`vagas-que-se-preenchem`, `assinatura-em-tres-estados`, `texto-em-linhas` e o painel já fazem isso).
+- **Atraso longo é quadro-chave parado no começo, nunca `animation-delay`.** O navegador só avisa o início de uma animação
+  no FIM do atraso. Se a pessoa rola antes disso, a animação começa com a seção fora da tela e o `gate-movimento.mjs`
+  reprova ("rodaram com a seção fora da tela"). Para esperar, ponha a espera dentro da animação:
+  `@keyframes entra { 0%, 18% { opacity: 0; } 100% { opacity: 1; } }` com `animation: entra 1.2s ...` sem `animation-delay`.
+  Atraso curto de escada (até 0,4 s, como o da `abertura-do-topo`) cabe, porque termina antes de qualquer rolagem.
 - **Todo estado escondido fica atrás de `.js`.** O `<html>` nasce `class="no-js"` e um script de
   uma linha no `<head>` troca por `js`. Sem script, a página inteira aparece. Regra do gate:
   `opacity: 0`, `transform` de entrada e `clip-path` só em seletor que começa com `.js`.
@@ -132,6 +137,11 @@ Sem JS: roda só com CSS, na carga (não precisa de observador). Atrasos: 0, 0,1
 **Reserva:** sem script o `.js` nunca liga e tudo aparece parado. Movimento reduzido:
 `.js .abertura-entra { opacity: 1; transform: none; animation: none; }` e
 `.js .abertura-foto .cena-quadro { clip-path: none; animation: none; }`.
+**O que cai abaixo da dobra no celular não usa a escada.** Em 320 e 390 px o subtítulo, o botão e os fatos
+descem para baixo da primeira tela (a foto precisa de 35% dela e o botão tem de ficar na dobra). Tudo que cair abaixo da
+dobra no celular leva `revela` (a receita `revelar-ao-entrar`), não `abertura-entra`: a escada de carga termina antes de a
+pessoa chegar ali, e o `gate-movimento.mjs` reprova ("chegam parados a 300 px/s"). Só o título e o que aparece na primeira
+tela do 320 x 568 ficam com `abertura-entra`; confira com `scripts/medir-dobra.mjs`.
 **Custo no celular:** baixo (`opacity`, `transform` e `clip-path` só na carga). Em celular fraco,
 o `clip-path` de 1,3 s sobre foto grande é o item mais caro: se travar, use só a escada.
 

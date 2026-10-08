@@ -352,5 +352,18 @@ class AssimetriaDeclarada(unittest.TestCase):
         self.assertRegex(gate, r"reg\(out\.ladoTitulo,[^\n]*marcado\(")
 
 
+class RegrasDoTesteReal358(unittest.TestCase):
+    """Achados N15 e N16 do teste de página do zero (3.5.8): o que a receita não dizia e custou rodadas de 191 s do gate."""
+
+    def test_abertura_do_topo_manda_o_que_cai_abaixo_da_dobra_do_celular_para_revela(self):
+        corpo = receitas()["abertura-do-topo"]
+        self.assertRegex(corpo, r"(?s)abaixo da dobra no celular.*`revela`.*n[aã]o `abertura-entra`")
+        self.assertIn("320", corpo, "a regra tem que citar o 320 px, onde o texto e os fatos descem")
+
+    def test_regra_geral_proibe_animation_delay_longo(self):
+        texto = ler(MD)
+        self.assertRegex(texto, r"(?s)(?=.*nunca `animation-delay`)(?=.*quadro-chave parad[oa] no come[cç]o)")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

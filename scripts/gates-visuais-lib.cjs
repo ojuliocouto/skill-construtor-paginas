@@ -30,6 +30,8 @@ const servidor = http.createServer((req, res) => {
   // A25: o clique de prova não sai da página de teste. Link para outro domínio: bloqueia a navegação, registra e conta como clique que funciona.
   if (rota === '/clique-externo') corpo = texto.replace(/<button[^>]*>Ver resultado<\/button>/, '<a id="ext" href="http://example.invalid/send?phone=5521900000000">Chamar no WhatsApp</a>');
   if (rota === '/clique-externo-blank') corpo = texto.replace(/<button[^>]*>Ver resultado<\/button>/, '<a id="ext" target="_blank" rel="noopener" href="http://example.invalid/outra">Chamar no WhatsApp</a>');
+  // N17 (3.5.8): navegação externa feita por SCRIPT (location.href) não tem como ser cancelada no clique: sem print de depois, saída 0.
+  if (rota === '/clique-externo-js') corpo = texto.replace(/<button[^>]*>Ver resultado<\/button>/, '<button id="ext" onclick="location.href=\'http://example.invalid/js?phone=5521900000000\'">Chamar no WhatsApp</button>');
   if (rota === '/inerte') corpo = texto.replace('onclick="this.textContent=\'Resultado confirmado\'"', '');
   if (rota === '/coberto') corpo += '<div style="position:fixed;inset:0;background:white;z-index:100"></div>';
   if (rota === '/overflow') corpo += '<div style="width:3000px">Conteúdo que excede a janela</div>';
@@ -136,6 +138,9 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/rede-no-mesmo-script') corpo = juntaRede(secoesMov(''), REDE_CODIGO);
   // o caso ruim continua ruim: script único SEM o temporizador da rede (só põe a classe js) deixa o conteúdo invisível sem o script
   if (rota === '/rede-no-mesmo-script-sem-timer') corpo = juntaRede(secoesMov(''), 'document.documentElement.classList.add("js");');
+  // N16 (3.5.8): animação com animation-delay: o navegador só avisa o início no fim do atraso; a mensagem tem que dizer isso.
+  if (rota === '/movimento-atraso') corpo = '<style>@keyframes sobe{from{opacity:0}to{opacity:1}}.alta{min-height:1000px}.d{animation:sobe .6s ease 3s both}</style>' + texto
+    + [1, 2, 3].map((i) => `<section class="alta"><h2 class="d">Seção ${i}</h2></section>`).join('');
   if (rota === '/movimento-temporizador') corpo = secoesMov('setTimeout(function(){els.forEach(function(e){e.classList.add("visivel")})},3000);');
   if (rota === '/movimento-parado') corpo = secoesMov('', false);
   // ===== Auditoria da v5 (03/10/2026, nota 7,0: "correta, mas vazia") =====
@@ -216,6 +221,8 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['identidade-positiva', 'screenshot-prova.js', [url + '/ok', path.join(pasta, 'identidade-positiva')], 0],
     ['identidade-negativa', 'screenshot-prova.js', [url + '/sem-identidade', path.join(pasta, 'identidade-negativa')], 1],
     ['clique-externo-bloqueado', 'screenshot-prova.js', [url + '/clique-externo', path.join(pasta, 'clique-externo'), '--click', '#ext'], 0, /o clique levaria a http:\/\/example\.invalid\/send\?phone=5521900000000/],
+    ['clique-externo-320-print-de-depois-nao-fica-em-branco', 'screenshot-prova.js', [url + '/clique-externo', path.join(pasta, 'clique-externo-320'), '--click', '#ext', '--com-320'], 0, /prova-mobile320-pos-clique\.png \(\d\d+KB\)/],
+    ['clique-externo-por-script-sem-print-em-branco', 'screenshot-prova.js', [url + '/clique-externo-js', path.join(pasta, 'clique-externo-js'), '--click', '#ext', '--com-320'], 0, /sem print de depois[\s\S]*example\.invalid\/js/],
     ['clique-externo-blank-bloqueado', 'screenshot-prova.js', [url + '/clique-externo-blank', path.join(pasta, 'clique-externo-blank'), '--click', '#ext'], 0, /o clique levaria a http:\/\/example\.invalid\/outra/],
     ['clique-inerte', 'screenshot-prova.js', [url + '/inerte', path.join(pasta, 'inerte'), '--click', 'button'], 1],
     ['clique-positivo', 'screenshot-prova.js', [url + '/ok', path.join(pasta, 'clique'), '--click', 'button'], 0],
@@ -280,6 +287,7 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['movimento-script-rede-lenta-reprova-na-demora', 'gate-movimento.mjs', ['--url', url + '/script-rede-lenta', '--so-prova-script'], 1, /script que demora 7 s: \d+ elemento/],
     ['movimento-rede-no-mesmo-script-passa', 'gate-movimento.mjs', ['--url', url + '/rede-no-mesmo-script', '--so-prova-script'], 0, /script bloqueado: 0 elemento/],
     ['movimento-rede-no-mesmo-script-sem-timer-reprova', 'gate-movimento.mjs', ['--url', url + '/rede-no-mesmo-script-sem-timer', '--so-prova-script'], 1, /script que demora 7 s: \d+ elemento/],
+    ['movimento-atraso-diz-o-animation-delay', 'gate-movimento.mjs', ['--url', url + '/movimento-atraso', '--sem-prova-script'], 1, /fora da tela[\s\S]*animation-delay de 3\.0 s[\s\S]*quadro-chave parado/],
     ['movimento-temporizador', 'gate-movimento.mjs', ['--url', url + '/movimento-temporizador'], 1, /fora da tela/],
     ['movimento-parado', 'gate-movimento.mjs', ['--url', url + '/movimento-parado'], 1, /animam ao chegar/],
     ['identidade-320', 'screenshot-prova.js', [url + '/ok', path.join(pasta, 'identidade-320'), '--com-320'], 0, /topo +mobile320: scrollY 0/],
@@ -294,6 +302,7 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['simetria-passos-sem-caixa', 'gate-simetria.mjs', ['--url', url + '/passos-sem-caixa'], 1, /passos sem caixa/],
     ['simetria-passos-em-caixas', 'gate-simetria.mjs', ['--url', url + '/passos-em-caixas'], 0],
     ['movimento-por-grupo', 'gate-movimento.mjs', ['--url', url + '/movimento-grupo', '--espera', '1000'], 1, /chega(m)? parad[oa]s? .*300 px\/s/],
+    ['movimento-por-grupo-nomeia-o-elemento', 'gate-movimento.mjs', ['--url', url + '/movimento-grupo', '--espera', '1000'], 1, /^(?![\s\S]*"Grupo Um)[\s\S]*chegam parados[\s\S]*div\.item "(Um|Dois|Três|Quatro)"/],
     ['movimento-rolagem-suave', 'gate-movimento.mjs', ['--url', url + '/rolagem-suave', '--espera', '1000'], 1, /movimento reduzido/],
     ['movimento-rolagem-suave-ok', 'gate-movimento.mjs', ['--url', url + '/rolagem-suave-ok', '--espera', '1000'], 0],
     ['composicao-wireframe', 'gate-composicao.mjs', ['--url', url + '/desenho-wireframe'], 1, /l[eê] como wireframe/],
