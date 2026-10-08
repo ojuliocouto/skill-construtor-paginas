@@ -193,6 +193,33 @@ async function pararNoTopo(page) {
   return fixos;
 }
 
+/** Espera a animação de ENTRADA acabar antes do print do topo (3.5.6, achado A13).
+ *
+ *  O print gravava o herói no meio da entrada (opacity 0 a 1 em até 1,5 s): faltavam a lista de
+ *  fatos e o encaixe, que existiam na página, e quem lê o PNG acha que o conteúdo sumiu. Espera as
+ *  animações FINITAS (CSS animation e transition, Web Animations) terminarem, com teto de 4 s;
+ *  animação infinita (loop decorativo) não conta, senão a prova nunca acabaria. Só libera depois
+ *  de duas leituras seguidas sem nenhuma animação finita rodando, porque a entrada pode começar um
+ *  instante depois que o observador de rolagem percebe o topo. Devolve quanto esperou. */
+async function esperarEntrada(page) {
+  const inicio = Date.now();
+  const fim = inicio + 4000;
+  let limpas = 0;
+  let rodando = 0;
+  while (Date.now() < fim) {
+    rodando = await page.evaluate(() => document.getAnimations().filter((a) => {
+      if (a.playState !== 'running' && a.playState !== 'pending') return false;
+      const t = a.effect && a.effect.getComputedTiming ? a.effect.getComputedTiming() : null;
+      return !!t && Number.isFinite(t.endTime) && t.iterations !== Infinity;
+    }).length);
+    limpas = rodando === 0 ? limpas + 1 : 0;
+    if (limpas >= 2) break;
+    await page.waitForTimeout(100);
+  }
+  await page.waitForTimeout(100);
+  return { ms: Date.now() - inicio, rodando };
+}
+
 async function lerEstado(page, el) {
   const pagina = await page.evaluate(() => ({
     scrollY: Math.round(window.scrollY),
@@ -327,6 +354,8 @@ async function main() {
       const file = path.join(outdir, `prova-${vp.name}.png`);
       const fixos = await pararNoTopo(page);
       console.log(`  topo             ${vp.name}: scrollY 0 confirmado antes do print (${fixos} elemento(s) fixed/sticky no lugar certo)`);
+      const entrada = await esperarEntrada(page);
+      console.log(`  entrada          ${vp.name}: esperou ${entrada.ms} ms a animação de entrada acabar${entrada.rodando ? ` (teto de 4 s: ainda rodavam ${entrada.rodando} animação(ões) finita(s); o print pode sair no meio da entrada)` : ''}`);
       await page.screenshot({ path: file, fullPage: true });
       shots.push(file);
 
