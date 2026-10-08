@@ -23,8 +23,11 @@ pergunta so: a pagina esta no nivel das referencias printadas no passo b? Reprov
 ciclo nao fecha por nota nenhuma e manda voltar ao plano visual (passo c). Ela nao aceita
 "nao aplicavel": no caminho CLONAR a referencia e a propria pagina original.
 
-As lentes rodam como subagentes independentes quando o ambiente permite. Quando nao
-permite, a mesma checagem roda em sequencia, uma lente por vez, e o registro diz isso.
+v3.5.4 (08/10/2026): a rodada de auditoria e UM subagente auditor independente que percorre as
+nove lentes numa passada e devolve um bloco por lente; o registro aqui continua um por lente,
+com a origem certa. Uma lente por subagente e modo opcional (auditoria profunda pedida pela
+pessoa). Teto de 2 rodadas; a segunda e de conferencia. Quando nao ha subagente, a mesma
+checagem roda em sequencia e o registro diz isso (autoavaliacao, que nao libera entrega).
 
 Uso:
     python3 scripts/wave.py --projeto <dir> registrar <lente> --nota 8.5 \\
@@ -304,7 +307,13 @@ def cmd_checar(args):
 #
 # Bateu 1 e 2 e convergiu? ENTREGA, com a nota real declarada na entrega. Nota 6,8 declarada
 # e honesta; nota 6,8 escondida atras de "auditado" e que e nota do.
-TETO_RODADAS = 4
+# v3.5.4 (08/10/2026): o teto cai de 4 para 2. A regra do dono e "teto de 2 rodadas de corrigir e
+# auditar" (laco de auditoria queimou token) e a skill e usada ao vivo em aula. Depois da segunda
+# rodada o ciclo fecha SEMPRE: aprovado, "ENTREGA COM RESSALVAS" (nota real e o que sobrou) ou
+# "NAO ENTREGAR" (critico ou regressao abertos, que o teto nao afrouxa). Terceira rodada so com
+# --rodada-extra-pedida, que fica registrada, e ela tambem fecha sempre. Nunca ha quarta.
+TETO_RODADAS = 2
+RODADAS_EXTRAS_MAX = 1
 GANHO_MINIMO = 0.3
 
 
@@ -337,6 +346,17 @@ def cmd_rodada(args):
         return 1
     hist = d.setdefault("rodadas", [])
     lentes = d.get("lentes", {})
+    extra_pedida = bool(getattr(args, "rodada_extra_pedida", False))
+    if len(hist) >= TETO_RODADAS:
+        if not extra_pedida:
+            print(f"ERRO: o ciclo ja fechou em {len(hist)} rodada(s), o teto e {TETO_RODADAS}. Terceira rodada so "
+                  "se a pessoa pedir, com --rodada-extra-pedida. Entregue com a nota real e as ressalvas.",
+                  file=sys.stderr)
+            return 2
+        if len(hist) >= TETO_RODADAS + RODADAS_EXTRAS_MAX:
+            print(f"ERRO: nao existe rodada alem de {TETO_RODADAS + RODADAS_EXTRAS_MAX}, nem a pedido. "
+                  "Entregue com a nota real e as ressalvas.", file=sys.stderr)
+            return 2
     if not set(LENTES).issubset(lentes):
         print(f"ERRO: so {len(lentes)} de {len(LENTES)} lentes registradas. "
               "Rode a wave inteira antes de fechar a rodada.", file=sys.stderr)
@@ -351,6 +371,7 @@ def cmd_rodada(args):
         "criticos": args.criticos,
         "altos": altos_informados,
         "pendencias_do_usuario": pend,
+        "rodada_extra_pedida": extra_pedida,
         "notas": {k: v.get("nota") for k, v in lentes.items()},
     }
     hist.append(atual)
@@ -416,6 +437,19 @@ def cmd_rodada(args):
         print(f"  e bonita no nivel das referencias (resposta: {ref.get('gosto') or 'nenhuma'}). Correta nao")
         print("  basta: o dono reprovou pagina com 9,05 nas lentes chamando de FEIA.\n")
         return 1
+    teto_efetivo = TETO_RODADAS + (RODADAS_EXTRAS_MAX if any(r.get("rodada_extra_pedida") for r in hist) else 0)
+    no_teto = len(hist) >= teto_efetivo
+    if no_teto and args.criticos > 0:
+        print(f"  NÃO ENTREGAR: crítico aberto. {args.criticos} critico(s) confirmado(s) na rodada {len(hist)}, a ultima do ciclo.")
+        print("  O teto de rodadas fecha o ciclo, nao afrouxa critico. Corrija o critico, refaca os gates que ele")
+        print("  toca e peca a pessoa uma rodada extra (--rodada-extra-pedida) ou entregue so depois de resolvido.\n")
+        return 1
+    if no_teto and regrediu:
+        print("  NÃO ENTREGAR: regressão aberta. A correção quebrou outra coisa e o ciclo não tem mais rodada:")
+        for r in regrediu:
+            print(f"    - {r}")
+        print("  Conserte a regressão antes de entregar.\n")
+        return 1
     if args.criticos > 0:
         print(f"  CONTINUA: {args.criticos} critico(s) confirmado(s). Critico nao negocia com media.")
         print("  Corrija os criticos e rode a wave de novo.\n")
@@ -427,7 +461,7 @@ def cmd_rodada(args):
         print("  Conserte a regressao antes de seguir.\n")
         return 1
     vai_entregar = ((media >= PISO_MEDIA and all(n >= PISO_NOTA for n in notas)) or secou or convergiu
-                    or len(hist) >= TETO_RODADAS)
+                    or no_teto)
     auto = sorted(l for l, v in lentes.items()
                   if v.get("veredito") != "nao_aplicavel" and v.get("origem") not in ORIGENS_INDEPENDENTES)
     if vai_entregar and auto:
@@ -449,18 +483,26 @@ def cmd_rodada(args):
             print("  enquanto o destino do lead estiver entre eles.")
         print()
         return 0
+    if no_teto:
+        print(f"  ENTREGA COM RESSALVAS: rodada {len(hist)}, a ultima do ciclo (teto {teto_efetivo}), sem critico e sem regressao.")
+        print(f"  Nota real: media {media:.2f}. Ela vai escrita na entrega, com o que sobrou:")
+        print(f"    - altos abertos: {altos_informados if altos_informados is not None else 'nao informado'}"
+              + (f" ({pend} dependem de dado do cliente)" if pend else "") + f"; {altos_reais if altos_reais is not None else '?'} alto(s) de verdade")
+        fracas = [f"{k} (nota {v.get('nota')}{', reprovada' if v.get('veredito') == 'reprovado' else ''})"
+                  for k, v in sorted(lentes.items())
+                  if v.get("veredito") == "reprovado" or (v.get("nota") is not None and v["nota"] < PISO_NOTA)]
+        if fracas:
+            print("    - lentes abaixo do piso ou reprovadas: " + ", ".join(fracas))
+        print("    - o texto dos achados de cada lente esta em .wave-auditoria.json; copie para a entrega.")
+        print("  Nao existe terceira rodada sozinha: so se a pessoa pedir (--rodada-extra-pedida).\n")
+        return 0
     if convergiu:
         print(f"  ENTREGA COM NOTA DECLARADA: zero critico, zero regressao, e a media parou de")
         print(f"  subir (ultimos ganhos: {ganho:+.2f}). Insistir aqui caça canto minusculo.")
         print(f"  A nota {media:.2f} VAI NA ENTREGA, escrita. Nota declarada e honesta;")
         print("  nota escondida atras de 'auditado' e que e nota do.\n")
         return 0
-    if len(hist) >= TETO_RODADAS:
-        print(f"  ENTREGA COM NOTA DECLARADA: teto de {TETO_RODADAS} rodadas atingido, sem critico")
-        print(f"  e sem regressao. Media {media:.2f} vai declarada na entrega, junto com o que")
-        print("  ficou em aberto e o custo estimado de cada item.\n")
-        return 0
-    faltam = TETO_RODADAS - len(hist)
+    faltam = teto_efetivo - len(hist)
     print(f"  CONTINUA: sem critico, mas a media ({media:.2f}) ainda sobe e o piso e {PISO_MEDIA}.")
     ganho_texto = f"{ganho:+.2f}" if ganho is not None else "primeira rodada, sem comparação"
     print(f"  Ganho da última rodada: {ganho_texto}. Restam {faltam} rodada(s) até o teto.\n")
@@ -510,6 +552,9 @@ def main():
                     help="quantos achados confirmados desta rodada foram CAUSADOS por uma "
                          "correcao da rodada anterior. E isto que trava o ciclo, nao nota que "
                          "caiu: cada rodada sorteia auditor novo e a nota nao e calibrada")
+    ro.add_argument("--rodada-extra-pedida", dest="rodada_extra_pedida", action="store_true",
+                    help="a PESSOA pediu uma terceira rodada. Fica registrada no historico; a terceira "
+                         "tambem fecha sempre e nunca existe quarta")
     ro.set_defaults(func=cmd_rodada)
 
     args = ap.parse_args()
