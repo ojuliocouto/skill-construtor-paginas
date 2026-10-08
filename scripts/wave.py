@@ -486,7 +486,7 @@ def cmd_rodada(args):
     if no_teto:
         print(f"  ENTREGA COM RESSALVAS: rodada {len(hist)}, a última do ciclo (teto {teto_efetivo}), sem crítico e sem regressão.")
         print(f"  Nota real: média {media:.2f}. Ela vai escrita na entrega, com o que sobrou:")
-        print(f"    - altos abertos: {altos_informados if altos_informados is not None else 'nao informado'}"
+        print(f"    - altos abertos: {altos_informados if altos_informados is not None else 'não informado'}"
               + (f" ({pend} dependem de dado do cliente)" if pend else "") + f"; {altos_reais if altos_reais is not None else '?'} alto(s) de verdade")
         fracas = [f"{k} (nota {v.get('nota')}{', reprovada' if v.get('veredito') == 'reprovado' else ''})"
                   for k, v in sorted(lentes.items())

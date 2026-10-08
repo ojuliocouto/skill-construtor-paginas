@@ -323,7 +323,7 @@ def cmd_checar(args):
 
     print("\nGATE DE USO DAS FERRAMENTAS\n" + "=" * 74)
     print(f"  caminho: {getattr(args, 'caminho', 'criar')} "
-          f"({'cobra tudo que estiver vivo' if modo == 'completo' else 'edicao pontual: cobra so a prova'})")
+          f"({'cobra tudo que estiver vivo' if modo == 'completo' else 'edição pontual: cobra só a prova'})")
     for f, motivo, detalhe in ok_list:
         print(f"  [USADA] {f}")
         print(f"          {detalhe or '(sem detalhe)'}  |  {motivo}")
