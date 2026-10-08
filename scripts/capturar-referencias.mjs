@@ -67,8 +67,10 @@ if (!Array.isArray(doc.referencias)) doc.referencias = [];
 
 // Caminho completo da skill, resolvido agora: quem roda isto está na pasta do projeto, não na da skill (A10).
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
-const scriptCmd = path.join(AQUI, 'capturar-referencias.mjs').split(path.sep).join('/');
-const pyCmd = path.join(AQUI, 'py.mjs').split(path.sep).join('/');
+// Entre aspas duplas quando o caminho tem espaço ou caractere fora de ASCII (cmd, PowerShell, bash e zsh aceitam).
+const entreAspas = (s) => (/[^\x00-\x7f ]| /.test(s) ? `"${s}"` : s);
+const scriptCmd = entreAspas(path.join(AQUI, 'capturar-referencias.mjs').split(path.sep).join('/'));
+const pyCmd = entreAspas(path.join(AQUI, 'py.mjs').split(path.sep).join('/'));
 const relativo = (p) => path.relative(path.resolve(projeto), p).split(path.sep).join('/');
 
 if (limparRuins) {
