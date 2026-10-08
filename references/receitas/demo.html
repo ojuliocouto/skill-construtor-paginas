@@ -58,11 +58,22 @@ img, svg { display: block; max-width: 100%; }
 .assin { background: var(--escuro) !important; color: var(--papel); }
 .assin .nota, .assin .selo { color: #d8e3dc; }
 .assin-grade { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 22px; align-items: start; margin-top: 40px; }
-.assin-coluna { position: sticky; top: calc(var(--vh, 1vh) * 12); height: calc(var(--vh, 1vh) * 70); }
+/* cores com contraste medido (3:1 ou mais para traço fino): fundo escuro por padrão, .sobre-claro em fundo claro */
+.coluna { --traco: #a9bcb0; --peca: #33403a; --peca-alinhada: #4f7a63; --traco-alinhada: #cfe3d6; }
+.coluna.sobre-claro { --traco: #4a6b58; --peca: #d9d2c2; --peca-alinhada: #a9c9b5; --traco-alinhada: #2f4a3b; }
 .assin-coluna svg { height: 100%; width: 100%; overflow: visible; }
-.coluna .peca rect { fill: #33403a; stroke: #a9bcb0; stroke-width: 1.2; transition: fill .45s ease; }
-.coluna .peca.alinhada rect { fill: var(--verde); stroke: var(--claro); }
-.coluna .fio { fill: none; stroke: #a9bcb0; stroke-width: 1.4; stroke-dasharray: 2 5; opacity: .7; }
+.assin-coluna { position: sticky; top: calc(var(--vh, 1vh) * 12); height: calc(var(--vh, 1vh) * 70); }
+/* a cor da peça muda pelo JS, no mesmo laço do alinhamento: sem transição de CSS que termine depois da seção */
+.coluna .peca .corpo { fill: var(--peca); stroke: var(--traco); stroke-width: 1.2; }
+.coluna .peca.alinhada .corpo { stroke: var(--traco-alinhada); }
+.coluna .fio { fill: none; stroke: var(--traco); stroke-width: 1.4; stroke-dasharray: 2 5; }
+/* CELULAR (abaixo de 900 px): a coluna sai do sticky e vai para o fluxo, em faixa baixa antes dos passos.
+   Sticky no celular soma à barra fixa e ao cabeçalho e estoura os 15% de espaço fixo do gate-responsivo. */
+@media (max-width: 899px) {
+  .assin-grade { grid-template-columns: 1fr; }
+  .assin-coluna { position: static; height: 112px; }
+  .assin-coluna svg { width: auto; height: 100%; }
+}
 .peca-dentro { transform-box: fill-box; transform-origin: center; }
 .js .coluna.entra-pecas .peca-dentro { opacity: 0; }
 .js .coluna.entra-pecas.visivel .peca-dentro { animation: pecaEntra .7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(.45s + var(--i) * .05s); }
@@ -244,24 +255,24 @@ img, svg { display: block; max-width: 100%; }
       <p class="selo">Receita: <code>assinatura-em-tres-estados</code></p>
       <h2>Assinatura em três estados</h2>
       <p class="nota">Um elemento do assunto que atravessa a página: entra torto, alinha com a rolagem e termina alinhado sozinho.</p>
-      <div class="assin-grade">
+      <div class="assin-grade" data-assimetrico="coluna fixa da assinatura ao lado dos passos, pedida no plano">
         <div class="assin-coluna" aria-hidden="true">
-          <svg class="coluna entra-pecas" data-coluna="rolagem" viewBox="0 0 120 232" role="img">
+          <svg class="coluna entra-pecas" data-coluna="rolagem" data-assinatura data-desenho="encaixe de peças que se alinham com a rolagem" viewBox="0 0 120 232" role="img">
             <polyline class="fio" points=""/>
-          <g class="peca" data-dx="6.23" data-rot="15.26" data-cy="11.5"><g class="peca-dentro" style="--i:0"><rect x="43.0" y="6.0" width="34.0" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="14.21" data-rot="10.40" data-cy="27.5"><g class="peca-dentro" style="--i:1"><rect x="40.6" y="22.0" width="38.8" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="11.56" data-rot="-0.65" data-cy="43.5"><g class="peca-dentro" style="--i:2"><rect x="38.2" y="38.0" width="43.6" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="17.99" data-rot="-1.65" data-cy="59.5"><g class="peca-dentro" style="--i:3"><rect x="35.8" y="54.0" width="48.4" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="15.03" data-rot="-0.47" data-cy="75.5"><g class="peca-dentro" style="--i:4"><rect x="33.4" y="70.0" width="53.2" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="7.09" data-rot="-9.65" data-cy="91.5"><g class="peca-dentro" style="--i:5"><rect x="41.0" y="86.0" width="38.0" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="7.67" data-rot="-16.44" data-cy="107.5"><g class="peca-dentro" style="--i:6"><rect x="38.6" y="102.0" width="42.8" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-3.48" data-rot="-10.25" data-cy="123.5"><g class="peca-dentro" style="--i:7"><rect x="36.2" y="118.0" width="47.6" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-9.82" data-rot="-5.79" data-cy="139.5"><g class="peca-dentro" style="--i:8"><rect x="33.8" y="134.0" width="52.4" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-9.70" data-rot="-9.71" data-cy="155.5"><g class="peca-dentro" style="--i:9"><rect x="31.4" y="150.0" width="57.2" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-18.63" data-rot="-6.19" data-cy="171.5"><g class="peca-dentro" style="--i:10"><rect x="39.0" y="166.0" width="42.0" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-15.08" data-rot="6.22" data-cy="187.5"><g class="peca-dentro" style="--i:11"><rect x="36.6" y="182.0" width="46.8" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-10.86" data-rot="9.73" data-cy="203.5"><g class="peca-dentro" style="--i:12"><rect x="34.2" y="198.0" width="51.6" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-11.75" data-rot="5.80" data-cy="219.5"><g class="peca-dentro" style="--i:13"><rect x="31.8" y="214.0" width="56.4" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="6.23" data-rot="15.26" data-cy="11.5"><g class="peca-dentro" style="--i:0"><ellipse class="corpo" cx="60" cy="11.5" rx="17" ry="5.5"/></g></g>
+          <g class="peca" data-dx="14.21" data-rot="10.40" data-cy="27.5"><g class="peca-dentro" style="--i:1"><ellipse class="corpo" cx="60" cy="27.5" rx="19.4" ry="5.5"/></g></g>
+          <g class="peca" data-dx="11.56" data-rot="-0.65" data-cy="43.5"><g class="peca-dentro" style="--i:2"><ellipse class="corpo" cx="60" cy="43.5" rx="21.8" ry="5.5"/></g></g>
+          <g class="peca" data-dx="17.99" data-rot="-1.65" data-cy="59.5"><g class="peca-dentro" style="--i:3"><ellipse class="corpo" cx="60" cy="59.5" rx="24.2" ry="5.5"/></g></g>
+          <g class="peca" data-dx="15.03" data-rot="-0.47" data-cy="75.5"><g class="peca-dentro" style="--i:4"><ellipse class="corpo" cx="60" cy="75.5" rx="26.6" ry="5.5"/></g></g>
+          <g class="peca" data-dx="7.09" data-rot="-9.65" data-cy="91.5"><g class="peca-dentro" style="--i:5"><ellipse class="corpo" cx="60" cy="91.5" rx="19" ry="5.5"/></g></g>
+          <g class="peca" data-dx="7.67" data-rot="-16.44" data-cy="107.5"><g class="peca-dentro" style="--i:6"><ellipse class="corpo" cx="60" cy="107.5" rx="21.4" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-3.48" data-rot="-10.25" data-cy="123.5"><g class="peca-dentro" style="--i:7"><ellipse class="corpo" cx="60" cy="123.5" rx="23.8" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-9.82" data-rot="-5.79" data-cy="139.5"><g class="peca-dentro" style="--i:8"><ellipse class="corpo" cx="60" cy="139.5" rx="26.2" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-9.70" data-rot="-9.71" data-cy="155.5"><g class="peca-dentro" style="--i:9"><ellipse class="corpo" cx="60" cy="155.5" rx="28.6" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-18.63" data-rot="-6.19" data-cy="171.5"><g class="peca-dentro" style="--i:10"><ellipse class="corpo" cx="60" cy="171.5" rx="21" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-15.08" data-rot="6.22" data-cy="187.5"><g class="peca-dentro" style="--i:11"><ellipse class="corpo" cx="60" cy="187.5" rx="23.4" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-10.86" data-rot="9.73" data-cy="203.5"><g class="peca-dentro" style="--i:12"><ellipse class="corpo" cx="60" cy="203.5" rx="25.8" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-11.75" data-rot="5.80" data-cy="219.5"><g class="peca-dentro" style="--i:13"><ellipse class="corpo" cx="60" cy="219.5" rx="28.2" ry="5.5"/></g></g>
           </svg>
         </div>
         <ol class="passos" style="list-style:none;margin:0;padding:0">
@@ -273,22 +284,22 @@ img, svg { display: block; max-width: 100%; }
       </div>
       <div class="alinha-sozinha" data-alinha-sozinha>
         <div class="coluna-solta" aria-hidden="true">
-          <svg class="coluna" data-coluna="sozinha" viewBox="0 0 120 232" role="img">
+          <svg class="coluna" data-coluna="sozinha" data-assinatura data-desenho="encaixe de peças que se alinham sozinhas no fecho" viewBox="0 0 120 232" role="img">
             <polyline class="fio" points=""/>
-          <g class="peca" data-dx="6.23" data-rot="15.26" data-cy="11.5"><g class="peca-dentro" style="--i:0"><rect x="43.0" y="6.0" width="34.0" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="14.21" data-rot="10.40" data-cy="27.5"><g class="peca-dentro" style="--i:1"><rect x="40.6" y="22.0" width="38.8" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="11.56" data-rot="-0.65" data-cy="43.5"><g class="peca-dentro" style="--i:2"><rect x="38.2" y="38.0" width="43.6" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="17.99" data-rot="-1.65" data-cy="59.5"><g class="peca-dentro" style="--i:3"><rect x="35.8" y="54.0" width="48.4" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="15.03" data-rot="-0.47" data-cy="75.5"><g class="peca-dentro" style="--i:4"><rect x="33.4" y="70.0" width="53.2" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="7.09" data-rot="-9.65" data-cy="91.5"><g class="peca-dentro" style="--i:5"><rect x="41.0" y="86.0" width="38.0" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="7.67" data-rot="-16.44" data-cy="107.5"><g class="peca-dentro" style="--i:6"><rect x="38.6" y="102.0" width="42.8" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-3.48" data-rot="-10.25" data-cy="123.5"><g class="peca-dentro" style="--i:7"><rect x="36.2" y="118.0" width="47.6" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-9.82" data-rot="-5.79" data-cy="139.5"><g class="peca-dentro" style="--i:8"><rect x="33.8" y="134.0" width="52.4" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-9.70" data-rot="-9.71" data-cy="155.5"><g class="peca-dentro" style="--i:9"><rect x="31.4" y="150.0" width="57.2" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-18.63" data-rot="-6.19" data-cy="171.5"><g class="peca-dentro" style="--i:10"><rect x="39.0" y="166.0" width="42.0" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-15.08" data-rot="6.22" data-cy="187.5"><g class="peca-dentro" style="--i:11"><rect x="36.6" y="182.0" width="46.8" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-10.86" data-rot="9.73" data-cy="203.5"><g class="peca-dentro" style="--i:12"><rect x="34.2" y="198.0" width="51.6" height="11.0" rx="4.6"/></g></g>
-          <g class="peca" data-dx="-11.75" data-rot="5.80" data-cy="219.5"><g class="peca-dentro" style="--i:13"><rect x="31.8" y="214.0" width="56.4" height="11.0" rx="4.6"/></g></g>
+          <g class="peca" data-dx="6.23" data-rot="15.26" data-cy="11.5"><g class="peca-dentro" style="--i:0"><ellipse class="corpo" cx="60" cy="11.5" rx="17" ry="5.5"/></g></g>
+          <g class="peca" data-dx="14.21" data-rot="10.40" data-cy="27.5"><g class="peca-dentro" style="--i:1"><ellipse class="corpo" cx="60" cy="27.5" rx="19.4" ry="5.5"/></g></g>
+          <g class="peca" data-dx="11.56" data-rot="-0.65" data-cy="43.5"><g class="peca-dentro" style="--i:2"><ellipse class="corpo" cx="60" cy="43.5" rx="21.8" ry="5.5"/></g></g>
+          <g class="peca" data-dx="17.99" data-rot="-1.65" data-cy="59.5"><g class="peca-dentro" style="--i:3"><ellipse class="corpo" cx="60" cy="59.5" rx="24.2" ry="5.5"/></g></g>
+          <g class="peca" data-dx="15.03" data-rot="-0.47" data-cy="75.5"><g class="peca-dentro" style="--i:4"><ellipse class="corpo" cx="60" cy="75.5" rx="26.6" ry="5.5"/></g></g>
+          <g class="peca" data-dx="7.09" data-rot="-9.65" data-cy="91.5"><g class="peca-dentro" style="--i:5"><ellipse class="corpo" cx="60" cy="91.5" rx="19" ry="5.5"/></g></g>
+          <g class="peca" data-dx="7.67" data-rot="-16.44" data-cy="107.5"><g class="peca-dentro" style="--i:6"><ellipse class="corpo" cx="60" cy="107.5" rx="21.4" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-3.48" data-rot="-10.25" data-cy="123.5"><g class="peca-dentro" style="--i:7"><ellipse class="corpo" cx="60" cy="123.5" rx="23.8" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-9.82" data-rot="-5.79" data-cy="139.5"><g class="peca-dentro" style="--i:8"><ellipse class="corpo" cx="60" cy="139.5" rx="26.2" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-9.70" data-rot="-9.71" data-cy="155.5"><g class="peca-dentro" style="--i:9"><ellipse class="corpo" cx="60" cy="155.5" rx="28.6" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-18.63" data-rot="-6.19" data-cy="171.5"><g class="peca-dentro" style="--i:10"><ellipse class="corpo" cx="60" cy="171.5" rx="21" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-15.08" data-rot="6.22" data-cy="187.5"><g class="peca-dentro" style="--i:11"><ellipse class="corpo" cx="60" cy="187.5" rx="23.4" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-10.86" data-rot="9.73" data-cy="203.5"><g class="peca-dentro" style="--i:12"><ellipse class="corpo" cx="60" cy="203.5" rx="25.8" ry="5.5"/></g></g>
+          <g class="peca" data-dx="-11.75" data-rot="5.80" data-cy="219.5"><g class="peca-dentro" style="--i:13"><ellipse class="corpo" cx="60" cy="219.5" rx="28.2" ry="5.5"/></g></g>
           </svg>
         </div>
         <p class="nota" style="margin:0">Terceiro estado: ao entrar na tela, a coluna se alinha sozinha em 2,0 s.</p>
@@ -310,7 +321,7 @@ img, svg { display: block; max-width: 100%; }
   </section>
 
   <section class="bloco" data-receita="titulo-fixo" data-gatilho="rolagem">
-    <div class="moldura fixo-grade">
+    <div class="moldura fixo-grade" data-assimetrico="título fixo ao lado da lista, pedido no plano">
       <div class="fixo-titulo"><p class="selo">Receita: <code>titulo-fixo</code></p>
       <h2>Título que fica enquanto a lista passa</h2></div>
       <ul class="fixo-lista">
@@ -570,11 +581,12 @@ img, svg { display: block; max-width: 100%; }
   });
 
   function montar(svg) {
-    var grupos = [];
+    var grupos = [], cs = getComputedStyle(svg);
+    var rgb = function (v) { v = v.trim().replace('#', ''); return [0, 2, 4].map(function (i) { return parseInt(v.substr(i, 2), 16); }); };
     each(svg.querySelectorAll('.peca'), function (g) {
-      grupos.push({ g: g, cy: parseFloat(g.getAttribute('data-cy')), dx: parseFloat(g.getAttribute('data-dx')), rot: parseFloat(g.getAttribute('data-rot')) });
+      grupos.push({ g: g, corpo: g.querySelector('.corpo'), cy: parseFloat(g.getAttribute('data-cy')), dx: parseFloat(g.getAttribute('data-dx')), rot: parseFloat(g.getAttribute('data-rot')) });
     });
-    return { svg: svg, grupos: grupos, fio: svg.querySelector('.fio') };
+    return { svg: svg, grupos: grupos, fio: svg.querySelector('.fio'), de: rgb(cs.getPropertyValue('--peca')), para: rgb(cs.getPropertyValue('--peca-alinhada')) };
   }
   function aplicar(c, p) {
     var n = c.grupos.length, pts = [];
@@ -584,6 +596,7 @@ img, svg { display: block; max-width: 100%; }
       var dx = o.dx * (1 - e), r = o.rot * (1 - e);
       o.g.setAttribute('transform', 'translate(' + dx.toFixed(2) + ' 0) rotate(' + r.toFixed(2) + ' 60 ' + o.cy.toFixed(1) + ')');
       if (local >= 1) o.g.classList.add('alinhada'); else o.g.classList.remove('alinhada');
+      o.corpo.style.fill = 'rgb(' + c.de.map(function (v, j) { return Math.round(v + (c.para[j] - v) * local); }).join(',') + ')';
       pts.push((60 + dx).toFixed(2) + ',' + o.cy.toFixed(1));
     });
     c.fio.setAttribute('points', pts.join(' '));
@@ -594,6 +607,7 @@ img, svg { display: block; max-width: 100%; }
   if (colunas.rolagem) aplicar(colunas.rolagem, reduz ? 1 : 0);
   if (colunas.sozinha) aplicar(colunas.sozinha, reduz ? 1 : 0);
 
+  var celular = window.matchMedia('(max-width: 899px)');
   var passos = document.querySelector('.passos'), listaPassos = passos ? passos.querySelectorAll('.passo') : [];
   function medirLinhaDoTempo() {
     if (!passos) return;
@@ -609,7 +623,10 @@ img, svg { display: block; max-width: 100%; }
     var av = colunas.rolagem;
     if (!av || !passos) return;
     var vh = window.innerHeight, p;
-    if (reduz) { p = 1; } else {
+    if (reduz) { p = 1; } else if (celular.matches) {
+      var rc = av.svg.getBoundingClientRect();
+      p = Math.min(1, Math.max(0, (vh * 0.9 - rc.top) / (vh * 0.5)));
+    } else {
       var r = passos.getBoundingClientRect();
       p = Math.min(1, Math.max(0, (vh * 0.62 - r.top) / Math.max(1, r.height - vh * 0.3)));
     }

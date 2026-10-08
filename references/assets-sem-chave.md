@@ -173,6 +173,20 @@ junte tudo numa seção "Créditos de imagem" no rodapé, com um item por foto:
 </section>
 ```
 
+**Link de crédito com alvo de toque de 44 px (padrão medido).** O `gate-responsivo.mjs` reprova alvo de toque menor
+que 44 px, e link dentro de frase tem uns 18 px de altura. Duas saídas que parecem boas e NÃO servem: `inline-flex` e
+`line-height: 44px` abrem buracos de 44 px entre as linhas do texto (visto no print). O que funciona: linha de 22 px e
+link em bloco em linha com 11 px de folga que a margem negativa devolve.
+
+```css
+.creditos li { font-size: 14px; line-height: 22px; }
+.creditos a { display: inline-block; padding: 11px; margin: -11px; }   /* 22 + 11 + 11 = 44 px de alvo, 0 px de buraco */
+```
+
+Medido em 390 e 360 px de largura: cada link com 44 px de altura, as linhas do texto na mesma distância de antes (22 px)
+e nenhum buraco entre elas. Link muito curto (duas letras) precisa de `min-width: 44px`. Abaixo de 14 px o gate reprova o texto de corpo; se a fonte for maior que 14 px,
+mantenha `line-height` = 44 menos duas vezes o `padding`.
+
 O crédito precisa estar visível na mesma página onde a imagem aparece. Crédito
 escondido em `alt`, em comentário de HTML ou em outra página não cumpre a
 licença.

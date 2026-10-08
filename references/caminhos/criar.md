@@ -130,6 +130,13 @@ ANTES de qualquer código:
   filetes": muitos fios finos, uma palavra em itálico colorida em vários títulos e fundo de
   grade decorativo) só entram se o briefing pediu
 
+**Arquivo registrado que muda derruba o registro (acontece aqui).** O `plano-visual.md` é evidência da etapa 2 e da
+`frontend-design` no `uso-ferramentas.py`, e cada registro guarda o hash do arquivo. Se você editar o arquivo DEPOIS de
+registrar (acontece quando a linha `Ícone do site:` ou a paleta muda no passo e), o `uso-ferramentas.py checar` e o
+`gate-etapas.py` reprovam em cascata, e a mensagem de cada um já traz os comandos na ordem: acionar a ferramenta de
+novo, `uso-ferramentas.py registrar ... --arquivo`, e `gate-etapas.py registrar` das etapas 2, 3 e 4, nessa ordem.
+Para não passar por isso: feche o plano visual (com a linha do ícone) ANTES de registrar a etapa 2.
+
 **Precedência:** identidade real do cliente (logo, cor, fonte que ele já usa) vence
 `references/preferencias-de-design.md`, que vence o plano. O banco de design
 (`node <dir-da-skill>/scripts/py.mjs search.py "<termo>" --domain style`) é consulta opcional:
@@ -266,6 +273,11 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    inteira logo abaixo da primeira tela, por cima da foto (medido na v4).
    **Peso:** fonte só nos pesos e estilos usados (itálico de 144 KiB para 3 palavras foi achado
    da v3); CSS em linha na publicação (`montar-dist.py --css-em-linha`).
+   **Baixar a fonte:** `node <dir-da-skill>/scripts/baixar-fontes.mjs --familia "Bricolage Grotesque" --pesos 400,700 --saida fonts`
+   baixa do Google Fonts só o subconjunto latino em woff2 (um arquivo variável quando a família tem eixo de peso, senão um
+   por peso), grava em `fonts/` e imprime o `@font-face` pronto, com `font-display: swap` e o `url()` relativo. Cole no CSS,
+   dê `<link rel="preload" as="font" type="font/woff2" crossorigin>` à fonte do título e liste só os pesos que a página usa.
+   Sem internet ele diz qual endereço não respondeu e não deixa arquivo pela metade.
 3b. **Padrão da v7 na construção** (cada item custou retrabalho): a animação de cada seção sai
    do repertório (`references/receitas-de-movimento.md`, com a página `references/receitas/demo.html`
    para ver cada uma andando) ou declara `criação nova: <motivo>` no PLANO; o momento assinatura do plano
@@ -282,7 +294,8 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    plano declara `Ícone do site: <motivo>`, o motivo é desenhado em `icones/icone.svg` (com o
    mesmo `data-motivo`, e a página desenha esse motivo em algum `data-desenho`) e os PNG saem de
    `node <dir-da-skill>/scripts/gerar-icones.mjs --projeto <dir>`. A v5 publicou o favicon da v3
-   (md5 igual), com um motivo que a página já tinha abandonado.
+   (md5 igual), com um motivo que a página já tinha abandonado. Se o motivo do ícone mudar aqui, o `plano-visual.md` muda e os registros dele caem (ver o aviso do passo c): refaça
+   na ordem que a mensagem do gate mostra.
 5. **Fora do domínio final, a página nasce `noindex`:** `<meta name="robots" content="noindex,
    nofollow">`, `robots.txt` com `Disallow: /`, sem sitemap, `canonical` apontando para o site
    do cliente quando existir.
@@ -312,12 +325,37 @@ Rode cada gate e registre o exit REAL na wave:
 `node <dir-da-skill>/scripts/gate-responsivo.mjs --url http://localhost:8765/` (12 telas)
 `node <dir-da-skill>/scripts/gate-oclusao.mjs --url http://localhost:8765/` (texto coberto ou cortado)
 `node <dir-da-skill>/scripts/gate-simetria.mjs --url http://localhost:8765/` (itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos com 4 px de folga, conteúdo interno sem buraco, texto das caixas na mesma faixa de linhas e passos em caixas)
+
+**Limite de colunas desbalanceadas (`gate-simetria.mjs`): 80 px.** Para cada filho de um grid ou flex em linha, a base
+é a base da caixa (se ele tem fundo, borda ou sombra) ou o fim do último texto ou ilustração visível dentro dele. Dois
+filhos lado a lado não podem terminar com mais de 80 px de diferença entre as bases. A falha diz qual elemento mediu em
+cada coluna e onde terminou (`último texto p.fatos, termina em y 812` contra `base da caixa figure.foto, termina em y
+893`). Se a coluna de texto termina antes, prenda o último bloco ao rodapé (`margin-top: auto` com o grid esticado) ou
+estique a foto até a mesma altura; se a assimetria é pedida no plano, declare `data-assimetrico="motivo"`.
 `node <dir-da-skill>/scripts/gate-texto.mjs --url http://localhost:8765/` (viúva em título e subtítulo, de h1 a h4, dt e summary, e em parágrafo na fonte do título ou dentro de caixa, em 7 telas de 320 a 1440; item em minúscula; itálico colorido repetido)
 `node <dir-da-skill>/scripts/gate-composicao.mjs --url http://localhost:8765/ --projeto <dir>` (mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, desenho que lê como wireframe, linha do tempo que passa do último marco, nenhuma pessoa na primeira tela para público de pessoas, destaque abaixo de 3:1)
 `node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, pelo menos 2 seções animam ao chegar, nenhum item chega parado numa rolagem de 300 px/s em 1440, 390 e 320, e rolagem sem animação com movimento reduzido)
 `node <dir-da-skill>/scripts/py.mjs gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas, e o dono nomeado no briefing no corpo da página)
 `node <dir-da-skill>/scripts/py.mjs gate-imagens.py --projeto <dir> --url http://localhost:8765/` (licença com versão e link, crédito no HTML com o título real da fonte, aviso no og-image; foto repetida entre seções por pHash e origem, nitidez abaixo de 100, "imagem ilustrativa" e 60% de foto na primeira tela medidos no navegador; pessoa identificável de banco é aviso de tráfego real, e `--trafego-real` a reprova)
 `node <dir-da-skill>/scripts/gate-ritmo.mjs --url http://localhost:8765/` (duas seções vizinhas com o mesmo esqueleto e mais de 1 "título centralizado + cartões")
+O `secoes.json` sai da tabela "Composição por seção" do PLANO, sem escrever à mão:
+`node <dir-da-skill>/scripts/py.mjs plano-para-secoes.py --projeto <dir> --html index.html --saida <dir>/prova/anim/secoes.json`.
+Ele infere o nome, o título, o tipo (`assinatura-em-tres-estados` vira `assinatura`), o modo (`heroi` para
+`abertura-do-topo`, `rolagem` para a assinatura em "estado 2"), o clique da FAQ (`<seletor> summary`) e o seletor de cada
+seção (`#id` ou a primeira classe, pela ordem, só quando o HTML tem o mesmo número de `<section>` que a tabela). O que não
+dá para inferir sai como `PREENCHER: ...` e o `anim.mjs` se recusa a rodar até você trocar; carrossel no celular vira aviso
+(acrescente `rolarHorizontal`). Exemplo completo, gerado do PLANO do Ateliê Veio:
+
+```json
+[
+ {"nome": "01-primeira-dobra", "seletor": ".heroi", "titulo": "Primeira dobra", "tipo": "abertura-do-topo", "modo": "heroi"},
+ {"nome": "04-depoimentos", "seletor": "#depoimentos", "titulo": "Depoimentos", "tipo": "revelar-ao-entrar"},
+ {"nome": "06-como-funciona", "seletor": "#como-funciona", "titulo": "Como funciona", "tipo": "assinatura", "modo": "rolagem"},
+ {"nome": "08-duvidas", "seletor": "#duvidas", "titulo": "Dúvidas", "tipo": "pergunta-que-abre", "clique": "#duvidas summary"},
+ {"nome": "09-fecho", "seletor": "#fecho", "titulo": "Fecho", "tipo": "assinatura"}
+]
+```
+
 `node <dir-da-skill>/scripts/anim.mjs --url http://localhost:8765/ --saida <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` e `node <dir-da-skill>/scripts/py.mjs prancha.py --pasta <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` (3 quadros por seção em 1440 e 390 e a prancha com a porcentagem de pixels que mudou; abra as pranchas)
 `node <dir-da-skill>/scripts/py.mjs gate-animacao.py --pasta <dir>/prova/anim --plano <dir>/PLANO.md` (menos de 2% de pixels mudando entre início e fim, mais de 2 seções com o mesmo tipo, menos pranchas que linhas da tabela do plano)
 `node <dir-da-skill>/scripts/sobreposicao.mjs --url http://localhost:8765/ --fixo "<seletor do sticky>" --contra "<seletor do bloco largo>"` (um para cada elemento fixo: 0 px² em 1024 a 1920)

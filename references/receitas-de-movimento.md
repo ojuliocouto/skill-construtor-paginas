@@ -171,42 +171,72 @@ entrar no fecho, ela se alinha sozinha em 2,0 s.
 **Quando NÃO usar:** se o assunto não tem um objeto que muda de estado (não invente: use outra
 receita); por cima de foto de pessoa (fica AO LADO); em mais de uma assinatura por página.
 **Layout e gate:** a coluna fixa ao lado dos passos verticais é o par "título/coluna à esquerda + lista vertical à direita" que a regra de simetria reprova por padrão (`references/preferencias-de-design.md`). Quando o plano pede esta receita, declare `data-assimetrico="coluna fixa da assinatura ao lado dos passos, pedida no plano"` na `<section>`: o `gate-simetria.mjs` passa a avisar em vez de reprovar, com o motivo no relatório. Sem o atributo, reprova.
+**Celular (abaixo de 900 px):** a coluna deixa de ser `sticky` e vai para o fluxo, em faixa de 112 px antes dos
+passos. Sticky ali soma à barra fixa e ao cabeçalho e estoura os 15% de espaço fixo do `gate-responsivo.mjs`
+(medido: 146 px, 15,7% em 430x932; 198 px, 26,8% em 360x740). O limite de 15% não sobe. **O estado 2 no celular:** a
+coluna alinha enquanto sobe de 90% a 40% da tela (o JS lê `celular.matches`), os passos continuam acendendo pela
+rolagem, e o momento fica visível sem ocupar espaço fixo. O CSS e o JS da variante estão abaixo e no `demo.html`.
+**Desenho repetido (gate-composicao):** o momento assinatura repete o mesmo desenho em 3 ou mais seções por regra do
+plano, e o `gate-composicao.mjs` reprova desenho repetido. O SVG da assinatura leva `data-assinatura` (o marcador desta
+receita: o gate o reconhece como o momento assinatura). `data-icone-repetido-ok` no SVG faz o mesmo efeito para outros
+casos. O mesmo traçado FORA da assinatura continua reprovando.
+**Cores do traço:** o traço fino precisa de 3:1 contra o que está embaixo. O exemplo usa variáveis que passam em fundo
+escuro (padrão) e em fundo claro (`class="coluna sobre-claro"`), conferidas no demo. O gate não mede o que está invisível
+(opacity 0, `visibility: hidden`, `display: none`).
+**Sem transição de CSS que termine depois da seção:** a cor da peça muda no mesmo laço do JS (estados 2 e 3), nunca por
+`transition`, senão o fim da animação cai depois que a pessoa saiu da seção e o `gate-movimento.mjs` reprova.
 **Origem na v7:** `_app.js:8-14, 30, 44` (estado 1), `55-66, 93-116` (estado 2), `231-239`
 (estado 3); `_input.css:104-109, 116-117, 173, 180-181, 200, 371`. Na v7 as peças eram vértebras
 montadas pelo script; aqui elas já vêm no HTML (`data-dx`, `data-rot`, `data-cy`), então a página
 sem script mostra a pilha, e o script só inclina e alinha.
 
 ```html
-<svg class="coluna entra-pecas" data-coluna="rolagem" viewBox="0 0 120 232" role="img" aria-label="...">
+<div class="assin-grade" data-assimetrico="coluna fixa da assinatura ao lado dos passos, pedida no plano">
+<div class="assin-coluna">
+<svg class="coluna entra-pecas" data-coluna="rolagem" data-assinatura data-desenho="encaixe de peças que se alinham com a rolagem" data-icone-repetido-ok viewBox="0 0 120 232" role="img" aria-label="...">
   <polyline class="fio" points=""/>
-  <g class="peca" data-dx="6.23" data-rot="15.26" data-cy="11.5"><g class="peca-dentro" style="--i:0"><rect x="43" y="6" width="34" height="11" rx="4.6"/></g></g>
+  <g class="peca" data-dx="6.23" data-rot="15.26" data-cy="11.5"><g class="peca-dentro" style="--i:0"><ellipse class="corpo" cx="60" cy="11.5" rx="17" ry="5.5"/></g></g>
   <!-- uma .peca por peça; data-dx e data-rot são o desvio e a inclinação do estado torto -->
 </svg>
+</div>
 <ol class="passos"><li class="passo"><span class="marco"></span><h3>Passo</h3><p>Texto.</p></li></ol>
+</div>
 ```
 
 ```css
+/* cores com contraste medido (3:1 ou mais para traço fino): fundo escuro por padrão, .sobre-claro em fundo claro */
+.coluna { --traco: #a9bcb0; --peca: #33403a; --peca-alinhada: #4f7a63; --traco-alinhada: #cfe3d6; }
+.coluna.sobre-claro { --traco: #4a6b58; --peca: #d9d2c2; --peca-alinhada: #a9c9b5; --traco-alinhada: #2f4a3b; }
 .assin-coluna { position: sticky; top: calc(var(--vh, 1vh) * 12); height: calc(var(--vh, 1vh) * 70); }
-.coluna .peca rect { fill: #33403a; stroke: #a9bcb0; stroke-width: 1.2; transition: fill .45s ease; }
-.coluna .peca.alinhada rect { fill: var(--verde); }
-.coluna .fio { fill: none; stroke: #a9bcb0; stroke-width: 1.4; stroke-dasharray: 2 5; opacity: .7; }
+/* a cor da peça muda pelo JS, no mesmo laço do alinhamento: sem transição de CSS que termine depois da seção */
+.coluna .peca .corpo { fill: var(--peca); stroke: var(--traco); stroke-width: 1.2; }
+.coluna .peca.alinhada .corpo { stroke: var(--traco-alinhada); }
+.coluna .fio { fill: none; stroke: var(--traco); stroke-width: 1.4; stroke-dasharray: 2 5; }
+/* CELULAR (abaixo de 900 px): a coluna sai do sticky e vai para o fluxo, em faixa baixa antes dos passos.
+   Sticky no celular soma à barra fixa e ao cabeçalho e estoura os 15% de espaço fixo do gate-responsivo. */
+@media (max-width: 899px) {
+  .assin-grade { grid-template-columns: 1fr; }
+  .assin-coluna { position: static; height: 112px; }
+  .assin-coluna svg { width: auto; height: 100%; }
+}
 .peca-dentro { transform-box: fill-box; transform-origin: center; }
 .js .coluna.entra-pecas .peca-dentro { opacity: 0; }
 .js .coluna.entra-pecas.visivel .peca-dentro { animation: pecaEntra .7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(.45s + var(--i) * .05s); }
 @keyframes pecaEntra { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
 .passos::before { content: ""; position: absolute; left: 7px; top: 14px; width: 1.5px; height: var(--altura-linha, 0px); background: rgba(216,227,220,.25); }
 .passos::after { content: ""; position: absolute; left: 7px; top: 14px; width: 1.5px; background: var(--claro); height: calc(var(--altura-linha, 0px) * var(--enche, 0)); }
-.passo .marco { transition: background-color .4s ease, border-color .4s ease, transform .4s ease; }
+.passo .marco { transition: background-color .25s ease, border-color .25s ease, transform .25s ease; }
 .passo.ativo .marco { background: var(--claro); border-color: var(--claro); transform: scale(1.15); }
 ```
 
 ```js
 function montar(svg) {
-  var grupos = [];
+  var grupos = [], cs = getComputedStyle(svg);
+  var rgb = function (v) { v = v.trim().replace('#', ''); return [0, 2, 4].map(function (i) { return parseInt(v.substr(i, 2), 16); }); };
   each(svg.querySelectorAll('.peca'), function (g) {
-    grupos.push({ g: g, cy: parseFloat(g.getAttribute('data-cy')), dx: parseFloat(g.getAttribute('data-dx')), rot: parseFloat(g.getAttribute('data-rot')) });
+    grupos.push({ g: g, corpo: g.querySelector('.corpo'), cy: parseFloat(g.getAttribute('data-cy')), dx: parseFloat(g.getAttribute('data-dx')), rot: parseFloat(g.getAttribute('data-rot')) });
   });
-  return { svg: svg, grupos: grupos, fio: svg.querySelector('.fio') };
+  return { svg: svg, grupos: grupos, fio: svg.querySelector('.fio'), de: rgb(cs.getPropertyValue('--peca')), para: rgb(cs.getPropertyValue('--peca-alinhada')) };
 }
 function aplicar(c, p) { // p de 0 (torto) a 1 (alinhado)
   var n = c.grupos.length, pts = [];
@@ -216,6 +246,7 @@ function aplicar(c, p) { // p de 0 (torto) a 1 (alinhado)
     var dx = o.dx * (1 - e), r = o.rot * (1 - e);
     o.g.setAttribute('transform', 'translate(' + dx.toFixed(2) + ' 0) rotate(' + r.toFixed(2) + ' 60 ' + o.cy.toFixed(1) + ')');
     if (local >= 1) o.g.classList.add('alinhada'); else o.g.classList.remove('alinhada');
+    o.corpo.style.fill = 'rgb(' + c.de.map(function (v, j) { return Math.round(v + (c.para[j] - v) * local); }).join(',') + ')';
     pts.push((60 + dx).toFixed(2) + ',' + o.cy.toFixed(1));
   });
   c.fio.setAttribute('points', pts.join(' '));
@@ -225,11 +256,16 @@ var colunas = {};
 each(document.querySelectorAll('svg[data-coluna]'), function (svg) { colunas[svg.getAttribute('data-coluna')] = montar(svg); });
 if (colunas.rolagem) aplicar(colunas.rolagem, reduz ? 1 : 0);
 if (colunas.sozinha) aplicar(colunas.sozinha, reduz ? 1 : 0);
-// Estado 2: presa à rolagem dos passos
+// Estado 2: presa à rolagem dos passos (no celular, ao subir da coluna: ver o CSS)
+var celular = window.matchMedia('(max-width: 899px)');
 var passos = document.querySelector('.passos'), listaPassos = passos.querySelectorAll('.passo');
 function progressoAssinatura() {
   var vh = window.innerHeight, p = 1;
-  if (!reduz) { var r = passos.getBoundingClientRect(); p = Math.min(1, Math.max(0, (vh * 0.62 - r.top) / Math.max(1, r.height - vh * 0.3))); }
+  if (!reduz && celular.matches) {
+    // celular: a coluna está no fluxo (sem sticky); alinha enquanto sobe de 90% a 40% da tela
+    var rc = colunas.rolagem.svg.getBoundingClientRect();
+    p = Math.min(1, Math.max(0, (vh * 0.9 - rc.top) / (vh * 0.5)));
+  } else if (!reduz) { var r = passos.getBoundingClientRect(); p = Math.min(1, Math.max(0, (vh * 0.62 - r.top) / Math.max(1, r.height - vh * 0.3))); }
   aplicar(colunas.rolagem, p);
   passos.style.setProperty('--enche', p.toFixed(3));
   each(listaPassos, function (s) { if (reduz || s.getBoundingClientRect().top < vh * 0.62) s.classList.add('ativo'); else s.classList.remove('ativo'); });
@@ -364,7 +400,7 @@ bloco de largura total (o título nunca solta). Regras e medidas em
 **Origem na v7:** `_input.css:135`.
 
 ```html
-<div class="fixo-grade"><div class="fixo-titulo"><h2>Título</h2></div><ul class="fixo-lista"><li>Item</li></ul></div>
+<div class="fixo-grade" data-assimetrico="título fixo ao lado da lista, pedido no plano"><div class="fixo-titulo"><h2>Título</h2></div><ul class="fixo-lista"><li>Item</li></ul></div>
 ```
 
 ```css

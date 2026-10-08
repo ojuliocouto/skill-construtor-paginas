@@ -16,6 +16,13 @@ Ela mora AO LADO de foto de gente, nunca por cima. O `gate-plano.py` cobra o cam
 prancha das seções listadas, no tipo `assinatura`, com mudança de pixels entre o primeiro e o
 último estado.
 
+**O mesmo desenho em 3 seções não é "repetido".** O `gate-composicao.mjs` reprova desenho repetido (mesmo
+traçado duas ou mais vezes), e a regra do momento assinatura pede exatamente isso. A saída: o SVG da assinatura
+leva o marcador `data-assinatura` (o da receita `assinatura-em-tres-estados`), e o gate o reconhece como o próprio
+momento assinatura. `data-icone-repetido-ok` no SVG é a exceção geral e faz o mesmo efeito. O mesmo traçado FORA da
+assinatura (sem o marcador) continua reprovando. O gate também não mede o que está invisível (opacity 0,
+`visibility: hidden`, `display: none`), como o pino que só aparece no estado travado.
+
 ## Esqueleto de cada seção (`gate-ritmo.mjs`)
 
 Esqueleto = posição do título x tipo de corpo (cartões, assimétrico, split com foto ou com
