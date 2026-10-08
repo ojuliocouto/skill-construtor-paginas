@@ -41,6 +41,7 @@ import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
+const { dividirScript, MARCAS_DO_PRINCIPAL } = require('./rede-de-seguranca.cjs');
 function carregarPlaywright() {
   try { return require('playwright'); } catch {
     try { return require(path.join(raizGlobalNpm(), 'playwright')); }
@@ -153,14 +154,23 @@ const falhas = [];
 
 /** O script principal em linha: tudo que não é o script curto que só troca a classe do <html> (a rede de segurança). */
 function ehScriptPrincipal(codigo) {
-  return codigo.length > 600 || /IntersectionObserver|addEventListener|querySelector|requestAnimationFrame|fetch\(|getBoundingClientRect/.test(codigo);
+  return codigo.length > 600 || MARCAS_DO_PRINCIPAL.test(codigo);
 }
 
-/** Troca o HTML para simular o script principal falhando (modo 'bloqueado') ou chegando só 7 s depois (modo 'demora'). */
+/** Troca o HTML para simular o script principal falhando (modo 'bloqueado') ou chegando só 7 s depois (modo 'demora').
+ *  3.5.8 (N13): se a rede de segurança divide o MESMO <script> com o principal (a medida do --vh, por exemplo), a rede fica de pé
+ *  e só o resto é removido ou atrasado. Sem rede no script, vale a regra de antes. */
 function reescrever(html, modo) {
   return html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (todo, attrs, codigo) => {
     if (/\bsrc\s*=/.test(attrs)) return modo === 'bloqueado' ? '' : todo;   // externo: abortado/atrasado pela rota
-    if (!codigo.trim() || !ehScriptPrincipal(codigo)) return todo;            // a rede de segurança fica de pé
+    if (!codigo.trim()) return todo;
+    const { rede, principal } = dividirScript(codigo);
+    if (rede) {
+      if (!principal.trim() || !ehScriptPrincipal(principal)) return todo;
+      const resto = modo === 'bloqueado' ? '' : `<script>setTimeout(function(){${principal}\n},7000)</script>`;
+      return `<script${attrs}>${rede}</script>${resto}`;
+    }
+    if (!ehScriptPrincipal(codigo)) return todo;                                // a rede de segurança fica de pé
     return modo === 'bloqueado' ? '' : `<script${attrs}>setTimeout(function(){${codigo}\n},7000)</script>`;
   });
 }

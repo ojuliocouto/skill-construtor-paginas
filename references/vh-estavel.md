@@ -32,6 +32,8 @@ quando a LARGURA muda. O CSS usa `calc(var(--vh, 1vh) * 100)` em vez de `100vh`.
 .coluna-fixa { position: sticky; top: calc(var(--vh, 1vh) * 12); height: calc(var(--vh, 1vh) * 76); }
 ```
 
+O script pode ir SEPARADO do da rede de segurança ou no MESMO `<script>`: o `gate-movimento` reconhece a rede (classe `js` e o temporizador que confere `data-js-ok`) dentro de um script maior e só atrasa ou remove o resto.
+
 O script vai sem comentário (`gate-publicacao.py` reprova comentário interno na `dist/`).
 
 ## Como medir

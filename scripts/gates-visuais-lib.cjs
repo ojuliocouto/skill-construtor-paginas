@@ -122,6 +122,13 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/script-sem-rede') corpo = secoesMov('').replace(REDE, '<script>document.documentElement.classList.add("js")</script>');
   // rede lenta demais: o temporizador existe, mas só dispara aos 9 s (o gate espera 6 s)
   if (rota === '/script-rede-lenta') corpo = secoesMov('').replace('},5000)', '},9000)');
+  // N13 (3.5.8): a página é longa (a medida de invisíveis rola até o fim e passa dos 7 s do script atrasado). A rede de segurança e a medida do --vh (addEventListener) no MESMO <script>. O gate tratava o script inteiro como principal.
+  const REDE_CODIGO = REDE.slice('<script>'.length, -'</script>'.length);
+  const VH = 'var largura=0;function medir(){if(window.innerWidth===largura)return;largura=window.innerWidth;document.documentElement.style.setProperty("--vh",window.innerHeight/100+"px")}medir();window.addEventListener("resize",medir);';
+  const juntaRede = (html, rede) => html.replace(REDE, '').replace('<script>' + OK, '<div style="height:16000px"></div><script>' + rede + '\n' + VH + OK);
+  if (rota === '/rede-no-mesmo-script') corpo = juntaRede(secoesMov(''), REDE_CODIGO);
+  // o caso ruim continua ruim: script único SEM o temporizador da rede (só põe a classe js) deixa o conteúdo invisível sem o script
+  if (rota === '/rede-no-mesmo-script-sem-timer') corpo = juntaRede(secoesMov(''), 'document.documentElement.classList.add("js");');
   if (rota === '/movimento-temporizador') corpo = secoesMov('setTimeout(function(){els.forEach(function(e){e.classList.add("visivel")})},3000);');
   if (rota === '/movimento-parado') corpo = secoesMov('', false);
   // ===== Auditoria da v5 (03/10/2026, nota 7,0: "correta, mas vazia") =====
@@ -262,6 +269,8 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['movimento-script-sem-rede-reprova', 'gate-movimento.mjs', ['--url', url + '/script-sem-rede', '--so-prova-script'], 1, /script bloqueado: \d+ elemento\(s\) com texto ou imagem invis[ií]vel/],
     ['movimento-script-demora-sem-rede-reprova', 'gate-movimento.mjs', ['--url', url + '/script-sem-rede', '--so-prova-script'], 1, /script que demora 7 s: \d+ elemento/],
     ['movimento-script-rede-lenta-reprova-na-demora', 'gate-movimento.mjs', ['--url', url + '/script-rede-lenta', '--so-prova-script'], 1, /script que demora 7 s: \d+ elemento/],
+    ['movimento-rede-no-mesmo-script-passa', 'gate-movimento.mjs', ['--url', url + '/rede-no-mesmo-script', '--so-prova-script'], 0, /script bloqueado: 0 elemento/],
+    ['movimento-rede-no-mesmo-script-sem-timer-reprova', 'gate-movimento.mjs', ['--url', url + '/rede-no-mesmo-script-sem-timer', '--so-prova-script'], 1, /script que demora 7 s: \d+ elemento/],
     ['movimento-temporizador', 'gate-movimento.mjs', ['--url', url + '/movimento-temporizador'], 1, /fora da tela/],
     ['movimento-parado', 'gate-movimento.mjs', ['--url', url + '/movimento-parado'], 1, /animam ao chegar/],
     ['identidade-320', 'screenshot-prova.js', [url + '/ok', path.join(pasta, 'identidade-320'), '--com-320'], 0, /topo +mobile320: scrollY 0/],
