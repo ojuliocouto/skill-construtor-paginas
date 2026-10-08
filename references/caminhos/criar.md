@@ -347,6 +347,9 @@ gate nenhum: chama os mesmos scripts, com os mesmos argumentos listados abaixo. 
 3. rode só os que reprovaram: `node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir> --reprovados` (ou `--so texto,ritmo`);
 4. repita 2 e 3 até passar, e no fim faça UMA rodada completa (o comando sem `--so` nem `--reprovados`): correção de um gate pode ter quebrado outro;
 5. só então registre o exit REAL de cada gate na wave (o comando não registra nem aprova nada).
+Gate que reprova só com a máquina cheia (a medida de tempo da barra fixa ou da animação muda com a carga) se confirma
+sozinho: `--so <gate> --paralelo 1`, ou `--confirmar-sozinho` na rodada, que roda de novo, isolado, cada gate de navegador
+que reprovou e adota o veredito isolado (o do modo em série), avisando no relatório quando ficou INSTÁVEL.
 Negócio de produto físico: `--produto-fisico`. Gates opcionais, que dependem de passos anteriores:
 `--com animacao` (depois do `anim.mjs` e da prancha), `--com video --publico <dir>`, `--com sobreposicao --fixo "<sel>" --contra "<sel>"`.
 

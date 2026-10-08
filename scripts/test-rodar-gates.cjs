@@ -325,6 +325,54 @@ teste('o teto padrão nunca passa de 4 nem fica abaixo de 1, qualquer que seja a
   assert.equal(mod.tetoPadrao(1), 1);
 });
 
+teste('--confirmar-sozinho: gate que reprova só com outro vivo e passa sozinho vira INSTÁVEL e o veredito oficial é o isolado', async () => {
+  const { CATALOGO } = await catalogo();
+  const falsos = pastaTemp('falsos');
+  const marcas = pastaTemp('marcas');
+  // texto e ritmo esperam um ao outro; o texto REPROVA se viu o outro vivo, e passa se está sozinho
+  const par = (eu, outro, falhaSeVer) => `
+import fs from 'node:fs';
+import path from 'node:path';
+const m = ${JSON.stringify(marcas)};
+fs.writeFileSync(path.join(m, ${JSON.stringify(eu)}), String(process.pid));
+const vivo = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
+const limite = Date.now() + 3000;
+let viu = false;
+while (Date.now() < limite) {
+  const f = path.join(m, ${JSON.stringify(outro)});
+  if (fs.existsSync(f) && vivo(Number(fs.readFileSync(f, 'utf8')))) { viu = true; break; }
+  await new Promise((r) => setTimeout(r, 20));
+}
+${falhaSeVer ? 'if (viu) { console.log("FALHA: medi com a máquina cheia"); process.exit(1); }' : 'await new Promise((r) => setTimeout(r, 3500));'}
+console.log('ok');
+`;
+  montarFalsos(falsos, { texto: { mjs: par('texto-vivo', 'ritmo-vivo', true) }, ritmo: { mjs: par('ritmo-vivo', 'texto-vivo', false) } })(CATALOGO);
+  const proj = projetoFalso();
+  const base = ['--projeto', proj, '--scripts-dir', falsos, '--url', 'http://127.0.0.1:1/', '--sem-montar', '--so', 'texto,ritmo', '--paralelo', '2'];
+  const sem = rodar(base);
+  assert.equal(sem.codigo, 1, 'sem a opção o veredito do paralelo vale:\n' + sem.saida);
+  const com = rodar([...base, '--confirmar-sozinho']);
+  assert.equal(com.codigo, 0, com.saida);
+  assert.match(com.saida, /INSTÁVEIS POR CARGA/);
+  assert.match(com.saida, /texto: saída 1 em paralelo/);
+  assert.ok(fs.existsSync(path.join(proj, 'gates', 'texto-r2-paralelo.txt')), 'a saída do paralelo deve ficar guardada');
+  assert.match(fs.readFileSync(path.join(proj, 'gates', 'texto-r2-paralelo.txt'), 'utf8'), /medi com a máquina cheia/);
+  const exec = fs.readFileSync(path.join(proj, 'gates', '_execucoes.txt'), 'utf8');
+  assert.match(exec, /^2 texto 0$/m);
+});
+
+teste('--confirmar-sozinho NÃO absolve gate que também reprova sozinho', async () => {
+  const { CATALOGO } = await catalogo();
+  const falsos = pastaTemp('falsos');
+  montarFalsos(falsos, { texto: { mjs: 'console.log("falha de verdade");\nprocess.exit(1);\n' } })(CATALOGO);
+  const proj = projetoFalso();
+  const r = rodar(['--projeto', proj, '--scripts-dir', falsos, '--url', 'http://127.0.0.1:1/', '--sem-montar', '--so', 'texto,ritmo', '--confirmar-sozinho']);
+  assert.equal(r.codigo, 1, r.saida);
+  assert.match(r.saida, /REPROVA\s+texto/);
+  assert.doesNotMatch(r.saida, /INSTÁVEIS POR CARGA/);
+  assert.match(r.saida, /falha de verdade/);
+});
+
 // ---------------------------------------------------------------- 4. --so, --reprovados, rodadas
 teste('--so roda só os gates pedidos e recusa nome que não existe', async () => {
   const { CATALOGO } = await catalogo();

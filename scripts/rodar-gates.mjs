@@ -26,6 +26,9 @@
  *   --url <url>          usa uma página já servida em vez de subir um servidor por gate.
  *   --dist <dir>         pasta a servir e a conferir (padrão: <projeto>/dist).
  *   --sem-montar         não roda o montar-dist antes (use se a dist já está montada).
+ *   --confirmar-sozinho  todo gate de navegador que reprovou no paralelo roda DE NOVO sozinho, e o veredito oficial é o dessa
+ *                        execução (o mesmo do modo em série). Se passou sozinho, o relatório diz que ficou INSTÁVEL por carga.
+ *                        Custa o tempo de cada gate reprovado; use quando a falha parecer de tempo (barra fixa, animação).
  *   --produto-fisico     repassa ao gate-composicao (negócio de produto físico).
  *   --trafego-real       repassa ao gate-imagens (pessoa identificável de banco reprova).
  *   --com <lista>        liga gates opcionais: animacao, video, sobreposicao.
@@ -37,7 +40,7 @@
  * Saída: 0 se todos passam, 1 se algum reprova, 2 se o pedido está errado (nome de gate, pasta).
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, createWriteStream } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, createWriteStream } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -260,6 +263,7 @@ function lerArgs(argv) {
     else if (a === '--scripts-dir') o.scriptsDir = pega(i++);
     else if (a === '--reprovados') o.reprovados = true;
     else if (a === '--sem-montar') o.semMontar = true;
+    else if (a === '--confirmar-sozinho') o.confirmarSozinho = true;
     else if (a === '--produto-fisico') o.produtoFisico = true;
     else if (a === '--trafego-real') o.trafegoReal = true;
     else if (a === '--lista') o.lista = true;
@@ -369,6 +373,18 @@ async function principal() {
   const pesados = escolhidos.filter((g) => g.navegador).sort(porPeso);
   const leves = escolhidos.filter((g) => !g.navegador).sort(porPeso);
   await Promise.all([pool(pesados.map(rodarUm), teto), pool(leves.map(rodarUm), 2)]);
+  // Confirmação isolada (opcional): a medida de tempo de um gate pode mudar com a máquina cheia. O modo em série é a referência.
+  const instaveis = [];
+  if (o.confirmarSozinho) {
+    for (const g of pesados.filter((x) => resultados.get(x.nome).codigo !== 0)) {
+      const emParalelo = resultados.get(g.nome);
+      const arq = path.join(gatesDir, `${g.nome}-r${rodada}.txt`);
+      renameSync(arq, path.join(gatesDir, `${g.nome}-r${rodada}-paralelo.txt`));
+      process.stdout.write(`  confirmando ${g.nome} sozinho (reprovou com outros gates rodando)...\n`);
+      await rodarUm(g)();
+      if (resultados.get(g.nome).codigo === 0) instaveis.push({ nome: g.nome, codigoParalelo: emParalelo.codigo });
+    }
+  }
   const totalS = (Date.now() - t0) / 1000;
 
   // 4. gravar o histórico (na ordem do catálogo, como o fluxo antigo)
@@ -397,6 +413,10 @@ async function principal() {
     const mostrar = avisos.slice(0, 30);
     linhas.push('', '----- AVISOS dos gates que passaram (não reprovam, mas leia) -----', ...mostrar);
     if (avisos.length > mostrar.length) linhas.push(`  (mais ${avisos.length - mostrar.length} aviso(s): estão nos arquivos gates/<nome>-r${rodada}.txt)`);
+  }
+  if (instaveis.length) {
+    linhas.push('', '----- INSTÁVEIS POR CARGA (reprovaram com outros gates rodando e PASSARAM sozinhos) -----');
+    for (const i of instaveis) linhas.push(`  ${i.nome}: saída ${i.codigoParalelo} em paralelo (gates/${i.nome}-r${rodada}-paralelo.txt), saída 0 sozinho. Veredito oficial: PASSA, o mesmo do modo em série.`);
   }
   if (reprovados.length) {
     linhas.push('', '----- FALHAS (texto inteiro de cada gate que reprovou) -----');
