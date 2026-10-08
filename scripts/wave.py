@@ -392,10 +392,27 @@ def cmd_rodada(args):
         "rodada_extra_pedida": extra_pedida,
         "notas": {k: v.get("nota") for k, v in lentes.items()},
     }
+    # A31 (a): lentes que NÃO foram medidas de novo desde a rodada anterior mantêm a nota dela; a média não é medida nova.
+    if hist:
+        corte = hist[-1].get("quando", "")
+        atual["mantidas"] = sorted(k for k, v in lentes.items() if (v.get("quando") or "") <= corte)
     hist.append(atual)
     salvar(args.projeto, d)
 
+    def fechar(code, desfecho, ressalvas=None):
+        """Grava o desfecho da rodada (o gate-etapas.py registrar 5 lê daqui: NÃO ENTREGAR não vira entrega pronta)."""
+        atual["desfecho"] = desfecho
+        if ressalvas:
+            atual["ressalvas"] = ressalvas
+        salvar(args.projeto, d)
+        return code
+
     print(f"\nRODADA {atual['n']}  média {media:.2f}  críticos confirmados: {args.criticos}")
+    mant = atual.get("mantidas") or []
+    if mant:
+        print(f"  nota da rodada {atual['n'] - 1} mantida: {', '.join(mant)}")
+        print(f"  média da rodada {atual['n']} mistura {len(lentes) - len(mant)} lente(s) medida(s) de novo e {len(mant)} nota(s) mantida(s) da rodada anterior: "
+              "não é uma medida nova das lentes que ninguém olhou outra vez.")
     print("=" * 74)
     for r in hist:
         print(f"  rodada {r['n']}: média {r['media']:.2f}, {r['criticos']} crítico(s)")
@@ -455,41 +472,47 @@ def cmd_rodada(args):
 
     print("-" * 74)
     ref = lentes.get(LENTE_REFERENCIAS, {})
-    if ref.get("veredito") == "reprovado" or ref.get("gosto") != "bonito":
-        # A26: o teto é 2 rodadas e a segunda é só conferência, então reprovar esta lente NÃO manda reconstruir sozinha.
-        # Lista os eixos abaixo das referências e manda corrigir esses eixos na página (cabe entre as rodadas).
-        eixos = ref.get("eixos_abaixo") or list(EIXOS)
-        quais = "os eixos abaixo das referências" if ref.get("eixos_abaixo") else "os 4 eixos (o auditor não disse quais ficaram abaixo; releia os achados da lente)"
-        print("  ABAIXO DAS REFERÊNCIAS: a comparacao-referencias não respondeu que a página é bonita no nível")
-        print(f"  das referências printadas no passo b (veredito: {ref.get('veredito')}, resposta: {ref.get('gosto') or 'nenhuma'}).")
-        print(f"  EIXOS a corrigir: {', '.join(eixos)} ({quais}).")
-        print("  Corrija esses eixos na página (cabe na correção entre as rodadas), refaça os gates que a correção toca")
-        print("  e feche a rodada de conferência. Nota alta nas outras lentes não compensa, e correta não basta.")
-        print("  Refazer o plano visual e reconstruir é um ciclo novo: só se você pedir (custa mais que a rodada 2).\n")
-        return 1
     teto_efetivo = TETO_RODADAS + (RODADAS_EXTRAS_MAX if any(r.get("rodada_extra_pedida") for r in hist) else 0)
     no_teto = len(hist) >= teto_efetivo
+    ref_ruim = ref.get("veredito") == "reprovado" or ref.get("gosto") == "correto"
+    eixos_ref = ref.get("eixos_abaixo") or list(EIXOS)
+    if ref.get("gosto") not in GOSTOS:
+        print("  SEM RESPOSTA DE GOSTO: a comparacao-referencias não respondeu se a página é bonita no nível das referências")
+        print("  (--gosto bonito|correto). Sem isso a rodada não fecha.\n")
+        return fechar(1, "CONTINUA")
+    if ref_ruim and not no_teto:
+        # A26: o teto é 2 rodadas e a segunda é só conferência, então reprovar esta lente NÃO manda reconstruir sozinha.
+        quais = "os eixos abaixo das referências" if ref.get("eixos_abaixo") else "os 4 eixos (o auditor não disse quais ficaram abaixo; releia os achados da lente)"
+        print("  ABAIXO DAS REFERÊNCIAS: a comparacao-referencias não respondeu que a página é bonita no nível")
+        print(f"  das referências printadas no passo b (veredito: {ref.get('veredito')}, resposta: {ref.get('gosto')}).")
+        print(f"  EIXOS a corrigir: {', '.join(eixos_ref)} ({quais}).")
+        print("  CONTINUA: corrija esses eixos na página (cabe na correção entre as rodadas), refaça os gates que a correção toca")
+        print("  e feche a rodada de conferência. Nota alta nas outras lentes não compensa, e correta não basta.")
+        print("  Refazer o plano visual e reconstruir é um ciclo novo: só se você pedir (custa mais que a rodada 2).\n")
+        return fechar(1, "CONTINUA")
+    # Na última rodada do ciclo a ordem é: 1) crítico ou regressão aberta = NÃO ENTREGAR; 2) senão, ENTREGA COM RESSALVAS
+    # (a lente de referências reprovada entra na lista, com os eixos). "Voltar ao plano" nunca aparece como ordem (A30).
     if no_teto and args.criticos > 0:
         print(f"  NÃO ENTREGAR: crítico aberto. {args.criticos} crítico(s) confirmado(s) na rodada {len(hist)}, a última do ciclo.")
         print("  O teto de rodadas fecha o ciclo, não afrouxa crítico. Corrija o crítico, refaca os gates que ele")
         print("  toca e peça à pessoa uma rodada extra (--rodada-extra-pedida) ou entregue só depois de resolvido.\n")
-        return 1
+        return fechar(1, "NAO_ENTREGAR")
     if no_teto and regrediu:
         print("  NÃO ENTREGAR: regressão aberta. A correção quebrou outra coisa e o ciclo não tem mais rodada:")
         for r in regrediu:
             print(f"    - {r}")
         print("  Conserte a regressão antes de entregar.\n")
-        return 1
+        return fechar(1, "NAO_ENTREGAR")
     if args.criticos > 0:
         print(f"  CONTINUA: {args.criticos} crítico(s) confirmado(s). Crítico não negocia com média.")
         print("  Corrija os críticos e rode a wave de novo.\n")
-        return 1
+        return fechar(1, "CONTINUA")
     if regrediu:
         print("  CONTINUA: houve REGRESSAO, a correção quebrou outra coisa:")
         for r in regrediu:
             print(f"    - {r}")
         print("  Conserte a regressão antes de seguir.\n")
-        return 1
+        return fechar(1, "CONTINUA")
     vai_entregar = ((media >= PISO_MEDIA and all(n >= PISO_NOTA for n in notas)) or secou or convergiu
                     or no_teto)
     auto = sorted(l for l, v in lentes.items()
@@ -499,10 +522,24 @@ def cmd_rodada(args):
         print(f"  ({', '.join(auto[:4])}{'...' if len(auto) > 4 else ''}). Nota de quem construiu não libera entrega.")
         print("  Rode a rodada com um subagente auditor independente (ou em outra sessão, sem o historico")
         print("  da construcao) e registre cada lente com --origem subagente ou sessao-independente.\n")
-        return 1
+        return fechar(1, "AUDITORIA_PENDENTE")
+    if ref_ruim and no_teto:
+        print(f"  ENTREGA COM RESSALVAS: rodada {len(hist)}, a última do ciclo (teto {teto_efetivo}), sem crítico e sem regressão.")
+        print(f"  Nota real: média {media:.2f}. Ela vai escrita na entrega, com o que sobrou:")
+        ressalvas = [f"lente comparacao-referencias reprovada (resposta: {ref.get('gosto')}): eixos abaixo das referências: {', '.join(eixos_ref)}",
+                     f"altos abertos: {altos_informados if altos_informados is not None else 'não informado'}" + (f" ({pend} dependem de dado do cliente)" if pend else "")]
+        for r_ in ressalvas:
+            print(f"    - {r_}")
+        outras = [f"{k} (nota {v.get('nota')})" for k, v in sorted(lentes.items())
+                  if k != LENTE_REFERENCIAS and (v.get("veredito") == "reprovado" or (v.get("nota") is not None and v["nota"] < PISO_NOTA))]
+        if outras:
+            ressalvas.append("outras lentes abaixo do piso ou reprovadas: " + ", ".join(outras))
+            print("    - outras lentes abaixo do piso ou reprovadas: " + ", ".join(outras))
+        print("    - refazer o plano visual e reconstruir é um ciclo novo: só se a pessoa pedir.\n")
+        return fechar(0, "ENTREGA_COM_RESSALVAS", ressalvas)
     if media >= PISO_MEDIA and all(n >= PISO_NOTA for n in notas):
         print(f"  ENTREGA: média {media:.2f} no piso e nenhuma lente abaixo de {PISO_NOTA}.\n")
-        return 0
+        return fechar(0, "ENTREGA")
     if secou:
         print("  ENTREGA COM NOTA DECLARADA: zero crítico e zero ALTO confirmados. O que sobrou")
         print(f"  é acabamento, e acabamento não segura entrega. A média {media:.2f} vai escrita na")
@@ -512,31 +549,33 @@ def cmd_rodada(args):
             print("  um por linha, com o que falta e onde entra na página. A página não recebe trafego")
             print("  enquanto o destino do lead estiver entre eles.")
         print()
-        return 0
+        return fechar(0, "ENTREGA")
     if no_teto:
         print(f"  ENTREGA COM RESSALVAS: rodada {len(hist)}, a última do ciclo (teto {teto_efetivo}), sem crítico e sem regressão.")
         print(f"  Nota real: média {media:.2f}. Ela vai escrita na entrega, com o que sobrou:")
-        print(f"    - altos abertos: {altos_informados if altos_informados is not None else 'não informado'}"
-              + (f" ({pend} dependem de dado do cliente)" if pend else "") + f"; {altos_reais if altos_reais is not None else '?'} alto(s) de verdade")
+        ressalvas = [f"altos abertos: {altos_informados if altos_informados is not None else 'não informado'}"
+                     + (f" ({pend} dependem de dado do cliente)" if pend else "") + f"; {altos_reais if altos_reais is not None else '?'} alto(s) de verdade"]
+        print(f"    - {ressalvas[0]}")
         fracas = [f"{k} (nota {v.get('nota')}{', reprovada' if v.get('veredito') == 'reprovado' else ''})"
                   for k, v in sorted(lentes.items())
                   if v.get("veredito") == "reprovado" or (v.get("nota") is not None and v["nota"] < PISO_NOTA)]
         if fracas:
+            ressalvas.append("lentes abaixo do piso ou reprovadas: " + ", ".join(fracas))
             print("    - lentes abaixo do piso ou reprovadas: " + ", ".join(fracas))
         print("    - o texto dos achados de cada lente esta em .wave-auditoria.json; copie para a entrega.")
         print("  Não existe terceira rodada sozinha: só se a pessoa pedir (--rodada-extra-pedida).\n")
-        return 0
+        return fechar(0, "ENTREGA_COM_RESSALVAS", ressalvas)
     if convergiu:
         print(f"  ENTREGA COM NOTA DECLARADA: zero crítico, zero regressão, e a média parou de")
         print(f"  subir (últimos ganhos: {ganho:+.2f}). Insistir aqui caça canto minúsculo.")
         print(f"  A nota {media:.2f} VAI NA ENTREGA, escrita. Nota declarada e honesta;")
         print("  nota escondida atras de 'auditado' e que e nota do.\n")
-        return 0
+        return fechar(0, "ENTREGA")
     faltam = teto_efetivo - len(hist)
     print(f"  CONTINUA: sem crítico, mas a média ({media:.2f}) ainda sobe e o piso é {PISO_MEDIA}.")
     ganho_texto = f"{ganho:+.2f}" if ganho is not None else "primeira rodada, sem comparação"
     print(f"  Ganho da última rodada: {ganho_texto}. Restam {faltam} rodada(s) até o teto.\n")
-    return 1
+    return fechar(1, "CONTINUA")
 
 
 def main():

@@ -30,6 +30,20 @@ PAGINAS = {
 }
 
 
+def desfecho_do_ciclo(projeto):
+    """Lê o que o `wave.py rodada` gravou na última rodada: (desfecho, ressalvas), ou (None, []) se não há ciclo registrado."""
+    arq = projeto / ".wave-auditoria.json"
+    if not arq.is_file():
+        return None, []
+    try:
+        rodadas = json.loads(arq.read_text(encoding="utf-8-sig")).get("rodadas") or []
+    except (OSError, ValueError, AttributeError):
+        return None, []
+    if not rodadas or not isinstance(rodadas[-1], dict):
+        return None, []
+    return rodadas[-1].get("desfecho"), list(rodadas[-1].get("ressalvas") or [])
+
+
 def videos_da_prova(projeto, doc):
     """Etapa 5: a prova leva o vídeo da rolagem (gravar-video.js) junto dos prints, em desktop e celular."""
     v = doc.get("video")
@@ -138,6 +152,14 @@ def validar(projeto, arquivo, etapa, campos, perfil):
         raise ValueError("Liste em arquivos as evidências reais desta etapa.")
     hashes = {}
     if perfil == "paginas" and etapa == "5":
+        # A31 (b): a etapa 5 é a entrega pronta. Ciclo que terminou em NÃO ENTREGAR (ou que ainda continua, ou com
+        # auditoria independente pendente) não vira entrega registrada; ENTREGA COM RESSALVAS registra e guarda as ressalvas.
+        desfecho, _ress = desfecho_do_ciclo(projeto)
+        if desfecho in ("NAO_ENTREGAR", "CONTINUA", "AUDITORIA_PENDENTE"):
+            nome = {"NAO_ENTREGAR": "NÃO ENTREGAR (crítico ou regressão aberta)", "CONTINUA": "CONTINUA (o ciclo ainda não fechou)",
+                    "AUDITORIA_PENDENTE": "AUDITORIA INDEPENDENTE PENDENTE"}[desfecho]
+            raise ValueError(f"Etapa 5: o ciclo de auditoria terminou em {nome}: não se registra a entrega como pronta. "
+                             f"Corrija e rode de novo o `wave.py rodada` (ou peça a rodada extra), depois registre a etapa 5.")
         hashes.update(videos_da_prova(projeto, doc))
     for nome in arquivos:
         p = (projeto / nome).resolve()
@@ -199,6 +221,11 @@ def main():
             # Corrigir uma etapa invalida as seguintes; um resultado antigo não prova a versão nova.
             registro = {e: registro[e] for e in ordem[:indice]}
             registro[args.etapa] = {"hashes": hashes}
+            if args.perfil == "paginas" and args.etapa == "5":
+                desfecho, ressalvas = desfecho_do_ciclo(projeto)
+                if desfecho == "ENTREGA_COM_RESSALVAS":
+                    registro[args.etapa]["desfecho"] = desfecho
+                    registro[args.etapa]["ressalvas"] = ressalvas
             alvo.write_text(json.dumps(registro, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"PASSA: etapa {args.etapa}, sequência e integridade conferidas.")
         return 0

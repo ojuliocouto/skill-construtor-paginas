@@ -97,8 +97,8 @@ Os critérios continuam todos; muda quantos agentes rodam e quantas rodadas.
 
 1. Zero crítico confirmado. Inegociável.
 2. Nenhuma regressão (achado causado pela correção da rodada anterior).
-3. A lente `comparacao-referencias` não pode estar reprovada: se estiver, a entrega não sai, com qualquer nota nas
-   outras. Reprovar essa lente NÃO manda reconstruir sozinha (o teto é 2 rodadas e a segunda é só conferência): o
+3. A lente `comparacao-referencias` reprovada na rodada 1 mantém o ciclo aberto (CONTINUA); na última rodada ela vira
+   ressalva listada na entrega, depois de crítico e regressão. Reprovar essa lente NÃO manda reconstruir sozinha (o teto é 2 rodadas e a segunda é só conferência): o
    `wave.py rodada` lista os eixos abaixo das referências e manda corrigir esses eixos na página, entre as rodadas.
    Refazer o plano visual e reconstruir é um ciclo novo, só se a pessoa pedir.
 4. Auditoria independente: nota de autoavaliação não libera (AUDITORIA INDEPENDENTE PENDENTE).
@@ -109,8 +109,10 @@ Os critérios continuam todos; muda quantos agentes rodam e quantas rodadas.
 três saídas: aprovado; **ENTREGA COM RESSALVAS**, que lista os achados que sobraram e a nota
 real, e as duas vão escritas na entrega; ou **NÃO ENTREGAR: crítico aberto** (ou regressão
 aberta). O teto fecha o ciclo e não afrouxa nada: crítico aberto, regressão, conteúdo falso
-(o `content-auditor` reprovado por dado inventado é crítico), lente de referências reprovada e
-auditoria independente pendente continuam barrando a entrega na segunda rodada, e nunca viram ressalva.
+(o `content-auditor` reprovado por dado inventado é crítico) e auditoria independente pendente
+continuam barrando a entrega na segunda rodada, e nunca viram ressalva. **Ordem na última rodada (A30):** 1) crítico ou
+regressão aberta = NÃO ENTREGAR; 2) senão, ENTREGA COM RESSALVAS, que lista o que sobrou, inclusive a lente
+`comparacao-referencias` reprovada com os eixos abaixo. "Voltar ao plano visual" nunca aparece como ordem: é ciclo novo, só se a pessoa pedir.
 O `wave.py rodada` nunca pede terceira rodada sozinho e recusa a terceira chamada. Uma terceira
 só acontece se a PESSOA pedir, com `rodada --rodada-extra-pedida ...`; o pedido fica registrado no
 histórico, a terceira também fecha sempre e não existe quarta. A nota real vai escrita na entrega, sempre.
@@ -148,6 +150,10 @@ Schema de retorno (um item por achado da rodada 1):
   mesma severidade.
 - **regressão:** a evidência mostra o que a correção quebrou. Conta em `--regressoes` e, se for
   crítico, em `--criticos`.
+
+**Nota nova só onde houve achado corrigido ou regressão (A31).** O auditor da rodada 2 devolve nota nova SÓ das lentes que tiveram achado
+corrigido ou regressão; as outras ficam com a nota da rodada 1 (o `wave.py rodada` mostra "nota da rodada 1 mantida" e que a média da
+rodada 2 mistura notas novas e mantidas, nunca como se tudo tivesse sido medido de novo).
 
 A sessão registra de novo só as lentes cujos achados mudaram de estado (`registrar`, mesma
 `--origem subagente`), conta `--criticos`, `--altos` e `--regressoes` do que ficou aberto e fecha:
@@ -256,3 +262,9 @@ Apontar o defeito não é remover o defeito. Depois do ciclo, passe a página in
 mandato de CORRIGIR: ícone genérico em caixinha, uniformidade excessiva (todo card igual, toda
 seção centralizada), os tells de `references/anti-vibe-coding.md`. Prova: tells antes e
 depois, e o depois tem que ser 0, mais a lista do que foi inspecionado.
+
+## O desfecho do ciclo e a etapa 5 (A31)
+
+O `wave.py rodada` grava o desfecho de cada rodada (`CONTINUA`, `NAO_ENTREGAR`, `ENTREGA`, `ENTREGA_COM_RESSALVAS`, `AUDITORIA_PENDENTE`) em
+`.wave-auditoria.json`. O `gate-etapas.py registrar 5` lê o último: recusa registrar a entrega pronta quando terminou em NÃO ENTREGAR, em
+CONTINUA ou com auditoria independente pendente; com ENTREGA COM RESSALVAS registra e grava as ressalvas na evidência da etapa.

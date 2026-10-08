@@ -82,6 +82,7 @@ class Ciclo(unittest.TestCase):
         })
         d = wave.carregar(self.projeto)
         d["lentes"]["comparacao-referencias"]["veredito"] = "reprovado"
+        d["lentes"]["comparacao-referencias"]["gosto"] = "correto"
         wave.salvar(self.projeto, d)
         saida = io.StringIO()
         with contextlib.redirect_stdout(saida):
@@ -260,15 +261,17 @@ class TetoDeDuasRodadas(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("AUDITORIA INDEPENDENTE PENDENTE", texto)
 
-    def test_segunda_rodada_com_referencias_reprovada_corrige_eixos_e_nao_entrega(self):
+    def test_segunda_rodada_com_referencias_reprovada_entrega_com_ressalvas_e_lista_a_lente(self):
+        # A30: na última rodada, sem crítico nem regressão, a lente de referências reprovada vira RESSALVA (não "volta ao plano")
         self.preparar()
         d = wave.carregar(self.projeto)
-        d["lentes"]["comparacao-referencias"]["veredito"] = "reprovado"
+        d["lentes"]["comparacao-referencias"].update(veredito="reprovado", gosto="correto", eixos_abaixo=["imagem"])
         wave.salvar(self.projeto, d)
         self.rodar()
         code, texto = self.rodar()
-        self.assertEqual(code, 1)
-        self.assertIn("EIXOS a corrigir", texto)
+        self.assertEqual(code, 0, texto)
+        self.assertIn("ENTREGA COM RESSALVAS", texto)
+        self.assertIn("comparacao-referencias", texto)
         self.assertNotIn("VOLTA PRO PLANO VISUAL", texto)
 
     def test_terceira_rodada_sem_pedido_e_recusada_e_nao_grava(self):
@@ -412,6 +415,119 @@ class TerceiraLeva(unittest.TestCase):
         self.montar()
         code, out = self.rodar()
         self.assertNotIn("orçamento", out)
+
+
+class NotasMantidasEDesfecho(unittest.TestCase):
+    """A31 (a): na rodada 2 só as lentes com achado corrigido ou regressão ganham nota nova; as outras mostram 'nota da rodada 1 mantida'.
+    (b): cada rodada grava o desfecho para o gate-etapas.py ler."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.projeto = self.temp.name
+
+    def rodar(self, **kw):
+        base = dict(projeto=self.projeto, criticos=0, altos=0, regressoes=0, pendencias_do_usuario=0)
+        base.update(kw)
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            code = wave.cmd_rodada(argparse.Namespace(**base))
+        return code, saida.getvalue()
+
+    def montar(self, quando):
+        lentes = {n: {"nota": 7, "veredito": "aprovado", "origem": "subagente", "gosto": "bonito", "quando": quando,
+                      "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES}
+        dados = wave.carregar(self.projeto)
+        dados["lentes"] = lentes
+        dados["gates"] = {n: {"exit": 0, "detalhe": "ok"} for n in wave.GATES}
+        wave.salvar(self.projeto, dados)
+
+    def test_rodada_2_marca_as_notas_mantidas_e_nao_diz_que_mediu_de_novo(self):
+        self.montar("2026-10-08T10:00:00")
+        self.rodar(altos=3)
+        d = wave.carregar(self.projeto)
+        for n in ("cro-auditor", "a11y-auditor"):          # só duas lentes foram medidas de novo
+            d["lentes"][n]["quando"] = "2999-01-01T00:00:00"
+            d["lentes"][n]["nota"] = 8
+        wave.salvar(self.projeto, d)
+        code, out = self.rodar(altos=1)
+        self.assertIn("nota da rodada 1 mantida", out)
+        self.assertIn("2 lente(s) medida(s) de novo", out)
+        self.assertNotIn("cro-auditor", out.split("nota da rodada 1 mantida")[1].split("\n")[0])
+        self.assertRegex(out, r"média da rodada 2 .*mistura")
+        h = wave.carregar(self.projeto)["rodadas"][-1]
+        self.assertEqual(len(h["mantidas"]), len(wave.LENTES) - 2)
+
+    def test_rodada_1_nao_tem_nota_mantida(self):
+        self.montar("2026-10-08T10:00:00")
+        _, out = self.rodar(altos=3)
+        self.assertNotIn("mantida", out)
+
+    def test_cada_rodada_grava_o_desfecho(self):
+        self.montar("2026-10-08T10:00:00")
+        self.rodar(criticos=2, altos=3)
+        self.rodar(criticos=1, altos=3)
+        h = wave.carregar(self.projeto)["rodadas"]
+        self.assertEqual(h[0]["desfecho"], "CONTINUA")
+        self.assertEqual(h[1]["desfecho"], "NAO_ENTREGAR")
+
+    def test_entrega_com_ressalvas_grava_a_lista(self):
+        self.montar("2026-10-08T10:00:00")
+        self.rodar(altos=3)
+        d = wave.carregar(self.projeto)
+        d["lentes"]["comparacao-referencias"].update(veredito="reprovado", gosto="correto", eixos_abaixo=["imagem"])
+        wave.salvar(self.projeto, d)
+        code, _ = self.rodar(altos=3)
+        h = wave.carregar(self.projeto)["rodadas"][-1]
+        self.assertEqual((code, h["desfecho"]), (0, "ENTREGA_COM_RESSALVAS"))
+        self.assertTrue(any("comparacao-referencias" in r for r in h["ressalvas"]))
+
+
+class CasoRealA30(unittest.TestCase):
+    """A30: no teste real, a rodada 2 (1 crítico, 2 regressões) imprimiu VOLTA PRO PLANO VISUAL em vez de NÃO ENTREGAR."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.projeto = self.temp.name
+        lentes = {n: {"nota": 7, "veredito": "aprovado", "origem": "subagente", "gosto": "bonito",
+                      "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES}
+        lentes["comparacao-referencias"].update(veredito="reprovado", gosto="correto", nota=5, eixos_abaixo=["tipografia", "imagem"])
+        wave.salvar(self.projeto, {"lentes": lentes, "gates": {n: {"exit": 0, "detalhe": "ok"} for n in wave.GATES}})
+
+    def rodada(self, criticos, altos, pend, reg):
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, criticos=criticos, altos=altos, regressoes=reg, pendencias_do_usuario=pend))
+        return code, saida.getvalue()
+
+    def test_numeros_do_caso_real_rodada_2_e_nao_entregar_e_nunca_volta_ao_plano(self):
+        c1, o1 = self.rodada(2, 9, 3, 0)
+        self.assertEqual(c1, 1)
+        self.assertIn("CONTINUA", o1)
+        self.assertIn("EIXOS a corrigir: tipografia, imagem", o1)
+        self.assertNotIn("VOLTA PRO PLANO", o1)
+        c2, o2 = self.rodada(1, 6, 4, 2)
+        self.assertEqual(c2, 1)
+        self.assertIn("NÃO ENTREGAR", o2)
+        self.assertNotIn("VOLTA PRO PLANO", o2)
+        self.assertNotRegex(o2, r"(?i)refa[cç]a o plano a partir")
+
+    def test_ultima_rodada_sem_critico_nem_regressao_vira_ressalva_com_a_lente_e_os_eixos(self):
+        self.rodada(2, 9, 3, 0)
+        c2, o2 = self.rodada(0, 3, 0, 0)
+        self.assertEqual(c2, 0, o2)
+        self.assertIn("ENTREGA COM RESSALVAS", o2)
+        self.assertIn("comparacao-referencias", o2)
+        self.assertIn("tipografia, imagem", o2)
+        self.assertNotIn("VOLTA PRO PLANO", o2)
+
+    def test_so_uma_regressao_na_ultima_rodada_tambem_e_nao_entregar(self):
+        self.rodada(0, 3, 0, 0)
+        c2, o2 = self.rodada(0, 3, 0, 1)
+        self.assertEqual(c2, 1)
+        self.assertIn("NÃO ENTREGAR", o2)
+        self.assertIn("regressão", o2)
 
 
 if __name__ == "__main__":

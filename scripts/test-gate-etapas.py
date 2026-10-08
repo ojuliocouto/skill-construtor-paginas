@@ -178,6 +178,40 @@ class Etapas(unittest.TestCase):
         self.assertEqual(self.validar('5', self.etapa5(video={'desktop': d, 'mobile': vazio})), 1)
         self.assertEqual(self.validar('5', self.etapa5(video={'desktop': d, 'mobile': lixo})), 1)
 
+    # A31 (b): o registro da etapa 5 lê o desfecho do ciclo do wave.py
+    def wave(self, desfecho, ressalvas=None):
+        (self.pasta / '.wave-auditoria.json').write_text(json.dumps({'rodadas': [
+            {'n': 1, 'desfecho': 'CONTINUA'}, {'n': 2, 'desfecho': desfecho, 'ressalvas': ressalvas or []}]}), encoding='utf-8')
+
+    def etapa5_ok(self):
+        d, m = self.webm('video-desktop.webm'), self.webm('video-mobile.webm')
+        return self.etapa5(video={'desktop': d, 'mobile': m})
+
+    def test_etapa_5_recusa_quando_o_ciclo_terminou_em_nao_entregar(self):
+        self.wave('NAO_ENTREGAR')
+        self.assertEqual(self.validar('5', self.etapa5_ok()), 1)
+
+    def test_etapa_5_recusa_ciclo_que_ainda_continua_ou_com_auditoria_pendente(self):
+        for d in ('CONTINUA', 'AUDITORIA_PENDENTE'):
+            self.wave(d)
+            self.assertEqual(self.validar('5', self.etapa5_ok()), 1, d)
+
+    def test_etapa_5_aceita_entrega_e_sem_registro_do_wave(self):
+        self.wave('ENTREGA')
+        self.assertEqual(self.validar('5', self.etapa5_ok()), 0)
+        (self.pasta / '.wave-auditoria.json').write_text('{}', encoding='utf-8')
+        self.assertEqual(self.validar('5', self.etapa5_ok()), 0, 'sem rodadas registradas: o resto do gate segue valendo')
+
+    def test_etapa_5_com_ressalvas_registra_e_grava_as_ressalvas_na_evidencia(self):
+        for e in ('0', '1', '2', '3', '4'):
+            self.registrar_fake(e)
+        self.wave('ENTREGA_COM_RESSALVAS', ['lente comparacao-referencias reprovada: eixos tipografia, imagem', '3 altos abertos'])
+        self.doc = self.etapa5_ok()
+        self.assertEqual(self.rodar('registrar', '5', '--arquivo', 'etapa.json'), 0)
+        reg = json.loads((self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8'))
+        self.assertEqual(reg['5']['ressalvas'], ['lente comparacao-referencias reprovada: eixos tipografia, imagem', '3 altos abertos'])
+        self.assertEqual(self.rodar('checar', '5'), 0)
+
     def test_etapa_5_video_fora_do_projeto_e_recusado(self):
         d = self.webm('video-desktop.webm')
         self.assertEqual(self.validar('5', self.etapa5(video={'desktop': d, 'mobile': '../fora.webm'})), 1)
