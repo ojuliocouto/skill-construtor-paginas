@@ -74,7 +74,7 @@ class Publicacao(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(montar.main(["--projeto", str(self.proj)]), 0)
         dist = self.proj / "dist"
-        tem = sorted(str(p.relative_to(dist)) for p in dist.rglob("*") if p.is_file())
+        tem = sorted(p.relative_to(dist).as_posix() for p in dist.rglob("*") if p.is_file())
         self.assertEqual(tem, sorted(["index.html", "estilo.css", "favicon.png", "og-image.jpg", "robots.txt",
                                       "fonts/f.woff2", "imagens/hero-640.webp", "imagens/hero-960.webp",
                                       "imagens/fundo.webp"]))
