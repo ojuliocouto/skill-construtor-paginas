@@ -26,7 +26,12 @@ contradiz o texto.
 ## Banco livre como ponte
 
 - "imagem ilustrativa" colada na foto e inteira na primeira tela, em 1440 e em 390: o fundo da
-  legenda tem de ficar abaixo de `innerHeight`. Também no og-image.
+  legenda tem de ficar abaixo de `innerHeight`. Também no og-image. Vale "Imagem ilustrativa" e "Imagens
+  ilustrativas" (plural, para duas ou mais fotos); a mensagem do gate diz se o texto está fora da primeira
+  tela ou se não foi achado em lugar nenhum da página.
+- Crédito com várias fotos do mesmo autor: ponha o link da origem de cada foto no próprio item do crédito
+  (`<li>"Título", por Autor, <a href="origem">...</a></li>`). O gate casa o crédito com a foto por esse link,
+  não pelo nome do autor. Título com hífen ("Close-up") vale igual com ou sem o hífen.
 - Licença com nome e link (Unsplash e Pexels têm o link da licença deles). Título só o da fonte.
 - **Pessoa identificável sem autorização das retratadas** é aviso de bloqueio para tráfego real,
   nunca bloqueio da página de teste: o gate imprime `AVISO ... bloqueia tráfego real` e passa.
