@@ -26,6 +26,11 @@ nomes neutros pelos do assunto é o caminho curto; o que não pode mudar é a gr
   pessoa saiu: o `gate-movimento.mjs` conta transição ou animação que começa com a seção fora da tela. Cada receita com
   tempo confere, a cada passo, se a seção ainda está na janela; se saiu, aplica o estado final de uma vez, sem transição
   (`vagas-que-se-preenchem`, `assinatura-em-tres-estados`, `texto-em-linhas` e o painel já fazem isso).
+- **Atraso longo é quadro-chave parado no começo, nunca `animation-delay`.** O navegador só avisa o início de uma animação
+  no FIM do atraso. Se a pessoa rola antes disso, a animação começa com a seção fora da tela e o `gate-movimento.mjs`
+  reprova ("rodaram com a seção fora da tela"). Para esperar, ponha a espera dentro da animação:
+  `@keyframes entra { 0%, 18% { opacity: 0; } 100% { opacity: 1; } }` com `animation: entra 1.2s ...` sem `animation-delay`.
+  Atraso curto de escada (até 0,4 s, como o da `abertura-do-topo`) cabe, porque termina antes de qualquer rolagem.
 - **Todo estado escondido fica atrás de `.js`.** O `<html>` nasce `class="no-js"` e um script de
   uma linha no `<head>` troca por `js`. Sem script, a página inteira aparece. Regra do gate:
   `opacity: 0`, `transform` de entrada e `clip-path` só em seletor que começa com `.js`.
@@ -86,7 +91,25 @@ script só, com o `else` para navegador sem observador (`classList.add('visivel'
 Lista das receitas: abertura-do-topo, paralaxe-da-foto, assinatura-em-tres-estados,
 texto-em-linhas, titulo-fixo, revelar-ao-entrar, foto-que-desliza, vagas-que-se-preenchem,
 traco-que-se-desenha, faixa-de-figuras, barras-que-crescem, pergunta-que-abre, botao-com-seta,
-barra-fixa-do-celular, painel-de-cor.
+barra-fixa-do-celular, painel-de-cor, foto-que-se-monta.
+
+## Escolha do momento assinatura
+
+Regra do dono, 3.5.8 (depois de ver o momento assinatura de uma marcenaria saído em desenho): "Considerando que se trata de móveis,
+visual real conta mais que qualquer outra coisa."
+
+- **Negócio de produto físico (móveis, comida, imóvel, moda, obra, carro, joia, planta): o momento assinatura usa foto real do produto,
+  nunca desenho nem ilustração figurativa.** A receita é `foto-que-se-monta` (a foto se monta em peças até ficar inteira). O desenho
+  de tábuas, pratos, plantas baixas ou peças de roupa, mesmo bem feito, perde para a foto da peça de verdade: quem compra o que se
+  toca quer ver o que vai receber.
+- **Desenho só quando o que se vende não tem imagem:** serviço abstrato (consultoria, contabilidade, seguro), método, software. Mesmo
+  assim a tela real do produto vem antes de qualquer ilustração; o desenho (`assinatura-em-tres-estados`, `traco-que-se-desenha`) é o último recurso.
+- Sem foto real do produto ainda (cliente não mandou, banco sem acervo): declare a foto como pendência do plano e entregue a página com a
+  receita montada sobre a melhor foto de ambiente que o acervo tem; nunca desenhe o produto no lugar.
+- O `gate-composicao.mjs --produto-fisico` AVISA (não reprova) quando o momento assinatura (`data-assinatura`) é só `<svg>` sem nenhuma
+  `<img>` nem foto de fundo na seção. O aviso só liga com a marca explícita do plano (`Produto físico: sim`), porque o gate não tem como
+  adivinhar o ramo do negócio.
+
 
 ---
 
@@ -132,6 +155,11 @@ Sem JS: roda só com CSS, na carga (não precisa de observador). Atrasos: 0, 0,1
 **Reserva:** sem script o `.js` nunca liga e tudo aparece parado. Movimento reduzido:
 `.js .abertura-entra { opacity: 1; transform: none; animation: none; }` e
 `.js .abertura-foto .cena-quadro { clip-path: none; animation: none; }`.
+**O que cai abaixo da dobra no celular não usa a escada.** Em 320 e 390 px o subtítulo, o botão e os fatos
+descem para baixo da primeira tela (a foto precisa de 35% dela e o botão tem de ficar na dobra). Tudo que cair abaixo da
+dobra no celular leva `revela` (a receita `revelar-ao-entrar`), não `abertura-entra`: a escada de carga termina antes de a
+pessoa chegar ali, e o `gate-movimento.mjs` reprova ("chegam parados a 300 px/s"). Só o título e o que aparece na primeira
+tela do 320 x 568 ficam com `abertura-entra`; confira com `scripts/medir-dobra.mjs`.
 **Custo no celular:** baixo (`opacity`, `transform` e `clip-path` só na carga). Em celular fraco,
 o `clip-path` de 1,3 s sobre foto grande é o item mais caro: se travar, use só a escada.
 
@@ -870,3 +898,56 @@ corpo. Movimento reduzido: `.barra { transition: none; }` (aparece sem deslizar)
 **Reserva:** sem script a âncora comum funciona (alvo no topo, `#` no endereço). Movimento reduzido: não há painel (`display: none` e o script nem anima), vai direto ao alvo e atualiza o endereço.
 **Custo no celular:** baixo: um elemento fixo animado só por `transform`. O painel cobre a tela inteira por 0,15 s, então não leve texto nem logo nele (o gate de oclusão não vê o painel).
 
+---
+
+## Receita: foto-que-se-monta
+
+`data-receita`: `foto-que-se-monta`. Nome: **Foto que se monta** (a 16ª receita; pedida pelo dono para o momento assinatura de produto físico).
+
+**Quando usar:** momento assinatura de negócio de produto físico (móveis, comida, imóvel, moda, obra, carro): uma FOTO REAL do produto fatiada em 5 faixas verticais; cada faixa entra de um lado, assenta no lugar e a foto fica inteira. No fim, um rótulo ou cota por cima (opcional): "Carvalho maciço, 4 tábuas", "Entrega montada".
+**Quando NÃO usar:** foto de pessoa (fatiar rosto lê como defeito); mais de uma vez por página (é o momento assinatura, um só); serviço abstrato ou software (veja a escolha do momento assinatura: tela real do produto, não esta receita); foto menor que o quadro (a fatia mostra o pixel).
+**Origem no teste real da 3.5.8:** `_input.css:101` e `_app.js:1` da página de teste de marcenaria (o momento assinatura que saiu em desenho de mesa e o dono trocou por foto real).
+
+```html
+<figure class="monta" style="--foto: url(mesa.webp)">
+  <div class="monta-quadro">
+    <img class="monta-foto" src="mesa.webp" alt="Mesa de jantar em carvalho maciço, vista de cima" width="1200" height="750">
+    <span class="monta-peca" aria-hidden="true" style="--i:0"></span>
+    <span class="monta-peca" aria-hidden="true" style="--i:1"></span>
+    <span class="monta-peca" aria-hidden="true" style="--i:2"></span>
+    <span class="monta-peca" aria-hidden="true" style="--i:3"></span>
+    <span class="monta-peca" aria-hidden="true" style="--i:4"></span>
+  </div>
+  <figcaption class="monta-rotulo">Carvalho maciço, quatro tábuas, montada na sua casa</figcaption>
+</figure>
+```
+
+```css
+.monta { position: relative; margin: 0; }
+.monta-quadro { position: relative; overflow: hidden; border-radius: 22px; aspect-ratio: 8 / 5; background: #e4dccb; }
+.monta-foto { display: block; width: 100%; height: 100%; object-fit: cover; }
+.monta-peca { display: none; position: absolute; inset: 0; background: var(--foto) center / cover no-repeat; }
+.monta-rotulo { position: absolute; left: 16px; bottom: 16px; padding: 8px 14px; border-radius: 10px; background: #1f2622; color: #fffdf8; font-size: 1rem; line-height: 1.3; max-width: calc(100% - 32px); }
+.js .monta-foto { opacity: 0; transition: opacity .5s ease 1.5s; }
+.js .monta-peca { display: block; clip-path: inset(0 max(0%, calc(100% - (var(--i) + 1) * 20% - .4%)) 0 max(0%, calc(var(--i) * 20% - .4%))); opacity: 0; transform: translateY(36px); transition: opacity .7s ease, transform .9s cubic-bezier(.2,.8,.2,1); transition-delay: calc(var(--i) * .16s); }
+.js .monta-peca:nth-of-type(even) { transform: translateY(-36px); }
+.js .monta.visivel .monta-peca { opacity: 1; transform: none; }
+.js .monta.visivel .monta-foto { opacity: 1; }
+.js .monta-rotulo { opacity: 0; transform: translateY(10px); transition: opacity .6s ease 1.7s, transform .6s cubic-bezier(.2,.8,.2,1) 1.7s; }
+.js .monta.visivel .monta-rotulo { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .js .monta-foto { opacity: 1; transition: none; }
+  .js .monta-peca { display: none; }
+  .js .monta-rotulo { opacity: 1; transform: none; transition: none; }
+}
+```
+
+```js
+each(document.querySelectorAll('.monta'), function (n) { io.observe(n); });
+```
+
+Como funciona: as 5 faixas são camadas do MESMO arquivo, cada uma recortada por `clip-path: inset(...)` numa quinta parte da largura (0,4% de folga de cada lado para não aparecer fresta). Elas entram em escada de 0,16 s, alternando de baixo e de cima, e a foto inteira (`<img>`, a que tem o `alt`) aparece por baixo logo depois, de modo que o quadro termina como a foto original, sem emenda. O rótulo entra por último, às 1,7 s.
+**Fora da janela:** a classe `.instantaneo` do `io` põe tudo no estado final de uma vez, sem transição (a seção que o observador avisou tarde já saiu da tela). O atraso é de `transition-delay`, nunca de `animation-delay`.
+**Foto:** sempre foto real do produto (ou, se o cliente ainda não mandou, a melhor foto de ambiente do acervo com a pendência declarada no plano); nunca desenho. O demo usa uma textura gerada só como exemplo, sem fonte de sistema nem arquivo fora do repositório.
+**Reserva:** sem script a classe `.js` nunca liga: as faixas ficam escondidas (`display: none`) e a foto aparece inteira, com o rótulo. Movimento reduzido: as faixas somem, a foto inteira e o rótulo aparecem de uma vez, sem transição. Texto igual nos dois modos.
+**Custo no celular:** baixo a médio: 5 camadas animadas só por `opacity` e `transform` (o `clip-path` é fixo, não anima) sobre a mesma imagem decodificada uma vez. Use foto de até 150 KB em WebP.

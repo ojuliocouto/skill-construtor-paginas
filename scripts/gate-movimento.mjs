@@ -41,6 +41,7 @@ import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
+const { dividirScript, MARCAS_DO_PRINCIPAL } = require('./rede-de-seguranca.cjs');
 function carregarPlaywright() {
   try { return require('playwright'); } catch {
     try { return require(path.join(raizGlobalNpm(), 'playwright')); }
@@ -80,11 +81,16 @@ function escuta() {
     const el = ev.target;
     if (!(el instanceof Element)) return;
     const cs = getComputedStyle(el);
+    let atraso = 0;
     if (ev.type === 'animationstart') {
       const nomes = cs.animationName.split(',').map((s) => s.trim());
       const voltas = cs.animationIterationCount.split(',').map((s) => s.trim());
       const i = Math.max(0, nomes.indexOf(ev.animationName));
       if ((voltas[i] || voltas[0]) === 'infinite') return;
+      // `animationstart` só sai no FIM do animation-delay: guarda o atraso para a mensagem dizer isso (3.5.8, N16)
+      const ds = cs.animationDelay.split(',').map((x) => x.trim());
+      const d = ds[i] || ds[0] || '0s';
+      atraso = d.endsWith('ms') ? parseFloat(d) / 1000 : parseFloat(d) || 0;
     }
     let fixo = false;
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
@@ -100,6 +106,7 @@ function escuta() {
       alvo: el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : ''),
       secao: sec ? secoes().indexOf(sec) : -1,
       fora: r.bottom <= 0 || r.top >= window.innerHeight,
+      atraso,
       sy: Math.round(window.scrollY),
     });
   };
@@ -153,14 +160,23 @@ const falhas = [];
 
 /** O script principal em linha: tudo que não é o script curto que só troca a classe do <html> (a rede de segurança). */
 function ehScriptPrincipal(codigo) {
-  return codigo.length > 600 || /IntersectionObserver|addEventListener|querySelector|requestAnimationFrame|fetch\(|getBoundingClientRect/.test(codigo);
+  return codigo.length > 600 || MARCAS_DO_PRINCIPAL.test(codigo);
 }
 
-/** Troca o HTML para simular o script principal falhando (modo 'bloqueado') ou chegando só 7 s depois (modo 'demora'). */
+/** Troca o HTML para simular o script principal falhando (modo 'bloqueado') ou chegando só 7 s depois (modo 'demora').
+ *  3.5.8 (N13): se a rede de segurança divide o MESMO <script> com o principal (a medida do --vh, por exemplo), a rede fica de pé
+ *  e só o resto é removido ou atrasado. Sem rede no script, vale a regra de antes. */
 function reescrever(html, modo) {
   return html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (todo, attrs, codigo) => {
     if (/\bsrc\s*=/.test(attrs)) return modo === 'bloqueado' ? '' : todo;   // externo: abortado/atrasado pela rota
-    if (!codigo.trim() || !ehScriptPrincipal(codigo)) return todo;            // a rede de segurança fica de pé
+    if (!codigo.trim()) return todo;
+    const { rede, principal } = dividirScript(codigo);
+    if (rede) {
+      if (!principal.trim() || !ehScriptPrincipal(principal)) return todo;
+      const resto = modo === 'bloqueado' ? '' : `<script>setTimeout(function(){${principal}\n},7000)</script>`;
+      return `<script${attrs}>${rede}</script>${resto}`;
+    }
+    if (!ehScriptPrincipal(codigo)) return todo;                                // a rede de segurança fica de pé
     return modo === 'bloqueado' ? '' : `<script${attrs}>setTimeout(function(){${codigo}\n},7000)</script>`;
   });
 }
@@ -267,7 +283,8 @@ for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
   const fora = new Map();
   for (const e of eventos) {
     if (!e.fora || e.secao < 0) continue;
-    const s = fora.get(e.secao) || { n: 0, t: e.t, sy: e.sy, ex: `${e.tipo} ${e.prop} em ${e.alvo}` };
+    const s = fora.get(e.secao) || { n: 0, t: e.t, sy: e.sy, ex: `${e.tipo} ${e.prop} em ${e.alvo}`, atraso: 0 };
+    s.atraso = Math.max(s.atraso, e.atraso || 0);
     s.n++; fora.set(e.secao, s);
   }
   const abaixo = secoes.filter((s) => s.abaixo && s.alta);
@@ -277,7 +294,7 @@ for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
   const lista = [];
   for (const [i, s] of fora) {
     const sec = secoes[i] || { nome: `seção ${i}` };
-    lista.push(`seção "${sec.nome}": ${s.n} animação(ões) rodaram com a seção fora da tela (aos ${(s.t / 1000).toFixed(1)} s, scrollY ${s.sy}; a primeira: ${s.ex}): a visita chega nela já revelada e parada`);
+    lista.push(`seção "${sec.nome}": ${s.n} animação(ões) rodaram com a seção fora da tela (aos ${(s.t / 1000).toFixed(1)} s, scrollY ${s.sy}; a primeira: ${s.ex}): a visita chega nela já revelada e parada${s.atraso > 0 ? `. A animação tem animation-delay de ${s.atraso.toFixed(1)} s: o navegador só avisa o início no fim do atraso, e a pessoa pode rolar antes. Troque o animation-delay por um quadro-chave parado no começo (0%, 30% { ... }), como manda references/receitas-de-movimento.md` : ''}`);
   }
   if (animam.length < minimo) {
     lista.push(`só ${animam.length} de ${abaixo.length} seções abaixo da dobra animam ao chegar (mínimo ${minimo}): ${abaixo.filter((s) => !chegaram.has(s.i)).map((s) => `"${s.nome}"`).slice(0, 6).join(', ')} chegam paradas`);
@@ -306,9 +323,10 @@ for (const [nome, w, h, mob] of ((SO_CELULAR || SO_PROVA_SCRIPT) ? [] : TELAS_IT
   await page.waitForTimeout(1500);
   const parados = await page.evaluate(() => {
     const rotulo = (el) => {
-      const item = el.closest('li, article, details, figure, section') || el;
-      const t = (item.innerText || item.getAttribute('aria-label') || el.tagName).replace(/\s+/g, ' ').trim();
-      return t.slice(0, 40) || el.tagName.toLowerCase();
+      // 3.5.8 (N15): o rótulo nomeia o PRÓPRIO elemento (tag.classe e o texto dele), não o texto da seção inteira
+      const nome = el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
+      const proprio = (el.innerText || el.getAttribute('alt') || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+      return proprio ? `${nome} "${proprio}"` : nome;
     };
     const porItem = new Map();
     for (const [el, r] of window.__itens) {
@@ -321,7 +339,7 @@ for (const [nome, w, h, mob] of ((SO_CELULAR || SO_PROVA_SCRIPT) ? [] : TELAS_IT
   const onde = `${nome} (${w}x${h})`;
   console.log(`${onde.padEnd(30)} ${parados.length ? 'FALHA' : 'ok'}  ${parados.length} item(ns) chegam parados`);
   if (parados.length) {
-    falhas.push(`${onde}: ${parados.length} item(ns) chegam parados na tela a ${VELOCIDADE} px/s (terminaram de animar antes de entrar): ${parados.slice(0, 5).map(([k, ms]) => `"${k}" ${ms} ms antes`).join(', ')}; revele cada item quando ele entra, não o grupo`);
+    falhas.push(`${onde}: ${parados.length} item(ns) chegam parados na tela a ${VELOCIDADE} px/s (terminaram de animar antes de entrar): ${parados.slice(0, 5).map(([k, ms]) => `${k} ${ms} ms antes`).join(', ')}; revele cada item quando ele entra, não o grupo`);
   }
   await ctx.close();
 }

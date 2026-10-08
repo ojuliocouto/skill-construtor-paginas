@@ -58,7 +58,7 @@ async function main() {
   try { doc = JSON.parse(fs.readFileSync(arquivoDoRoteiro, 'utf8').replace(/^\uFEFF/, '')); } catch (e) { console.error(`Não consegui ler o roteiro ${arquivoDoRoteiro}: ${e.message}`); return 2; }
   const v = roteiro.validarRoteiro(doc);
   v.avisos.forEach((a) => console.log('  aviso: ' + a));
-  if (!v.ok) { console.error('Roteiro inválido:\n' + v.erros.map((e) => '  - ' + e).join('\n')); return 2; }
+  if (!v.ok) { console.error('Roteiro inválido:\n' + v.erros.map((e) => '  - ' + e).join('\n') + '\nLimites do roteiro: ' + roteiro.limitesEmTexto()); return 2; }
   for (const p of perfis) if (!roteiro.PERFIS[p]) { console.error(`perfil desconhecido: ${p} (use desktop e/ou mobile)`); return 2; }
 
   const pastaDeQuadros = roteiro.caminhoDeSaida(saida, 'quadros');

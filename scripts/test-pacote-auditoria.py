@@ -201,5 +201,52 @@ class Pacote(unittest.TestCase):
             self.assertEqual(antes[p], t, p)
 
 
+class BriefingProntoParaColar(unittest.TestCase):
+    """N19 (3.5.8): colar o arquivo como a skill manda tem que bastar. Lentes, schema, critérios e TODAS as capturas, com caminho absoluto."""
+
+    def setUp(self):
+        self.t = tempfile.TemporaryDirectory()
+        self.addCleanup(self.t.cleanup)
+        self.raiz = pathlib.Path(self.t.name) / "projeto com acento é espaço"
+        self.raiz.mkdir()
+        montar_completo(self.raiz)
+        tocar(self.raiz / "provas/prova-mobile360.png", b"\x89PNG", 1_000_010)
+        tocar(self.raiz / "provas/prova-mobile320.png", b"\x89PNG", 1_000_010)
+        tocar(self.raiz / "provas/anim/01-primeira-dobra.png", b"\x89PNG", 1_000_010)
+        tocar(self.raiz / "provas/anim/02-moveis.png", b"\x89PNG", 1_000_010)
+        tocar(self.raiz / "referencias/a-meio.png", b"\x89PNG", 1_000_000)
+        code, saida = rodar(self.raiz)
+        self.assertEqual(code, 0, saida)
+        self.b = (self.raiz / "auditoria/briefing-do-auditor.md").read_text(encoding="utf-8")
+
+    def test_traz_o_caminho_absoluto_do_projeto_em_formato_posix(self):
+        self.assertIn(self.raiz.as_posix(), self.b)
+
+    def test_traz_as_nove_lentes_e_onde_esta_o_criterio_de_cada_uma(self):
+        for lente in ("design-critic", "assets-auditor", "visual-auditor", "motion-auditor", "responsive-auditor",
+                      "cro-auditor", "a11y-auditor", "content-auditor", "comparacao-referencias"):
+            self.assertIn(lente, self.b, lente)
+        ref = pathlib.Path(__file__).resolve().parent.parent / "references"
+        for arq in ("auditores.md", "preferencias-de-design.md", "anti-vibe-coding.md"):
+            self.assertIn((ref / arq).as_posix(), self.b, arq)
+
+    def test_traz_o_schema_de_retorno_com_gosto_e_eixos_abaixo(self):
+        for campo in ('"lente"', '"aprovado"', '"score"', '"achados"', '"severidade"', '"evidencia"', '"fix"', "gosto", "eixos_abaixo", "composicao"):
+            self.assertIn(campo, self.b, campo)
+
+    def test_lista_todas_as_capturas_e_nao_so_a_primeira(self):
+        for rel in ("referencias/a-dobra.png", "referencias/b-dobra.png", "referencias/a-meio.png", "provas/prova-mobile360.png",
+                    "provas/prova-mobile320.png", "provas/anim/01-primeira-dobra.png", "provas/anim/02-moveis.png"):
+            self.assertIn(f"`{rel}`", self.b, rel)
+
+    def test_rodada_2_traz_o_schema_da_conferencia(self):
+        tocar(self.raiz / "auditoria/achados-rodada-1.json", "{}", 1_000_100)
+        code, saida = rodar(self.raiz, "--rodada", "2")
+        self.assertEqual(code, 0, saida)
+        b = (self.raiz / "auditoria/briefing-do-auditor.md").read_text(encoding="utf-8")
+        for campo in ('"estado"', "corrigido|não corrigido|regressão"):
+            self.assertIn(campo, b, campo)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
