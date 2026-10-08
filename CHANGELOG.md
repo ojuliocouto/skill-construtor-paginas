@@ -66,6 +66,15 @@ há um teste-mutante que prova que o que é ruim continua reprovando.
   pessoa em alt, legenda ou depoimento, salvo o campo `Negócio fictício de teste: sim` no briefing.
 - **A29** `gerar-og-image.mjs`: og:image 1200x630 com título, foto, faixa "Imagem ilustrativa" e a fonte da marca de `fonts/`.
 
+- **A30** (defeito real da 3.5.4) na última rodada do ciclo a ordem é crítico ou regressão aberta = NÃO ENTREGAR, senão ENTREGA COM
+  RESSALVAS (a lente de referências reprovada entra na lista, com os eixos); "voltar ao plano" nunca é ordem. Teste com os números do caso real.
+- **A31** na rodada 2 as lentes não medidas de novo mostram "nota da rodada 1 mantida" e a média não é apresentada como medida nova; cada
+  rodada grava o desfecho e o `gate-etapas.py registrar 5` recusa NÃO ENTREGAR, CONTINUA e auditoria pendente, e grava as ressalvas.
+- **A32** `gate-etapas.py revalidar --motivo "<texto>"`: mudança de briefing no meio revalida em ordem só as etapas em que SÓ o briefing mudou
+  (o gate delas roda de novo); qualquer outra evidência mudada continua exigindo o gate da etapa.
+- **A33** `pacote-auditoria.py` exige a resposta `--briefing-reflete-pedido sim|nao` no checklist (ou usa `evidencias/pedidos.md` e avisa quando o
+  briefing é mais antigo que o último pedido).
+
 ### Ainda não provado
 - Windows e Linux reais continuam como na 3.5.5. Nenhuma das correções acima foi rodada fora do macOS.
 
