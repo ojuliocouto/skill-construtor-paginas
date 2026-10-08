@@ -1,5 +1,37 @@
 # Changelog
 
+## 3.5.6 (08/10/2026): correções do teste de ponta a ponta (achados A1 a A13)
+
+Um teste criou uma página real como aluno (Ateliê Veio) e anotou cada tropeço. Esta versão corrige o que era da
+skill, com teste vermelho antes de cada conserto. Nenhum gate foi afrouxado: onde um gate passa a aceitar mais,
+há um teste-mutante que prova que o que é ruim continua reprovando.
+
+### Corrigido
+- **A1, A2** `capturar-referencias.mjs` julga a captura (`ok`, `bloqueada`, `quebrada`, `coberta`, com o motivo), tenta
+  fechar o aviso de cookies, sai com código diferente de zero enquanto houver menos de 6 boas e ganhou `--limpar-ruins`
+  (módulo `qualidade-captura.mjs`). `gate-referencias.py` reprova referência ruim e aceita página curta de verdade com
+  o print do meio igual ao da dobra. `pesquisa-de-referencias.md` diz onde procurar quando a busca só dá classificado e loja.
+- **A3** `gate-verdade.py` sem `index.html` confere só a tabela contra o briefing e diz "página ainda não existe".
+- **A4** a citação é comparada com o briefing inteiro (espaços e quebras colapsados); citação que não está nele reprova.
+- **A5** crédito de imagem (bloco marcado) e identificador de licença não são promessa; rótulo curto herda a promessa
+  sustentada da mesma seção só com o mesmo número e unidade.
+- **A6** a `sustentacao.md` é a tabela viva (texto em `plano.md` e `criar.md`); a saída imprime a linha pronta por seção;
+  aviso quando a tabela do PLANO e a `sustentacao.md` divergem.
+- **A7** `assets-search.py` ganhou a Wikimedia Commons como segunda rota quando a Openverse não responde (mesmo formato
+  e campos de licença, só CC0, CC BY, CC BY-SA e domínio público, pausa e tratamento de HTTP 429), com a rota dita na saída
+  e `--type commons`; testada com resposta gravada, sem internet.
+- **A8** `Ícone do site: <motivo>` no modelo do PLANO, cobrado por `gate-plano.py` e pelo registro da etapa 2.
+- **A9** acentuação em todas as frases impressas pelos scripts, com `test-acentuacao.py`.
+- **A10** o próximo comando impresso traz o caminho completo da skill (`scripts/lancador.py`, `test-lancador.py`).
+- **A11** painel-de-cor: o texto bate com o código (0,8 + 0,15 + 0,8 = 1,75 s); teste confere tempos do texto contra o código.
+- **A12** assinatura-em-tres-estados com `colunas` e `montar()` iguais aos do demo; o par "título + lista vertical" declara
+  `data-assimetrico` na receita, na linha do tempo e na regra de design; teste de nome indefinido em JS (`js-livres.py`).
+- **A13** `screenshot-prova.js` espera a animação de entrada (teto de 4 s, diz quanto esperou) e congela as entradas
+  terminadas antes do print de página inteira, que reiniciava a animação; a receita abertura-do-topo fixa o estado final com `.pronto`.
+
+### Ainda não provado
+- Windows e Linux reais continuam como na 3.5.5. Nenhuma das correções acima foi rodada fora do macOS.
+
 ## 3.5.5 (08/10/2026): Windows, macOS e Linux, com trava e teste em máquina real
 
 A skill é usada ao vivo por alunos, muitos em Windows, e só tinha o mínimo (`py.mjs` e `sistemas.md`).

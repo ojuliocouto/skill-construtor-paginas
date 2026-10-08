@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.5)
+SKILL.md                       router (v3.5.6)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,18 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.5.6
+
+Fixes from an end-to-end test where a student built a real page with the skill and logged every stumble (`ACHADOS`, A1 to A13).
+
+- **Reference capture judges what it captured.** `capturar-referencias.mjs` reports `ok`, `bloqueada` (HTTP 401/403/429, "Forbidden", "Just a moment", captcha), `quebrada` (HTTP 400+, no stylesheet applied, empty page) or `coberta` (a modal covering more than 40% of the window after trying to close the cookie notice), with the reason. It exits non-zero until 6 good references exist, and `--limpar-ruins` moves the bad ones out. `gate-referencias.py` fails a reference marked bad and accepts a really short page whose middle print equals its first screen. `references/pesquisa-de-referencias.md` says where to look when search only returns classifieds and shops.
+- **Truth gate fits the workflow.** Without `index.html` (copy step) it checks only the support table against the brief and says so; citations may cross `;`, `.` and line breaks (a citation that is not in the brief still fails); image credits (`data-credito`, `id="creditos"` or class `creditos`) and bare licence identifiers are not promises; a missing line prints a ready-to-paste row grouped by section; a PLAN-vs-`sustentacao.md` drift is a warning. A short label such as "5 anos" inherits a promise already supported in the same section, only with the same number and unit.
+- **Second photo route.** When Openverse does not answer, `assets-search.py` falls back to the Wikimedia Commons (same output and licence fields, only CC0, CC BY, CC BY-SA and public domain, pause between calls, HTTP 429 handled) and says which route answered; `--type commons` asks for it directly.
+- **Icon line in the PLAN.** `Ícone do site: <motivo>` is in the PLAN model, required by `gate-plano.py` and by the stage 2 registration.
+- **Commands and text.** The "next command" the scripts print carries the full skill path (`scripts/lancador.py`); every script message has correct accents (`test-acentuacao.py`).
+- **Motion recipes.** Colour-panel text matches the code (0.8 + 0.15 + 0.8 = 1.75 s); the signature recipe now defines `colunas`; the pair "title + vertical list" declares `data-assimetrico`; the opening recipe keeps its final state with `.pronto`; tests check that no recipe JS uses an undefined name and that times in the text exist in the code.
+- **Proof screenshot waits for the entrance** (up to 4 s, says how long) and freezes finished entrances so the full-page print does not restart them.
 
 ## What is new in 3.5.5
 

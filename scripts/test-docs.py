@@ -233,10 +233,12 @@ class Estrutura(unittest.TestCase):
         self.assertIn("```json", ler(REF / "auditores.md").split("Rodada 2", 1)[1])
 
     def test_v354_versao_e_registro_de_mudancas(self):
-        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.5$")
+        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.6$")
         self.assertIn("## 3.5.4", ler(RAIZ / "CHANGELOG.md"))
         self.assertIn("## 3.5.5", ler(RAIZ / "CHANGELOG.md"))
         self.assertIn("3.5.5", ler(RAIZ / "README.md"))
+        self.assertIn("## 3.5.6", ler(RAIZ / "CHANGELOG.md"))
+        self.assertIn("3.5.6", ler(RAIZ / "README.md"))
         self.assertIn("pacote-auditoria.py", ler(RAIZ / "README.md"))
         self.assertIn("pacote-auditoria.py", ler(SKILL))
 
