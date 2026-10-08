@@ -47,6 +47,14 @@ Desde a 3.5.6 (achados do teste de ponta a ponta, 08/10/2026):
   - quando falta linha, a saída imprime a linha pronta pra colar, agrupada por seção da página;
   - aviso (não reprova) quando a tabela da seção d do PLANO.md e a sustentacao.md divergem.
 
+Desde a 3.5.8 (achados N10 e N11 do teste de ponta a ponta):
+  - o número animado da receita `vagas-que-se-preenchem` (`<span class="contador" data-contador>5</span>
+    anos de garantia`) fica DENTRO da frase: a frase é lida inteira ("5 anos de garantia na estrutura.") e
+    um título que carrega o contador entra na seção dele mesmo, não na anterior;
+  - telefone formatado na página ("(21) 90000-0000", "+55 21 90000-0000") é reconhecido pelos dígitos
+    quando o briefing traz o mesmo número só em dígitos ("5521900000000"): não pede linha de sustentação.
+    Número que não está no briefing, ou promessa na mesma frase, continua pedindo a linha.
+
 Uso: node scripts/py.mjs gate-verdade.py --projeto <dir> [--html index.html]
 """
 import argparse
@@ -81,6 +89,14 @@ def frases(texto):
 ROTULO = re.compile(r"\d+(?:[.,]\d+)?\s+[a-zçãõáéíóúâêô]+")
 
 
+def e_contador(tag, attrs):
+    """`<span class="contador" data-contador>`: número animado no meio de uma frase (receita vagas-que-se-preenchem).
+    Não divide o bloco: o número e o resto da frase são uma frase só."""
+    if tag != "span":
+        return False
+    return "data-contador" in attrs or any(c.lower() == "contador" for c in (attrs.get("class") or "").split())
+
+
 def e_credito(attrs):
     """O elemento é um bloco de crédito de imagem: `data-credito`, id ou classe `creditos`/`credito`."""
     if "data-credito" in attrs:
@@ -108,12 +124,13 @@ class Leitor(HTMLParser):
         self.titulo, self._no_title = "", False
         self.secao, self.secoes = "", []
         self.cbuf, self.creditos = [], []
+        self.htxt = None  # texto do título aberto (h1 a h4), com os filhos
 
     def _oculto(self):
-        return any(o for _, o, _c in self.pilha)
+        return any(o for _, o, _c, _i in self.pilha)
 
     def _credito(self):
-        return any(c for _, _o, c in self.pilha)
+        return any(c for _, _o, c, _i in self.pilha)
 
     def _descarrega(self):
         t = re.sub(r"\s+", " ", "".join(self.buf)).strip()
@@ -140,19 +157,27 @@ class Leitor(HTMLParser):
         if tag == "title":
             self._no_title = True
         oculto = tag in OCULTOS or "hidden" in a or a.get("aria-hidden") == "true"
-        if tag in BLOCOS:
+        inline = e_contador(tag, a)
+        if tag in BLOCOS and not inline:
             self._descarrega()
-        self.pilha.append((tag, oculto, e_credito(a)))
+        if re.fullmatch(r"h[1-4]", tag):
+            self.htxt = []
+        self.pilha.append((tag, oculto, e_credito(a), inline))
 
     def handle_endtag(self, tag):
         if tag == "title":
             self._no_title = False
         if tag in VAZIOS:
             return
-        if tag in BLOCOS:
+        inline = any(t == tag and i for t, _o, _c, i in self.pilha[-1:])
+        if tag in BLOCOS and not inline:
+            # o título é a seção do próprio texto (3.5.8, N10): a frase "5 anos de garantia" de um h2 pertence à seção que ele abre
+            if re.fullmatch(r"h[1-4]", tag) and not self._credito() and self.htxt is not None:
+                t = re.sub(r"\s+", " ", "".join(self.htxt)).strip()
+                if t:
+                    self.secao = t
+                self.htxt = None
             self._descarrega()
-        if re.fullmatch(r"h[1-4]", tag) and self.blocos and not self._credito():
-            self.secao = self.blocos[-1]
         for i in range(len(self.pilha) - 1, -1, -1):
             if self.pilha[i][0] == tag:
                 del self.pilha[i:]
@@ -164,6 +189,8 @@ class Leitor(HTMLParser):
             return
         if not self._oculto():
             (self.cbuf if self._credito() else self.buf).append(data)
+            if self.htxt is not None and not self._credito():
+                self.htxt.append(data)
 
 
 def ler_tabela(texto):
@@ -303,6 +330,26 @@ def conferir_tabela(tabela, corrido, intervalos, problemas):
             checa_citacao(c, frase, corrido, intervalos, problemas)
 
 
+# N11: telefone. A página mostra "(21) 90000-0000"; o briefing guarda "5521900000000". Casa pelos dígitos.
+TELEFONE = re.compile(r"(?<![\w,.])(?:\+?55[\s.-]*)?\(?\d{2}\)?[\s.-]*9?\d{4}[\s.-]*\d{4}(?![\w])")
+CORRIDA_DE_DIGITOS = re.compile(r"\+?\(?\d[\d\s().-]{6,}\d")
+
+
+def telefones_do_briefing(texto):
+    """Cada sequência de dígitos (com espaço, parêntese, hífen, ponto ou +) do briefing, só com os dígitos."""
+    return {re.sub(r"\D", "", m.group(0)) for m in CORRIDA_DE_DIGITOS.finditer(texto or "")}
+
+
+def sem_telefone_sustentado(frase, fones_briefing):
+    """A frase sem os telefones que o briefing traz (pelos dígitos, com ou sem o 55). Telefone que o briefing
+    não tem fica na frase e segue pedindo linha de sustentação; o que sobra é julgado como promessa."""
+    def tira(m):
+        d = re.sub(r"\D", "", m.group(0))
+        d = d[2:] if d.startswith("55") and len(d) >= 12 else d
+        return " " if any(f in (d, "55" + d) for f in fones_briefing) else m.group(0)
+    return TELEFONE.sub(tira, frase)
+
+
 def linha_pronta(frase):
     return '| "' + frase.replace("|", "\\|") + '" | <linha do briefing entre aspas> |'
 
@@ -325,6 +372,7 @@ def checar(projeto, html_nome="index.html", relatorio=None):
         return ["evidencias/sustentacao.md sem a tabela 'Frase da página | Linha do briefing que sustenta'"]
     sent_brief = sentencas_do_briefing(briefing)
     corrido, intervalos = briefing_corrido(sent_brief)
+    fones_briefing = telefones_do_briefing(briefing)
     rel["avisos"] = avisos_plano_x_sustentacao(r, tabela)
 
     if sem_pagina:
@@ -380,7 +428,7 @@ def checar(projeto, html_nome="index.html", relatorio=None):
         if chave in vistos:
             continue
         vistos.add(chave)
-        promessa = bool(PROMESSA.search(frase)) and not SO_LICENCA.fullmatch(norm(frase).replace("’", ""))
+        promessa = bool(PROMESSA.search(sem_telefone_sustentado(frase, fones_briefing))) and not SO_LICENCA.fullmatch(norm(frase).replace("’", ""))
         par = linha_da(frase)
         if origem != "texto" and not par:
             falta(frase, origem, f"{origem}: \"{frase}\" sem linha de sustentação na tabela (a prévia do link também promete)")
