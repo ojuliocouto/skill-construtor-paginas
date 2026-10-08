@@ -104,8 +104,11 @@ const servidor = http.createServer((req, res) => {
   // ===== Auditoria da v5 (03/10/2026, nota 7,0: "correta, mas vazia") =====
   // gate-texto: o texto das situações era Newsreader de 22 px (a fonte do título) e ficava com
   // "depois." sozinho em 768; e o 1o passo, "experimental." sozinho em 360 e 320.
-  const serifa = '<style>h1,.serifa{font-family:Georgia,serif}</style>';
-  if (rota === '/viuva-paragrafo-serifa') corpo = serifa + curta + '<p class="serifa" style="width:11ch;font-size:22px;line-height:1.3">Aaaa bbbb cccc d</p>';
+  // Fonte de largura fixa de propósito: com Georgia a quebra dependia da fonte do sistema (no Linux do
+  // CI não existe Georgia, a quebra mudava e a viúva sumia: falha medida em 08/10/2026). Em fonte de
+  // largura fixa cada letra mede 1ch em qualquer sistema: 14 letras cabem em 14.5ch e o "d" sobra sozinho.
+  const fonteDoTitulo = '<style>h1,.fonte-titulo{font-family:"Courier New",Courier,monospace}</style>';
+  if (rota === '/viuva-paragrafo-serifa') corpo = fonteDoTitulo + curta + '<p class="fonte-titulo" style="width:14.5ch;font-size:22px;line-height:1.3">Aaaa bbbb cccc d</p>';
   const cardTexto = (t) => `<li style="background:#eee;padding:12px"><p style="font:18px/1.4 monospace;width:10ch">${t}</p></li>`;
   if (rota === '/viuva-paragrafo-card') corpo = curta + '<ul style="list-style:none;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:16px">' + cardTexto('Aaaa bbbb c') + cardTexto('Aaaa bbbb') + cardTexto('Aaaa bbbb') + '</ul>';
   if (rota === '/paragrafo-corrido-ok') corpo = curta + '<p style="width:11ch">Aaaa bbbb cccc d</p>';
