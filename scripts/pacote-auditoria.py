@@ -102,10 +102,10 @@ def main():
     print(f"  [ACHOU ] url                      {args.url}" if not falta else f"  [FALTA ] url                      {args.url}")
     for rotulo, arq in itens_obrigatorios(raiz, args.caminho, args.rodada):
         if arq is None or arq.stat().st_size == 0:
-            print(f"  [FALTA ] {rotulo:<26} {'arquivo vazio: ' + str(arq.relative_to(raiz)) if arq else 'não encontrado'}")
+            print(f"  [FALTA ] {rotulo:<26} {'arquivo vazio: ' + arq.relative_to(raiz).as_posix() if arq else 'não encontrado'}")
             falta.append(rotulo)
             continue
-        rel = str(arq.relative_to(raiz))
+        rel = arq.relative_to(raiz).as_posix()
         itens[rel] = {"bytes": arq.stat().st_size, "modificado": datetime.datetime.fromtimestamp(arq.stat().st_mtime).isoformat(timespec="seconds")}
         eh_captura = arq.suffix == ".png" and rotulo.startswith(("prova-", "prancha-"))
         if eh_captura and marco is not None and arq.stat().st_mtime < marco:
@@ -114,7 +114,7 @@ def main():
         else:
             print(f"  [ACHOU ] {rotulo:<26} {rel}")
     for arq in opcionais(raiz):
-        rel = str(arq.relative_to(raiz))
+        rel = arq.relative_to(raiz).as_posix()
         itens.setdefault(rel, {"bytes": arq.stat().st_size, "modificado": datetime.datetime.fromtimestamp(arq.stat().st_mtime).isoformat(timespec="seconds")})
         print(f"  [opcional] {rel}")
 
