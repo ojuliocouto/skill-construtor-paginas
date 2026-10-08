@@ -4,14 +4,14 @@
 // navegador em capturar-referencias.mjs; aqui se prova só a decisão.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { classificar, ESTADOS, resumirBoas } from "./qualidade-captura.mjs";
+import { classificar, ESTADOS, resumirBoas, proximoPrefixo, acharReferencia } from "./qualidade-captura.mjs";
 
 const TEXTO_BOM = "Móveis sob medida em madeira maciça. ".repeat(40);
 const base = { http: 200, titulo: "Ateliê", texto: TEXTO_BOM, temEstilo: true, altura: 4200, janela: 900, cobertura: 0 };
 
 test("página renderizada de verdade é ok", () => {
   assert.equal(classificar(base).estado, "ok");
-  assert.deepEqual(ESTADOS, ["ok", "bloqueada", "quebrada", "coberta"]);
+  assert.deepEqual(ESTADOS, ["ok", "bloqueada", "quebrada", "coberta", "vazia"]);
 });
 
 test("HTTP 403, 401 e 429 são bloqueada; 404 e 500 são quebrada", () => {
@@ -67,4 +67,67 @@ test("bloqueada vence quebrada, que vence coberta", () => {
 test("resumirBoas conta só as ok; manifesto antigo sem captura conta como ok", () => {
   const refs = [{ captura: { estado: "ok" } }, { captura: { estado: "bloqueada" } }, {}, { captura: { estado: "coberta" } }];
   assert.equal(resumirBoas(refs), 2);
+});
+
+// ---- 3.5.8, achado N1: dobra em branco e meio com foto que não carregou não são "ok" ----
+test("N1: dobra quase toda de uma cor só é vazia, com o motivo e a porcentagem", () => {
+  const r = classificar({ ...base, dominanciaDobra: 0.99 });
+  assert.equal(r.estado, "vazia");
+  assert.match(r.motivo, /dobra/);
+  assert.match(r.motivo, /99%/);
+  assert.ok(ESTADOS.includes("vazia"));
+});
+
+test("N1: dobra com mais de 80% de uma cor só segue ok, mas leva aviso (minimalista de verdade passa)", () => {
+  const r = classificar({ ...base, dominanciaDobra: 0.88 });
+  assert.equal(r.estado, "ok");
+  assert.match(r.aviso, /88%/);
+  assert.equal(classificar({ ...base, dominanciaDobra: 0.5 }).aviso, undefined);
+});
+
+test("N1: meio de uma cor só com foto que não carregou é vazia; meio de texto sobre fundo liso sem foto pendente é ok", () => {
+  const r = classificar({ ...base, dominanciaMeio: 0.9, imagensSemCarregar: 4 });
+  assert.equal(r.estado, "vazia");
+  assert.match(r.motivo, /meio/);
+  assert.match(r.motivo, /4 foto/);
+  assert.equal(classificar({ ...base, dominanciaMeio: 0.9, imagensSemCarregar: 0 }).estado, "ok");
+  assert.equal(classificar({ ...base, dominanciaMeio: 0.5, imagensSemCarregar: 6 }).estado, "ok");
+});
+
+test("N1: meio inteiro de uma cor só (97% ou mais) é vazia mesmo sem foto pendente", () => {
+  assert.equal(classificar({ ...base, dominanciaMeio: 0.985, imagensSemCarregar: 0 }).estado, "vazia");
+});
+
+test("N1: vazia não vence bloqueada, quebrada nem coberta (o motivo mais grave aparece)", () => {
+  assert.equal(classificar({ ...base, http: 403, dominanciaDobra: 1 }).estado, "bloqueada");
+  assert.equal(classificar({ ...base, temEstilo: false, dominanciaDobra: 1 }).estado, "quebrada");
+  assert.equal(classificar({ ...base, cobertura: 0.9, dominanciaDobra: 1 }).estado, "coberta");
+});
+
+test("N1: sem as medidas novas (manifesto e chamadas antigas) o resultado não muda", () => {
+  assert.equal(classificar(base).estado, "ok");
+  assert.equal(classificar(base).aviso, undefined);
+});
+
+test("N1: resumirBoas não conta vazia", () => {
+  assert.equal(resumirBoas([{ captura: { estado: "vazia" } }, { captura: { estado: "ok" } }]), 1);
+});
+
+// ---- 3.5.8, achado N2: numeração segue do maior prefixo já usado ----
+test("N2: proximoPrefixo segue do maior número visto nas pastas, não do tamanho do manifesto", () => {
+  assert.equal(proximoPrefixo([]), 1);
+  assert.equal(proximoPrefixo(["01-a-dobra.png", "02-a-meio.png", "13-b-dobra.png"]), 14);
+  assert.equal(proximoPrefixo(["referencias.json", "abc.png", "7-x.png"]), 8);
+  // mutante: contar quantos arquivos existem (o defeito original) daria 4, e 4 já está em uso na vida real
+  assert.notEqual(proximoPrefixo(["01-a.png", "02-a.png", "13-b.png"]), 4);
+});
+
+// ---- 3.5.8, achado N3: remover uma referência ok que não serve ----
+test("N3: acharReferencia casa por endereço exato (com ou sem barra final) e por trecho único; trecho ambíguo recusa", () => {
+  const refs = [{ url: "https://a.com/" }, { url: "https://b.com/x" }, { url: "https://b.com/y" }];
+  assert.equal(acharReferencia(refs, "https://a.com").url, "https://a.com/");
+  assert.equal(acharReferencia(refs, "a.com").url, "https://a.com/");
+  assert.equal(acharReferencia(refs, "b.com").erro, "ambigua");
+  assert.equal(acharReferencia(refs, "c.com").erro, "nenhuma");
+  assert.equal(acharReferencia(refs, "https://b.com/y").url, "https://b.com/y");
 });

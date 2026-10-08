@@ -16,6 +16,8 @@
  *   bloqueada  HTTP 401/403/429 ou texto de bloqueio (403, Forbidden, "Just a moment", captcha)
  *   quebrada   HTTP 400 ou mais, sem folha de estilo aplicada, ou página vazia
  *   coberta    modal cobrindo mais de 40% da janela mesmo depois de tentar fechar
+ *   vazia      (3.5.8) a primeira dobra é uma folha lisa (herói em vídeo que não rendeu), ou o meio é de
+ *              uma cor só com fotos que não carregaram. Dobra com mais de 80% de uma cor só segue ok, com aviso.
  * com o motivo. O gate-referencias.py reprova as que não são ok.
  *
  * Uso:
@@ -23,6 +25,9 @@
  *   node scripts/capturar-referencias.mjs --projeto <dir> --tipo design <url> [<url> ...]
  *   node scripts/capturar-referencias.mjs --projeto <dir> --limpar-ruins
  *       (tira do manifesto as que não são ok e move os PNG delas para <projeto>/descartados/referencias/)
+ *   node scripts/capturar-referencias.mjs --projeto <dir> --remover <url> [<url> ...]
+ *       (3.5.8: tira do manifesto uma referência que capturou ok e não serve; aceita o endereço ou um
+ *        trecho que só case uma; os PNG vão para <projeto>/descartados/referencias/)
  * Sai 0 se sobraram pelo menos 6 referências boas no manifesto (--minimo N muda o número, só
  * para teste), 1 se faltam. Falhar uma URL isolada não derruba a rodada: as que deram certo
  * ficam gravadas.
@@ -32,7 +37,7 @@ import { fileURLToPath } from 'node:url';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import fs from 'node:fs';
 import path from 'node:path';
-import { classificar, resumirBoas } from './qualidade-captura.mjs';
+import { classificar, resumirBoas, proximoPrefixo, acharReferencia } from './qualidade-captura.mjs';
 
 const require = createRequire(import.meta.url);
 function carregarPlaywright() {
@@ -49,10 +54,14 @@ const tipo = valor('--tipo');
 const TIPOS = ['mesmo-negocio', 'design'];
 const limparRuins = args.includes('--limpar-ruins');
 const MINIMO = Number(valor('--minimo') || 6);
-const urls = args.filter((a, i) => !a.startsWith('--') && !['--projeto', '--tipo', '--minimo'].includes(args[i - 1]));
+const iRemover = args.indexOf('--remover');
+const remover = [];
+if (iRemover >= 0) for (let k = iRemover + 1; k < args.length && !args[k].startsWith('--'); k++) remover.push(args[k]);
+const modoRemover = iRemover >= 0;
+const urls = modoRemover ? [] : args.filter((a, i) => !a.startsWith('--') && !['--projeto', '--tipo', '--minimo'].includes(args[i - 1]));
 
-if (!projeto || (!limparRuins && (!TIPOS.includes(tipo) || urls.length === 0))) {
-  console.error('uso: node capturar-referencias.mjs --projeto <dir> --tipo <mesmo-negocio|design> <url> [<url> ...]\n     node capturar-referencias.mjs --projeto <dir> --limpar-ruins');
+if (!projeto || (modoRemover && remover.length === 0) || (!limparRuins && !modoRemover && (!TIPOS.includes(tipo) || urls.length === 0))) {
+  console.error('uso: node capturar-referencias.mjs --projeto <dir> --tipo <mesmo-negocio|design> <url> [<url> ...]\n     node capturar-referencias.mjs --projeto <dir> --limpar-ruins\n     node capturar-referencias.mjs --projeto <dir> --remover <url> [<url> ...]');
   process.exit(2);
 }
 for (const u of urls) {
@@ -73,15 +82,40 @@ const scriptCmd = entreAspas(path.join(AQUI, 'capturar-referencias.mjs').split(p
 const pyCmd = entreAspas(path.join(AQUI, 'py.mjs').split(path.sep).join('/'));
 const relativo = (p) => path.relative(path.resolve(projeto), p).split(path.sep).join('/');
 
+const destinoDescarte = path.join(path.resolve(projeto), 'descartados', 'referencias');
+// Move os PNG de uma referência para descartados/referencias/ (nunca apaga). Nome repetido ganha sufixo.
+function descartarPrints(r) {
+  fs.mkdirSync(destinoDescarte, { recursive: true });
+  for (const rel of Object.values(r.prints || {})) {
+    const de = path.join(path.resolve(projeto), rel);
+    if (!fs.existsSync(de)) continue;
+    let para = path.join(destinoDescarte, path.basename(de));
+    for (let k = 2; fs.existsSync(para); k++) para = path.join(destinoDescarte, path.basename(de).replace(/(\.png)$/, `-${k}$1`));
+    fs.renameSync(de, para);
+  }
+}
+
+if (modoRemover) {
+  const alvos = [];
+  let erro = false;
+  for (const u of remover) {
+    const achada = acharReferencia(doc.referencias, u);
+    if (achada.erro === 'ambigua') { console.error(`"${u}" casa mais de uma referência (${achada.candidatas.join(', ')}). Passe o endereço inteiro.`); erro = true; }
+    else if (achada.erro) { console.error(`"${u}" não está no manifesto. Referências: ${doc.referencias.map((r) => r.url).join(', ') || '(nenhuma)'}`); erro = true; }
+    else if (!alvos.includes(achada)) alvos.push(achada);
+  }
+  if (erro) { console.error('Nada foi removido.'); process.exit(1); }
+  for (const r of alvos) { descartarPrints(r); console.log(`removida: ${r.url}`); }
+  doc.referencias = doc.referencias.filter((r) => !alvos.includes(r));
+  fs.writeFileSync(manifesto, JSON.stringify(doc, null, 2) + '\n');
+  console.log(`\n${alvos.length} removida(s); ${resumirBoas(doc.referencias)} boa(s) no manifesto (mínimo ${MINIMO}). PNG em descartados/referencias/.`);
+  process.exit(0);
+}
+
 if (limparRuins) {
   const ruins = doc.referencias.filter((r) => r.captura && r.captura.estado !== 'ok');
-  const destino = path.join(path.resolve(projeto), 'descartados', 'referencias');
-  fs.mkdirSync(destino, { recursive: true });
   for (const r of ruins) {
-    for (const rel of Object.values(r.prints || {})) {
-      const de = path.join(path.resolve(projeto), rel);
-      if (fs.existsSync(de)) fs.renameSync(de, path.join(destino, path.basename(de)));
-    }
+    descartarPrints(r);
     console.log(`descartada (${r.captura.estado}): ${r.url}`);
   }
   doc.referencias = doc.referencias.filter((r) => !ruins.includes(r));
@@ -89,6 +123,13 @@ if (limparRuins) {
   console.log(`\n${ruins.length} descartada(s); ${resumirBoas(doc.referencias)} boa(s) no manifesto. PNG em descartados/referencias/.`);
   process.exit(0);
 }
+
+// 3.5.8 (N2): o número do print segue do MAIOR prefixo já usado (pasta, descartados e manifesto).
+const lerNomes = (d) => { try { return fs.readdirSync(d); } catch { return []; } };
+const nomesUsados = () => [
+  ...lerNomes(pasta), ...lerNomes(destinoDescarte),
+  ...doc.referencias.flatMap((r) => Object.values(r.prints || {}).map((p) => path.basename(p))),
+];
 
 // Botões comuns de aviso de cookies, do menos ao mais permissivo. Só botões visíveis, com texto curto.
 const BOTOES_COOKIE = [
@@ -159,6 +200,45 @@ const medirPagina = () => {
   };
 };
 
+// 3.5.8 (N1): fração do print ocupada pela cor mais comum e fotos visíveis que não carregaram.
+// A dominância é medida num canvas de uma página à parte do mesmo navegador (sem biblioteca de imagem).
+const medirImagensSemCarregar = () => {
+  const H = window.innerHeight, W = window.innerWidth;
+  return [...document.images].filter((im) => {
+    const r = im.getBoundingClientRect();
+    if (r.width < 40 || r.height < 40 || r.bottom < 0 || r.top > H || r.right < 0 || r.left > W) return false;
+    const cs = getComputedStyle(im);
+    if (cs.visibility === 'hidden' || cs.display === 'none') return false;
+    return !im.complete || im.naturalWidth === 0;
+  }).length;
+};
+async function esperarImagensVisiveis(page, ms = 6000) {
+  await page.evaluate((limite) => new Promise((resolve) => {
+    const H = window.innerHeight;
+    const pendentes = [...document.images].filter((im) => { const r = im.getBoundingClientRect(); return r.bottom > 0 && r.top < H && !im.complete; });
+    if (!pendentes.length) return resolve();
+    let falta = pendentes.length;
+    const fim = () => { if (--falta <= 0) resolve(); };
+    pendentes.forEach((im) => { im.addEventListener('load', fim, { once: true }); im.addEventListener('error', fim, { once: true }); });
+    setTimeout(resolve, limite);
+  }), ms).catch(() => {});
+}
+async function medirDominancia(ctxMedida, png) {
+  const aux = await ctxMedida.newPage();
+  try {
+    return await aux.evaluate(async (b64) => {
+      const img = new Image();
+      await new Promise((ok, no) => { img.onload = ok; img.onerror = no; img.src = 'data:image/png;base64,' + b64; });
+      const w = 160, h = Math.max(1, Math.round(160 * img.naturalHeight / img.naturalWidth));
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const g = c.getContext('2d'); g.drawImage(img, 0, 0, w, h);
+      const d = g.getImageData(0, 0, w, h).data, cont = new Map();
+      for (let i = 0; i < d.length; i += 4) { const k = ((d[i] >> 3) << 10) | ((d[i + 1] >> 3) << 5) | (d[i + 2] >> 3); cont.set(k, (cont.get(k) || 0) + 1); }
+      return Math.max(...cont.values()) / (w * h);
+    }, png.toString('base64'));
+  } catch { return undefined; } finally { await aux.close(); }
+}
+
 const slug = (u) => {
   try {
     const x = new URL(u);
@@ -168,13 +248,15 @@ const slug = (u) => {
 
 const { chromium } = carregarPlaywright();
 const browser = await chromium.launch({ headless: true });
+const ctxMedida = await browser.newContext();
 const falhas = [];
 const resultado = [];
 try {
   for (const url of urls) {
     const existente = doc.referencias.find((r) => (r.url || '').replace(/\/$/, '') === url.replace(/\/$/, ''));
-    const n = existente ? doc.referencias.indexOf(existente) + 1 : doc.referencias.length + 1;
-    const base = `${String(n).padStart(2, '0')}-${slug(url)}`;
+    // recaptura da mesma URL regrava os mesmos arquivos; URL nova ganha o próximo número livre (N2)
+    const baseAnterior = existente && existente.prints && existente.prints.dobra ? path.basename(existente.prints.dobra).replace(/-dobra\.png$/, '') : '';
+    const base = baseAnterior || `${String(proximoPrefixo(nomesUsados())).padStart(2, '0')}-${slug(url)}`;
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, locale: 'pt-BR' });
     const page = await ctx.newPage();
     try {
@@ -186,12 +268,12 @@ try {
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
       await page.waitForTimeout(400);
       const dobra = path.join(pasta, `${base}-dobra.png`);
-      await page.screenshot({ path: dobra });
+      const bufDobra = await page.screenshot({ path: dobra });
+      const dominanciaDobra = await medirDominancia(ctxMedida, bufDobra);
 
       const medidas = await page.evaluate(medirPagina);
       const altura = medidas.altura;
       const cobertura = await page.evaluate(medirCobertura);
-      const veredito = classificar({ http, titulo: await page.title(), texto: medidas.texto, temEstilo: medidas.temEstilo, altura, janela: 900, cobertura });
       const alvo = Math.max(900, Math.round(altura * 0.45) - 450);
       for (let y = 0; y < alvo; y += 600) {
         await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), y);
@@ -199,8 +281,13 @@ try {
       }
       await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), alvo);
       await page.waitForTimeout(1200);
+      await esperarImagensVisiveis(page);
       const meio = path.join(pasta, `${base}-meio.png`);
-      await page.screenshot({ path: meio });
+      // conta as fotos pendentes ANTES do print: o que não carregou até aqui é o que o print mostra em branco
+      const imagensSemCarregar = await page.evaluate(medirImagensSemCarregar);
+      const bufMeio = await page.screenshot({ path: meio });
+      const dominanciaMeio = await medirDominancia(ctxMedida, bufMeio);
+      const veredito = classificar({ http, titulo: await page.title(), texto: medidas.texto, temEstilo: medidas.temEstilo, altura, janela: 900, cobertura, dominanciaDobra, dominanciaMeio, imagensSemCarregar });
 
       const titulo = (await page.title()).trim().slice(0, 140);
       const entrada = existente || { url };
@@ -209,7 +296,10 @@ try {
         titulo,
         prints: { dobra: path.relative(path.resolve(projeto), dobra).split(path.sep).join('/'), meio: path.relative(path.resolve(projeto), meio).split(path.sep).join('/') },
         altura_pagina: altura,
-        captura: { estado: veredito.estado, motivo: veredito.motivo, http, cobertura: Math.round(cobertura * 100) / 100, aviso_fechado: fechou },
+        captura: { estado: veredito.estado, motivo: veredito.motivo, http, cobertura: Math.round(cobertura * 100) / 100, aviso_fechado: fechou,
+          dominancia_dobra: dominanciaDobra === undefined ? null : Math.round(dominanciaDobra * 100) / 100,
+          dominancia_meio: dominanciaMeio === undefined ? null : Math.round(dominanciaMeio * 100) / 100, imagens_sem_carregar: imagensSemCarregar,
+          ...(veredito.aviso ? { aviso: veredito.aviso } : {}) },
         capturado_em: new Date().toISOString().slice(0, 19),
       });
       if (!existente) {
@@ -222,7 +312,7 @@ try {
       }
       resultado.push(veredito.estado);
       const rotulo = veredito.estado.padEnd(9);
-      console.log(`${rotulo} ${url}${veredito.motivo ? `\n     motivo: ${veredito.motivo}` : ''}\n     ${entrada.prints.dobra}\n     ${entrada.prints.meio}  (pagina com ${altura}px${fechou ? ', aviso de cookies fechado' : ''})`);
+      console.log(`${rotulo} ${url}${veredito.motivo ? `\n     motivo: ${veredito.motivo}` : ''}${veredito.aviso ? `\n     AVISO: ${veredito.aviso}` : ''}\n     ${entrada.prints.dobra}\n     ${entrada.prints.meio}  (pagina com ${altura}px${fechou ? ', aviso de cookies fechado' : ''})`);
     } catch (e) {
       falhas.push(url);
       console.error(`FALHA ${url}: ${String(e.message || e).split('\n')[0]}`);
@@ -239,6 +329,7 @@ const ruins = resultado.filter((e) => e !== 'ok').length;
 console.log(`\n${urls.length - falhas.length} de ${urls.length} capturada(s), ${resultado.filter((e) => e === 'ok').length} ok, ${ruins} ruim(ns), ${falhas.length} com falha. Manifesto: ${path.relative(process.cwd(), manifesto).split(path.sep).join('/') || manifesto}`);
 console.log(`Referências boas no manifesto: ${boas} (mínimo ${MINIMO}).`);
 if (ruins) console.log(`Tire as ruins do manifesto e dos prints: node ${scriptCmd} --projeto <dir> --limpar-ruins`);
+console.log(`Uma ok que não serve (feia, cookie, sem foto)? node ${scriptCmd} --projeto <dir> --remover <url>`);
 console.log(`Agora ABRA cada PNG que ficou ok e escreva faz_bem, principio e lido:true. Depois: node ${pyCmd} gate-referencias.py --projeto <dir>`);
 if (boas < MINIMO) console.log(`Faltam ${MINIMO - boas} referência(s) boa(s): capture mais URLs (a saída é diferente de zero até chegar no mínimo).`);
 process.exit(boas < MINIMO ? 1 : 0);

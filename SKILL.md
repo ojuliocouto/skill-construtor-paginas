@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.5.7
+version: 3.5.8
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -223,7 +223,7 @@ executa, nunca uma lista solta no fim de um arquivo.
 |---|---|---|
 | `checar-ferramentas.py` | verificador: crítico x opcional, manda cada ferramenta fazer algo | antes de tudo |
 | `gate-etapas.py` | sequência e integridade das evidências de cada passo | a a h |
-| `capturar-referencias.mjs` | abre a URL no Chromium headless e grava primeira dobra e meio | b |
+| `capturar-referencias.mjs` | abre a URL no Chromium headless e grava primeira dobra e meio; julga o que capturou (`ok`, `bloqueada`, `quebrada`, `coberta`, `vazia`); `--limpar-ruins` e `--remover <url>` tiram do manifesto | b |
 | `gate-referencias.py` | reprova sem 6 prints reais lidos, 2 de cada tipo | b, f |
 | `previa-direcoes.mjs` | as 3 primeiras dobras em PNG (1440 e 390) e o `direcoes.png` lado a lado; `--miniaturas` grava o cardápio de seções | b2 |
 | `gate-plano.py` | reprova o `PLANO.md` sem as 7 seções, as 3 prévias, a copy sustentada, o pixel declarado ou alguma aprovação | b2, e, f |
