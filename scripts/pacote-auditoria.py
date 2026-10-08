@@ -94,35 +94,35 @@ ORCAMENTO = {1: (15, 30), 2: (8, 15)}
 
 
 SKILL_RAIZ = Path(__file__).resolve().parent.parent
-SCHEMA_LENTE = """```json
-{
-  "lente": "string",
-  "aprovado": true,
-  "score": 8.5,
-  "achados": [
-    { "item": "string", "severidade": "critico|alto|medio|baixo", "evidencia": "string", "fix": "string" }
-  ]
-}
-```
-Evidência é obrigatória e verificável (print, medida em px, contraste, alvo de toque, trecho com linha ou passo de reprodução); achado sem evidência é descartado. O fix nunca viola a regra da skill (nada de depoimento inventado, urgência falsa ou dado fora do briefing).
-Na lente `comparacao-referencias` o bloco leva mais dois campos: `"gosto": "bonito|correto"` (a página é bonita ou só correta?) e `"eixos_abaixo": ["composicao", "tipografia", "imagem", "ritmo"]` (só os eixos que ficaram abaixo das referências; vazio se nenhum)."""
-SCHEMA_RODADA_2 = """```json
-{
-  "rodada": 2,
-  "achados": [
-    { "achado": "string (o item da rodada 1, com a lente)", "estado": "corrigido|não corrigido|regressão", "evidencia": "string" }
-  ]
-}
-```"""
+_ACHADO = {"item": "string", "severidade": "critico|alto|medio|baixo", "evidencia": "string", "fix": "string"}
+_BLOCO = {"lente": "string", "aprovado": True, "score": 8.5, "achados": [_ACHADO]}
+_CONFERENCIA = {"rodada": 2, "achados": [{"achado": "string (o item da rodada 1, com a lente)", "estado": "corrigido|não corrigido|regressão", "evidencia": "string"}]}
+SCHEMA_LENTE = (
+    "```json\n" + json.dumps(_BLOCO, ensure_ascii=False, indent=2) + "\n```\n"
+    "Evidência é obrigatória e verificável (print, medida em px, contraste, alvo de toque, trecho com linha ou passo de reprodução); "
+    "achado sem evidência é descartado. O fix nunca viola a regra da skill (nada de depoimento inventado, urgência falsa ou dado fora do briefing).\n"
+    'Na lente `comparacao-referencias` o bloco leva mais dois campos: `"gosto": "bonito|correto"` (a página é bonita ou só correta?) '
+    'e `"eixos_abaixo": {EIXOS}` (só os eixos que ficaram abaixo das referências; vazio se nenhum).'
+)
+SCHEMA_RODADA_2 = "```json\n" + json.dumps(_CONFERENCIA, ensure_ascii=False, indent=2) + "\n```"
 
 
-def lentes_da_skill():
-    """As 9 lentes do wave.py (a fonte única), com o critério de cada uma em uma linha."""
+def _wave():
     import importlib.util
     spec = importlib.util.spec_from_file_location("wave_lentes", Path(__file__).resolve().parent / "wave.py")
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
-    return dict(m.LENTES)
+    return m
+
+
+def lentes_da_skill():
+    """As 9 lentes do wave.py (a fonte única), com o critério de cada uma em uma linha."""
+    return dict(_wave().LENTES)
+
+
+def schema_da_lente():
+    """O schema de retorno da lente; os eixos vêm do wave.py, que os valida no registro."""
+    return SCHEMA_LENTE.replace("{EIXOS}", json.dumps(list(_wave().EIXOS), ensure_ascii=False))
 
 
 def briefing_do_auditor(rodada, url, itens, caminho, raiz=None):
@@ -135,12 +135,10 @@ def briefing_do_auditor(rodada, url, itens, caminho, raiz=None):
     pasta = Path(raiz).resolve().as_posix() if raiz else "(pasta do projeto)"
     ref = SKILL_RAIZ / "references"
     criterios = [ref / "auditores.md", ref / "preferencias-de-design.md", ref / "anti-vibe-coding.md"]
-    local = ref / "preferencias-dono-ea.md"
-    if local.is_file():
-        criterios.append(local)
+    criterios += sorted(ref.glob("preferencias-dono-*.md"))   # preferências locais do dono da skill, quando existem
     lentes = "\n".join(f"- `{n}`: {d}" for n, d in lentes_da_skill().items())
     criterios_txt = "\n".join(f"- `{c.as_posix()}`" for c in criterios)
-    schema = SCHEMA_RODADA_2 if rodada == 2 else SCHEMA_LENTE
+    schema = SCHEMA_RODADA_2 if rodada == 2 else schema_da_lente()
     return f"""# Briefing do auditor, rodada {rodada} (caminho {caminho})
 
 Você é o auditor independente. Refute, não revise: ache o que está errado e diga onde, com a medida.

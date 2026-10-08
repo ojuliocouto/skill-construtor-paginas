@@ -50,7 +50,7 @@ class Receitas(unittest.TestCase):
             self.assertIn(f"`data-receita`: `{nome}`", corpo, f"{nome}: identificador")
             for campo in ("**Quando usar:**", "**Quando NÃO usar:**", "**Reserva:**", "**Custo no celular:**"):
                 self.assertIn(campo, corpo, f"{nome}: falta {campo}")
-            achada = re.search(r"\*\*Origem (?:na v7|no protótipo v8):\*\*[^\n]*(?:\n[^\n*][^\n]*)*", corpo)
+            achada = re.search(r"\*\*Origem (?:na v7|no protótipo v8|no teste real da 3\.5\.8):\*\*[^\n]*(?:\n[^\n*][^\n]*)*", corpo)
             self.assertTrue(achada, f"{nome}: falta a origem")
             self.assertRegex(achada.group(0), r"_(app\.js|input\.css|heroi\.html|efeitos\.js):\d+", f"{nome}: origem sem arquivo:linha")
             self.assertIn("```html", corpo, f"{nome}: sem HTML mínimo")
@@ -350,6 +350,51 @@ class AssimetriaDeclarada(unittest.TestCase):
     def test_o_gate_de_simetria_le_o_atributo_na_lista_ao_lado_do_titulo(self):
         gate = ler(SCRIPTS / "gate-simetria.mjs")
         self.assertRegex(gate, r"reg\(out\.ladoTitulo,[^\n]*marcado\(")
+
+
+class FotoQueSeMonta(unittest.TestCase):
+    """N21 (3.5.8): o momento assinatura de produto físico é FOTO REAL, nunca desenho. Palavras do dono: "visual real conta mais que qualquer outra coisa"."""
+
+    def test_receita_e_so_transform_opacity_e_clip_path_com_reserva_e_instantaneo(self):
+        r = receitas()["foto-que-se-monta"]
+        css = r[r.index("```css"):]
+        css = css[:css.index("```", 6)]
+        for prop in re.findall(r"(?m)^[^{}/]*\{([^}]*)\}", css):
+            for nome in re.findall(r"([a-z-]+)\s*:", prop):
+                self.assertIn(nome, {"position", "inset", "display", "opacity", "transform", "transition", "transition-delay", "clip-path",
+                                     "background", "background-image", "aspect-ratio", "overflow", "border-radius", "width", "height", "object-fit",
+                                     "margin", "margin-top", "padding", "font-size", "color", "line-height", "max-width", "will-change",
+                                     "animation", "pointer-events", "left", "right", "top", "bottom", "z-index", "--i", "--n", "--dy", "--foto",
+                                     "background-size", "background-position", "background-repeat", "gap"}, f"propriedade {nome} fora da gramática")
+        self.assertIn("clip-path: inset(", r)
+        self.assertIn(".instantaneo", r)
+        self.assertRegex(r, r"(?s)\*\*Reserva:\*\*.*sem script.*foto inteira")
+        self.assertRegex(r, r"(?i)movimento reduzido.*foto inteira|foto inteira.*movimento reduzido")
+        self.assertRegex(r, r"(?i)foto real")
+        self.assertRegex(r, r"(?i)r[oó]tulo|cota")
+
+    def test_a_regra_do_momento_assinatura_manda_foto_real_em_produto_fisico(self):
+        t = re.sub(r"\s+", " ", ler(MD))
+        i = t.index("## Escolha do momento assinatura")
+        regra = t[i:t.index("## Receita:", i)]
+        for item in ("produto físico", "móveis", "comida", "imóvel", "moda", "obra", "carro", "foto real do produto", "nunca desenho",
+                     "serviço abstrato", "software", "tela real do produto", "foto-que-se-monta"):
+            self.assertIn(item, regra, item)
+
+    def test_demo_traz_o_bloco_com_foto_raster_embutida_e_sem_fonte_de_sistema_nova(self):
+        demo = ler(DEMO)
+        i = demo.index('data-receita="foto-que-se-monta"')
+        bloco = demo[i:demo.index("</section>", i)]
+        self.assertRegex(demo, r"data:image/jpeg;base64,[A-Za-z0-9+/=]{4000,}")
+        self.assertIn('class="monta-peca"', bloco)
+        self.assertNotIn("<use", bloco)
+        self.assertEqual(len(re.findall(r'class="monta-peca"', bloco)), 5)
+
+    def test_gate_de_composicao_avisa_desenho_no_lugar_da_foto_so_com_a_marca_de_produto_fisico(self):
+        g = ler(SCRIPTS / "gate-composicao.mjs")
+        self.assertIn("--produto-fisico", g)
+        self.assertRegex(g, r"AVISO")
+        self.assertIn("foto real do produto", g)
 
 
 class RegrasDoTesteReal358(unittest.TestCase):

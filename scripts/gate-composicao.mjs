@@ -36,6 +36,7 @@
  *
  * Exceções declaradas: `data-composicao-ok="motivo"` na seção, `data-icone-repetido-ok` no SVG e
  * `data-assinatura` no SVG do momento assinatura (que repete por regra do plano).
+ * `--produto-fisico` (3.5.8): AVISA (não reprova) quando o momento assinatura é só SVG, sem foto na seção.
  * O que está invisível (opacity 0, visibility hidden, display none) não entra na medida de contraste.
  *
  * Uso: node scripts/gate-composicao.mjs --url <url> [--publico "<público do briefing>" | --projeto <dir>]
@@ -63,6 +64,8 @@ if (!URL_ALVO || URL_ALVO.startsWith('--')) {
 const valor = (nome) => { const i = args.indexOf(nome); return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : null; };
 let PUBLICO = valor('--publico');
 const PROJETO = valor('--projeto');
+// `--produto-fisico`: o plano diz que o negócio vende produto físico (móveis, comida, imóvel, moda, obra, carro). Só então o desenho no lugar da foto vira AVISO.
+const PRODUTO_FISICO = args.includes('--produto-fisico');
 if (!PUBLICO && PROJETO) {
   try { PUBLICO = JSON.parse(fs.readFileSync(path.join(PROJETO, 'evidencias', 'etapa-0.json'), 'utf8').replace(/^\uFEFF/, '')).briefing.publico; }
   catch {
@@ -289,7 +292,16 @@ const r = await page.evaluate((genericos) => {
       if (k < 3) fracos.push(`${acento ? 'destaque' : 'traço fino'} ${cs.stroke !== 'none' && temTraco ? cs.stroke : cs.fill} a ${k.toFixed(2)}:1 contra o fundo em "${d}" (mínimo 3:1 para o que carrega informação)`);
     }
   }
-  return { assinaturas, semDesenho, genericosAchados, repetidos, nSvgs: svgs.length, wireframes, fracos: [...new Set(fracos)], menorContraste };
+  // 3.5.8 (N21): momento assinatura (`data-assinatura`) só em SVG, sem nenhuma foto na seção (`img`, `picture`, `video` ou fundo com url()).
+  const soDesenho = [];
+  for (const v of document.querySelectorAll('svg[data-assinatura]')) {
+    if (!visivel(v)) continue;
+    const secao = v.closest('section') || document.body;
+    const temFoto = [...secao.querySelectorAll('img, picture, video')].some((m) => visivel(m))
+      || [secao, ...secao.querySelectorAll('*')].some((e) => /url\(/.test(getComputedStyle(e).backgroundImage));
+    if (!temFoto) soDesenho.push(rotulo(secao.querySelector('h1, h2') || secao));
+  }
+  return { soDesenho: [...new Set(soDesenho)], assinaturas, semDesenho, genericosAchados, repetidos, nSvgs: svgs.length, wireframes, fracos: [...new Set(fracos)], menorContraste };
 }, GENERICOS);
 
 /** Linha do tempo e pessoa na primeira tela: medidas que valem em 1440 e em 390. */
@@ -396,6 +408,9 @@ for (const [tela, m] of telasMedidas) {
   }
 }
 console.log(`Desenhos SVG medidos: ${r.nSvgs}; menor contraste de traço fino ou destaque: ${r.menorContraste === null ? 'nenhum medido' : r.menorContraste.toFixed(2) + ':1'}`);
+if (PRODUTO_FISICO && r.soDesenho.length) {
+  console.log(`  AVISO: momento assinatura só em desenho em ${r.soDesenho.map((x) => `"${x}"`).join(', ')}: em negócio de produto físico o momento assinatura usa foto real do produto, nunca desenho (receita foto-que-se-monta, references/receitas-de-movimento.md). Desenho só quando o que se vende não tem imagem; e mesmo assim a tela real do produto vem antes. Aviso, não reprova.`);
+}
 for (const [tela, m] of telasMedidas) {
   console.log(`${tela}: linha do tempo passa do último marco em até ${m.maiorPassagem} px; pessoa na primeira tela: ${m.pessoa ? (m.pessoa.naTela.join('; ') || 'nenhuma') : 'não conferido (sem --publico nem --projeto)'}`);
 }

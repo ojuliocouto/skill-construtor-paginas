@@ -188,6 +188,9 @@ const servidor = http.createServer((req, res) => {
   const marcar = (d) => d.replace('<svg ', '<svg data-assinatura ');
   if (rota === '/assinatura-repetida') corpo = texto + '<section><h2>Encaixe</h2>' + marcar(desenho('encaixe')) + '<p>Meio.</p>' + marcar(desenho('encaixe')) + '<p>Fecho.</p>' + marcar(desenho('encaixe')) + '</section>';
   if (rota === '/assinatura-e-repetido-fora') corpo = texto + '<section><h2>Encaixe</h2>' + marcar(desenho('encaixe')) + '<p>Meio.</p>' + marcar(desenho('encaixe')) + '<p>Fora.</p>' + desenho('encaixe') + '<p>Fora de novo.</p>' + desenho('encaixe') + '</section>';
+  // N21 (3.5.8): em produto físico o momento assinatura é foto real; o gate AVISA (não reprova) quando ele é só SVG, e só com --produto-fisico.
+  if (rota === '/assinatura-so-desenho') corpo = texto + '<section><h2>Mesa montada</h2>' + marcar(desenho('mesa de jantar montada tábua a tábua')) + '<p>Cada tábua entra no lugar.</p></section>';
+  if (rota === '/assinatura-com-foto') corpo = texto + '<section><h2>Mesa montada</h2><img src="/poster.png" width="320" height="180" alt="Mesa de jantar em madeira maciça" style="width:100%;height:auto">' + marcar(desenho('mesa de jantar montada tábua a tábua')) + '<p>Cada tábua entra no lugar.</p></section>';
   if (rota === '/acento-fraco') corpo = texto + situacao('#C99A1E');
   if (rota === '/acento-ok') corpo = texto + situacao('#7A5C0E');
   if (rota.startsWith('/dash')) corpo ='<h1>Painel 2026</h1><div class="kpi__value">' + (rota === '/dash-ok' ? 'R$ 150,00' : '&#8212;') + '</div>';
@@ -271,6 +274,10 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['composicao-traco-opacity0-nao-conta', 'gate-composicao.mjs', ['--url', url + '/traco-opacity0'], 0],
     ['composicao-traco-visibility-nao-conta', 'gate-composicao.mjs', ['--url', url + '/traco-visibility'], 0],
     ['composicao-traco-display-none-nao-conta', 'gate-composicao.mjs', ['--url', url + '/traco-display-none'], 0],
+    ['composicao-assinatura-so-desenho-avisa-em-produto-fisico', 'gate-composicao.mjs', ['--url', url + '/assinatura-so-desenho', '--produto-fisico'], 0, /AVISO: momento assinatura só em desenho[\s\S]*foto real do produto[\s\S]*PASSA/],
+    ['composicao-assinatura-so-desenho-sem-a-marca-nao-avisa', 'gate-composicao.mjs', ['--url', url + '/assinatura-so-desenho'], 0, /^(?![\s\S]*AVISO: momento assinatura)[\s\S]*PASSA/],
+    ['composicao-assinatura-com-foto-nao-avisa', 'gate-composicao.mjs', ['--url', url + '/assinatura-com-foto', '--produto-fisico'], 0, /^(?![\s\S]*AVISO: momento assinatura)[\s\S]*PASSA/],
+    ['composicao-assinatura-so-desenho-continua-reprovando-o-resto', 'gate-composicao.mjs', ['--url', url + '/icone-generico', '--produto-fisico'], 1, /gen[eé]rico/],
     ['composicao-assinatura-repetida-passa', 'gate-composicao.mjs', ['--url', url + '/assinatura-repetida'], 0],
     ['composicao-repetido-fora-da-assinatura-reprova', 'gate-composicao.mjs', ['--url', url + '/assinatura-e-repetido-fora'], 1, /repetido[^\n]*2x/],
     ['composicao-icone-repetido', 'gate-composicao.mjs', ['--url', url + '/icone-repetido'], 1, /repetido/],
