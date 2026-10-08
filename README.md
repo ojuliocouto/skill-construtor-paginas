@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.6)
+SKILL.md                       router (v3.5.8)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,16 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.5.8
+
+Fixes from a second end-to-end test (`ACHADOS` N1 to N20). This release covers N1 to N12 (capture, photo search, image gate, truth gate, icon gate).
+
+- **Reference capture sees blank pages.** A new state `vazia` catches a first screen that is a flat sheet (97% or more of one colour: a hero video that did not render) and a middle print that is one colour with photos that never loaded; the script now waits for the visible photos (up to 6 s) before the middle print, and a first screen above 80% of one colour is a warning. Print numbers continue from the highest prefix ever used (folder, `descartados/`, manifest), and `--remover <url>` takes an `ok` reference that does not fit out of the manifest and moves its PNG files.
+- **Photo search.** `assets-search.py --type commons` drops police-evidence scans (`EFTA`), dollhouses, horse trailers and museum collections, says how many, and takes `--autor` and `--categoria` (the Commons pays off when you search by author or category). Every item shows a 500 px thumbnail and, when the photo is wide enough, the 1920 px hero URL; the reference explains that the Commons only serves 500, 960, 1280 and 1920 px. A table of starting names per craft unblocks the reference search.
+- **Image gate.** The credit is matched to its photo by the origin link in the credit item, so ten photos by one author no longer fail each other; without that link, a quoted title is accepted if it belongs to any photo of the same author, and a title that belongs to none still fails. A real title with a hyphen ("Close-up") passes. "Imagens ilustrativas" (plural) counts as the notice, and the message says whether the text is below the first screen or was not found.
+- **Truth gate.** The animated counter of the `vagas-que-se-preenchem` recipe stays inside its sentence and its heading opens its own section; a formatted phone number matches the digits-only number in the brief (a number that is not in the brief, or a promise next to it, still asks for a line).
+- **Icon gate.** The message tells you to copy the icon motif, letter by letter, into a `data-desenho` and shows the ones the page has (the check itself is unchanged).
 
 ## What is new in 3.5.7
 
