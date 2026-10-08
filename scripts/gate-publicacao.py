@@ -103,7 +103,11 @@ def icones_coerentes(dist, pagina):
         problemas.append(f"icones/icone.svg mudou depois de gerar os PNG: rode {comando('gerar-icones.mjs')} de novo")
     desenhos = " | ".join(_norm(html_mod.unescape(d)) for d in re.findall(r'data-desenho="([^"]+)"', pagina))
     if _norm(motivo) not in desenhos:
-        problemas.append(f"o ícone do site desenha \"{motivo}\", que a página não desenha em nenhum data-desenho: o favicon tem de ser a identidade atual, não a de uma versão anterior")
+        existentes = [html_mod.unescape(d).strip() for d in re.findall(r'data-desenho="([^"]+)"', pagina)]
+        tem = ("; a página tem " + str(len(existentes)) + " data-desenho, ex.: \"" + existentes[0][:80] + "\"") if existentes else "; a página não tem nenhum data-desenho"
+        problemas.append(f"o ícone do site desenha \"{motivo}\", que a página não desenha em nenhum data-desenho{tem}. O gate procura esse texto, letra por letra, "
+                         f"dentro de um data-desenho: copie a frase do motivo (\"{motivo}\") para o data-desenho do SVG da página que desenha o motivo "
+                         "(pode vir no meio de uma descrição maior). O favicon tem de ser a identidade atual, não a de uma versão anterior")
     for nome, sha in (reg.get("arquivos") or {}).items():
         alvo = dist / nome
         if alvo.is_file() and hashlib.sha256(alvo.read_bytes()).hexdigest() != sha:

@@ -300,7 +300,8 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    favicon PNG quadrado e `apple-touch-icon`, `og:title`, `og:description` e `og:image`.
    Favicon: recorte quadrado primeiro, depois redimensione. **O ícone é a identidade ATUAL:** o
    plano declara `Ícone do site: <motivo>`, o motivo é desenhado em `icones/icone.svg` (com o
-   mesmo `data-motivo`, e a página desenha esse motivo em algum `data-desenho`) e os PNG saem de
+   mesmo `data-motivo`, e a página desenha esse motivo em algum `data-desenho`: **copie a frase do motivo, letra por letra, para dentro do
+   `data-desenho` do SVG que o desenha** (pode vir no meio de uma descrição maior; palavra trocada não vale)) e os PNG saem de
    `node <dir-da-skill>/scripts/gerar-icones.mjs --projeto <dir>`. **A og:image sai de um comando** (1200x630, o título, a foto e a
    faixa "Imagem ilustrativa" quando a foto é de banco, com a fonte da marca de `fonts/`; sem fonte, usa a do sistema e diz que é reserva):
    `node <dir-da-skill>/scripts/gerar-og-image.mjs --projeto <dir> --titulo "<título>" --foto imagens/hero.jpg --ilustrativa`. A v5 publicou o favicon da v3

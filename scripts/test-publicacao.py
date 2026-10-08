@@ -205,6 +205,42 @@ class IconesDoSite(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("prumo sobre grade", out)
 
+    # 3.5.8, N12: o gate procura o texto do motivo, letra por letra, dentro de um data-desenho. A mensagem diz isso
+    # e mostra o que a página tem, para quem desenhou um SVG parecido saber o que copiar e para onde.
+    def test_n12_mensagem_ensina_a_copiar_o_motivo_para_um_data_desenho_e_mostra_os_da_pagina(self):
+        (self.proj / "plano-visual.md").write_text("Ícone do site: a mesa de frente (tampo e dois pés) em azul de giz\n", encoding="utf-8")
+        (self.proj / "icones" / "icone.svg").write_text('<svg data-motivo="a mesa de frente (tampo e dois pés) em azul de giz"></svg>', encoding="utf-8")
+        self.registrar(motivo="a mesa de frente (tampo e dois pés) em azul de giz")
+        code, out = self.gate()
+        self.assertEqual(code, 1, out)
+        self.assertIn("letra por letra", out)
+        self.assertIn("copie", out)
+        self.assertIn("data-desenho", out)
+        self.assertIn("coluna vertebral em curva natural", out)  # o que a página já tem
+        self.assertIn("a mesa de frente (tampo e dois pés) em azul de giz", out)  # o texto a copiar
+
+    def test_n12_motivo_copiado_inteiro_dentro_de_um_data_desenho_maior_passa(self):
+        (self.proj / "plano-visual.md").write_text("Ícone do site: a mesa de frente (tampo e dois pés) em azul de giz\n", encoding="utf-8")
+        (self.proj / "icones" / "icone.svg").write_text('<svg data-motivo="a mesa de frente (tampo e dois pés) em azul de giz"></svg>', encoding="utf-8")
+        self.registrar(motivo="a mesa de frente (tampo e dois pés) em azul de giz")
+        html = (self.proj / "index.html").read_text(encoding="utf-8")
+        html = html.replace('data-desenho="coluna vertebral em curva natural"',
+                            'data-desenho="mesa de jantar em vista de frente; a mesa de frente (tampo e dois pés) em azul de giz"')
+        (self.proj / "index.html").write_text(html, encoding="utf-8")
+        code, out = self.gate()
+        self.assertEqual(code, 0, out)
+
+    def test_n12_mutante_motivo_com_uma_palavra_trocada_continua_reprovando(self):
+        (self.proj / "plano-visual.md").write_text("Ícone do site: a mesa de frente (tampo e dois pés) em azul de giz\n", encoding="utf-8")
+        (self.proj / "icones" / "icone.svg").write_text('<svg data-motivo="a mesa de frente (tampo e dois pés) em azul de giz"></svg>', encoding="utf-8")
+        self.registrar(motivo="a mesa de frente (tampo e dois pés) em azul de giz")
+        html = (self.proj / "index.html").read_text(encoding="utf-8")
+        html = html.replace('data-desenho="coluna vertebral em curva natural"',
+                            'data-desenho="a mesa de frente (tampo e dois pés) em azul de gesso"')
+        (self.proj / "index.html").write_text(html, encoding="utf-8")
+        code, out = self.gate()
+        self.assertEqual(code, 1, out)
+
     def test_svg_alterado_depois_de_gerar_reprova(self):
         self.registrar()
         (self.proj / "icones" / "icone.svg").write_text('<svg data-motivo="coluna vertebral"><path d="M2 2"/></svg>', encoding="utf-8")
