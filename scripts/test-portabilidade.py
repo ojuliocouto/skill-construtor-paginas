@@ -64,6 +64,7 @@ PAD_SHELL = [
      "programa de Unix chamado por subprocesso"),
     (re.compile(r"""\bexecSync\(\s*[`"']"""), "execSync com string"),
     (re.compile(r"\bcpSync\("), "cpSync (no Node 22 do Windows falha com acento no caminho: copie com laço próprio)"),
+    (re.compile(r"""(?<![\w.])import\(\s*(?!['"`]|pathToFileURL|require\(['"]node:url['"]\)\.pathToFileURL|new URL)"""), "import() dinâmico com caminho de arquivo (no Windows precisa de pathToFileURL(caminho).href)"),
     (re.compile(r"import\.meta\.url\)?\.pathname|new URL\([^)]*import\.meta\.url[^)]*\)\.pathname"), "caminho de módulo por .pathname (use fileURLToPath)"),
 ]
 
@@ -168,6 +169,7 @@ RUINS = {
     "pkill.md": "```bash\npkill -f wrangler\n```\n",
     "exec.mjs": "import { execSync } from 'node:child_process';\nexecSync('ls -la');\n",
     "cpsync.mjs": "import fs from 'node:fs';\nfs.cpSync(a, b, { recursive: true });\n",
+    "import-dinamico.mjs": "const m = await import(path.join(aqui, 'x.mjs'));\n",
     "pathname.mjs": "const aqui = new URL('.', import.meta.url).pathname;\n",
 }
 BONS = {
@@ -183,6 +185,7 @@ BONS = {
     "comentario.py": "# brew install x e /tmp e open('a')\nx = 1\n",
     "open-url.md": "Abra https://exemplo.com no navegador.\nAbra o arquivo com o app.\n",
     "spawn-ok.mjs": "import { spawnSync } from 'node:child_process';\nspawnSync(process.execPath, ['a.js']);\n",
+    "import-ok.mjs": "const m = await import(pathToFileURL(p).href);\nconst n = await import('node:fs');\n",
     "url-ok.mjs": "import { fileURLToPath } from 'node:url';\nconst aqui = fileURLToPath(new URL('.', import.meta.url));\n",
 }
 

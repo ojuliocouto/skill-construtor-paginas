@@ -159,7 +159,7 @@ async function unidade() {
   const resultados = [];
   const confere = (nome, ok, detalhe) => { console.log(`${ok ? 'OK' : 'FALHA'} ${nome}${ok ? '' : ': ' + detalhe}`); resultados.push(ok); };
   let m;
-  try { m = await import(path.join(__dirname, 'ritmo-regras.mjs')); }
+  try { m = await import(require('node:url').pathToFileURL(path.join(__dirname, 'ritmo-regras.mjs')).href); }
   catch (e) { confere('ritmo-regras-existe', false, e.message); return resultados; }
   const s = (nome, sig, excecao) => ({ nome, sig, excecao });
   const a = m.avaliarRitmo([s('A', 'x'), s('B', 'y'), s('C', 'x')]);
