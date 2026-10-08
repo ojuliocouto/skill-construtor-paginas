@@ -19,6 +19,7 @@ v3.5 (padrão da v7, 04/10/2026). Cobra também o que fez a v7 sair melhor que a
     escolhida, nenhuma célula vazia e no máximo 2 seções com o mesmo tipo de animação (o tipo é
     o que vem antes dos dois pontos da célula; o tipo `assinatura` é o próprio momento
     assinatura, que aparece em 3 seções por regra, e fica fora da contagem);
+  - (3.5.6) `Ícone do site: <motivo>`: o favicon é decidido no plano, não no passo e.4;
   - `Material da cliente pedido:` com a lista do que só a cliente tem (foto real, número do
     WhatsApp, depoimento com autorização). `nenhum` só vale com o motivo.
 """
@@ -112,6 +113,15 @@ def checar_assinatura(texto):
         erros.append("Momento assinatura: faltam os estados com a mudança ('torta -> alinhada'); "
                      "o elemento tem de mudar de estado ao longo da página")
     return erros
+
+
+def checar_icone(texto):
+    """v3.5.6: o ícone do site é decidido no plano (o motivo desenhado em 32 px), não no passo e.4."""
+    m = re.search(r"(?mi)^\W*[ií]cone do site\W*:[ \t]*(.*)$", texto)
+    if not m or vazio(m.group(1)):
+        return ["Ícone do site: falta a linha 'Ícone do site: <motivo>' (o que o favicon desenha em 32 px, "
+                "ligado ao assunto e à assinatura; o gate de publicação e o gerar-icones.mjs leem esse motivo)"]
+    return []
 
 
 def tipo_da_animacao(celula):
@@ -216,6 +226,7 @@ def checar(caminho):
         erros.append(f"ID real de GA4 no plano ({m.group(0)}): use G-XXXXXXXX no texto")
 
     erros += checar_assinatura(texto)
+    erros += checar_icone(texto)
     erros += checar_material(texto)
 
     # a. Referências

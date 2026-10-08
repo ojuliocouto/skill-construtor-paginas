@@ -106,6 +106,16 @@ class Etapas(unittest.TestCase):
         b['secoes'][2]['tratamento'] = 'linha do tempo'
         self.assertEqual(self.validar('2', b), 0, 'duas seguidas iguais é o limite')
 
+    # v3.5.6 (achado A8): a linha "Ícone do site: <motivo>" é cobrada quando o plano visual é
+    # registrado, não só no passo e.4, quando o aluno já construiu a página.
+    def test_plano_visual_sem_linha_do_icone_do_site_reprova(self):
+        (self.pasta / 'plano-visual.md').write_text('# Plano visual\n\nDireção: oficina.\n', encoding='utf-8')
+        self.assertEqual(self.validar('2', self.plano()), 1)
+        (self.pasta / 'plano-visual.md').write_text('# Plano visual\n\nÍcone do site: <motivo>\n', encoding='utf-8')
+        self.assertEqual(self.validar('2', self.plano()), 1, 'modelo não preenchido')
+        (self.pasta / 'plano-visual.md').write_text('# Plano visual\n\nÍcone do site: encaixe de duas peças de madeira\n', encoding='utf-8')
+        self.assertEqual(self.validar('2', self.plano()), 0)
+
     def test_plano_visual_reprova_icone_de_biblioteca(self):
         b = self.plano(icones=[{'secao': 'Como funciona', 'desenha': 'balão de conversa com três pontos'}])
         self.assertEqual(self.validar('2', b), 1)

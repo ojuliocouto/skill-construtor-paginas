@@ -112,6 +112,10 @@ def validar(projeto, arquivo, etapa, campos, perfil):
         for i in range(len(norm) - 2):
             if norm[i] == norm[i + 1] == norm[i + 2]:
                 raise ValueError(f"Etapa 2: '{secoes[i]['tratamento']}' em 3 seções seguidas ({secoes[i]['secao']}, {secoes[i + 1]['secao']}, {secoes[i + 2]['secao']}): cada seção ganha um tratamento próprio.")
+        # v3.5.6: o plano visual declara o ícone do site; o aluno não descobre a linha só no passo e.4.
+        pv = projeto / "plano-visual.md"
+        if pv.is_file() and not re.search(r"(?im)^\W*[ií]cone do site\W*:[ \t]*(?!<[^>]*>\s*$)\S", pv.read_text(encoding="utf-8-sig")):
+            raise ValueError("Etapa 2: plano-visual.md não declara 'Ícone do site: <motivo>' (o que o favicon desenha em 32 px).")
         for ic in doc.get("icones") or []:
             desenha = str((ic or {}).get("desenha") or "").strip() if isinstance(ic, dict) else ""
             if not desenha:
