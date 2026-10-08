@@ -49,7 +49,7 @@ achado por `scripts/npm-global.cjs`. Quem escrever script novo respeita a trava
 | Pillow e numpy (opcional, gates de imagem) | `node <dir-da-skill>/scripts/py.mjs -m pip install pillow numpy` | igual | igual; no Ubuntu 24.04 e Debian 12 veja o erro "externally-managed-environment" abaixo |
 | Playwright | `npm install -g playwright` | igual | igual |
 | Chromium do Playwright | `npx playwright install chromium` | igual | `npx playwright install --with-deps chromium` |
-| ffmpeg (opcional, só para página com vídeo) | `winget install -e --id Gyan.FFmpeg` | `brew install ffmpeg` (macOS) | `sudo apt install ffmpeg` ou `sudo dnf install ffmpeg` |
+| ffmpeg (opcional, só para página com vídeo) | `winget install -e --id Gyan.FFmpeg`; se não tiver o `winget`: `choco install ffmpeg -y` (é o que o CI usa) | `brew install ffmpeg` (macOS) | `sudo apt install ffmpeg` ou `sudo dnf install ffmpeg` |
 | Skill `frontend-design` | `npx -y skills add anthropics/skills --skill frontend-design --agent claude-code -g -y --copy` | igual | igual |
 
 O `checar-ferramentas.py` confere tudo isso e imprime a linha certa para a máquina de quem rodou.
@@ -71,6 +71,7 @@ foram reproduzidas em máquina real nesta skill.
 | `error: externally-managed-environment` ao instalar Pillow (documentada) | Ubuntu 24.04 e Debian 12 bloqueiam `pip` no Python do sistema. Use `sudo apt install python3-pil python3-numpy`, ou crie um ambiente (`python3 -m venv ~/.venv-skill`) e rode o `py.mjs` com ele no PATH. |
 | `npx : O arquivo ...npx.ps1 não pode ser carregado porque a execução de scripts foi desabilitada neste sistema` (documentada) | PowerShell com política restrita. Use o Git Bash, ou `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. |
 | `spawn EINVAL` ao chamar `npm.cmd` ou `npx.cmd` pelo Node 20.12+ (documentada) | O Node recusa rodar `.cmd` sem shell. Os scripts da skill não fazem isso (`npm-global.cjs` roda o `npm-cli.js` com o próprio `node`). Se um script novo precisar, use o mesmo caminho. |
+| `ffmpeg não encontrado: instale com ...` (medida: gate de vídeo e teste sem ffmpeg no PATH) | O ffmpeg e o ffprobe não estão no PATH. Instale pela tabela acima e abra um terminal novo. O teste `test-gates-visuais.cjs` fica PULADO fora do CI e FALHA no CI. |
 | `/usr/bin/env: 'bash\r': No such file or directory` (documentada) | Fim de linha CRLF num script. O `.gitattributes` da skill força LF; se clonou antes dele, rode `git add --renormalize .`. |
 | `ENOENT` ou `EPERM` com caminho que tem acento ou espaço (medida: o CI abre `C:\curso automação\skill`) | Falta de aspas no comando. Todo caminho vai entre aspas duplas. |
 

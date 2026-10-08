@@ -5,6 +5,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { spawn, execFileSync } = require('node:child_process');
 
+require('./ffmpeg-ausente.cjs').pularOuFalharSemFfmpeg();
 const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'gates-visuais-'));
 execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=gray:s=320x180:r=10', '-t', '8', '-pix_fmt', 'yuv420p', path.join(pasta, 'controle.mp4')]);
 execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', path.join(pasta, 'controle.mp4'), '-frames:v', '1', path.join(pasta, 'poster.png')]);

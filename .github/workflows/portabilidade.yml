@@ -48,10 +48,24 @@ jobs:
         if: runner.os != 'Linux'
         run: npx playwright install chromium
 
+      - name: ffmpeg (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: ffmpeg (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg
+
+      - name: ffmpeg (Windows; o runner não traz winget, então choco)
+        if: runner.os == 'Windows'
+        run: choco install ffmpeg -y --no-progress
+
       - name: Versões
         run: |
           node --version
           python --version
+          ffmpeg -version
+          ffprobe -version
           node scripts/py.mjs --descobrir
 
       - name: Suíte inteira

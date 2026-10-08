@@ -106,7 +106,7 @@ def como_instalar_playwright():
 
 def como_instalar_ffmpeg():
     return {
-        "windows": "winget install -e --id Gyan.FFmpeg   (abra um terminal novo depois)",
+        "windows": "winget install -e --id Gyan.FFmpeg   (ou: choco install ffmpeg -y; abra um terminal novo depois)",
         "macos": "brew install ffmpeg",  # macOS
         "linux": "Debian/Ubuntu: sudo apt install ffmpeg  |  Fedora: sudo dnf install ffmpeg (precisa do repositório RPM Fusion)",
     }[plataforma.sistema()]
@@ -256,9 +256,13 @@ def checagens(opcionais=False):
     yield ("Pillow e numpy", "repeticao e nitidez de foto (gate-imagens) e a prancha de animacao (opcional)",
            CRITICIDADE["Pillow e numpy"], tem_pn, det_pn, comando_pip("pillow numpy"))
 
-    ok, saida = roda(["ffprobe", "-version"])
-    yield ("ffmpeg/ffprobe", "gate de video (so em pagina com video)", CRITICIDADE["ffmpeg/ffprobe"], ok,
-           saida.splitlines()[0] if saida else "", como_instalar_ffmpeg())
+    ok_prb, saida = roda(["ffprobe", "-version"])
+    ok_mpg, saida_mpg = roda(["ffmpeg", "-version"])
+    faltam = [n for n, o in (("ffmpeg", ok_mpg), ("ffprobe", ok_prb)) if not o]
+    yield ("ffmpeg/ffprobe", "gate de video (so em pagina com video)", CRITICIDADE["ffmpeg/ffprobe"],
+           ok_prb and ok_mpg,
+           (f"nao encontrado: {', '.join(faltam)}" if faltam else (saida.splitlines()[0] if saida else "")),
+           como_instalar_ffmpeg())
 
     TASTE = "npx skills add Leonxlnx/taste-skill -g -y --copy"
     for s, papel, fix in [
