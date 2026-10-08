@@ -25,6 +25,7 @@ Uso:
 """
 import ast
 import re
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -141,12 +142,29 @@ def varrer_texto(nome, texto):
     return achados
 
 
+def _ignorados_pelo_git():
+    """Caminhos (com barra normal) que o git ignora nesta cópia. A trava vale para o que é publicado:
+    na máquina do dono a skill tem notas locais ignoradas (references/projects/ e afins) que nunca
+    chegam ao aluno. Sem git (zip baixado), devolve vazio e tudo é varrido."""
+    if not (RAIZ / ".git").exists():
+        return set()
+    try:
+        r = subprocess.run(["git", "-C", str(RAIZ), "ls-files", "--others", "--ignored", "--exclude-standard", "-z"],
+                           capture_output=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    if r.returncode != 0:
+        return set()
+    return {c for c in r.stdout.decode("utf-8", "replace").split("\0") if c}
+
+
 def arquivos_da_skill():
+    ignorados = _ignorados_pelo_git()
     for p in sorted(RAIZ.rglob("*")):
         if not p.is_file() or p.suffix.lower() not in EXTENSOES or p.name in ISENTOS:
             continue
         rel = p.relative_to(RAIZ)
-        if any(parte in PASTAS_FORA for parte in rel.parts):
+        if any(parte in PASTAS_FORA for parte in rel.parts) or rel.as_posix() in ignorados:
             continue
         yield p, rel.as_posix()
 
