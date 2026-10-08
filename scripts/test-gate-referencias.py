@@ -78,7 +78,7 @@ class GateReferencias(unittest.TestCase):
 
     def rodar(self, *extra):
         r = subprocess.run([sys.executable, str(SCRIPT), "--projeto", str(self.projeto), *extra],
-                           capture_output=True, text=True)
+                           capture_output=True, text=True, encoding="utf-8")
         return r.returncode, r.stdout + r.stderr
 
     def test_seis_prints_reais_lidos_passa(self):
@@ -126,21 +126,21 @@ class GateReferencias(unittest.TestCase):
     def test_referencia_nao_lida_nao_conta(self):
         refs = self.montar(6)
         refs[4]["lido"] = False
-        (self.projeto / "referencias" / "referencias.json").write_text(json.dumps({"referencias": refs}))
+        (self.projeto / "referencias" / "referencias.json").write_text(json.dumps({"referencias": refs}), encoding="utf-8")
         code, _ = self.rodar()
         self.assertEqual(code, 1)
 
     def test_leitura_rasa_nao_conta(self):
         refs = self.montar(6)
         refs[0]["faz_bem"]["tipografia"] = "bonita"
-        (self.projeto / "referencias" / "referencias.json").write_text(json.dumps({"referencias": refs}))
+        (self.projeto / "referencias" / "referencias.json").write_text(json.dumps({"referencias": refs}), encoding="utf-8")
         code, out = self.rodar()
         self.assertEqual(code, 1, out)
 
     def test_url_repetida_nao_conta_duas_vezes(self):
         refs = self.montar(6)
         refs[5]["url"] = refs[0]["url"]
-        (self.projeto / "referencias" / "referencias.json").write_text(json.dumps({"referencias": refs}))
+        (self.projeto / "referencias" / "referencias.json").write_text(json.dumps({"referencias": refs}), encoding="utf-8")
         code, _ = self.rodar()
         self.assertEqual(code, 1)
 
@@ -155,7 +155,7 @@ class GateReferencias(unittest.TestCase):
         fora = pathlib.Path(tempfile.mkdtemp()) / "fora.png"
         png(fora, semente=99)
         refs[0]["prints"]["dobra"] = str(fora)
-        (self.projeto / "referencias" / "referencias.json").write_text(json.dumps({"referencias": refs}))
+        (self.projeto / "referencias" / "referencias.json").write_text(json.dumps({"referencias": refs}), encoding="utf-8")
         code, _ = self.rodar()
         self.assertEqual(code, 1)
 

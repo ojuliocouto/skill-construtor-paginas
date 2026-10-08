@@ -20,7 +20,7 @@ headline é erro de processo.
 7. **Prova:** print do ponto alterado, desktop e celular, lido com os próprios olhos, mais a
    confirmação de que o resto da página continua igual:
    `node <dir-da-skill>/scripts/screenshot-prova.js <url> <dir>/prova-edicao`
-   `python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> checar --caminho editar`
+   `node <dir-da-skill>/scripts/py.mjs uso-ferramentas.py --projeto <dir> checar --caminho editar`
 8. Registro curto na sessão (o que mudou e onde).
 
 Se a MUDANÇA pede mais (o pedido é "põe um vídeo no hero" ou "refaz a seção de preço"), ela

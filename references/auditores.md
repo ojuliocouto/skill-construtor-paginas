@@ -29,7 +29,7 @@ Os critérios continuam todos; muda quantos agentes rodam e quantas rodadas.
      (`gravar-video.js`), mais as pranchas de animação por seção quando existirem;
    - as preferências do dono da skill, quando o projeto as usa.
    Gere uma vez o que ainda não existir (prints e vídeo, `references/caminhos/criar.md` passo g) e confira:
-   `python3 <dir-da-skill>/scripts/pacote-auditoria.py --projeto <dir> --url <url>`.
+   `node <dir-da-skill>/scripts/py.mjs pacote-auditoria.py --projeto <dir> --url <url>`.
    Ele lista o que achou, o que falta e o que está velho (capturado antes da última mudança da
    página), grava `auditoria/pacote.json` e sai 1 se faltar item obrigatório. Não chame o auditor
    com pacote incompleto: ele ia capturar por conta própria, de novo.
@@ -50,10 +50,10 @@ Os critérios continuam todos; muda quantos agentes rodam e quantas rodadas.
    medido de confiar na autoavaliação (02/10/2026): média 7,78 e "tells 0" contra 5,5 e cinco
    achados graves do auditor independente, na mesma página.
 5. Cada lente devolvida se registra:
-   `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> registrar <lente> --veredito <aprovado|reprovado> --nota <0-10> --origem <subagente|sessao-independente|pessoa|autoavaliacao> --achados "<o que olhou, o que mediu, o que achou>"`
-6. Master: `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> checar` (todas as lentes e
+   `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> registrar <lente> --veredito <aprovado|reprovado> --nota <0-10> --origem <subagente|sessao-independente|pessoa|autoavaliacao> --achados "<o que olhou, o que mediu, o que achou>"`
+6. Master: `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> checar` (todas as lentes e
    todos os gates registrados).
-7. Ciclo: `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`.
+7. Ciclo: `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`.
    Saiu CONTINUA (rodada 1): corrija, refaça os gates que a correção toca, junte o pacote de novo
    (a página mudou, os prints antigos ficam velhos), salve os achados da rodada 1 em
    `auditoria/achados-rodada-1.json` e feche a rodada de conferência (a seção sobre a segunda rodada, abaixo).
@@ -216,7 +216,7 @@ A lente que a v3 criou. Pega as 2 ou 3 referências mais fortes de `referencias/
 põe cada uma ao lado da página, na mesma escala:
 
 ```bash
-python3 <dir-da-skill>/scripts/lado-a-lado.py <dir>/referencias/<ref>-dobra.png <print-da-pagina-dobra.png> <dir>/referencias/comparativo-1.jpg --rotulos "Referência,Nossa página"
+node <dir-da-skill>/scripts/py.mjs lado-a-lado.py <dir>/referencias/<ref>-dobra.png <print-da-pagina-dobra.png> <dir>/referencias/comparativo-1.jpg --rotulos "Referência,Nossa página"
 ```
 
 Olhe a imagem e responda por escrito, eixo por eixo (composição, tipografia, imagem, ritmo,

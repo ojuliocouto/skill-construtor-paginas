@@ -139,7 +139,7 @@ class Demo(unittest.TestCase):
         self.assertIn("replace('no-js','js')", self.html)
 
     def test_sem_kicker_nem_numero_decorativo(self):
-        r = subprocess.run([sys.executable, str(SCRIPTS / "gate-sem-kicker.py"), str(DEMO)], capture_output=True, text=True)
+        r = subprocess.run([sys.executable, str(SCRIPTS / "gate-sem-kicker.py"), str(DEMO)], capture_output=True, text=True, encoding="utf-8")
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_assinatura_vem_no_html_para_a_pagina_sem_script(self):

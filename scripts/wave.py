@@ -30,12 +30,12 @@ pessoa). Teto de 2 rodadas; a segunda e de conferencia. Quando nao ha subagente,
 checagem roda em sequencia e o registro diz isso (autoavaliacao, que nao libera entrega).
 
 Uso:
-    python3 scripts/wave.py --projeto <dir> registrar <lente> --nota 8.5 \\
+    node scripts/py.mjs wave.py --projeto <dir> registrar <lente> --nota 8.5 \\
         --veredito aprovado --achados "o que olhou e o que encontrou"
-    python3 scripts/wave.py --projeto <dir> gate <nome> --exit 0 --detalhe "..."
-    python3 scripts/wave.py --projeto <dir> checar        # o AUDITOR MASTER
-    python3 scripts/wave.py --projeto <dir> --caminho clonar checar   # clone fiel: sem gate de referencias
-    python3 scripts/wave.py --projeto <dir> rodada --criticos 0 --altos 4 --pendencias-do-usuario 2 --regressoes 0
+    node scripts/py.mjs wave.py --projeto <dir> gate <nome> --exit 0 --detalhe "..."
+    node scripts/py.mjs wave.py --projeto <dir> checar        # o AUDITOR MASTER
+    node scripts/py.mjs wave.py --projeto <dir> --caminho clonar checar   # clone fiel: sem gate de referencias
+    node scripts/py.mjs wave.py --projeto <dir> rodada --criticos 0 --altos 4 --pendencias-do-usuario 2 --regressoes 0
 """
 import argparse
 import datetime
@@ -125,7 +125,7 @@ def carregar(projeto):
     if not p.exists():
         return {"lentes": {}, "gates": {}}
     try:
-        d = json.loads(p.read_text(encoding="utf-8"))
+        d = json.loads(p.read_text(encoding="utf-8-sig"))
         d.setdefault("lentes", {})
         d.setdefault("gates", {})
         return d

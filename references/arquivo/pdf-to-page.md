@@ -351,19 +351,19 @@ contraste entre página "de verdade" e template genérico. Receita validada num 
 
 ```bash
 # 1. Extrair todas as imagens embutidas no PDF
-pdfimages -all arquivo.pdf /tmp/extr/img      # gera img-000.ppm/png/jpg...
+pdfimages -all arquivo.pdf <pasta-temp>/extr/img      # gera img-000.ppm/png/jpg...
 
 # 2. Muitas vezes o equipamento esta DENTRO de um slide com texto por cima.
 #    Recortar so o objeto limpo, com Python/PIL:
-python3 - <<'PY'
+node <dir-da-skill>/scripts/py.mjs - <<'PY'
 from PIL import Image
-im = Image.open("/tmp/extr/img-005.png")
+im = Image.open("<pasta-temp>/extr/img-005.png")
 crop = im.crop((x0, y0, x1, y1))     # ajustar caixa pra pegar so o equipamento
 crop.save("/projeto/assets/equip.webp", "WEBP", quality=82)
 PY
 
 # 3. Converter o resto pra WebP (leve)
-for f in /tmp/extr/*.png; do cwebp -q 82 "$f" -o "${f%.png}.webp"; done
+for f in <pasta-temp>/extr/*.png; do cwebp -q 82 "$f" -o "${f%.png}.webp"; done
 ```
 
 Regras:

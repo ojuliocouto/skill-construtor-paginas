@@ -14,7 +14,7 @@ sitemap.xml, _headers e _redirects quando existirem. Nada mais.
 (as url() reescritas para a raiz): tira o CSS do caminho crítico, que no celular custava 1,3 s
 de bloqueio de renderização na v3.
 
-Uso: python3 scripts/montar-dist.py --projeto <dir> [--saida dist] [--css-em-linha]
+Uso: node scripts/py.mjs montar-dist.py --projeto <dir> [--saida dist] [--css-em-linha]
 """
 import argparse
 import os
@@ -70,7 +70,7 @@ class Coletor(HTMLParser):
 def referenciados(raiz):
     """Conjunto de caminhos relativos (POSIX) que a página usa, a partir do index.html."""
     raiz = Path(raiz).resolve()
-    html = (raiz / "index.html").read_text(encoding="utf-8")
+    html = (raiz / "index.html").read_text(encoding="utf-8-sig")
     c = Coletor()
     c.feed(html)
     usados = {"index.html"}
@@ -91,7 +91,7 @@ def referenciados(raiz):
             continue
         usados.add(rel)
         if alvo.suffix.lower() == ".css":
-            for m in URL_CSS.finditer(alvo.read_text(encoding="utf-8")):
+            for m in URL_CSS.finditer(alvo.read_text(encoding="utf-8-sig")):
                 pendentes.append((m.group(2), alvo.parent))
     for extra in EXTRAS:
         if (raiz / extra).is_file():
@@ -108,7 +108,7 @@ def css_em_linha(raiz, html, usados):
         if not ref or not (raiz / ref).is_file():
             return tag
         arquivo = raiz / ref
-        texto = arquivo.read_text(encoding="utf-8")
+        texto = arquivo.read_text(encoding="utf-8-sig")
 
         def raiz_url(u):
             alvo = local(u.group(2))
@@ -136,7 +136,7 @@ def main(argv=None):
         print("ERRO: a saída não pode ser a própria pasta do projeto.")
         return 2
     usados = referenciados(raiz)
-    html = (raiz / "index.html").read_text(encoding="utf-8")
+    html = (raiz / "index.html").read_text(encoding="utf-8-sig")
     if a.css_em_linha:
         html = css_em_linha(raiz, html, usados)
         # o CSS em linha pode ter trazido url() que antes só o .css citava: já estão em `usados`

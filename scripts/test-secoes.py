@@ -53,7 +53,7 @@ class Biblioteca(unittest.TestCase):
     def test_html_de_exemplo_sem_tells(self):
         for h in sorted(SECOES.glob("*.html")):
             r = subprocess.run([sys.executable, str(RAIZ / "scripts" / "gate-sem-kicker.py"), str(h)],
-                               capture_output=True, text=True)
+                               capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(r.returncode, 0, f"{h.name}: {r.stdout}")
 
     def test_html_em_portugues_sem_travessao_sem_cdn_tailwind(self):

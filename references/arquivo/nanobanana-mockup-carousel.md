@@ -40,7 +40,6 @@ mkdir -p scripts
 ```
 
 ```python
-#!/usr/bin/env python3
 """
 generate-app-mockup.py
 Gera screenshot de interface de app com Nanobanana (Gemini 3 Pro Image)
@@ -49,6 +48,7 @@ Gera screenshot de interface de app com Nanobanana (Gemini 3 Pro Image)
 import os
 import json
 import base64
+import tempfile
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -106,7 +106,7 @@ def generate_mockup(prompt: str, output_name: str = 'mockup', aspect: str = '9:1
             ext = 'png' if 'png' in mime_type else 'jpg'
 
             timestamp = datetime.now().strftime('%H%M%S')
-            output_path = Path(f'/tmp/{output_name}-{timestamp}.{ext}')
+            output_path = Path(tempfile.gettempdir()) / f'{output_name}-{timestamp}.{ext}'
             output_path.write_bytes(base64.b64decode(image_data))
             print(f"✅ Imagem: {output_path} ({output_path.stat().st_size // 1024}KB)")
             return output_path
@@ -159,10 +159,10 @@ if __name__ == '__main__':
 
 ```bash
 # Single
-cwebp -q 88 /tmp/mockup-123456.png -o /tmp/mockup.webp
+cwebp -q 88 <pasta-temp>/mockup-123456.png -o <pasta-temp>/mockup.webp
 
 # Batch (todos os PNGs)
-for f in /tmp/mockup-*.png; do
+for f in <pasta-temp>/mockup-*.png; do
   cwebp -q 88 "$f" -o "${f%.png}.webp" && echo "✅ ${f%.png}.webp"
 done
 ```
@@ -672,12 +672,12 @@ Modern fintech design. iOS UI. Portrait 1080x1920. No faces, realistic data.
 #    Sem esse passo, o comando abaixo devolve "No such file or directory".
 
 # 1. Gerar screenshots com nanobanana (rode a partir da pasta do seu projeto)
-python3 scripts/generate-app-mockup.py \
+node scripts/py.mjs generate-app-mockup.py \
   "WhatsApp automation dashboard, dark mode, purple theme" \
   "screen-whatsapp" "9:16"
 
 # 2. Converter para WebP
-cwebp -q 88 /tmp/screen-whatsapp-*.png -o public/images/screen-whatsapp.webp
+cwebp -q 88 <pasta-temp>/screen-whatsapp-*.png -o public/images/screen-whatsapp.webp
 
 # 3. Repetir para cada slide do carousel (3-5 imagens)
 # 4. Copiar para public/images/

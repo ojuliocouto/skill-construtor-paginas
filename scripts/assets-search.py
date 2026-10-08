@@ -6,15 +6,15 @@ Assets Search: Videos, Fotos, Lottie, Ilustracoes para paginas web.
 Busca assets visuais gratuitos para usar em backgrounds, heroes, secoes.
 
 Uso:
-  python3 assets-search.py "dark abstract"              # videos (padrao)
-  python3 assets-search.py "technology" --type photo    # fotos
-  python3 assets-search.py tech-dark                    # preset video
-  python3 assets-search.py --type lottie "loading"      # lottie (links)
-  python3 assets-search.py --type illustrations         # undraw/storyset
-  python3 assets-search.py --type icons                 # lordicon/animated
-  python3 assets-search.py --type openverse "team"      # FOTOS REAIS SEM CHAVE (licenca CC)
-  python3 assets-search.py --type sem-chave             # todas as rotas sem chave
-  python3 assets-search.py --presets                    # listar presets
+  node scripts/py.mjs assets-search.py "dark abstract"              # videos (padrao)
+  node scripts/py.mjs assets-search.py "technology" --type photo    # fotos
+  node scripts/py.mjs assets-search.py tech-dark                    # preset video
+  node scripts/py.mjs assets-search.py --type lottie "loading"      # lottie (links)
+  node scripts/py.mjs assets-search.py --type illustrations         # undraw/storyset
+  node scripts/py.mjs assets-search.py --type icons                 # lordicon/animated
+  node scripts/py.mjs assets-search.py --type openverse "team"      # FOTOS REAIS SEM CHAVE (licenca CC)
+  node scripts/py.mjs assets-search.py --type sem-chave             # todas as rotas sem chave
+  node scripts/py.mjs assets-search.py --presets                    # listar presets
 
 Sem PEXELS_API_KEY o script NAO fica sem imagem: "--type photo" cai
 automaticamente na Openverse, que devolve fotos reais com licenca Creative
@@ -485,7 +485,7 @@ def format_openverse(items: list, query: str, veio_de_fallback: bool = False) ->
         linhas.append('  Nenhuma foto encontrada na Openverse para: "%s"' % query)
         linhas.append(barra)
         linhas.append("  Tente termos em ingles e mais concretos, ex: \"team meeting office\".")
-        linhas.append("  Outras rotas sem chave: python3 assets-search.py --type sem-chave")
+        linhas.append("  Outras rotas sem chave: node scripts/py.mjs assets-search.py --type sem-chave")
         linhas.append(barra)
         return "\n".join(linhas)
 
@@ -602,8 +602,8 @@ def show_sem_chave_resources() -> str:
     linhas.append("")
 
     linhas.append("  1. OPENVERSE: fotos reais, licenca Creative Commons (a melhor rota)")
-    linhas.append("     python3 assets-search.py \"team meeting office\" --type openverse -n 6")
-    linhas.append("     python3 assets-search.py \"sua busca\" --type photo   # cai aqui sozinho")
+    linhas.append("     node scripts/py.mjs assets-search.py \"team meeting office\" --type openverse -n 6")
+    linhas.append("     node scripts/py.mjs assets-search.py \"sua busca\" --type photo   # cai aqui sozinho")
     linhas.append("     Credito ao autor OBRIGATORIO (CC BY / BY-SA). Sai pronto na busca.")
     linhas.append("")
 
@@ -616,12 +616,12 @@ def show_sem_chave_resources() -> str:
 
     linhas.append("  3. UNDRAW: ilustracoes SVG tematicas, cor customizavel")
     linhas.append("     https://undraw.co/illustrations")
-    linhas.append("     python3 assets-search.py --type illustrations \"team work\"")
+    linhas.append("     node scripts/py.mjs assets-search.py --type illustrations \"team work\"")
     linhas.append("     Sem obrigacao de credito. Boas pra secao de features e vazio de dados.")
     linhas.append("")
 
     linhas.append("  4. GRADIENTE E PATTERN SVG (background, nunca sozinho como 'imagem')")
-    linhas.append("     python3 assets-search.py --type backgrounds")
+    linhas.append("     node scripts/py.mjs assets-search.py --type backgrounds")
     linhas.append("")
 
     linhas.append(barra)
@@ -869,8 +869,8 @@ def print_no_api_key(com_saida_alternativa: bool = True):
     if com_saida_alternativa:
         linhas += [
             "  SEM CHAVE VOCE AINDA TEM FOTO REAL:",
-            '      python3 assets-search.py "sua busca" --type openverse',
-            "      python3 assets-search.py --type sem-chave",
+            '      node scripts/py.mjs assets-search.py "sua busca" --type openverse',
+            "      node scripts/py.mjs assets-search.py --type sem-chave",
             "",
             "  A Openverse devolve fotos reais com licenca Creative Commons.",
             "  Nesse caso creditar o autor NAO e opcional.",
@@ -898,16 +898,16 @@ Tipos disponiveis:
   backgrounds  Lista geradores de backgrounds SVG/patterns
 
 Exemplos:
-  python3 assets-search.py "dark abstract"
-  python3 assets-search.py tech-dark
-  python3 assets-search.py "minimal white" --type video --orientation landscape
-  python3 assets-search.py "office team" --type photo -n 5
-  python3 assets-search.py "team meeting office" --type openverse -n 5
-  python3 assets-search.py --type sem-chave
-  python3 assets-search.py "loading" --type lottie
-  python3 assets-search.py --type illustrations "team work"
-  python3 assets-search.py --type backgrounds
-  python3 assets-search.py --presets
+  node scripts/py.mjs assets-search.py "dark abstract"
+  node scripts/py.mjs assets-search.py tech-dark
+  node scripts/py.mjs assets-search.py "minimal white" --type video --orientation landscape
+  node scripts/py.mjs assets-search.py "office team" --type photo -n 5
+  node scripts/py.mjs assets-search.py "team meeting office" --type openverse -n 5
+  node scripts/py.mjs assets-search.py --type sem-chave
+  node scripts/py.mjs assets-search.py "loading" --type lottie
+  node scripts/py.mjs assets-search.py --type illustrations "team work"
+  node scripts/py.mjs assets-search.py --type backgrounds
+  node scripts/py.mjs assets-search.py --presets
         """
     )
     parser.add_argument("query", nargs="?", default="", help="Termo de busca ou preset")

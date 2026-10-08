@@ -85,7 +85,7 @@ Exemplo: `<a href="https://wa.me/55DDNUMERO" data-evento="clique_whatsapp">Agend
 
 ## O gate
 
-`python3 <dir-da-skill>/scripts/gate-rastreamento.py --dist <dir>/dist --plano <dir>/PLANO.md`
+`node <dir-da-skill>/scripts/py.mjs gate-rastreamento.py --dist <dir>/dist --plano <dir>/PLANO.md`
 
 Lê o pedido no PLANO.md e reprova a `dist/` sem o `window.RASTREIO`, sem o carregador de cada
 ferramenta pedida, sem o ouvinte de `[data-evento]`, sem os marcos de rolagem, com link de

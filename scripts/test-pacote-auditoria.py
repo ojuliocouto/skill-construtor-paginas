@@ -40,7 +40,7 @@ def rodar(raiz, *extra, url=URL):
     args = [sys.executable, str(SCRIPT), "--projeto", str(raiz)]
     if url:
         args += ["--url", url]
-    r = subprocess.run(args + list(extra), capture_output=True, text=True)
+    r = subprocess.run(args + list(extra), capture_output=True, text=True, encoding="utf-8")
     return r.returncode, r.stdout + r.stderr
 
 

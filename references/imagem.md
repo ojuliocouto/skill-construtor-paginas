@@ -49,7 +49,7 @@ o print e confira se o assunto está em foco: desfoque de fundo proposital pode 
 
 ## Comandos
 
-`python3 <dir-da-skill>/scripts/gate-imagens.py --projeto <dir> --url http://localhost:8765/`
-`python3 <dir-da-skill>/scripts/gate-imagens.py --projeto <dir> --trafego-real` (página que vai receber anúncio)
+`node <dir-da-skill>/scripts/py.mjs gate-imagens.py --projeto <dir> --url http://localhost:8765/`
+`node <dir-da-skill>/scripts/py.mjs gate-imagens.py --projeto <dir> --trafego-real` (página que vai receber anúncio)
 
-Mede com Pillow e numpy (`pip install pillow numpy`).
+Mede com Pillow e numpy (o comando de instalar certo para a sua máquina sai do `checar-ferramentas.py`, linha "Pillow e numpy").

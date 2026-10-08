@@ -27,7 +27,6 @@ Aprovado em produção em um site institucional real (março/2026).
 ## Script de geração: `generate-videos.py`
 
 ```python
-#!/usr/bin/env python3
 import json, time, urllib.request, urllib.error, os, sys
 from pathlib import Path
 from datetime import datetime

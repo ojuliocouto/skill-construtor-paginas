@@ -25,7 +25,7 @@ Reprova (exit 1) se a pasta:
     sha256 do SVG atual e dos PNG publicados. A v5 publicou o prumo da v3 (md5 igual) numa
     página que já desenhava a coluna vertebral.
 
-Uso: python3 scripts/gate-publicacao.py --dist <dir-do-projeto>/dist
+Uso: node scripts/py.mjs gate-publicacao.py --dist <dir-do-projeto>/dist
 """
 import argparse
 import hashlib
@@ -78,7 +78,7 @@ def icones_coerentes(dist, pagina):
     plano = projeto / "plano-visual.md"
     if not plano.is_file():
         return []
-    m = re.search(r"(?im)^\W*[ií]cone do site\W*:\s*(.+)$", plano.read_text(encoding="utf-8"))
+    m = re.search(r"(?im)^\W*[ií]cone do site\W*:\s*(.+)$", plano.read_text(encoding="utf-8-sig"))
     if not m:
         return ["plano-visual.md não declara \"Ícone do site: <motivo>\": o favicon é a identidade em 32 px e precisa ser decidido no plano"]
     motivo = m.group(1).strip().strip("*`. ")
@@ -88,10 +88,10 @@ def icones_coerentes(dist, pagina):
     if not svg.is_file() or not reg_arq.is_file():
         return [f"favicon sem origem na identidade atual: falta icones/icone.svg ou icones/icones.json; desenhe o motivo \"{motivo}\" em icones/icone.svg e gere os PNG com scripts/gerar-icones.mjs"]
     try:
-        reg = json.loads(reg_arq.read_text(encoding="utf-8"))
+        reg = json.loads(reg_arq.read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError:
         return ["icones/icones.json ilegível: gere de novo com scripts/gerar-icones.mjs"]
-    mm = re.search(r'data-motivo="([^"]+)"', svg.read_text(encoding="utf-8"))
+    mm = re.search(r'data-motivo="([^"]+)"', svg.read_text(encoding="utf-8-sig"))
     if not mm or _norm(mm.group(1)) != _norm(motivo):
         problemas.append(f"icones/icone.svg sem data-motivo=\"{motivo}\" (o motivo que o plano declara)")
     if _norm(reg.get("motivo")) != _norm(motivo):
@@ -148,7 +148,7 @@ def checar(dist):
             motivo = "a página não usa este arquivo (print, origem, folha de contato ou sobra)"
         if motivo:
             problemas.append(f"{rel}: {motivo}")
-    pagina = (dist / "index.html").read_text(encoding="utf-8")
+    pagina = (dist / "index.html").read_text(encoding="utf-8-sig")
     problemas += comentarios_internos(pagina)
     problemas += icones_coerentes(dist, pagina)
     return problemas

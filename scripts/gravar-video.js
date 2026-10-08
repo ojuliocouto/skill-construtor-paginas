@@ -55,7 +55,7 @@ async function main() {
   const senha = flag('--senha');
 
   let doc;
-  try { doc = JSON.parse(fs.readFileSync(arquivoDoRoteiro, 'utf8')); } catch (e) { console.error(`Não consegui ler o roteiro ${arquivoDoRoteiro}: ${e.message}`); return 2; }
+  try { doc = JSON.parse(fs.readFileSync(arquivoDoRoteiro, 'utf8').replace(/^\uFEFF/, '')); } catch (e) { console.error(`Não consegui ler o roteiro ${arquivoDoRoteiro}: ${e.message}`); return 2; }
   const v = roteiro.validarRoteiro(doc);
   v.avisos.forEach((a) => console.log('  aviso: ' + a));
   if (!v.ok) { console.error('Roteiro inválido:\n' + v.erros.map((e) => '  - ' + e).join('\n')); return 2; }

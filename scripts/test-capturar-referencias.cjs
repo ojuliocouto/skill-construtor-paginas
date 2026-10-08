@@ -54,7 +54,7 @@ servidor.listen(0, '127.0.0.1', async () => {
   const doc2 = JSON.parse(fs.readFileSync(manifesto, 'utf8'));
   checa('recapturar a mesma url não duplica a entrada', again.status === 0 && doc2.referencias.length === 2,
     String(doc2.referencias.length));
-  const gate = await rodar('python3', [path.join(AQUI, 'gate-referencias.py'), '--projeto', projeto]);
+  const gate = await rodar(process.execPath, [path.join(AQUI, 'py.mjs'), 'gate-referencias.py', '--projeto', projeto]);
   checa('gate reprova enquanto a leitura não existe', gate.status === 1, String(gate.status));
   servidor.close();
   fs.rmSync(projeto, { recursive: true, force: true });

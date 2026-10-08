@@ -63,7 +63,7 @@ Everything else (21st.dev, Stitch, Higgsfield, image generators, brand kits, ext
 |---|---|---|
 | **Python 3.8+** | gates, audit registry, reference gate | yes |
 | **Node.js 18+** | Playwright, screenshots, visual gates | yes |
-| **Playwright with Chromium** (`npm i -g playwright && npx playwright install chromium`) | reference screenshots and delivery proof | yes |
+| **Playwright with Chromium** (`npm install -g playwright`, then `npx playwright install chromium`) | reference screenshots and delivery proof | yes |
 | **`frontend-design` skill** (`npx -y skills add anthropics/skills --skill frontend-design --agent claude-code -g -y --copy`) | the visual plan | yes |
 | A web search tool in the agent session | finding the reference pages | yes (any search tool works) |
 | ffmpeg | video gate, only for pages with video | optional |
@@ -72,8 +72,8 @@ Everything else (21st.dev, Stitch, Higgsfield, image generators, brand kits, ext
 Check everything with one command. Only the four critical items can fail it:
 
 ```bash
-python3 <skill-dir>/scripts/checar-ferramentas.py              # critical + quick local optionals
-python3 <skill-dir>/scripts/checar-ferramentas.py --opcionais  # also MCPs, Higgsfield, network
+node <skill-dir>/scripts/py.mjs checar-ferramentas.py              # critical + quick local optionals
+node <skill-dir>/scripts/py.mjs checar-ferramentas.py --opcionais  # also MCPs, Higgsfield, network
 ```
 
 ## Installation
@@ -81,28 +81,31 @@ python3 <skill-dir>/scripts/checar-ferramentas.py --opcionais  # also MCPs, Higg
 ```bash
 git clone https://github.com/ojuliocouto/skill-construtor-paginas.git ~/.claude/skills/construtor-paginas
 npx -y skills add anthropics/skills --skill frontend-design --agent claude-code -g -y --copy
-npm i -g playwright && npx playwright install chromium
+npm install -g playwright
+npx playwright install chromium   # on Linux: npx playwright install --with-deps chromium
 node <skill-dir>/scripts/py.mjs checar-ferramentas.py   # <skill-dir> = where you cloned it
 ```
 
 ### Windows, macOS and Linux
 
-`scripts/py.mjs` is a small launcher that finds the Python on your machine (its command name differs between Windows, macOS and Linux) and turns on UTF-8 mode. Wherever this guide shows `python3 <skill-dir>/scripts/<script>.py`, `node <skill-dir>/scripts/py.mjs <script>.py` does the same on any system.
+`scripts/py.mjs` is a small launcher that finds the Python on your machine (its command name differs between Windows, macOS and Linux) and turns on UTF-8 mode. Wherever this guide shows `node <skill-dir>/scripts/py.mjs <script>.py`, that exact command works on any system. `references/sistemas.md` has what changes per system, how to install every prerequisite on Windows, macOS and Linux, and the known errors with their output.
 
 | | Windows | macOS | Linux (Debian/Ubuntu, Fedora) |
 |---|---|---|---|
-| Node 18+ | `winget install -e --id OpenJS.NodeJS.LTS` | `brew install node` | installer or `nvm` from nodejs.org |
-| Python 3.8+ | `winget install -e --id Python.Python.3.12` | `brew install python` | `sudo apt install python3` / `sudo dnf install python3` |
+| Node 18+ | `winget install -e --id OpenJS.NodeJS.LTS` | `brew install node` (macOS) | installer or `nvm` from nodejs.org |
+| Python 3.8+ | `winget install -e --id Python.Python.3.12` | `brew install python` (macOS) | `sudo apt install python3` / `sudo dnf install python3` |
 | Git | `winget install -e --id Git.Git` (ships Git Bash) | Apple Command Line Tools | `sudo apt install git` / `sudo dnf install git` |
+| Chromium for Playwright | `npx playwright install chromium` | same | `npx playwright install --with-deps chromium` |
+| ffmpeg (optional) | `winget install -e --id Gyan.FFmpeg` | `brew install ffmpeg` (macOS) | `sudo apt install ffmpeg` / `sudo dnf install ffmpeg` |
 
-On Windows, run everything from Git Bash (or WSL), not plain PowerShell. The `-g` in the `skills add` command matters: without it the `frontend-design` skill is installed into the current folder instead of your user-level skills folder.
+On Windows, prefer Git Bash (or WSL); PowerShell 5.1 has no `&&`. The `-g` in the `skills add` command matters: without it the `frontend-design` skill is installed into the current folder instead of your user-level skills folder. `checar-ferramentas.py` prints the right install command for your system.
 
-Status: the skill was built and tested on macOS. Windows and Linux follow the path above and have not yet been run on a real machine.
+Status: the skill was built on macOS. Since 3.5.5 it has a portability guard (`scripts/test-portabilidade.py`) and a GitHub Actions workflow (`.github/workflows/portabilidade.yml`) that runs the whole suite on `windows-latest`, `ubuntu-latest` and `macos-latest`, plus the portable tests from a Windows folder with an accent and a space in its name (`C:\curso automação\skill`). Until a green run of that workflow is recorded in `CHANGELOG.md`, Windows and Linux are described and guarded, not yet proven on a real machine.
 
 The skill activates on the next Claude Code session whenever you ask to create, clone, improve or edit a page. Optional: `hooks/pagina-skill-inject.py` is a `UserPromptSubmit` hook that injects a reminder to run the skill when it detects those intents. Wire it in `settings.json`:
 
 ```json
-{ "hooks": { "UserPromptSubmit": [ { "hooks": [ { "type": "command", "command": "python3 <skill-dir>/hooks/pagina-skill-inject.py" } ] } ] } }
+{ "hooks": { "UserPromptSubmit": [ { "hooks": [ { "type": "command", "command": "node <skill-dir>/scripts/py.mjs <skill-dir>/hooks/pagina-skill-inject.py" } ] } ] } }
 ```
 
 ---
@@ -125,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.4)
+SKILL.md                       router (v3.5.5)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -151,10 +154,19 @@ references/
   arquivo/                     v2 references, outside the flow (kept for lookup only)
   projects/EXAMPLE.md          per-project template (real files are local, gitignored)
   sessions/EXAMPLE.md          per-session template (real files are local, gitignored)
-scripts/                       gates, capture, audit registry, tests
+scripts/                       gates, capture, audit registry, tests, rodar-testes.mjs (whole suite), test-portabilidade.py (portability guard)
+.github/workflows/             portabilidade.yml (suite on Windows, macOS and Linux)
+.gitattributes                 LF line endings for scripts
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.5.5
+
+- Works on Windows, macOS and Linux, guarded: `scripts/test-portabilidade.py` fails the suite on a Mac-only command, a fixed `/tmp`, text read or written without `encoding=`, a Mac-style loose Python command name, or a shell call in code. It proves itself on planted bad and good examples first.
+- Every Python command in the texts is `node <skill-dir>/scripts/py.mjs <script>.py`; `checar-ferramentas.py` prints the install command for the user's own system and names the exact Python that lacks Pillow.
+- `node scripts/rodar-testes.mjs` runs the whole suite in one command on any system (`--so-portateis` runs only the tests that need neither a browser nor Pillow/numpy).
+- `.github/workflows/portabilidade.yml` runs it on Windows, macOS and Linux with Node 22 and Python 3.12.
 
 ## What is new in 3.5.4
 
@@ -171,28 +183,37 @@ hooks/pagina-skill-inject.py   optional trigger hook
 
 ## Tests
 
-Run from the repository root:
+Run from the repository root, on any system:
 
 ```bash
-python3 scripts/test-checar-ferramentas.py
-python3 scripts/test-uso-ferramentas.py
-python3 scripts/test-gate-referencias.py
-python3 scripts/test-wave.py
-python3 scripts/test-pacote-auditoria.py
-python3 scripts/test-gate-etapas.py
-python3 scripts/test-gate-sem-kicker.py
-python3 scripts/test-classes-mortas.py
-python3 scripts/test-search.py
-python3 scripts/test-docs.py
-python3 scripts/test-preferencias.py
-python3 scripts/test-publicacao.py
-python3 scripts/test-gate-verdade.py
-python3 scripts/test-imagens.py
-python3 scripts/test-relatorio.py
-python3 scripts/test-gate-plano.py
-python3 scripts/test-secoes.py
-python3 scripts/test-animacao.py
-python3 scripts/test-receitas.py
+node scripts/rodar-testes.mjs                 # the whole suite, one result per file, exit 1 if any fails
+node scripts/rodar-testes.mjs --so-portateis  # only tests that need neither a browser nor Pillow/numpy
+node scripts/rodar-testes.mjs --lista         # what would run
+```
+
+Or one at a time (the `.py` tests through the launcher, the `.cjs` ones with Node):
+
+```bash
+node scripts/py.mjs test-checar-ferramentas.py
+node scripts/py.mjs test-uso-ferramentas.py
+node scripts/py.mjs test-gate-referencias.py
+node scripts/py.mjs test-wave.py
+node scripts/py.mjs test-pacote-auditoria.py
+node scripts/py.mjs test-gate-etapas.py
+node scripts/py.mjs test-gate-sem-kicker.py
+node scripts/py.mjs test-classes-mortas.py
+node scripts/py.mjs test-search.py
+node scripts/py.mjs test-docs.py
+node scripts/py.mjs test-preferencias.py
+node scripts/py.mjs test-publicacao.py
+node scripts/py.mjs test-gate-verdade.py
+node scripts/py.mjs test-imagens.py
+node scripts/py.mjs test-relatorio.py
+node scripts/py.mjs test-gate-plano.py
+node scripts/py.mjs test-secoes.py
+node scripts/py.mjs test-animacao.py
+node scripts/py.mjs test-receitas.py
+node scripts/py.mjs test-portabilidade.py
 node scripts/test-painel.cjs
 node scripts/test-receitas-navegador.cjs
 node scripts/test-linhas.cjs
@@ -205,6 +226,8 @@ node scripts/test-gates-v35.cjs
 node scripts/test-print-cabecalho.cjs
 node --test scripts/extrai-identidade.test.mjs
 ```
+
+A test that cannot run on a machine (a local file that is not in Git, a missing browser) prints `PULADO: <reason>` and the summary lists it; in CI a skip for a missing Playwright counts as a failure.
 
 The visual tests use Chromium, ffmpeg and local synthetic pages. They prove that each gate fails on the defect it exists for; they do not approve a client's design. Reading the screenshots stays mandatory.
 

@@ -26,7 +26,7 @@ Workflow completo para gerar vídeos com Veo 2/3 (Gemini), otimizar para web e e
 echo $GEMINI_API_KEY
 
 # Se não estiver disponível, verificar:
-cat <pasta-da-skill-nanobanana>/config.json | python3 -c "import json,sys; print(json.load(sys.stdin).get('GEMINI_API_KEY',''))"
+node -p "require('<pasta-da-skill-nanobanana>/config.json').GEMINI_API_KEY"
 ```
 
 ---
@@ -34,10 +34,9 @@ cat <pasta-da-skill-nanobanana>/config.json | python3 -c "import json,sys; print
 ## Script de Geração: Veo 2
 
 ```python
-#!/usr/bin/env python3
 """
 Script: generate-veo.py
-Uso: python3 generate-veo.py "prompt do vídeo" --aspect 16:9 --duration 5
+Uso: node scripts/py.mjs generate-veo.py "prompt do vídeo" --aspect 16:9 --duration 5
 """
 
 import os
@@ -45,6 +44,7 @@ import sys
 import time
 import json
 import base64
+import tempfile
 import argparse
 import urllib.request
 import urllib.error
@@ -127,7 +127,7 @@ def generate_video(prompt: str, aspect_ratio: str = '16:9', duration: int = 5, m
     # Salvar
     timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
     ext = 'mp4' if 'mp4' in mime_type else 'mp4'
-    output_path = Path(f'/tmp/veo-{timestamp}.{ext}')
+    output_path = Path(tempfile.gettempdir()) / f'veo-{timestamp}.{ext}'
 
     with open(output_path, 'wb') as f:
         f.write(base64.b64decode(video_b64))
@@ -145,7 +145,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     path = generate_video(args.prompt, args.aspect, args.duration, args.model)
-    print(f"\nPróximo passo: python3 optimize-veo.py '{path}'")
+    print(f"\nPróximo passo: node scripts/py.mjs optimize-veo.py '{path}'")
 ```
 
 ---
@@ -155,7 +155,7 @@ if __name__ == '__main__':
 ```bash
 #!/bin/bash
 # Script: optimize-veo.sh
-# Uso: bash optimize-veo.sh /tmp/veo-20260307-123456.mp4 [output-name]
+# Uso: bash optimize-veo.sh <pasta-temp>/veo-20260307-123456.mp4 [output-name]
 
 INPUT="$1"
 NAME="${2:-hero-video}"
@@ -205,10 +205,10 @@ MID=$(echo "$DURATION / 2" | bc -l 2>/dev/null || echo "2")
 ffmpeg -ss "$MID" -i "$INPUT" \
   -vframes 1 \
   -f image2 \
-  -y "/tmp/poster-raw.jpg" 2>/dev/null
+  -y "<pasta-temp>/poster-raw.jpg" 2>/dev/null
 
 if command -v cwebp &>/dev/null; then
-  cwebp -q 82 "/tmp/poster-raw.jpg" -o "$OUTPUT_DIR/${NAME}-poster.webp" 2>/dev/null
+  cwebp -q 82 "<pasta-temp>/poster-raw.jpg" -o "$OUTPUT_DIR/${NAME}-poster.webp" 2>/dev/null
   POSTER_SIZE=$(du -sh "$OUTPUT_DIR/${NAME}-poster.webp" | cut -f1)
   echo "   Poster WebP: $POSTER_SIZE"
 else
@@ -232,11 +232,14 @@ echo "  cp $OUTPUT_DIR/${NAME}-poster.webp public/videos/"
 ```python
 # Versão Python (cross-platform, sem bash)
 # Script: optimize-veo.py
-# Uso: python3 optimize-veo.py /tmp/veo-xxx.mp4 hero-video
+# Uso: node scripts/py.mjs optimize-veo.py <pasta-temp>/veo-xxx.mp4 hero-video
 
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
+
+POSTER_RAW = str(Path(tempfile.gettempdir()) / 'poster-raw.jpg')
 
 def optimize_video(input_path: str, output_name: str = 'hero-video') -> dict:
     inp = Path(input_path)
@@ -281,9 +284,9 @@ def optimize_video(input_path: str, output_name: str = 'hero-video') -> dict:
         'ffmpeg', '-ss', '2', '-i', str(inp),
         '-vframes', '1',
         '-f', 'image2',
-        '-y', '/tmp/poster-raw.jpg'
+        '-y', POSTER_RAW
     ], capture_output=True)
-    subprocess.run(['cwebp', '-q', '82', '/tmp/poster-raw.jpg', '-o', str(poster_out)],
+    subprocess.run(['cwebp', '-q', '82', POSTER_RAW, '-o', str(poster_out)],
                    capture_output=True)
     results['poster'] = poster_out
     print(f"✅ Poster: {poster_out.stat().st_size / 1024:.0f}KB")
@@ -295,7 +298,7 @@ if __name__ == '__main__':
     output_name = sys.argv[2] if len(sys.argv) > 2 else 'hero-video'
 
     if not input_path:
-        print("Uso: python3 optimize-veo.py <input.mp4> [nome-base]")
+        print("Uso: node scripts/py.mjs optimize-veo.py <input.mp4> [nome-base]")
         sys.exit(1)
 
     files = optimize_video(input_path, output_name)
@@ -499,7 +502,7 @@ No código:
 // Veja: references/efeitos-avancados.md#9-aurora-background
 
 // Ou vídeo stock do Pexels:
-// python3 <dir-da-skill>/scripts/assets-search.py "dark tech abstract" --type video
+// node <dir-da-skill>/scripts/py.mjs assets-search.py "dark tech abstract" --type video
 ```
 
 ---
@@ -514,5 +517,5 @@ No código:
 Para verificar modelos disponíveis:
 ```bash
 curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" \
-  | python3 -c "import json,sys; [print(m['name']) for m in json.load(sys.stdin)['models'] if 'veo' in m['name'].lower()]"
+  | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>JSON.parse(s).models.filter(m=>/veo/i.test(m.name)).forEach(m=>console.log(m.name)))"
 ```

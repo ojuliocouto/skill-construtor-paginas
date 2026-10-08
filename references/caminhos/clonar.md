@@ -38,7 +38,7 @@ domínio final.
 
 ## 4. Gate de fidelidade
 
-`python3 <dir-da-skill>/scripts/lado-a-lado.py <dir>/original/prova-desktop.png <dir>/prova/prova-desktop.png <dir>/comparativo.jpg --rotulos "Original,Clone"`
+`node <dir-da-skill>/scripts/py.mjs lado-a-lado.py <dir>/original/prova-desktop.png <dir>/prova/prova-desktop.png <dir>/comparativo.jpg --rotulos "Original,Clone"`
 
 Olhe a imagem e confira cor a cor, fonte, hierarquia, ordem das seções e o celular. Divergiu
 sem estar no delta declarado: volta.
@@ -50,8 +50,8 @@ UM auditor independente com o pacote de evidência (`pacote-auditoria.py --camin
 não exige PLANO nem briefing) e teto de 2 rodadas, com `--caminho clonar` no wave (o gate de
 referências não se aplica; a lente `comparacao-referencias` compara com a original):
 
-`python3 <dir-da-skill>/scripts/wave.py --projeto <dir> --caminho clonar checar`
-`python3 <dir-da-skill>/scripts/wave.py --projeto <dir> --caminho clonar rodada --criticos <N> --altos <N> --regressoes <N>`
+`node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> --caminho clonar checar`
+`node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> --caminho clonar rodada --criticos <N> --altos <N> --regressoes <N>`
 
 ## 6. Prova e entrega
 

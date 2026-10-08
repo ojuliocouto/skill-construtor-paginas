@@ -14,7 +14,7 @@ Saída: `<pasta>/<nome>.png` (a prancha) e `<pasta>/medidas.json`, lido pelo gat
      "desk": {"ini_meio", "meio_fim", "ini_fim"}, "mob": {...}}]}
 Um pixel "mudou" quando o cinza dele varia mais de 12 níveis (de 255) entre os dois quadros.
 
-Uso: python3 scripts/prancha.py --pasta <saida> --secoes <secoes.json> [--so <nome>] [--limiar 12]
+Uso: node scripts/py.mjs prancha.py --pasta <saida> --secoes <secoes.json> [--so <nome>] [--limiar 12]
 """
 import argparse
 import json
@@ -101,11 +101,11 @@ def main():
     ap.add_argument("--limiar", type=int, default=12, help="níveis de cinza (de 255) para um pixel contar como mudado")
     a = ap.parse_args()
     pasta = Path(a.pasta)
-    secoes = json.loads(Path(a.secoes).read_text(encoding="utf-8"))
+    secoes = json.loads(Path(a.secoes).read_text(encoding="utf-8-sig"))
     destino = pasta / "medidas.json"
     atuais = {}
     if a.so and destino.is_file():
-        atuais = {s["nome"]: s for s in json.loads(destino.read_text(encoding="utf-8"))["secoes"]}
+        atuais = {s["nome"]: s for s in json.loads(destino.read_text(encoding="utf-8-sig"))["secoes"]}
     erros = []
     for sec in secoes:
         if a.so and sec["nome"] != a.so:

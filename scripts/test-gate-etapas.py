@@ -14,12 +14,12 @@ class Etapas(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.pasta = pathlib.Path(self.temp.name)
-        (self.pasta / 'briefing.txt').write_text('Documento de controle com informações confirmadas')
+        (self.pasta / 'briefing.txt').write_text('Documento de controle com informações confirmadas', encoding="utf-8")
         self.doc = {'briefing': dict.fromkeys(['nicho', 'local', 'publico', 'oferta', 'preco', 'acao'], 'Informado'), 'inventario': ['Fonte'], 'pendencias_cliente': ['Número do WhatsApp'], 'arquivos': ['briefing.txt']}
 
     def rodar(self, *args):
-        (self.pasta / 'etapa.json').write_text(json.dumps(self.doc))
-        r = subprocess.run([sys.executable, str(SCRIPT), '--projeto', str(self.pasta), *args], capture_output=True, text=True)
+        (self.pasta / 'etapa.json').write_text(json.dumps(self.doc), encoding="utf-8")
+        r = subprocess.run([sys.executable, str(SCRIPT), '--projeto', str(self.pasta), *args], capture_output=True, text=True, encoding="utf-8")
         return r.returncode
 
     def test_positivo_e_releitura(self):
@@ -35,7 +35,7 @@ class Etapas(unittest.TestCase):
 
     def test_artefato_alterado_reprova(self):
         self.assertEqual(self.rodar('registrar', '0', '--arquivo', 'etapa.json'), 0)
-        (self.pasta / 'briefing.txt').write_text('Conteúdo diferente')
+        (self.pasta / 'briefing.txt').write_text('Conteúdo diferente', encoding="utf-8")
         self.assertEqual(self.rodar('checar', '0'), 1)
 
     def test_v3_referencias_antes_do_plano_visual(self):
@@ -60,7 +60,7 @@ class Etapas(unittest.TestCase):
         spec = importlib.util.spec_from_file_location('ge', SCRIPT)
         ge = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(ge)
-        (self.pasta / 'e.json').write_text(json.dumps(doc))
+        (self.pasta / 'e.json').write_text(json.dumps(doc), encoding="utf-8")
         try:
             ge.validar(self.pasta.resolve(), (self.pasta / 'e.json').resolve(), etapa, ge.PAGINAS[etapa], 'paginas')
             return 0
@@ -122,7 +122,7 @@ class Etapas(unittest.TestCase):
         base['sustentacao'] = 'evidencias/sustentacao.md'
         self.assertEqual(self.validar('3', base), 1, 'arquivo de sustentação inexistente')
         (self.pasta / 'evidencias').mkdir()
-        (self.pasta / 'evidencias' / 'sustentacao.md').write_text('| Frase da página | Linha |\n|---|---|\n| A | "b" |\n')
+        (self.pasta / 'evidencias' / 'sustentacao.md').write_text('| Frase da página | Linha |\n|---|---|\n| A | "b" |\n', encoding="utf-8")
         self.assertEqual(self.validar('3', base), 0)
 
 
@@ -174,9 +174,9 @@ class Etapas(unittest.TestCase):
         """Grava direto no registro as etapas anteriores, só para testar a 5 em sequência."""
         import hashlib
         alvo = self.pasta / '.etapas-verificadas.json'
-        reg = json.loads(alvo.read_text()) if alvo.exists() else {}
+        reg = json.loads(alvo.read_text(encoding="utf-8")) if alvo.exists() else {}
         reg[etapa] = {'hashes': {'briefing.txt': hashlib.sha256((self.pasta / 'briefing.txt').read_bytes()).hexdigest()}}
-        alvo.write_text(json.dumps(reg))
+        alvo.write_text(json.dumps(reg), encoding="utf-8")
 
 
 if __name__ == '__main__':

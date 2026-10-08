@@ -33,7 +33,7 @@ classe utilitaria precisa das duas.
 =================================================================================
 
 USO
-    python3 gate-classes-mortas.py [--projeto DIR] [--css DIR] [--fonte DIR]
+    node scripts/py.mjs gate-classes-mortas.py [--projeto DIR] [--css DIR] [--fonte DIR]
 
     --projeto  raiz do projeto (padrao: diretorio atual)
     --css      onde procurar o CSS gerado (padrao: <projeto>/dist; sem dist/, a raiz do
@@ -139,7 +139,7 @@ def main() -> int:
             | set(RE_TOKEN.findall(texto))
         for c in candidatas - CONHECIDOS:
             if escapar(c) not in css:
-                mortas.setdefault(c, []).append(str(f.relative_to(raiz)))
+                mortas.setdefault(c, []).append(f.relative_to(raiz).as_posix())
 
     print('GATE DE CLASSE MORTA')
     print('=' * 72)

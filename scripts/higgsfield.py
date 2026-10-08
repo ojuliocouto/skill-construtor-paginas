@@ -21,10 +21,10 @@ USO
     export HF_API_KEY_SECRET=...   # seu secret, nunca commitar
 
     # ver a requisição sem gastar crédito
-    python3 higgsfield.py --dry-run --prompt "..." --preset "slow push in"
+    node scripts/py.mjs higgsfield.py --dry-run --prompt "..." --preset "slow push in"
 
     # gerar de verdade, com a lista toda de uma vez (crédito não faz rollover)
-    python3 higgsfield.py --lote lote.json --saida ./public/assets/v
+    node scripts/py.mjs higgsfield.py --lote lote.json --saida ./public/assets/v
 
 AUTENTICAÇÃO
     Authorization: Key <KEY_ID>:<KEY_SECRET>     (formato novo)
@@ -193,7 +193,7 @@ def anota(saida: str, registro: dict) -> None:
     dados = []
     if os.path.exists(caminho):
         try:
-            dados = json.load(open(caminho, encoding="utf-8"))
+            dados = json.load(open(caminho, encoding="utf-8-sig"))
         except Exception:
             dados = []
     dados.append(registro)
@@ -265,7 +265,7 @@ def main() -> int:
 
     if a.lote:
         try:
-            jobs = json.load(open(a.lote, encoding="utf-8"))
+            jobs = json.load(open(a.lote, encoding="utf-8-sig"))
         except FileNotFoundError:
             sys.exit(f"arquivo de lote nao encontrado: {a.lote}")
         except json.JSONDecodeError as e:

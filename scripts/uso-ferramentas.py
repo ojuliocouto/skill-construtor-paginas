@@ -23,10 +23,10 @@ Stitch, Higgsfield, skills de acabamento) NUNCA reprova: quem usar registra, que
 segue, e a pagina nao sai pior por isso.
 
 Uso:
-    python3 scripts/uso-ferramentas.py registrar <ferramenta> --arquivo <path> [--detalhe "..."]
-    python3 scripts/uso-ferramentas.py registrar <ferramenta> --no-codigo "<trecho>" --em <dir>
-    python3 scripts/uso-ferramentas.py registrar <ferramenta> --detalhe "..." --sem-artefato
-    python3 scripts/uso-ferramentas.py checar [--projeto <dir>]
+    node scripts/py.mjs uso-ferramentas.py registrar <ferramenta> --arquivo <path> [--detalhe "..."]
+    node scripts/py.mjs uso-ferramentas.py registrar <ferramenta> --no-codigo "<trecho>" --em <dir>
+    node scripts/py.mjs uso-ferramentas.py registrar <ferramenta> --detalhe "..." --sem-artefato
+    node scripts/py.mjs uso-ferramentas.py checar [--projeto <dir>]
 """
 import argparse
 import datetime
@@ -96,7 +96,7 @@ def criticas():
         spec.loader.exec_module(chk)
         return {nome for nome, critico in chk.CRITICIDADE.items() if critico}
     except Exception:
-        return {"python3", "node", "Playwright", "skill frontend-design"}
+        return {"Python", "node", "Playwright", "skill frontend-design"}
 
 
 def motivo_recusado(motivo):
@@ -117,7 +117,7 @@ def carregar(projeto):
     if not p.exists():
         return {}
     try:
-        return json.loads(p.read_text(encoding="utf-8"))
+        return json.loads(p.read_text(encoding="utf-8-sig"))
     except (json.JSONDecodeError, OSError):
         return {}
 
@@ -158,13 +158,12 @@ def evidencia_vale(ev, projeto):
         base = Path(ev.get("em") or projeto)
         if not base.exists():
             return False, f"pasta de busca nao existe: {base}"
-        # grep -r: nao depende de extensao nem de encoding do arquivo.
+        # Busca de texto fixo em todos os arquivos (nao depende de extensao nem de encoding).
         # --exclude do proprio registro: sem isso o gate se AUTO-VALIDA, porque o trecho
         # procurado tambem esta gravado dentro do .ferramentas-usadas.json. Pego em teste:
         # apaguei o componente do codigo e o gate continuou dizendo "usada".
-        r = subprocess.run(["grep", "-rqIF", f"--exclude={REGISTRO}", "--", valor, str(base)],
-                           capture_output=True, text=True)
-        if r.returncode != 0:
+        achou = _trecho_no_codigo(valor, base)
+        if not achou:
             return False, f"o trecho registrado nao esta mais no codigo: {valor[:60]!r}"
         return True, f"trecho encontrado no codigo ({valor[:40]!r})"
     if tipo == "declarado":
@@ -174,6 +173,31 @@ def evidencia_vale(ev, projeto):
     return False, f"tipo de evidencia desconhecido: {tipo}"
 
 
+def _trecho_no_codigo(valor, base):
+    """True se `valor` aparece em algum arquivo de texto sob `base`, ignorando o proprio registro.
+
+    Faz o que `grep -rqIF --exclude=REGISTRO` fazia, em Python puro: grep nao existe no Windows.
+    Arquivo binario (com byte nulo no comeco) nao conta; cada linha de `valor` e um padrao.
+    """
+    padroes = [p.encode("utf-8") for p in valor.split("\n")]
+    if base.is_file():
+        arquivos = [base]
+    else:
+        arquivos = (Path(raiz) / nome for raiz, _, nomes in os.walk(base) for nome in nomes)
+    for arq in arquivos:
+        if arq.name == REGISTRO:
+            continue
+        try:
+            dados = arq.read_bytes()
+        except OSError:
+            continue
+        if b"\0" in dados[:8192]:
+            continue
+        if any(p in dados for p in padroes):
+            return True
+    return False
+
+
 def estado_das_ferramentas():
     """Roda o gate de entrada e devolve {rotulo: ok}. Sem ele nao da pra saber o que cobrar."""
     checador = RAIZ / "scripts" / "checar-ferramentas.py"
@@ -181,7 +205,7 @@ def estado_das_ferramentas():
         return None, f"nao achei {checador}"
     try:
         r = subprocess.run([sys.executable, str(checador), "--json"],
-                           capture_output=True, text=True, timeout=600)
+                           capture_output=True, text=True, timeout=600, encoding="utf-8")
         linhas = json.loads(r.stdout)
         if r.returncode != 0 or any(l.get("critico") and not l.get("ok") for l in linhas):
             return None, "gate de entrada reprovado; resolva as ferramentas críticas antes da entrega"

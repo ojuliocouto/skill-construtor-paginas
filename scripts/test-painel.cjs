@@ -15,7 +15,7 @@ const { acharPlaywright } = require('./video/achar-playwright.cjs');
 const demo = path.join(path.resolve(__dirname, '..'), 'references', 'receitas', 'demo.html');
 let falhas = 0;
 const checar = (cond, msg) => { if (cond) console.log('ok   ' + msg); else { falhas++; console.log('FALHOU ' + msg); } };
-if (!acharPlaywright()) { console.log('Playwright ausente: prova do painel NAO VERIFICADA'); process.exit(0); }
+if (!acharPlaywright()) { console.log('PULADO: Playwright ausente, prova do painel NAO VERIFICADA'); process.exit(0); }
 
 const servidor = http.createServer((req, res) => { res.setHeader('content-type', 'text/html; charset=utf-8'); res.end(fs.readFileSync(demo)); });
 servidor.listen(0, '127.0.0.1', () => {

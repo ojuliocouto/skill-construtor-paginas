@@ -20,7 +20,7 @@ const temPlaywright = () => {
   const r = spawnSync('npm', ['root', '-g'], { encoding: 'utf8', shell: process.platform === 'win32' });
   try { require(path.join((r.stdout || '').trim(), 'playwright')); return true; } catch { return false; }
 };
-if (!temPlaywright()) { console.log('Playwright ausente: prova no navegador NAO VERIFICADA'); process.exit(0); }
+if (!temPlaywright()) { console.log('PULADO: Playwright ausente, prova no navegador NAO VERIFICADA'); process.exit(0); }
 
 const servidor = http.createServer((req, res) => {
   res.setHeader('content-type', 'text/html; charset=utf-8');

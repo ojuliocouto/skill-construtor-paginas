@@ -20,7 +20,9 @@
  *   (opcional; sem a flag, nada de CDP é usado)
  */
 import { createRequire } from "node:module";
-import { execFileSync, execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
+import { raizGlobal as raizGlobalNpm } from "./npm-global.cjs";
+import { sairSeAusente } from "./ffmpeg-ausente.cjs";
 import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
@@ -53,7 +55,7 @@ function carregarPlaywright() {
     return require("playwright");
   } catch {
     try {
-      return require(join(execSync("npm root -g", { encoding: "utf8" }).trim(), "playwright"));
+      return require(join(raizGlobalNpm(), "playwright"));
     } catch {
       console.error(
         "FALHA: playwright nao encontrado. Instale com:\n" +
@@ -89,7 +91,7 @@ const ffprobe = (f) => {
       "-show_entries", "stream=width,height", "-of", "csv=p=0", f], { encoding: "utf-8" }).trim();
     const [w, h] = o.split(",").map(Number);
     return { w, h, razao: +(w / h).toFixed(3) };
-  } catch { return null; }
+  } catch (e) { sairSeAusente(e, "ffprobe"); return null; }
 };
 
 let falhas = 0;
@@ -345,7 +347,7 @@ for (const v of porTela.desktop) for (const f of v.fontes) {
     try {
       execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-ss", String(i), "-i", p,
         "-frames:v", "1", "-vf", "scale=420:-1", join(FRAMES, `${base}-f${i}.png`)]);
-    } catch { /* clipe mais curto que o instante pedido */ }
+    } catch (e) { sairSeAusente(e, "ffmpeg"); /* senão: clipe mais curto que o instante pedido */ }
   }
 }
 const n = readdirSync(FRAMES).length;

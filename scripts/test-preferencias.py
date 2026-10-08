@@ -71,7 +71,9 @@ class Sincronia(unittest.TestCase):
     def test_todo_item_numerado_da_memoria_tem_par(self):
         mem = memoria()
         if not mem:
-            self.skipTest("memória de gosto do dono não existe nesta máquina (aluno): sincronia pulada")
+            self.skipTest("PULADO: memória de gosto do dono não existe nesta máquina (aluno): sincronia pulada")
+        if not DONO.exists():
+            self.skipTest("PULADO: references/preferencias-dono-ea.md é local e fica fora do Git; sem ele o item só do dono não tem par")
         itens = itens_da_memoria(mem.read_text(encoding="utf-8"))
         self.assertGreaterEqual(len(itens), 10, "a leitura da memória não achou os itens numerados")
         tem = marcas(GENERICO) | marcas(DONO)
@@ -80,7 +82,7 @@ class Sincronia(unittest.TestCase):
 
     def test_item_do_dono_mora_no_arquivo_local(self):
         if not memoria() or not DONO.exists():
-            self.skipTest("sem memória ou sem preferencias-dono-ea.md local: pulado")
+            self.skipTest("PULADO: sem memória ou sem preferencias-dono-ea.md local (arquivo do dono, fora do Git)")
         self.assertTrue(SO_DO_DONO <= marcas(DONO), "item só do dono ausente do arquivo local")
 
 

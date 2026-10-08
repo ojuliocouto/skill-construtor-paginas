@@ -4,7 +4,7 @@
 Preferência de gosto medida em correção real e repetida ("dá uma puta cara de IA"). Roda
 ANTES de qualquer deploy de página:
 
-    python3 <dir-da-skill>/scripts/gate-sem-kicker.py <arquivo.html|pasta>
+    node <dir-da-skill>/scripts/py.mjs gate-sem-kicker.py <arquivo.html|pasta>
 
 Sai com código 1 se achar:
   1. regra CSS com text-transform: uppercase E letter-spacing >= 0.1em (a receita do kicker),

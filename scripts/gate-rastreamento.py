@@ -2,8 +2,8 @@
 """Gate de rastreamento: a dist/ tem o pixel e os eventos que o PLANO pediu.
 
 Uso:
-  python3 gate-rastreamento.py --dist <dir>/dist --plano <dir>/PLANO.md
-  python3 gate-rastreamento.py --dist <dir>/dist --pedido meta,ga4     (ou meta, ga4, nenhum)
+  node scripts/py.mjs gate-rastreamento.py --dist <dir>/dist --plano <dir>/PLANO.md
+  node scripts/py.mjs gate-rastreamento.py --dist <dir>/dist --pedido meta,ga4     (ou meta, ga4, nenhum)
 
 Com "Pixel pedido: nenhum", passa sem olhar a página. Senão reprova (exit 1) se faltar o
 bloco window.RASTREIO, o carregador de cada ferramenta pedida, o ouvinte de [data-evento], os
@@ -36,7 +36,7 @@ class Elementos(HTMLParser):
 
 
 def pedido_do_plano(plano):
-    m = re.search(r"(?mi)^pixel pedido:\s*(.+)$", pathlib.Path(plano).read_text(encoding="utf-8"))
+    m = re.search(r"(?mi)^pixel pedido:\s*(.+)$", pathlib.Path(plano).read_text(encoding="utf-8-sig"))
     if not m:
         return None
     v = m.group(1).lower()
@@ -52,7 +52,7 @@ def checar(dist, pedido):
         return [f"nenhum HTML em {dist}"], avisos
     for p in paginas:
         t = p.read_text(encoding="utf-8", errors="replace")
-        nome = p.relative_to(dist)
+        nome = p.relative_to(dist).as_posix()
         if "window.RASTREIO" not in t:
             erros.append(f"{nome}: falta o bloco window.RASTREIO (references/rastreamento.md)")
         else:

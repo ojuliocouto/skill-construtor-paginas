@@ -24,9 +24,9 @@ class GateRelatorio(unittest.TestCase):
         self.addCleanup(t.cleanup)
         self.raiz = pathlib.Path(t.name)
         (self.raiz / "gates").mkdir()
-        (self.raiz / "gates" / "simetria.txt").write_text("títulos com 147 px de diferença\nespaço fixo de 152px (18.0% da tela)\n")
+        (self.raiz / "gates" / "simetria.txt").write_text("títulos com 147 px de diferença\nespaço fixo de 152px (18.0% da tela)\n", encoding="utf-8")
         (self.raiz / "dist").mkdir()
-        (self.raiz / "dist" / "index.html").write_text("<html></html>")
+        (self.raiz / "dist" / "index.html").write_text("<html></html>", encoding="utf-8")
 
     def checar(self, texto, dist=True):
         rel = self.raiz / "relatorio.md"
@@ -52,7 +52,7 @@ class GateRelatorio(unittest.TestCase):
 
     def test_lighthouse_anterior_a_dist_reprova(self):
         lh = self.raiz / "gates" / "lighthouse.json"
-        lh.write_text('{"performance": 100}')
+        lh.write_text('{"performance": 100}', encoding="utf-8")
         antigo = time.time() - 3600
         os.utime(lh, (antigo, antigo))
         p = self.checar("- Lighthouse 100 em desempenho (`gates/lighthouse.json`)\n")
@@ -63,7 +63,7 @@ class GateRelatorio(unittest.TestCase):
         # antiga que a dist/ da v5 por definição e não é medida da versão entregue.
         outra = pathlib.Path(tempfile.mkdtemp()) / "v4-simetria.txt"
         self.addCleanup(lambda: outra.unlink(missing_ok=True))
-        outra.write_text("títulos com 147 px de diferença")
+        outra.write_text("títulos com 147 px de diferença", encoding="utf-8")
         antigo = time.time() - 3600
         os.utime(outra, (antigo, antigo))
         self.assertEqual(self.checar(f"- Na v4, títulos a 147 px (`{outra}`)\n"), [])

@@ -2,8 +2,8 @@
 """Gate da etapa PLANO: o PLANO.md tem tudo o que o aluno precisa aprovar antes do código.
 
 Uso:
-  python3 gate-plano.py --projeto <dir>          (lê <dir>/PLANO.md)
-  python3 gate-plano.py --plano <dir>/PLANO.md
+  node scripts/py.mjs gate-plano.py --projeto <dir>          (lê <dir>/PLANO.md)
+  node scripts/py.mjs gate-plano.py --plano <dir>/PLANO.md
 
 Reprova (exit 1) se faltar qualquer uma das 7 seções (a. Referências, b. Visual, c. Seções,
 d. Copy, e. Pixel e rastreamento, f. Código e publicação, g. Aprovação), se o visual não tiver
@@ -200,7 +200,7 @@ def checar(caminho):
     erros = []
     if not caminho.exists():
         return [f"{caminho} não existe: a etapa PLANO não foi feita (modelo em references/plano.md)"]
-    texto = caminho.read_text(encoding="utf-8")
+    texto = caminho.read_text(encoding="utf-8-sig")
     base = caminho.parent
     sec, ordem = fatiar(texto)
 

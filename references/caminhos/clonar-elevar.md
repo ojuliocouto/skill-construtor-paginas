@@ -41,7 +41,7 @@ Pelo menos **quatro** dos seis eixos com mudança NOMEADA, com antes e depois.
 
 ## O gate deste caminho
 
-`python3 <dir-da-skill>/scripts/lado-a-lado.py <png-original> <png-nova> <dir>/comparativo.jpg --rotulos "Original,Elevada"`
+`node <dir-da-skill>/scripts/py.mjs lado-a-lado.py <png-original> <png-nova> <dir>/comparativo.jpg --rotulos "Original,Elevada"`
 
 1. Olhe a imagem e responda por escrito: **o dono veria a diferença sem eu apontar?** Se a
    resposta honesta é não, volte. Nenhuma lista de melhorias compensa esse não.

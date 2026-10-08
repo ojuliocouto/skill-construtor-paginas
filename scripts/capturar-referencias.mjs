@@ -17,14 +17,14 @@
  * Sai 0 se todas capturaram, 1 se alguma falhou (as que deram certo ficam gravadas).
  */
 import { createRequire } from 'node:module';
-import { execSync } from 'node:child_process';
+import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
 function carregarPlaywright() {
   try { return require('playwright'); } catch {
-    try { return require(path.join(execSync('npm root -g', { encoding: 'utf8' }).trim(), 'playwright')); }
+    try { return require(path.join(raizGlobalNpm(), 'playwright')); }
     catch { console.error('playwright nao encontrado: npm i -g playwright && npx playwright install chromium'); process.exit(1); }
   }
 }
@@ -47,7 +47,7 @@ for (const u of urls) {
 const pasta = path.join(path.resolve(projeto), 'referencias');
 fs.mkdirSync(pasta, { recursive: true });
 const manifesto = path.join(pasta, 'referencias.json');
-const doc = fs.existsSync(manifesto) ? JSON.parse(fs.readFileSync(manifesto, 'utf8')) : { referencias: [] };
+const doc = fs.existsSync(manifesto) ? JSON.parse(fs.readFileSync(manifesto, 'utf8').replace(/^\uFEFF/, '')) : { referencias: [] };
 if (!Array.isArray(doc.referencias)) doc.referencias = [];
 
 const slug = (u) => {
@@ -92,7 +92,7 @@ try {
       Object.assign(entrada, {
         tipo,
         titulo,
-        prints: { dobra: path.relative(path.resolve(projeto), dobra), meio: path.relative(path.resolve(projeto), meio) },
+        prints: { dobra: path.relative(path.resolve(projeto), dobra).split(path.sep).join('/'), meio: path.relative(path.resolve(projeto), meio).split(path.sep).join('/') },
         altura_pagina: altura,
         capturado_em: new Date().toISOString().slice(0, 19),
       });
@@ -116,6 +116,6 @@ try {
   await browser.close();
   fs.writeFileSync(manifesto, JSON.stringify(doc, null, 2) + '\n');
 }
-console.log(`\n${urls.length - falhas.length} de ${urls.length} capturada(s). Manifesto: ${path.relative(process.cwd(), manifesto) || manifesto}`);
-console.log('Agora ABRA cada PNG e escreva faz_bem, principio e lido:true. Depois: python3 scripts/gate-referencias.py --projeto <dir>');
+console.log(`\n${urls.length - falhas.length} de ${urls.length} capturada(s). Manifesto: ${path.relative(process.cwd(), manifesto).split(path.sep).join('/') || manifesto}`);
+console.log('Agora ABRA cada PNG e escreva faz_bem, principio e lido:true. Depois: node scripts/py.mjs gate-referencias.py --projeto <dir>');
 process.exit(falhas.length ? 1 : 0);

@@ -54,10 +54,10 @@ https://docs.google.com/document/d/SEU_DOC_ID_AQUI/edit
 3. **Se o usuário pede pra buscar conteúdo**: usar `google-api.sh search "termo"`
 4. **Se token expirar (erro 401 persistente)**: rodar reautorização:
    ```bash
-   lsof -ti:8080 | xargs kill -9 2>/dev/null
-   python3 ~/.claude/scripts/google-oauth-capture.py &
-   # Abrir URL no navegador:
-   open "https://accounts.google.com/o/oauth2/v2/auth?client_id=SEU_CLIENT_ID.apps.googleusercontent.com&redirect_uri=http://localhost:8080&response_type=code&scope=https%3A//www.googleapis.com/auth/documents.readonly%20https%3A//www.googleapis.com/auth/spreadsheets.readonly%20https%3A//www.googleapis.com/auth/drive.readonly&access_type=offline&prompt=consent"
+   # Se algo já usa a porta 8080, feche o programa antes (Windows: netstat -ano | findstr :8080 e taskkill /PID <número> /F).
+   node <dir-da-skill>/scripts/py.mjs ~/.claude/scripts/google-oauth-capture.py   # deixe rodando num segundo terminal
+   # Abrir no navegador (macOS: open, Windows: start, Linux: xdg-open) a URL:
+   "https://accounts.google.com/o/oauth2/v2/auth?client_id=SEU_CLIENT_ID.apps.googleusercontent.com&redirect_uri=http://localhost:8080&response_type=code&scope=https%3A//www.googleapis.com/auth/documents.readonly%20https%3A//www.googleapis.com/auth/spreadsheets.readonly%20https%3A//www.googleapis.com/auth/drive.readonly&access_type=offline&prompt=consent"
    # Depois trocar o code por token via curl POST
    ```
 

@@ -51,7 +51,7 @@ no lugar da ilustração chapada, e isso trouxe cinco regras que nenhum gate cob
      SVG o tira da conta.
 Mede com Pillow e numpy (`pip install pillow numpy`).
 
-Uso: python3 scripts/gate-imagens.py --projeto <dir> [--dist <dir>/dist] [--url <url>] [--trafego-real]
+Uso: node scripts/py.mjs gate-imagens.py --projeto <dir> [--dist <dir>/dist] [--url <url>] [--trafego-real]
 """
 import argparse
 import html as html_mod
@@ -394,7 +394,7 @@ def checar_fotos(dist, usados, regioes, problemas, avisos):
 
 def medir_dobra(url):
     """Mede, no navegador, aviso e áreas de foto e desenho na primeira tela (1440 e 390)."""
-    r = subprocess.run(["node", str(AQUI / "medir-dobra.mjs"), "--url", url], capture_output=True, text=True, timeout=180)
+    r = subprocess.run(["node", str(AQUI / "medir-dobra.mjs"), "--url", url], capture_output=True, text=True, timeout=180, encoding="utf-8")
     if r.returncode != 0:
         raise RuntimeError((r.stderr or r.stdout).strip()[-400:])
     return json.loads(r.stdout)
@@ -420,12 +420,12 @@ def avaliar(projeto, dist=None, trafego_real=False, url=None):
     lic = projeto / "imagens" / "LICENCAS.md"
     if not lic.is_file():
         return [f"falta {lic}: toda imagem publicada precisa de origem, autor, licença e link"], avisos
-    mapa, itens = ler_tabela(lic.read_text(encoding="utf-8"))
+    mapa, itens = ler_tabela(lic.read_text(encoding="utf-8-sig"))
     faltam = [c for c in COLUNAS if c not in mapa]
     if faltam:
         return [f"LICENCAS.md sem as colunas {', '.join(faltam)} (cabeçalho: Arquivo publicado | Origem | Autor | Título | Licença | Link da licença | Alteração | Pessoa identificável | Autorização de imagem | Aviso de ilustrativa)"], avisos
     index = dist / "index.html"
-    pagina = index.read_text(encoding="utf-8") if index.is_file() else ""
+    pagina = index.read_text(encoding="utf-8-sig") if index.is_file() else ""
     texto = texto_visivel(pagina)
     texto_n = norm(texto)
     hrefs = set(re.findall(r'href="([^"]+)"', pagina))
