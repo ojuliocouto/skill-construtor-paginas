@@ -220,7 +220,8 @@ class BriefingProntoParaColar(unittest.TestCase):
         self.b = (self.raiz / "auditoria/briefing-do-auditor.md").read_text(encoding="utf-8")
 
     def test_traz_o_caminho_absoluto_do_projeto_em_formato_posix(self):
-        self.assertIn(self.raiz.as_posix(), self.b)
+        # resolve(): no Windows a pasta temporária vem no nome curto (RUNNER~1) e o script grava o nome longo.
+        self.assertIn(self.raiz.resolve().as_posix(), self.b)
 
     def test_traz_as_nove_lentes_e_onde_esta_o_criterio_de_cada_uma(self):
         for lente in ("design-critic", "assets-auditor", "visual-auditor", "motion-auditor", "responsive-auditor",
