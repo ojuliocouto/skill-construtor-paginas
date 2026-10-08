@@ -21,6 +21,9 @@ const servidor = http.createServer((req, res) => {
   if (req.url === '/icon.png') { res.writeHead(200, { 'Content-Type': 'image/png' }); res.end(png); return; }
   const rota = req.url.split('?')[0];
   let corpo = texto;
+  // A25: o clique de prova não sai da página de teste. Link para outro domínio: bloqueia a navegação, registra e conta como clique que funciona.
+  if (rota === '/clique-externo') corpo = texto.replace(/<button[^>]*>Ver resultado<\/button>/, '<a id="ext" href="http://example.invalid/send?phone=5521900000000">Chamar no WhatsApp</a>');
+  if (rota === '/clique-externo-blank') corpo = texto.replace(/<button[^>]*>Ver resultado<\/button>/, '<a id="ext" target="_blank" rel="noopener" href="http://example.invalid/outra">Chamar no WhatsApp</a>');
   if (rota === '/inerte') corpo = texto.replace('onclick="this.textContent=\'Resultado confirmado\'"', '');
   if (rota === '/coberto') corpo += '<div style="position:fixed;inset:0;background:white;z-index:100"></div>';
   if (rota === '/overflow') corpo += '<div style="width:3000px">Conteúdo que excede a janela</div>';
@@ -46,6 +49,13 @@ const servidor = http.createServer((req, res) => {
   // Auditoria da v4 no celular: cabeçalho fixo com botão + barra fixa = 152 px (18% da tela em
   // 390, 28,3% em 320), 3 botões na mesma tela, barra cobrindo botão e foto fora da 1a tela.
   if (rota === '/fixos-demais') corpo = '<header style="position:sticky;top:0;height:100px;background:#ddd">Marca</header>' + texto + longo.repeat(14) + '<div style="position:fixed;left:0;right:0;bottom:0;height:90px;background:#222"></div>';
+  // A14 (segunda leva da 3.5.6): o link de pular fica fora da janela (left:-999px) com fundo e NAO e botao de acao.
+  if (rota === '/pular-fora') corpo = '<a href="#c" style="position:absolute;left:-999px;top:0">Pular para o conteúdo</a>' + texto;
+  if (rota === '/pular-fora-e-dois-botoes') corpo = '<a href="#c" style="position:absolute;left:-999px;top:0">Pular para o conteúdo</a>' + texto.replace('</button>', '</button> <a href="#c">Agendar</a>');
+  // A21: link de crédito dentro de frase. O padrão do modelo (assets-sem-chave.md) mede 44 px de alvo sem abrir buraco entre linhas.
+  const cred = (css) => '<section class="cred"><style>.cred{padding:24px}.cred li{font:14px/22px Arial;margin:0;color:#444;max-width:300px}.cred a{background:transparent;color:#036;' + css + '}</style><h2>Créditos de imagem</h2><ul style="list-style:none;padding:0;margin:0"><li>Oficina: “Woodworking workshop” por <a href="#a">s w wengenroad</a>, <a href="#b">CC0 1.0</a>, via <a href="#c">Wikimedia Commons</a>. Imagem recortada a partir do original.</li><li>Aparas: “Hand inspecting wood shavings” por <a href="#d">Shixart1985</a>, <a href="#e">CC BY 2.0</a>, via <a href="#c">Wikimedia Commons</a>.</li></ul></section>';
+  if (rota === '/creditos-padrao-44') corpo = texto + cred('display:inline-block;padding:11px;margin:-11px;font:inherit');
+  if (rota === '/creditos-inline') corpo = texto + cred('display:inline;padding:0;margin:0;font:inherit');
   if (rota === '/dois-botoes') corpo = texto.replace('</button>', '</button> <a href="#c">Agendar</a>');
   if (rota === '/botao-coberto') corpo = texto + (longo.repeat(2) + '<a href="#c">Agendar no meio</a>').repeat(6) + '<a href="#c" style="position:fixed;left:0;right:0;bottom:0;text-align:center">Agendar agora</a>';
   const foto = '<img src="/poster.png" width="320" height="180" alt="Foto de controle" style="display:block;width:100%;height:40vh;object-fit:cover">';
@@ -137,6 +147,15 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/com-pessoa') corpo = '<section><h1>Controle da página</h1>' + pessoa + '<button>Ver resultado</button></section>';
   if (rota === '/pessoa-placeholder') corpo = '<section><h1>Controle da página</h1><svg data-desenho="mulher" data-figura="pessoa" width="320" height="320" viewBox="0 0 320 320"><rect x="10" y="10" width="300" height="300" fill="#ccd"/></svg><button>Ver resultado</button></section>';
   const situacao = (cor) => `<section><h2>Situações</h2><div style="background:#E2E8E0;padding:20px;display:inline-block"><svg data-desenho="costas de perfil com a lombar marcada" width="112" height="112" viewBox="0 0 96 96" fill="none" stroke="#24525A" stroke-width="2.2"><path d="M52 8C44 20 38 30 41 44C44 57 33 65 35 80"/><path class="acento" stroke="${cor}" d="M27 52c-5 4-5 10 0 14"/></svg></div></section>`;
+  // A17 (segunda leva): o que está invisível (opacity 0, visibility hidden, display none) não entra na medida de contraste.
+  const fraca = situacao('#C99A1E');
+  if (rota === '/traco-opacity0') corpo = texto + fraca.replace('<div style="background', '<div style="opacity:0;background');
+  if (rota === '/traco-visibility') corpo = texto + fraca.replace('<div style="background', '<div style="visibility:hidden;background');
+  if (rota === '/traco-display-none') corpo = texto + fraca.replace('<svg ', '<svg style="display:none" ');
+  // A16: o desenho do momento assinatura repete por regra do plano; marcado com data-assinatura não é "repetido".
+  const marcar = (d) => d.replace('<svg ', '<svg data-assinatura ');
+  if (rota === '/assinatura-repetida') corpo = texto + '<section><h2>Encaixe</h2>' + marcar(desenho('encaixe')) + '<p>Meio.</p>' + marcar(desenho('encaixe')) + '<p>Fecho.</p>' + marcar(desenho('encaixe')) + '</section>';
+  if (rota === '/assinatura-e-repetido-fora') corpo = texto + '<section><h2>Encaixe</h2>' + marcar(desenho('encaixe')) + '<p>Meio.</p>' + marcar(desenho('encaixe')) + '<p>Fora.</p>' + desenho('encaixe') + '<p>Fora de novo.</p>' + desenho('encaixe') + '</section>';
   if (rota === '/acento-fraco') corpo = texto + situacao('#C99A1E');
   if (rota === '/acento-ok') corpo = texto + situacao('#7A5C0E');
   if (rota.startsWith('/dash')) corpo ='<h1>Painel 2026</h1><div class="kpi__value">' + (rota === '/dash-ok' ? 'R$ 150,00' : '&#8212;') + '</div>';
@@ -168,6 +187,8 @@ servidor.listen(0, '127.0.0.1', async () => {
   const casos = [
     ['identidade-positiva', 'screenshot-prova.js', [url + '/ok', path.join(pasta, 'identidade-positiva')], 0],
     ['identidade-negativa', 'screenshot-prova.js', [url + '/sem-identidade', path.join(pasta, 'identidade-negativa')], 1],
+    ['clique-externo-bloqueado', 'screenshot-prova.js', [url + '/clique-externo', path.join(pasta, 'clique-externo'), '--click', '#ext'], 0, /o clique levaria a http:\/\/example\.invalid\/send\?phone=5521900000000/],
+    ['clique-externo-blank-bloqueado', 'screenshot-prova.js', [url + '/clique-externo-blank', path.join(pasta, 'clique-externo-blank'), '--click', '#ext'], 0, /o clique levaria a http:\/\/example\.invalid\/outra/],
     ['clique-inerte', 'screenshot-prova.js', [url + '/inerte', path.join(pasta, 'inerte'), '--click', 'button'], 1],
     ['clique-positivo', 'screenshot-prova.js', [url + '/ok', path.join(pasta, 'clique'), '--click', 'button'], 0],
     ['http-negativo', 'screenshot-prova.js', [url + '/erro', path.join(pasta, 'erro')], 1],
@@ -183,6 +204,12 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['responsivo-sem-cta-longo', 'gate-responsivo.mjs', ['--url', url + '/sem-cta-longo'], 1, /sem nenhum bot[aã]o/],
     ['responsivo-cta-fixo', 'gate-responsivo.mjs', ['--url', url + '/cta-fixo'], 0],
     ['responsivo-fixos-demais', 'gate-responsivo.mjs', ['--url', url + '/fixos-demais'], 1, /espa[cç]o fixo/],
+    // A15: a mensagem diz QUAIS elementos somou, com o seletor e a altura de cada um.
+    ['responsivo-fixos-demais-diz-quais', 'gate-responsivo.mjs', ['--url', url + '/fixos-demais'], 1, /somados: header[^\n]*\(100px\)[^\n]*div[^\n]*\(90px\)/],
+    ['responsivo-pular-fora-nao-e-botao', 'gate-responsivo.mjs', ['--url', url + '/pular-fora'], 0],
+    ['responsivo-pular-fora-e-dois-botoes-reprova', 'gate-responsivo.mjs', ['--url', url + '/pular-fora-e-dois-botoes'], 1, /2 bot[oõ]es de a[cç][aã]o na mesma tela[^\n]*Ver resultado \| Agendar/],
+    ['responsivo-creditos-inline-reprova', 'gate-responsivo.mjs', ['--url', url + '/creditos-inline'], 1, /alvo\(s\) de toque/],
+    ['responsivo-creditos-padrao-44-passa', 'gate-responsivo.mjs', ['--url', url + '/creditos-padrao-44'], 0],
     ['responsivo-dois-botoes', 'gate-responsivo.mjs', ['--url', url + '/dois-botoes'], 1, /bot[oõ]es de a[cç][aã]o na mesma tela/],
     ['responsivo-botao-coberto', 'gate-responsivo.mjs', ['--url', url + '/botao-coberto'], 1, /coberto ou encostado/],
     ['responsivo-hero-foto-ok', 'gate-responsivo.mjs', ['--url', url + '/hero-foto-ok'], 0, /medido no celular: fixo \d+px \([\d.]+%\), foto do her[oó]i \d+px \([\d.]+%\), at[eé] \d bot/],
@@ -193,6 +220,8 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['simetria-alturas', 'gate-simetria.mjs', ['--url', url + '/grade-alturas'], 1, /alturas diferentes/],
     ['simetria-passos-ao-lado', 'gate-simetria.mjs', ['--url', url + '/passos-ao-lado'], 1, /lista vertical ao lado do t[ií]tulo/],
     ['simetria-colunas', 'gate-simetria.mjs', ['--url', url + '/colunas-desbalanceadas'], 1, /colunas desbalanceadas/],
+    // A19: a falha diz qual elemento mediu em cada coluna e a medida de cada um.
+    ['simetria-colunas-diz-quem-mediu', 'gate-simetria.mjs', ['--url', url + '/colunas-desbalanceadas'], 1, /\(base da caixa button, termina em y \d+\)[^\n]*\(base da caixa div, termina em y \d+\)[^\n]*px de diferença/],
     ['simetria-ilustracao-ao-lado', 'gate-simetria.mjs', ['--url', url + '/ilustracao-ao-lado'], 0],
     ['simetria-colunas-titulo', 'gate-simetria.mjs', ['--url', url + '/colunas-titulo-desalinhado'], 1, /t[ií]tulos de cards vizinhos desalinhados/],
     ['simetria-cards-ok', 'gate-simetria.mjs', ['--url', url + '/cards-ok'], 0, /medido: maior diferen[cç]a entre t[ií]tulos vizinhos 0 px/],
@@ -202,6 +231,11 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['composicao-repetida', 'gate-composicao.mjs', ['--url', url + '/composicao-repetida'], 1, /mesmo esqueleto/],
     ['composicao-icone-generico', 'gate-composicao.mjs', ['--url', url + '/icone-generico'], 1, /gen[eé]rico/],
     ['composicao-icone-sem-desenho', 'gate-composicao.mjs', ['--url', url + '/icone-sem-desenho'], 1, /sem data-desenho/],
+    ['composicao-traco-opacity0-nao-conta', 'gate-composicao.mjs', ['--url', url + '/traco-opacity0'], 0],
+    ['composicao-traco-visibility-nao-conta', 'gate-composicao.mjs', ['--url', url + '/traco-visibility'], 0],
+    ['composicao-traco-display-none-nao-conta', 'gate-composicao.mjs', ['--url', url + '/traco-display-none'], 0],
+    ['composicao-assinatura-repetida-passa', 'gate-composicao.mjs', ['--url', url + '/assinatura-repetida'], 0],
+    ['composicao-repetido-fora-da-assinatura-reprova', 'gate-composicao.mjs', ['--url', url + '/assinatura-e-repetido-fora'], 1, /repetido[^\n]*2x/],
     ['composicao-icone-repetido', 'gate-composicao.mjs', ['--url', url + '/icone-repetido'], 1, /repetido/],
     ['texto-positivo', 'gate-texto.mjs', ['--url', url + '/texto-ok'], 0],
     ['texto-viuva', 'gate-texto.mjs', ['--url', url + '/viuva'], 1, /vi[uú]va/],

@@ -427,8 +427,24 @@ async function main() {
         await page.screenshot({ path: fAntes, fullPage: false });
         const antes = await lerEstado(page, el);
 
+        // O clique de prova NAO sai da pagina de teste (A25): navegacao para outro dominio (mesma aba ou
+        // target=_blank) e bloqueada, registrada com a URL, e conta como clique que funciona. Sem isto a prova
+        // abria o site real (api.whatsapp.com) em cada viewport.
+        const origemTeste = new URL(url).origin;
+        const externas = [];
+        await page.context().route('**/*', (rota) => {
+          const rq = rota.request();
+          let alvo = null;
+          try { alvo = new URL(rq.url()); } catch { /* url sem origem */ }
+          if (rq.isNavigationRequest() && alvo && /^https?:$/.test(alvo.protocol) && alvo.origin !== origemTeste) {
+            externas.push(rq.url());
+            return rota.abort('blockedbyclient');
+          }
+          return rota.continue();
+        });
         await el.click();
         await page.waitForTimeout(2500);
+        await page.context().unroute('**/*').catch(() => {});
 
         const fDepois = path.join(outdir, `prova-${vp.name}-pos-clique.png`);
         await page.screenshot({ path: fDepois, fullPage: false });
@@ -442,8 +458,9 @@ async function main() {
           `  URL              ${antes.url === depois.url ? `igual (${depois.url})` : `${antes.url} -> ${depois.url}`}`
         );
         console.log(`  texto do alvo    "${antes.texto}" -> "${depois.texto}"`);
+        for (const u of [...new Set(externas)]) console.log(`  navegação externa  o clique levaria a ${u} (bloqueei a navegação: o teste não sai da página; conta como clique que funciona)`);
         console.log(`  pixels do print  ${iguais ? 'IDENTICOS' : 'mudaram'}`);
-        if (iguais) {
+        if (iguais && !externas.length) {
           console.log('ATENCAO: o print pos-clique e identico ao anterior. O clique pode nao ter surtido efeito visivel.');
           cliquesInertes.push(vp.name);
         }

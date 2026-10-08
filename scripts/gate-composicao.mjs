@@ -34,7 +34,9 @@
  *     .acento / [data-acento] de um data-desenho com contraste menor que 3:1 contra o que está
  *     embaixo dele. O amarelo que dava sentido aos desenhos estava a 2,07:1 no palco.
  *
- * Exceções declaradas: `data-composicao-ok="motivo"` na seção e `data-icone-repetido-ok` no SVG.
+ * Exceções declaradas: `data-composicao-ok="motivo"` na seção, `data-icone-repetido-ok` no SVG e
+ * `data-assinatura` no SVG do momento assinatura (que repete por regra do plano).
+ * O que está invisível (opacity 0, visibility hidden, display none) não entra na medida de contraste.
  *
  * Uso: node scripts/gate-composicao.mjs --url <url> [--publico "<público do briefing>" | --projeto <dir>]
  */
@@ -225,7 +227,9 @@ const r = await page.evaluate((genericos) => {
     const onde = secao ? rotulo(secao.querySelector('h1, h2') || secao) : 'fora de seção';
     if (!d) semDesenho.push(`SVG de ${Math.round(v.getBoundingClientRect().width)} px em "${onde}"`);
     else if (re.test(d)) genericosAchados.push(`"${d}" em "${onde}"`);
-    if (v.hasAttribute('data-icone-repetido-ok')) continue;
+    // O momento assinatura repete o mesmo desenho por regra do plano (3 ou mais seções): o marcador da receita
+    // `data-assinatura` no próprio SVG o isenta. O mesmo desenho FORA da assinatura continua reprovando.
+    if (v.hasAttribute('data-icone-repetido-ok') || v.hasAttribute('data-assinatura')) continue;
     const chave = [...v.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse')]
       .map((n) => n.tagName + ':' + ['d', 'cx', 'cy', 'r', 'x', 'y', 'width', 'height', 'points', 'x1', 'y1', 'x2', 'y2'].map((a) => n.getAttribute(a) || '').join(',')).join('|');
     if (!chave) continue;
@@ -247,6 +251,8 @@ const r = await page.evaluate((genericos) => {
     const escala = (n) => { const m = n.getScreenCTM(); return m ? Math.hypot(m.a, m.b) : 1; };
     for (let i = 0; i < formas.length; i++) {
       const n = formas[i];
+      // O que está invisível (opacity 0 no próprio elemento ou acima, visibility hidden, display none) não se mede.
+      if (n.checkVisibility && !n.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
       const cs = getComputedStyle(n);
       const acento = n.matches('.acento, [data-acento]') || !!n.closest('.acento, [data-acento]');
       const larg = parseFloat(cs.strokeWidth) * escala(n);
