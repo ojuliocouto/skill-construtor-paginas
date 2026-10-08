@@ -15,8 +15,8 @@ na entrega as decisões que o dono deveria ter aprovado. A exceção dispensa a 
 
 ## Antes de tudo
 
-1. `python3 <dir-da-skill>/scripts/checar-ferramentas.py`
-   Crítico: python3, node, Playwright com Chromium e a skill `frontend-design`. Faltou crítico:
+1. `node <dir-da-skill>/scripts/py.mjs checar-ferramentas.py`
+   Crítico: Python 3, node, Playwright com Chromium e a skill `frontend-design`. Faltou crítico:
    conduza a instalação (o comando aparece na saída) e só então siga. Opcional ausente não
    bloqueia nada.
 2. Leia `references/preferencias-de-design.md`: vale para toda página.
@@ -46,7 +46,7 @@ interativo: as cinco de interpretação saem como `SUPOSICAO`, o preço fica PEN
 para a conversa.
 
 Grave `evidencias/briefing.md` e `evidencias/etapa-0.json` (campos em `references/gate-etapas.md`):
-`python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 0 --arquivo evidencias/etapa-0.json`
+`node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir> registrar 0 --arquivo evidencias/etapa-0.json`
 
 ## b. Pesquisa de referências
 
@@ -60,8 +60,8 @@ uma e escrever o que ela faz bem e o princípio que se leva dela.
 Abra os dois PNGs de cada uma (Read), preencha `faz_bem`, `principio` e `lido: true` no
 manifesto e escreva `referencias/sintese.md`. Gate:
 
-`python3 <dir-da-skill>/scripts/gate-referencias.py --projeto <dir>`
-`python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 1 --arquivo evidencias/etapa-1.json`
+`node <dir-da-skill>/scripts/py.mjs gate-referencias.py --projeto <dir>`
+`node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir> registrar 1 --arquivo evidencias/etapa-1.json`
 
 **GATE b:** sem 6 prints reais lidos (2 de cada tipo), o plano visual não começa.
 
@@ -85,7 +85,7 @@ em `references/ritmo-e-animacao.md`.
 Abra o `plano/direcoes.png` (Read): se duas direções parecem a mesma página com outra cor,
 refaça uma delas antes de mostrar.
 
-`python3 <dir-da-skill>/scripts/gate-plano.py --projeto <dir>`
+`node <dir-da-skill>/scripts/py.mjs gate-plano.py --projeto <dir>`
 
 **GATE b2:** sem `PLANO.md` aprovado (as 7 seções, as 3 prévias, a copy sustentada, o pixel
 declarado, o momento assinatura, a composição por seção, o material da cliente e todas as caixas
@@ -130,11 +130,11 @@ ANTES de qualquer código:
 
 **Precedência:** identidade real do cliente (logo, cor, fonte que ele já usa) vence
 `references/preferencias-de-design.md`, que vence o plano. O banco de design
-(`python3 <dir-da-skill>/scripts/search.py "<termo>" --domain style`) é consulta opcional:
+(`node <dir-da-skill>/scripts/py.mjs search.py "<termo>" --domain style`) é consulta opcional:
 pode dar ideia, nunca decide.
 
-`python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> registrar "skill frontend-design" --arquivo plano-visual.md --detalhe "plano visual em duas passadas"`
-`python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 2 --arquivo evidencias/etapa-2.json`
+`node <dir-da-skill>/scripts/py.mjs uso-ferramentas.py --projeto <dir> registrar "skill frontend-design" --arquivo plano-visual.md --detalhe "plano visual em duas passadas"`
+`node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir> registrar 2 --arquivo evidencias/etapa-2.json`
 
 **GATE c:** sem `plano-visual.md` com os oito itens e a etapa 2 registrada, nenhuma linha de código.
 
@@ -164,18 +164,18 @@ mesmo dia" pendente, "Você chega, faz a avaliação postural e começa" e "aula
 postural" afirmam as duas coisas. A forma honesta: "Antes da primeira aula, você passa por uma
 avaliação postural", em frase própria, sem "grátis" e sem "no mesmo dia".
 
-`python3 <dir-da-skill>/scripts/gate-verdade.py --projeto <dir>`
+`node <dir-da-skill>/scripts/py.mjs gate-verdade.py --projeto <dir>`
 
 **Sem cliente ainda:** a página MOSTRA só substitutos verificáveis (credencial, fotos reais do
 espaço, endereço, horário, CNPJ, condição confirmada) e OCULTA o espaço do depoimento futuro
 como `<section data-reservado="depoimentos" hidden>`, que não é placeholder porque ninguém vê.
 Na tela, nada de "em breve depoimentos", estrela ou contador.
 
-Grave `evidencias/copy.md` e registre (o JSON da etapa 3 leva `"sustentacao": "evidencias/sustentacao.md"`): `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 3 --arquivo evidencias/etapa-3.json`
+Grave `evidencias/copy.md` e registre (o JSON da etapa 3 leva `"sustentacao": "evidencias/sustentacao.md"`): `node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir> registrar 3 --arquivo evidencias/etapa-3.json`
 
 ## e. Construção
 
-**Antes da primeira linha:** `python3 <dir-da-skill>/scripts/gate-plano.py --projeto <dir>` verde.
+**Antes da primeira linha:** `node <dir-da-skill>/scripts/py.mjs gate-plano.py --projeto <dir>` verde.
 A construção segue a ordem escolhida no PLANO, com os formatos de `references/secoes/`.
 
 **Stack padrão: HTML + Tailwind compilado.** React só se o projeto destino já for React ou se
@@ -281,37 +281,37 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    style; só o aviso de licença `/*! */` passa): a v5 publicou o histórico da construção num
    comentário do script.
 
-Grave `evidencias/etapa-4.json` e registre: `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 4 --arquivo evidencias/etapa-4.json`
+Grave `evidencias/etapa-4.json` e registre: `node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir> registrar 4 --arquivo evidencias/etapa-4.json`
 
 ## f. Gates mecânicos
 
 Sirva com compressão (medir sem gzip inverte o resultado) e mate o servidor no fim:
-`python3 <dir-da-skill>/scripts/servidor-gzip.py <dir> 8765`
+`node <dir-da-skill>/scripts/py.mjs servidor-gzip.py <dir> 8765`
 
 Rode cada gate e registre o exit REAL na wave:
 
-`python3 <dir-da-skill>/scripts/gate-sem-kicker.py <dir>/index.html` (kicker, 01/02/03, número gigante)
-`python3 <dir-da-skill>/scripts/gate-classes-mortas.py --projeto <dir>` (classe que não existe no CSS)
+`node <dir-da-skill>/scripts/py.mjs gate-sem-kicker.py <dir>/index.html` (kicker, 01/02/03, número gigante)
+`node <dir-da-skill>/scripts/py.mjs gate-classes-mortas.py --projeto <dir>` (classe que não existe no CSS)
 `node <dir-da-skill>/scripts/gate-responsivo.mjs --url http://localhost:8765/` (12 telas)
 `node <dir-da-skill>/scripts/gate-oclusao.mjs --url http://localhost:8765/` (texto coberto ou cortado)
 `node <dir-da-skill>/scripts/gate-simetria.mjs --url http://localhost:8765/` (itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos com 4 px de folga, conteúdo interno sem buraco, texto das caixas na mesma faixa de linhas e passos em caixas)
 `node <dir-da-skill>/scripts/gate-texto.mjs --url http://localhost:8765/` (viúva em título e subtítulo, de h1 a h4, dt e summary, e em parágrafo na fonte do título ou dentro de caixa, em 7 telas de 320 a 1440; item em minúscula; itálico colorido repetido)
 `node <dir-da-skill>/scripts/gate-composicao.mjs --url http://localhost:8765/ --projeto <dir>` (mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, desenho que lê como wireframe, linha do tempo que passa do último marco, nenhuma pessoa na primeira tela para público de pessoas, destaque abaixo de 3:1)
 `node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, pelo menos 2 seções animam ao chegar, nenhum item chega parado numa rolagem de 300 px/s em 1440, 390 e 320, e rolagem sem animação com movimento reduzido)
-`python3 <dir-da-skill>/scripts/gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas, e o dono nomeado no briefing no corpo da página)
-`python3 <dir-da-skill>/scripts/gate-imagens.py --projeto <dir> --url http://localhost:8765/` (licença com versão e link, crédito no HTML com o título real da fonte, aviso no og-image; foto repetida entre seções por pHash e origem, nitidez abaixo de 100, "imagem ilustrativa" e 60% de foto na primeira tela medidos no navegador; pessoa identificável de banco é aviso de tráfego real, e `--trafego-real` a reprova)
+`node <dir-da-skill>/scripts/py.mjs gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas, e o dono nomeado no briefing no corpo da página)
+`node <dir-da-skill>/scripts/py.mjs gate-imagens.py --projeto <dir> --url http://localhost:8765/` (licença com versão e link, crédito no HTML com o título real da fonte, aviso no og-image; foto repetida entre seções por pHash e origem, nitidez abaixo de 100, "imagem ilustrativa" e 60% de foto na primeira tela medidos no navegador; pessoa identificável de banco é aviso de tráfego real, e `--trafego-real` a reprova)
 `node <dir-da-skill>/scripts/gate-ritmo.mjs --url http://localhost:8765/` (duas seções vizinhas com o mesmo esqueleto e mais de 1 "título centralizado + cartões")
-`node <dir-da-skill>/scripts/anim.mjs --url http://localhost:8765/ --saida <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` e `python3 <dir-da-skill>/scripts/prancha.py --pasta <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` (3 quadros por seção em 1440 e 390 e a prancha com a porcentagem de pixels que mudou; abra as pranchas)
-`python3 <dir-da-skill>/scripts/gate-animacao.py --pasta <dir>/prova/anim --plano <dir>/PLANO.md` (menos de 2% de pixels mudando entre início e fim, mais de 2 seções com o mesmo tipo, menos pranchas que linhas da tabela do plano)
+`node <dir-da-skill>/scripts/anim.mjs --url http://localhost:8765/ --saida <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` e `node <dir-da-skill>/scripts/py.mjs prancha.py --pasta <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` (3 quadros por seção em 1440 e 390 e a prancha com a porcentagem de pixels que mudou; abra as pranchas)
+`node <dir-da-skill>/scripts/py.mjs gate-animacao.py --pasta <dir>/prova/anim --plano <dir>/PLANO.md` (menos de 2% de pixels mudando entre início e fim, mais de 2 seções com o mesmo tipo, menos pranchas que linhas da tabela do plano)
 `node <dir-da-skill>/scripts/sobreposicao.mjs --url http://localhost:8765/ --fixo "<seletor do sticky>" --contra "<seletor do bloco largo>"` (um para cada elemento fixo: 0 px² em 1024 a 1920)
-`python3 <dir-da-skill>/scripts/montar-dist.py --projeto <dir> --css-em-linha` e `python3 <dir-da-skill>/scripts/gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar, sem comentário interno, e ícones gerados do `icones/icone.svg` do motivo do plano)
-`python3 <dir-da-skill>/scripts/gate-rastreamento.py --dist <dir>/dist --plano <dir>/PLANO.md` (pixel e eventos que o plano pediu; passa direto com `Pixel pedido: nenhum`)
-`python3 <dir-da-skill>/scripts/gate-plano.py --projeto <dir>` (o plano continua aprovado depois das correções)
+`node <dir-da-skill>/scripts/py.mjs montar-dist.py --projeto <dir> --css-em-linha` e `node <dir-da-skill>/scripts/py.mjs gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar, sem comentário interno, e ícones gerados do `icones/icone.svg` do motivo do plano)
+`node <dir-da-skill>/scripts/py.mjs gate-rastreamento.py --dist <dir>/dist --plano <dir>/PLANO.md` (pixel e eventos que o plano pediu; passa direto com `Pixel pedido: nenhum`)
+`node <dir-da-skill>/scripts/py.mjs gate-plano.py --projeto <dir>` (o plano continua aprovado depois das correções)
 `node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/prova --click "<seletor do botão>"` (identidade, scrollY 0, clique)
-`python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> registrar Playwright --arquivo prova/prova-desktop.png --detalhe "prova de tela lida"`
-`python3 <dir-da-skill>/scripts/uso-ferramentas.py --projeto <dir> checar --caminho criar`
-`python3 <dir-da-skill>/scripts/gate-referencias.py --projeto <dir>`
-`python3 <dir-da-skill>/scripts/wave.py --projeto <dir> gate <nome> --exit <0|1> --detalhe "<o que o gate imprimiu>"`
+`node <dir-da-skill>/scripts/py.mjs uso-ferramentas.py --projeto <dir> registrar Playwright --arquivo prova/prova-desktop.png --detalhe "prova de tela lida"`
+`node <dir-da-skill>/scripts/py.mjs uso-ferramentas.py --projeto <dir> checar --caminho criar`
+`node <dir-da-skill>/scripts/py.mjs gate-referencias.py --projeto <dir>`
+`node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> gate <nome> --exit <0|1> --detalhe "<o que o gate imprimiu>"`
 (nomes: `sem-kicker`, `classes-mortas`, `responsivo`, `oclusao`, `identidade`, `uso-ferramentas`, `referencias`, `simetria`, `texto`, `verdade`, `publicacao`, `movimento`, `composicao`, `imagens`, `plano`, `rastreamento`, `ritmo`, `animacao`)
 
 O `gate-responsivo.mjs` também reprova botão em mais de uma linha até 768 px e trecho de mais de
@@ -342,7 +342,7 @@ novo). Gere o que ainda não existir, nesta ordem, e confira:
 
 1. Prints: `node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/provas --com-360 --com-320` (os gates do passo f já geram parte).
 2. Vídeo de prova: `node <dir-da-skill>/scripts/gravar-video.js http://localhost:8765/ --saida <dir>/videos` (passo h, item 3b, que reaproveita estes arquivos).
-3. `python3 <dir-da-skill>/scripts/pacote-auditoria.py --projeto <dir> --url http://localhost:8765/`
+3. `node <dir-da-skill>/scripts/py.mjs pacote-auditoria.py --projeto <dir> --url http://localhost:8765/`
 
 O pacote tem: a URL, a `dist/`, o briefing (`evidencias/briefing.md`), o `PLANO.md`, a tabela de
 sustentação, a pasta `referencias/` (síntese e `*-dobra.png`), as capturas dos gates
@@ -360,12 +360,12 @@ responde AUDITORIA INDEPENDENTE PENDENTE até uma rodada de outra sessão (sem o
 `--origem sessao-independente`) ou de outra pessoa (`--origem pessoa`). Na v3, a autoavaliação
 deu média 7,78 e "tells 0"; o auditor independente deu 5,5 e cinco achados graves.
 
-`python3 <dir-da-skill>/scripts/wave.py --projeto <dir> registrar <lente> --veredito <aprovado|reprovado> --nota <0-10> --origem <subagente|sessao-independente|pessoa|autoavaliacao> --achados "<o que olhou e achou>"`
+`node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> registrar <lente> --veredito <aprovado|reprovado> --nota <0-10> --origem <subagente|sessao-independente|pessoa|autoavaliacao> --achados "<o que olhou e achou>"`
 A `comparacao-referencias` responde também, com `--gosto bonito|correto`, a pergunta do dono
 depois da SobrAI (9,05 nas lentes e "que página FEIA"): **isso é bonito ou só está correto?**
 "correto" não aprova e a rodada volta ao plano visual; sem resposta, a rodada também volta.
-`python3 <dir-da-skill>/scripts/wave.py --projeto <dir> checar`
-`python3 <dir-da-skill>/scripts/wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`
+`node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> checar`
+`node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`
 
 **Teto de 2 rodadas.** Saiu CONTINUA na rodada 1: corrige, refaz os gates do passo f que a
 correção toca, junta o pacote de novo (`pacote-auditoria.py --rodada 2`, depois de salvar os achados
@@ -394,7 +394,7 @@ passe de gosto: tells antes e depois, o depois é 0.
    Sem a rolagem chegar ao fim da página, a gravação reprova. Os dois `.webm` entram em
    `video` na etapa 5; etapa sem vídeo não registra.
 4. Re-registrar a etapa 4 depois dos auditores é esperado (`references/gate-etapas.md`); depois:
-   `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir> registrar 5 --arquivo evidencias/etapa-5.json`
+   `node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir> registrar 5 --arquivo evidencias/etapa-5.json`
 5. Deploy (opcional para aluno): **sai só de `dist/`**, montada por `montar-dist.py` e aprovada
    pelo `gate-publicacao.py`, nunca da pasta do projeto (na v3 ela tinha 94 arquivos e 18 MB,
    com prints de terceiros e o briefing da cliente). Nunca sobrescrever projeto que já tem
@@ -403,7 +403,7 @@ passe de gosto: tells antes e depois, o depois é 0.
 6. **Relatório só com medida gravada:** cada número (px, %, s, KiB, :1, telas, Lighthouse) cita
    entre crases o arquivo de texto do gate que o mediu, e o arquivo é da `dist/` entregue. Na v4
    o auditor refutou 10 afirmações do relatório, entre elas um Lighthouse 100 medido antes da
-   versão final. `python3 <dir-da-skill>/scripts/gate-relatorio.py --relatorio <relatório.md> --base <dir> --dist <dir>/dist`
+   versão final. `node <dir-da-skill>/scripts/py.mjs gate-relatorio.py --relatorio <relatório.md> --base <dir> --dist <dir>/dist`
 7. A mensagem de entrega leva o bloco do SKILL.md (auditores, identidade, passe de gosto, prova,
    pendências) e o link ou os prints.
 

@@ -70,7 +70,7 @@ mostra de fato. Leitura inventada sobre o que o print não mostra é dado invent
 ## O gate
 
 ```bash
-python3 <dir-da-skill>/scripts/gate-referencias.py --projeto <dir>
+node <dir-da-skill>/scripts/py.mjs gate-referencias.py --projeto <dir>
 ```
 
 Reprova (exit 1) se houver menos de 6 referências válidas ou menos de 2 de cada tipo. Uma

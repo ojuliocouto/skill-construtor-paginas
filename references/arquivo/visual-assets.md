@@ -125,7 +125,7 @@ function LazyVideo({ src, className = '' }) {
 ### Otimização de Vídeo
 
 ```bash
-# Comprimir com ffmpeg (instalar: brew install ffmpeg)
+# Comprimir com ffmpeg (instalar: veja references/sistemas.md; no macOS: brew install ffmpeg)
 # MP4 otimizado para web (alvo: < 5MB para hero, < 2MB para secoes)
 ffmpeg -i input.mp4 \
   -vcodec libx264 -crf 28 -preset slow \
@@ -525,8 +525,8 @@ body::after {
 
 ```
 1. VÍDEO ou IMAGEM no hero?
-   ├── Vídeo: python3 assets-search.py "tech dark abstract"
-   └── Imagem: python3 assets-search.py "hero dark minimal" --type photo
+   ├── Vídeo: node scripts/py.mjs assets-search.py "tech dark abstract"
+   └── Imagem: node scripts/py.mjs assets-search.py "hero dark minimal" --type photo
 
 2. ILUSTRAÇÃO ou MOCKUP na seção de produto?
    ├── App/SaaS: Safari ou iPhone15Pro mockup (MagicUI) com screenshot real

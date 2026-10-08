@@ -44,8 +44,8 @@ Exemplo de `evidencias/etapa-0.json`, só para mostrar o formato:
 ```
 
 ```bash
-python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir-do-projeto> registrar 0 --arquivo evidencias/etapa-0.json
-python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir-do-projeto> checar 0
+node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir-do-projeto> registrar 0 --arquivo evidencias/etapa-0.json
+node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir-do-projeto> checar 0
 ```
 
 Registrar de novo uma etapa invalida as seguintes. Antes de entregar, confira a etapa 5.
@@ -61,8 +61,8 @@ página mudou de propósito, e o gate só pede que o registro aponte a versão n
 Depois da última rodada dos auditores (a segunda, ou a extra se a pessoa pediu):
 
 1. Atualize `evidencias/etapa-4.json` se o `primeiro_bloco` ou as `imagens` mudaram.
-2. `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir-do-projeto> registrar 4 --arquivo evidencias/etapa-4.json`
-3. `python3 <dir-da-skill>/scripts/gate-etapas.py --projeto <dir-do-projeto> registrar 5 --arquivo evidencias/etapa-5.json`
+2. `node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir-do-projeto> registrar 4 --arquivo evidencias/etapa-4.json`
+3. `node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir-do-projeto> registrar 5 --arquivo evidencias/etapa-5.json`
 
 O que NÃO é esperado: evidência das etapas 0 a 3 mudar depois dos auditores. Briefing,
 referências, plano visual ou copy alterados querem dizer que a auditoria mudou o que já

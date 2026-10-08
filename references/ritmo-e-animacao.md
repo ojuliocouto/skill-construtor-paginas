@@ -48,9 +48,9 @@ chega na tela, estado escondido só atrás de `.js`) vale também para a criaç�
    (seção com elemento fixo que muda com a rolagem).
 2. `node <dir-da-skill>/scripts/anim.mjs --url http://localhost:8765/ --saida <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json`
    grava início, meio e fim em 1440 e em 390.
-3. `python3 <dir-da-skill>/scripts/prancha.py --pasta <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json`
+3. `node <dir-da-skill>/scripts/py.mjs prancha.py --pasta <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json`
    monta a prancha de cada seção e mede a porcentagem de pixels que mudou.
-4. `python3 <dir-da-skill>/scripts/gate-animacao.py --pasta <dir>/prova/anim --plano <dir>/PLANO.md`
+4. `node <dir-da-skill>/scripts/py.mjs gate-animacao.py --pasta <dir>/prova/anim --plano <dir>/PLANO.md`
    reprova seção com menos de 2% de pixels mudando entre o início e o fim (em 1440 ou em 390), mais
    de 2 seções com o mesmo tipo e menos pranchas que linhas da tabela.
 

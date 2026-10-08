@@ -54,7 +54,7 @@ direção aqui custa uma conversa; depois do código, custa a página.
    e espere o aluno marcar. Sessão não interativa: marque, e liste na entrega cada escolha que
    o aluno deveria ter feito.
 
-`python3 <dir-da-skill>/scripts/gate-plano.py --projeto <dir>`
+`node <dir-da-skill>/scripts/py.mjs gate-plano.py --projeto <dir>`
 
 ## O modelo do PLANO.md
 

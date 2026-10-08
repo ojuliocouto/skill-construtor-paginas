@@ -16,13 +16,13 @@ com licença Creative Commons. Responde sem nenhuma API key.
 
 ```bash
 # busca direta
-python3 scripts/assets-search.py "team meeting office" --type openverse -n 6
+node scripts/py.mjs assets-search.py "team meeting office" --type openverse -n 6
 
 # alias curto
-python3 scripts/assets-search.py "brazil city aerial" --type cc -n 6
+node scripts/py.mjs assets-search.py "brazil city aerial" --type cc -n 6
 
 # e o mais importante: sem PEXELS_API_KEY, isto cai na Openverse sozinho
-python3 scripts/assets-search.py "coworking space" --type photo -n 6
+node scripts/py.mjs assets-search.py "coworking space" --type photo -n 6
 ```
 
 O script já filtra por `license_type=commercial`, ou seja, só volta o que pode
@@ -86,7 +86,7 @@ se fosse foto do cliente ou do produto dele.
 
 ```
 https://undraw.co/illustrations
-python3 scripts/assets-search.py --type illustrations "team work"
+node scripts/py.mjs assets-search.py --type illustrations "team work"
 ```
 
 Cor customizável para casar com a paleta da página. Sem obrigação de crédito.
@@ -98,7 +98,7 @@ real no hero: ilustração sozinha em página inteira ainda parece página vazia
 ## 4. Backgrounds, patterns e gradientes
 
 ```
-python3 scripts/assets-search.py --type backgrounds
+node scripts/py.mjs assets-search.py --type backgrounds
 ```
 
 São camada de fundo, não são a imagem da página. Se a única coisa visual da

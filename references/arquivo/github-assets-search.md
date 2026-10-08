@@ -6,26 +6,26 @@ Antes de construir do zero, busque templates e páginas já criadas no GitHub co
 
 ```bash
 # Busca por repositorios (padrao)
-python3 <dir-da-skill>/scripts/github-search.py "landing page tailwind"
+node <dir-da-skill>/scripts/py.mjs github-search.py "landing page tailwind"
 
 # Usar preset (queries otimizadas)
-python3 <dir-da-skill>/scripts/github-search.py landing-nextjs
+node <dir-da-skill>/scripts/py.mjs github-search.py landing-nextjs
 
 # Filtrar por linguagem
-python3 <dir-da-skill>/scripts/github-search.py "saas template" --lang tsx
+node <dir-da-skill>/scripts/py.mjs github-search.py "saas template" --lang tsx
 
 # Minimo de stars (qualidade)
-python3 <dir-da-skill>/scripts/github-search.py "portfolio template" --stars 200
+node <dir-da-skill>/scripts/py.mjs github-search.py "portfolio template" --stars 200
 
 # Mais resultados
-python3 <dir-da-skill>/scripts/github-search.py dashboard -n 20
+node <dir-da-skill>/scripts/py.mjs github-search.py dashboard -n 20
 
 # Ordenar por mais recente
-python3 <dir-da-skill>/scripts/github-search.py "nextjs starter" --sort updated
+node <dir-da-skill>/scripts/py.mjs github-search.py "nextjs starter" --sort updated
 
 # Buscar CODIGO especifico (componentes, secoes)
-python3 <dir-da-skill>/scripts/github-search.py "hero section tailwind" --type code --lang tsx
-python3 <dir-da-skill>/scripts/github-search.py "pricing table component" --type code --lang tsx
+node <dir-da-skill>/scripts/py.mjs github-search.py "hero section tailwind" --type code --lang tsx
+node <dir-da-skill>/scripts/py.mjs github-search.py "pricing table component" --type code --lang tsx
 ```
 
 ### Presets Disponíveis
@@ -61,27 +61,27 @@ python3 <dir-da-skill>/scripts/github-search.py "pricing table component" --type
 
 ```bash
 # Videos de fundo para hero (requer PEXELS_API_KEY gratuita)
-python3 <dir-da-skill>/scripts/assets-search.py "dark abstract tech"
-python3 <dir-da-skill>/scripts/assets-search.py tech-dark          # preset
-python3 <dir-da-skill>/scripts/assets-search.py waves-light        # preset light
+node <dir-da-skill>/scripts/py.mjs assets-search.py "dark abstract tech"
+node <dir-da-skill>/scripts/py.mjs assets-search.py tech-dark          # preset
+node <dir-da-skill>/scripts/py.mjs assets-search.py waves-light        # preset light
 
 # Fotos para hero ou secoes
-python3 <dir-da-skill>/scripts/assets-search.py "office modern" --type photo
+node <dir-da-skill>/scripts/py.mjs assets-search.py "office modern" --type photo
 
 # Lottie animations (loading, success, rocket, etc.)
-python3 <dir-da-skill>/scripts/assets-search.py "loading" --type lottie
+node <dir-da-skill>/scripts/py.mjs assets-search.py "loading" --type lottie
 
 # Ilustracoes SVG (undraw, storyset)
-python3 <dir-da-skill>/scripts/assets-search.py --type illustrations "team work"
+node <dir-da-skill>/scripts/py.mjs assets-search.py --type illustrations "team work"
 
 # Icones animados (LordIcon, Lucide)
-python3 <dir-da-skill>/scripts/assets-search.py --type icons
+node <dir-da-skill>/scripts/py.mjs assets-search.py --type icons
 
 # Backgrounds SVG, patterns, noise textures
-python3 <dir-da-skill>/scripts/assets-search.py --type backgrounds
+node <dir-da-skill>/scripts/py.mjs assets-search.py --type backgrounds
 
 # Ver todos os presets de video
-python3 <dir-da-skill>/scripts/assets-search.py --presets
+node <dir-da-skill>/scripts/py.mjs assets-search.py --presets
 ```
 
 **Setup da API Pexels (gratuita, 20.000 req/mes):**
@@ -101,11 +101,11 @@ export PEXELS_API_KEY="sua-chave-aqui"
 
 ### Workflow Recomendado com GitHub
 
-1. **Buscar inspiração**: `python3 .../github-search.py landing-nextjs --stars 100`
+1. **Buscar inspiração**: `node .../py.mjs github-search.py landing-nextjs --stars 100`
 2. **Clonar template**: `gh repo clone <repo>`
 3. **Estudar estrutura**: Ler os arquivos do template clonado
 4. **Adaptar**: Usar como base e customizar com as guidelines desta skill
-5. **Buscar componentes**: `python3 .../github-search.py "pricing section" --type code --lang tsx`
+5. **Buscar componentes**: `node .../py.mjs github-search.py "pricing section" --type code --lang tsx`
 
 ### Após Encontrar um Repo
 
