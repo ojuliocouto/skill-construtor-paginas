@@ -68,3 +68,9 @@ O que NÃO é esperado: evidência das etapas 0 a 3 mudar depois dos auditores. 
 referências, plano visual ou copy alterados querem dizer que a auditoria mudou o que já
 estava decidido. Se foi a lente `comparacao-referencias` que reprovou, esse é exatamente o
 caso: volte ao plano visual (etapa 2), registre de novo e siga dali.
+
+## Campo do briefing: negócio fictício de teste
+
+`evidencias/briefing.md` pode ter a linha `Negócio fictício de teste: sim`. É o único jeito de o `gate-imagens.py` aceitar nome de pessoa
+ao lado de foto de banco (alt, legenda ou depoimento); o gate imprime "permitido porque o briefing declara teste fictício".
+Sem a linha, ou com `não`, esse nome reprova.
