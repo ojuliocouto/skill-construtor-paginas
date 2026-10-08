@@ -6,7 +6,10 @@
  *  Controle: página cujo bloco vermelho (200x100, no topo) entra com uma animação linear de 1,5 s que
  *  COMEÇA quando a rolagem volta ao topo (é o que a entrada de uma página real faz depois que o
  *  screenshot-prova.js percorre a página). O print só vale com o vermelho PURO (opacidade 1) e a
- *  saída tem de dizer quanto esperou. Outra página, com uma animação infinita (um loop decorativo),
+ *  saída tem de dizer quanto esperou. Segundo controle (A13, atualização): página cuja animação
+ *  REINICIA quando a janela muda de tamanho, que é o que o `fullPage` do Playwright provoca (no teste
+ *  do aluno, a entrada do herói voltou a opacidade 0 durante o print de página inteira). O print tem
+ *  de sair com o estado final, não com a entrada recomeçada. Outra página, com uma animação infinita (um loop decorativo),
  *  não pode travar a prova: o teto de 4 s vale e a saída diz que ainda havia animação rodando.
  */
 const http = require('node:http');
@@ -28,6 +31,10 @@ const PAGINAS = {
   '/entrada': base('<div class="alvo" id="a"></div>' + Array.from({ length: 12 }, (_, i) => `<section style="height:600px"><p>Seção ${i}</p></section>`).join('')
     + '<script>var desceu=false;addEventListener("scroll",function(){if(scrollY>400)desceu=true;if(desceu&&scrollY===0&&!document.getElementById("a").classList.contains("entra")){document.getElementById("a").classList.add("entra");}});</script>',
   '.alvo{opacity:1}.alvo.entra{animation:entra 1.5s linear both}@keyframes entra{from{opacity:0}to{opacity:1}}'),
+  // a entrada de 1,5 s roda no carregamento e REINICIA a cada resize (o fullPage redimensiona a janela)
+  '/reinicia': base('<div class="alvo entra" id="a"></div>' + Array.from({ length: 12 }, (_, i) => `<section style="height:600px"><p>Seção ${i}</p></section>`).join('')
+    + '<script>addEventListener("resize",function(){var a=document.getElementById("a");a.classList.remove("entra");void a.offsetWidth;a.classList.add("entra");});</script>',
+  '.alvo.entra{animation:entra 1.5s linear both}@keyframes entra{from{opacity:0}to{opacity:1}}'),
   // animação infinita decorativa: o teto de 4 s tem que valer
   '/loop': base('<div class="alvo"></div><div class="gira" style="width:40px;height:40px;background:#00f"></div>' + Array.from({ length: 3 }, (_, i) => `<section style="height:600px"><p>Seção ${i}</p></section>`).join(''),
     '.gira{animation:g 1s linear infinite}@keyframes g{to{transform:translateX(100px)}}'),
@@ -68,6 +75,15 @@ servidor.listen(0, '127.0.0.1', async () => {
   checa('a saída diz quanto esperou a entrada', /entrada\s+desktop: esperou \d+ ms/.test(e.log), (e.log.match(/entrada .*/) || [''])[0]);
   const ms = Number((e.log.match(/entrada\s+desktop: esperou (\d+) ms/) || [0, -1])[1]);
   checa('esperou de verdade (mais de 100 ms) e dentro do teto de 4 s', ms > 100 && ms <= 4300, String(ms));
+
+  const r = await rodar(`http://127.0.0.1:${porta}/reinicia`, path.join(pasta, 'reinicia'));
+  checa('prova da página que reinicia a entrada no resize sai 0', r.code === 0, r.log.split('\n').slice(-3).join(' | '));
+  for (const nome of ['desktop', 'mobile']) {
+    const arq = path.join(pasta, 'reinicia', `prova-${nome}.png`);
+    const escala = nome === 'desktop' ? 1 : 2;
+    const px2 = await pixel(arq, 100 * escala, 70 * escala);
+    checa(`o bloco volta ao estado final no print ${nome}, mesmo com o resize que reinicia a entrada`, px2[0] === 255 && px2[1] === 0 && px2[2] === 0, JSON.stringify(px2));
+  }
 
   const l = await rodar(`http://127.0.0.1:${porta}/loop`, path.join(pasta, 'loop'));
   checa('animação infinita não trava a prova (sai 0)', l.code === 0, l.log.split('\n').slice(-3).join(' | '));

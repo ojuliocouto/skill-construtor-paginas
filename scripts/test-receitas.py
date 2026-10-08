@@ -303,6 +303,21 @@ class NumerosDoTexto(unittest.TestCase):
         self.assertNotIn("0,45 s", prosa)
 
 
+class EstadoFinalDaEntrada(unittest.TestCase):
+    """A entrada `forwards` recomeça quando o navegador refaz o estilo (achado A13, atualização)."""
+
+    def test_abertura_do_topo_fixa_o_estado_final_com_pronto(self):
+        corpo = receitas()["abertura-do-topo"]
+        self.assertIn(".js .abertura-entra.pronto { opacity: 1; transform: none; animation: none; }", corpo)
+        self.assertIn("animationend", corpo)
+        self.assertIn("classList.add('pronto')", corpo)
+
+    def test_demo_traz_o_mesmo_estado_final(self):
+        demo = ler(DEMO)
+        self.assertIn(".js .abertura-entra.pronto { opacity: 1; transform: none; animation: none; }", demo)
+        self.assertIn("classList.add('pronto')", demo)
+
+
 class AssimetriaDeclarada(unittest.TestCase):
     """O par "título + lista vertical" que as receitas pedem declara `data-assimetrico` (achado A12)."""
 

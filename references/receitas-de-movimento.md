@@ -91,8 +91,19 @@ a imagem).
 .js .abertura-entra { opacity: 0; transform: translateY(22px); animation: sobe .9s cubic-bezier(.2,.8,.2,1) forwards; }
 .js .abertura-entra.d1 { animation-delay: .12s; } .js .abertura-entra.d2 { animation-delay: .26s; } .js .abertura-entra.d3 { animation-delay: .4s; }
 .js .abertura-foto .cena-quadro { animation: abreFoto 1.3s cubic-bezier(.2,.8,.2,1) both; }
+/* estado final fixo: ao terminar, o script (abaixo) põe .pronto e a animação não recomeça */
+.js .abertura-entra.pronto { opacity: 1; transform: none; animation: none; }
+.js .abertura-foto .cena-quadro.pronto { clip-path: none; animation: none; }
 @keyframes sobe { to { opacity: 1; transform: none; } }
 @keyframes abreFoto { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+```
+
+```js
+// Fixa o estado final: uma animação `forwards` recomeça se o navegador refizer o estilo (redimensionar
+// a janela, o print de página inteira, o foco que muda o layout) e o herói volta a sumir (achado A13)
+each(document.querySelectorAll('.abertura-entra, .abertura-foto .cena-quadro'), function (n) {
+  n.addEventListener('animationend', function (e) { if (e.target === n) n.classList.add('pronto'); });
+});
 ```
 
 Sem JS: roda só com CSS, na carga (não precisa de observador). Atrasos: 0, 0,12, 0,26 e 0,4 s.

@@ -220,6 +220,30 @@ async function esperarEntrada(page) {
   return { ms: Date.now() - inicio, rodando };
 }
 
+/** Congela as entradas já terminadas no estado final, para o print de página inteira não as reiniciar.
+ *
+ *  O `fullPage` redimensiona a janela, e uma animação de CSS pode recomeçar nesse resize: no teste do
+ *  aluno (A13, atualização) o herói estava com opacidade 1 antes do print e saiu com 0,32, 0 e 0
+ *  nele (subtítulo, fatos e encaixe sumidos). Para cada animação CSS finita já terminada,
+ *  `commitStyles()` grava o estado final no `style` do elemento e `animation: none` impede que ela
+ *  recomece. Só mexe no que já acabou (esperarEntrada vem antes) e só na página da prova, nunca no
+ *  arquivo do aluno. Animação infinita fica como está. Devolve quantos elementos congelou. */
+async function congelarEntrada(page) {
+  return page.evaluate(() => {
+    const feitos = new Set();
+    for (const a of document.getAnimations()) {
+      const t = a.effect && a.effect.getComputedTiming ? a.effect.getComputedTiming() : null;
+      const el = a.effect && a.effect.target;
+      if (!t || !el || !el.style || !Number.isFinite(t.endTime) || a.playState !== 'finished') continue;
+      if (typeof CSSAnimation !== 'undefined' && !(a instanceof CSSAnimation)) continue;
+      try { a.commitStyles(); } catch { continue; }
+      feitos.add(el);
+    }
+    for (const el of feitos) el.style.setProperty('animation', 'none', 'important');
+    return feitos.size;
+  });
+}
+
 async function lerEstado(page, el) {
   const pagina = await page.evaluate(() => ({
     scrollY: Math.round(window.scrollY),
@@ -355,7 +379,9 @@ async function main() {
       const fixos = await pararNoTopo(page);
       console.log(`  topo             ${vp.name}: scrollY 0 confirmado antes do print (${fixos} elemento(s) fixed/sticky no lugar certo)`);
       const entrada = await esperarEntrada(page);
+      const congelados = await congelarEntrada(page);
       console.log(`  entrada          ${vp.name}: esperou ${entrada.ms} ms a animação de entrada acabar${entrada.rodando ? ` (teto de 4 s: ainda rodavam ${entrada.rodando} animação(ões) finita(s); o print pode sair no meio da entrada)` : ''}`);
+      if (congelados) console.log(`  entrada          ${vp.name}: ${congelados} elemento(s) com a entrada já terminada ficaram no estado final (o print de página inteira redimensiona a janela e reiniciaria a animação)`);
       await page.screenshot({ path: file, fullPage: true });
       shots.push(file);
 

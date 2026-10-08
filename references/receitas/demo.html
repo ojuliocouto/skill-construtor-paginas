@@ -43,6 +43,8 @@ img, svg { display: block; max-width: 100%; }
 .js .abertura-entra { opacity: 0; transform: translateY(22px); animation: sobe .9s cubic-bezier(.2,.8,.2,1) forwards; }
 .js .abertura-entra.d1 { animation-delay: .12s; } .js .abertura-entra.d2 { animation-delay: .26s; } .js .abertura-entra.d3 { animation-delay: .4s; }
 .js .abertura-foto .cena-quadro { animation: abreFoto 1.3s cubic-bezier(.2,.8,.2,1) both; }
+.js .abertura-entra.pronto { opacity: 1; transform: none; animation: none; }
+.js .abertura-foto .cena-quadro.pronto { clip-path: none; animation: none; }
 @keyframes sobe { to { opacity: 1; transform: none; } }
 @keyframes abreFoto { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
 
@@ -563,6 +565,9 @@ img, svg { display: block; max-width: 100%; }
   window.addEventListener('resize', function () { if (window.innerWidth !== larguraVh) { larguraVh = window.innerWidth; raiz.style.setProperty('--vh', (window.innerHeight / 100) + 'px'); } });
   var each = function (lista, f) { Array.prototype.forEach.call(lista, f); };
   var NS = 'http://www.w3.org/2000/svg';
+  each(document.querySelectorAll('.abertura-entra, .abertura-foto .cena-quadro'), function (n) {
+    n.addEventListener('animationend', function (e) { if (e.target === n) n.classList.add('pronto'); });
+  });
 
   function montar(svg) {
     var grupos = [];
