@@ -47,6 +47,9 @@ if (!URL_ALVO || !SAIDA || !JSON_SECOES) {
 }
 let secoes;
 try { secoes = JSON.parse(fs.readFileSync(JSON_SECOES, 'utf8').replace(/^\uFEFF/, '')); } catch (e) { console.error('secoes.json ilegível: ' + e.message); process.exit(2); }
+// secoes.json gerado por plano-para-secoes.py: o que não dá para inferir sai como PREENCHER e para aqui, em vez de falhar no meio da prova.
+const faltaPreencher = JSON.stringify(secoes).match(/"PREENCHER[^"]*"/g);
+if (faltaPreencher) { console.error(`secoes.json ainda tem ${faltaPreencher.length} campo(s) PREENCHER (${faltaPreencher[0]}): troque pelo seletor real antes de rodar.`); process.exit(2); }
 if (!Array.isArray(secoes) || !secoes.every((s) => s.nome && s.seletor)) { console.error('secoes.json: cada seção precisa de "nome" e "seletor"'); process.exit(2); }
 const quadros = path.join(SAIDA, 'quadros');
 fs.mkdirSync(quadros, { recursive: true });
