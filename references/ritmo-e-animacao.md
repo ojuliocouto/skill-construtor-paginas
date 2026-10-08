@@ -6,6 +6,8 @@ que atravessa a página e muda de estado. Tudo isso entra no PLANO e vira medida
 
 ## Momento assinatura (campo do PLANO)
 
+**Negócio de produto físico (móveis, comida, imóvel, moda, obra, carro): o momento assinatura é FOTO REAL do produto, nunca desenho.** Receita `foto-que-se-monta` e a regra completa em `references/receitas-de-movimento.md` ("Escolha do momento assinatura"). Desenho só quando o que se vende não tem imagem. Passe `--produto-fisico` ao `gate-composicao.mjs` nesses negócios.
+
 Um elemento ligado ao assunto, que aparece em 3 ou mais seções (começo, meio e fim) e muda de
 estado ao longo da página. Na v7, a coluna vertebral em SVG: torta no topo, alinhando vértebra por
 vértebra na avaliação, terminando alinhada no fecho. No PLANO:

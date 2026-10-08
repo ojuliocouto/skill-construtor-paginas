@@ -12,6 +12,7 @@ import pathlib
 import contextlib
 import unittest
 import urllib.error
+import urllib.parse
 
 AQUI = pathlib.Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location("assets_search", AQUI / "assets-search.py")
@@ -195,6 +196,90 @@ class Commons(unittest.TestCase):
                 sys.argv = velho
         self.assertIn("Wikimedia Commons", saida.getvalue())
         self.assertFalse(any("openverse.org" in u for u in rede.chamadas))
+
+
+# ---- 3.5.8: achados N5 (acervo ruim, autor e categoria, miniatura) e N6 (larguras padrão da Commons) ----
+def com_titulos(*titulos):
+    """Resposta gravada com os títulos trocados (a licença e o resto continuam os da gravação)."""
+    r = json.loads(json.dumps(GRAVADA))
+    paginas = list(r["query"]["pages"].values())
+    for p, t in zip(paginas, titulos):
+        p["title"] = "File:" + t
+    r["query"]["pages"] = {str(i): p for i, p in enumerate(paginas[:len(titulos)])}
+    return r
+
+
+class CommonsAcervoELarguras(unittest.TestCase):
+    def setUp(self):
+        self._orig = (mod._abrir_url, mod.time.sleep)
+
+    def tearDown(self):
+        mod._abrir_url, mod.time.sleep = self._orig
+
+    def buscar(self, resposta, **kw):
+        rede = Rede(urllib.error.URLError("fora"), [resposta])
+        mod._abrir_url, mod.time.sleep = rede.abrir, rede.dormir
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            itens = mod.search_commons("solid wood dining table", limit=20, orientation="landscape", **kw)
+        return itens, err.getvalue(), rede
+
+    LIXO = ["EFTA00123456.jpg", "Dollhouse living room with tiny table.jpg", "Horse trailer interior.jpg",
+            "Living room of the Museum of Decorative Arts.jpg"]
+    BOM = ["Solid oak dining table in a bright kitchen.jpg", "Hand sanding a walnut table top.jpg"]
+
+    def test_n5_acervo_de_museu_casa_de_boneca_trailer_e_prova_policial_ficam_de_fora_e_o_aviso_conta(self):
+        itens, err, _ = self.buscar(com_titulos(*(self.LIXO + self.BOM)))
+        titulos = [i["titulo"] for i in itens]
+        self.assertEqual(len(itens), 2, titulos)
+        self.assertTrue(all(t.startswith(("Solid oak", "Hand sanding")) for t in titulos), titulos)
+        self.assertIn("4 resultado(s) descartado(s)", err)
+
+    def test_n5_mutante_titulo_normal_com_palavra_parecida_nao_e_descartado(self):
+        normais = ["Dolly cart with wooden table.jpg", "Trailer park wooden fence table.jpg", "Efta table in oak.jpg"]
+        itens, _, _ = self.buscar(com_titulos(*normais))
+        self.assertEqual(len(itens), 3, [i["titulo"] for i in itens])
+
+    def test_n5_sem_filtro_devolve_tudo(self):
+        itens, _, _ = self.buscar(com_titulos(*(self.LIXO + self.BOM)), filtrar_acervo=False)
+        self.assertEqual(len(itens), 6)
+
+    def test_n5_autor_e_categoria_entram_na_consulta_enviada_a_commons(self):
+        _, _, rede = self.buscar(GRAVADA, autor="Shixart1985", categoria="Wooden furniture")
+        url = [u for u in rede.chamadas if "commons.wikimedia.org" in u][0]
+        busca = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)["gsrsearch"][0]
+        self.assertIn("Shixart1985", busca)
+        self.assertIn('incategory:"Wooden furniture"', busca)
+        self.assertIn("solid wood dining table", busca)
+
+    def test_n5_sem_autor_nem_categoria_a_consulta_continua_a_mesma(self):
+        _, _, rede = self.buscar(GRAVADA)
+        url = [u for u in rede.chamadas if "commons.wikimedia.org" in u][0]
+        busca = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)["gsrsearch"][0]
+        self.assertEqual(busca, "solid wood dining table filetype:bitmap")
+
+    def test_n5_n6_a_saida_traz_miniatura_de_500_px_e_a_versao_de_1920_quando_a_foto_tem_tamanho(self):
+        itens, _, _ = self.buscar(GRAVADA)
+        grande = [i for i in itens if i["largura"] >= 1920 and "/thumb/" in i["url"]][0]
+        self.assertIn("/500px-", grande["thumbnail"])
+        saida = mod.format_openverse([grande], "x", fonte="Wikimedia Commons")
+        self.assertIn("Miniatura (500 px)", saida)
+        self.assertIn("/500px-", saida)
+        self.assertIn("1920 px", saida)
+        self.assertIn("/1920px-", saida)
+        self.assertIn("500, 960, 1280 ou 1920", saida)
+
+    def test_n6_larguras_padrao_e_url_so_com_largura_valida(self):
+        url = ("https://thumb.wikimedia.org/wikipedia/commons/thumb/5/57/Mesa.jpg/1280px-Mesa.jpg"
+               "?utm_source=commons.wikimedia.org")
+        self.assertEqual(mod.LARGURAS_COMMONS, (500, 960, 1280, 1920))
+        self.assertIn("/1920px-Mesa.jpg", mod.url_commons_na_largura(url, 1920, 4000))
+        self.assertIn("/500px-Mesa.jpg", mod.url_commons_na_largura(url, 500, 4000))
+        self.assertIn("/500px-Mesa.jpg", mod.url_commons_na_largura(url, 480, 4000), "480 não existe: sobe para 500")
+        self.assertIn("/1920px-Mesa.jpg", mod.url_commons_na_largura(url, 1500, 4000), "1500 não existe: sobe para 1920")
+        # foto menor que a largura pedida: a Commons responde 400, então não se monta a URL
+        self.assertEqual(mod.url_commons_na_largura(url, 1920, 1486), "")
+        self.assertEqual(mod.url_commons_na_largura("https://upload.wikimedia.org/x/Mesa.webp", 500, 4000), "")
 
 
 if __name__ == "__main__":

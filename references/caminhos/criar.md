@@ -99,6 +99,8 @@ refaça uma delas antes de mostrar.
 declarado, o momento assinatura, a composição por seção, o material da cliente e todas as caixas
 marcadas), o plano visual e o código não começam.
 
+**Momento assinatura em negócio de produto físico.** Quando o que se vende é algo que a pessoa toca, come, veste, habita ou dirige (móveis, comida, imóvel, moda, obra, carro, joia, planta), o momento assinatura é FOTO REAL do produto, nunca desenho nem ilustração figurativa. A receita é `foto-que-se-monta`: a foto do produto se monta em faixas até ficar inteira, com um rótulo ou cota por cima no fim (ex.: "Carvalho maciço, quatro tábuas, montada na sua casa"). Se o cliente ainda não mandou a foto, declare a foto como pendência do plano e use a melhor foto de ambiente do acervo; nunca desenhe o produto no lugar. Desenho só entra quando o que se vende não tem imagem (serviço abstrato, método, software), e mesmo nesse caso a tela real do produto vem antes de qualquer ilustração. Nesses negócios rode o `gate-composicao.mjs` com `--produto-fisico`: ele avisa se o momento assinatura ficou só em SVG. Palavras do dono: "Considerando que se trata de móveis, visual real conta mais que qualquer outra coisa."
+
 ## c. Plano visual, pela skill `frontend-design`
 
 Acione a skill de verdade (Skill tool, `frontend-design`) com o briefing, a síntese das
@@ -300,7 +302,8 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    favicon PNG quadrado e `apple-touch-icon`, `og:title`, `og:description` e `og:image`.
    Favicon: recorte quadrado primeiro, depois redimensione. **O ícone é a identidade ATUAL:** o
    plano declara `Ícone do site: <motivo>`, o motivo é desenhado em `icones/icone.svg` (com o
-   mesmo `data-motivo`, e a página desenha esse motivo em algum `data-desenho`) e os PNG saem de
+   mesmo `data-motivo`, e a página desenha esse motivo em algum `data-desenho`: **copie a frase do motivo, letra por letra, para dentro do
+   `data-desenho` do SVG que o desenha** (pode vir no meio de uma descrição maior; palavra trocada não vale)) e os PNG saem de
    `node <dir-da-skill>/scripts/gerar-icones.mjs --projeto <dir>`. **A og:image sai de um comando** (1200x630, o título, a foto e a
    faixa "Imagem ilustrativa" quando a foto é de banco, com a fonte da marca de `fonts/`; sem fonte, usa a do sistema e diz que é reserva):
    `node <dir-da-skill>/scripts/gerar-og-image.mjs --projeto <dir> --titulo "<título>" --foto imagens/hero.jpg --ilustrativa`. A v5 publicou o favicon da v3
@@ -344,6 +347,7 @@ cada coluna e onde terminou (`último texto p.fatos, termina em y 812` contra `b
 estique a foto até a mesma altura; se a assimetria é pedida no plano, declare `data-assimetrico="motivo"`.
 `node <dir-da-skill>/scripts/gate-texto.mjs --url http://localhost:8765/` (viúva em título e subtítulo, de h1 a h4, dt e summary, e em parágrafo na fonte do título ou dentro de caixa, em 7 telas de 320 a 1440; item em minúscula; itálico colorido repetido)
 `node <dir-da-skill>/scripts/gate-composicao.mjs --url http://localhost:8765/ --projeto <dir>` (mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, desenho que lê como wireframe, linha do tempo que passa do último marco, nenhuma pessoa na primeira tela para público de pessoas, destaque abaixo de 3:1)
+Negócio de produto físico (móveis, comida, imóvel, moda, obra, carro): acrescente `--produto-fisico` ao comando acima. Se o momento assinatura estiver só em desenho, o gate AVISA (não reprova) que ele deve ser foto real do produto, receita `foto-que-se-monta`.
 `node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, pelo menos 2 seções animam ao chegar, nenhum item chega parado numa rolagem de 300 px/s em 1440, 390 e 320, e rolagem sem animação com movimento reduzido)
 `node <dir-da-skill>/scripts/py.mjs gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas, e o dono nomeado no briefing no corpo da página)
 `node <dir-da-skill>/scripts/py.mjs gate-imagens.py --projeto <dir> --url http://localhost:8765/` (licença com versão e link, crédito no HTML com o título real da fonte, aviso no og-image; foto repetida entre seções por pHash e origem, nitidez abaixo de 100, "imagem ilustrativa" e 60% de foto na primeira tela medidos no navegador; pessoa identificável de banco é aviso de tráfego real, e `--trafego-real` a reprova)
@@ -391,6 +395,7 @@ Conferências que nenhum script faz sozinho, e que a lente content-auditor cobra
   do JSON-LD e cada alt contra o briefing
 - comentário no código que afirma comportamento ("fica sólido", "aparece") só depois de medido
 - edição por script com `assert` da troca e medida no navegador: build verde não prova pixel
+- **edição por script e gates na mesma linha: ligue com `&&`, nunca com `;` nem em linhas soltas.** Se o `assert` da troca falha, o `&&` para ali; sem ele os gates rodam em cima da página velha e a rodada inteira (minutos) mede o que você já tinha. Ex.: `python edita.py && bash gates-todos.sh`
 
 Lighthouse quando houver Chromium (pendência declarada quando não houver). SEO abaixo de 90
 sob `noindex` é esperado se a única auditoria reprovada for `is-crawlable`.
@@ -462,7 +467,7 @@ passe de gosto: tells antes e depois, o depois é 0.
    Android 360 e o menor suportado, 320, página inteira em scrollY 0), servindo a `dist/`. Nunca por script próprio: cabeçalho fixo no meio do print é artefato de rolagem.
 2. **Leia os PNGs com os próprios olhos** (Read): a página inteira para ritmo e composição, e
    recortes 1:1 para texto, rótulo e borda. Screenshot reduzido não aprova detalhe.
-3. A interação principal clicada nos dois viewports.
+3. A interação principal clicada nos dois viewports (`--click "<seletor>"`). Botão que é link de WhatsApp ou outro link externo: o clique é capturado e a navegação cancelada, então o teste não sai da página e o print de depois mostra a página; o destino aparece na saída ("o clique levaria a ..."). Confira o número dígito por dígito pelo `href`. Navegação feita por script (`location.href`) também é barrada, mas aí o print de depois não é tirado.
 3b. **Vídeo da rolagem, junto dos prints** (já gravado no passo g para o pacote do auditor: reaproveite
    se a página não mudou depois, refaça se mudou): com a página servida, grave desktop e celular do topo ao
    fim em ritmo de leitura:
@@ -470,6 +475,12 @@ passe de gosto: tells antes e depois, o depois é 0.
    (usa o `roteiro-pagina.json` da pasta de scripts: abre, espera a abertura, rola meia janela a cada 1,5 s e
    tira 7 quadros; leva de 30 a 70 s). **Leia as duas pranchas** (`prancha-desktop.png` e
    `prancha-mobile.png`): o vídeo prova o movimento, a prancha prova o que apareceu em cada ponto.
+   **Roteiro próprio** (`--roteiro arquivo.json`): o roteiro padrão só rola a página; efeito que pede clique ou mouse (painel de cor
+   de tela inteira, hover do botão) só aparece num roteiro seu. Página com `[data-painel]`: parta do `roteiro-demo-receitas.json` da pasta de scripts da skill, que já
+   clica. O gravador confere tudo de uma vez e recusa o roteiro que quebra qualquer limite: `abrir` é o primeiro passo;
+   `esperar` de 0 a 10000 ms; `rolar_pagina` com `passo` de 0,2 a 1, `espera_ms` de 300 a 3000, `max_passos` de 1 a 45 e `prints` de 0 a 8;
+   no mínimo 6 prints no roteiro; `duracao_minima_s` de 10 a 15; duração prevista de 10 a 90 s (com `rolar_pagina` vale o pior caso:
+   `max_passos` x (`espera_ms` + 300 ms) + 1,2 s). A mensagem de recusa repete essa lista de limites.
    Sem a rolagem chegar ao fim da página, a gravação reprova. Os dois `.webm` entram em
    `video` na etapa 5; etapa sem vídeo não registra.
 4. Re-registrar a etapa 4 depois dos auditores é esperado (`references/gate-etapas.md`); depois:

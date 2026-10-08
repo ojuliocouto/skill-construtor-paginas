@@ -157,6 +157,41 @@ def titulo_da_url(origem):
     return norm(re.sub(r"[-_%]+", " ", ultimo))
 
 
+def plano(s):
+    """Texto comparável: sem acento, sem caixa e com hífen e sublinhado tratados como espaço (o endereço da
+    fonte escreve 'Close-up' como 'Close-up_of'; o título real pode ter hífen). Vale dos dois lados."""
+    return norm(re.sub(r"[-_]+", " ", str(s)))
+
+
+_BLOCOS_DE_CREDITO = ("li", "p", "figcaption", "dd", "tr", "blockquote")
+
+
+def unidade_do_credito(pagina, origem):
+    """Texto do item de crédito (li, p, figcaption...) que traz o link para a origem desta foto, ou None quando
+    a página não liga o crédito à foto por esse link. Casa o crédito com a foto pelo endereço da fonte, não
+    pelo nome do autor: com várias fotos do mesmo autor, o nome não diz de qual foto é o crédito."""
+    m = re.match(r"https?://\S+", origem or "")
+    if not m:
+        return None
+    alvo = m.group(0).rstrip("/")
+    baixo = pagina.lower()
+    for ancora in re.finditer(r'href=["\']([^"\']+)["\']', pagina):
+        if html_mod.unescape(ancora.group(1)).rstrip("/") != alvo:
+            continue
+        melhor_pos, melhor_tag = -1, None
+        for tag in _BLOCOS_DE_CREDITO:
+            pos = max(baixo.rfind(f"<{tag} ", 0, ancora.start()), baixo.rfind(f"<{tag}>", 0, ancora.start()))
+            if pos > melhor_pos and baixo.find(f"</{tag}", pos, ancora.start()) == -1:
+                melhor_pos, melhor_tag = pos, tag
+        if melhor_tag is None:
+            continue
+        fim = baixo.find(f"</{melhor_tag}", ancora.start())
+        if fim == -1:
+            continue
+        return texto_visivel(pagina[melhor_pos:fim])
+    return None
+
+
 def citacoes_do_credito(texto, autor):
     """Trechos entre aspas nas frases do texto da página que citam o autor."""
     if not autor.strip():
@@ -404,8 +439,12 @@ def checar_dobra(medida, precisa_aviso, problemas):
     for tela, m in medida.items():
         rotulo = "desktop 1440" if tela == "desk" else "celular 390"
         if precisa_aviso and not m["aviso"]:
-            problemas.append(f"{rotulo}: 'imagem ilustrativa' fora da primeira tela (foto de banco com pessoa identificável só passa "
-                             "como ponte com o aviso visível sem rolar)")
+            if m.get("avisoNaPagina") is False:
+                problemas.append(f"{rotulo}: não achei o texto 'imagem ilustrativa' (nem 'imagens ilustrativas') visível na página neste tamanho de tela "
+                                 "(foto de banco com pessoa identificável só passa como ponte com o aviso visível sem rolar)")
+            else:
+                problemas.append(f"{rotulo}: 'imagem ilustrativa' fora da primeira tela (foto de banco com pessoa identificável só passa "
+                                 "como ponte com o aviso visível sem rolar)")
         total = m["foto"] + m["desenho"]
         if total > 0 and m["foto"] / total < FOTO_NA_DOBRA_MINIMA:
             problemas.append(f"{rotulo}: foto é {100 * m['foto'] / total:.0f}% da imagem da primeira tela (mínimo {100 * FOTO_NA_DOBRA_MINIMA:.0f}%): "
@@ -587,10 +626,18 @@ def avaliar(projeto, dist=None, trafego_real=False, url=None):
                 problemas.append(f"{nome}: versão alterada de CC BY-SA sem \"mesma licença\" escrito no crédito da página")
         slug = titulo_da_url(it.get("origem", ""))
         titulo = it.get("titulo", "").strip()
-        if titulo and len(slug.split()) >= 3 and norm(titulo) not in slug:
+        if titulo and len(slug.split()) >= 3 and plano(titulo) not in plano(slug):
             problemas.append(f"{nome}: Título \"{titulo}\" não é o da fonte (o endereço diz \"{slug}\"): use o título real ou crédito sem título entre aspas")
-        for citado in citacoes_do_credito(texto, it.get("autor", "")):
-            if norm(citado) != norm(titulo):
+        # N7: com a página ligando o crédito à foto pelo link da origem, vale o título desta foto; sem esse link,
+        # o crédito pode ser de qualquer foto do mesmo autor (aceita o título de uma delas, reprova o que não é de nenhuma).
+        unidade = unidade_do_credito(pagina, it.get("origem", ""))
+        if unidade is not None:
+            titulos_aceitos, onde_citar = {plano(titulo)}, unidade
+        else:
+            titulos_aceitos = {plano(o["titulo"]) for o in itens if norm(o.get("autor", "")) == norm(it.get("autor", ""))} | {plano(titulo)}
+            onde_citar = texto
+        for citado in citacoes_do_credito(onde_citar, it.get("autor", "")):
+            if plano(citado) not in titulos_aceitos:
                 problemas.append(f"{nome}: o crédito da página cita \"{citado}\" entre aspas como título, e o título da fonte é \"{titulo or slug}\"")
         if sim(it["pessoa"]) and not sim(it["autorizacao"]):
             pessoas_sem_autorizacao.append(nome)

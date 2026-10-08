@@ -55,13 +55,27 @@ node scripts/py.mjs assets-search.py "woodworking workshop" --type photo -n 6
 node scripts/py.mjs assets-search.py "woodworking workshop" --type commons -n 6
 ```
 
-- **Mesma saída e mesmos campos de licença:** URL da imagem (1280 px), autor com link, rótulo e link da
-  licença, página de origem, crédito pronto e `<figure>` para colar.
+- **Mesma saída e mesmos campos de licença:** URL da imagem (1280 px), miniatura de 500 px, autor com link,
+  rótulo e link da licença, página de origem, crédito pronto e `<figure>` para colar.
+- **Só existem estas larguras de miniatura: 500, 960, 1280 e 1920 px.** Outra largura (480, 1500) devolve
+  `HTTP Error 400: Use thumbnail sizes listed...`. Para a versão do herói, troque `1280px-` por `1920px-` na URL
+  (o script já imprime a linha `Versão 1920 px` quando a foto tem essa largura; foto mais estreita que a pedida também dá 400).
 - **Só entra licença que uma página de cliente pode usar:** CC0, CC BY, CC BY-SA e domínio público. NC, ND,
   GFDL e "uso livre" de cada país são descartadas. Crédito segue obrigatório em CC BY e CC BY-SA.
 - **Pausa e limite:** o script espera 1 s antes de chamar e, em HTTP 429 (limite da Commons), espera o
   `Retry-After` (no máximo 30 s) e tenta **uma** vez. Se ainda der 429, devolve vazio e diz para esperar um
   minuto: insistir só alonga o bloqueio.
+- **Busque por AUTOR ou por CATEGORIA, não só por palavra.** Palavra solta de móvel ou ofício traz sala de
+  museu, casa de boneca, reboque de cavalo e prova policial (prefixo `EFTA`); no teste, o que serviu veio de
+  UM autor, achado por acaso e buscado pelo nome. O script já descarta esses quatro tipos de acervo e conta quantos
+  tirou (`--sem-filtro` mostra tudo). Estreite com `--autor` e `--categoria` (só em `--type commons`):
+  ```bash
+  node scripts/py.mjs assets-search.py "woodworking" --type commons --autor "Shixart1985" -n 8
+  node scripts/py.mjs assets-search.py "table" --type commons --categoria "Wooden furniture" -n 8
+  ```
+  Achou um bom autor numa foto? Busque o nome dele de novo: o acervo de um autor costuma ser coerente.
+  Cada item traz a miniatura de 500 px, então dá para escolher sem abrir um título por vez.
+  Acervo fraco para "móvel de autor": cena de casa com o tipo de móvel entra como ponte, dita na legenda.
 - **O acervo é diferente:** a Commons tem muita foto de ofício, lugar e objeto, e pouca de gente "natural,
   30 a 55 anos". Para rosto de depoimento, a foto do cliente continua sendo o caminho.
 - A suíte testa essa rota com a resposta gravada (`scripts/fixtures/commons-resposta.json`), sem internet.

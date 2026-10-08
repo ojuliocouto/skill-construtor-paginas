@@ -10,6 +10,7 @@ import unittest
 
 AQUI = pathlib.Path(__file__).resolve().parent
 ANTES_DA_DIVISAO = 85
+MINIMO_3_5_8 = 97  # 12 controles novos na 3.5.8 (N13 a N17 e N21): a contagem só sobe
 
 
 def ler(p):
@@ -34,6 +35,9 @@ def familias():
 class Cobertura(unittest.TestCase):
     def test_nenhum_controle_sumiu(self):
         self.assertGreaterEqual(len(controles()), ANTES_DA_DIVISAO, "a lib tem menos controles que antes da divisão")
+
+    def test_a_contagem_da_3_5_8_nao_cai(self):
+        self.assertGreaterEqual(len(controles()), MINIMO_3_5_8, "a lib tem menos controles que a 3.5.8")
 
     def test_todo_controle_cai_em_exatamente_uma_familia(self):
         fam = familias()

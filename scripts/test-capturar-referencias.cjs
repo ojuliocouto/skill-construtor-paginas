@@ -34,6 +34,22 @@ const servidor = http.createServer((req, res) => {
     <div id="aviso" style="position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.7);color:#fff;padding:80px"><p>Usamos cookies.</p><button onclick="document.getElementById('aviso').remove()">Aceitar todos</button></div>`, ESTILO));
   if (rota === '/modal') return html(200, pagina('Com modal de região', `<main><h1>Ateliê</h1><p>${LONGO.repeat(10)}</p></main>
     <div role="dialog" aria-modal="true" style="position:fixed;left:10%;top:5%;width:80%;height:80%;z-index:99;background:#fff;border:2px solid #000;padding:40px"><p>Escolha a sua região para continuar.</p><button>Brasil</button><button>Portugal</button></div>`, ESTILO));
+  // 3.5.8 (N1): herói que não rendeu (dobra branca) e meio com fotos que não chegaram (blocos chapados)
+  if (rota === '/brancadobra') return html(200, pagina('Herói em vídeo', `<div style="height:900px;background:#fff"></div><main><h1>Ateliê</h1><p>${LONGO.repeat(12)}</p></main><div style="height:1400px"></div>`, ESTILO.replace('background:#f4efe6', 'background:#fff')));
+  if (rota === '/fotas') {
+    const sec = (i) => `<section style="height:700px;background:#5b3a29;color:#fff;padding:40px"><p>Obra ${i}</p><img src="/nao-existe-${i}.jpg" alt="" width="300" height="200"></section>`;
+    return html(200, pagina('Fotos que não carregam', `<section style="height:900px;background:linear-gradient(90deg,#fff 50%,#222 50%);padding:60px;font:32px Georgia">${LONGO.slice(0, 300)}</section>${[1, 2, 3, 4, 5, 6, 7, 8].map(sec).join('')}`, ESTILO));
+  }
+  // foto que só começa a carregar quando entra na tela (IntersectionObserver) e demora 3,5 s: sem esperar o carregamento, o print do meio sai com blocos chapados
+  if (rota === '/lentas') {
+    const sec = (i) => `<section style="height:700px;background:#5b3a29;color:#fff;padding:40px"><p>Obra ${i}</p><img data-src="/lenta-${i}.png" alt="" width="300" height="200"></section>`;
+    return html(200, pagina('Fotos lentas', `<section style="height:900px;background:linear-gradient(90deg,#fff 50%,#222 50%);padding:60px;font:32px Georgia">${LONGO.slice(0, 300)}</section>${[1, 2, 3, 4, 5, 6, 7, 8].map(sec).join('')}<script>const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting && !e.target.src) e.target.src = e.target.dataset.src; })); document.querySelectorAll('img[data-src]').forEach((im) => io.observe(im));</script>`, ESTILO));
+  }
+  if (rota.startsWith('/lenta-')) {
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAY' + 'AAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', 'base64');
+    return setTimeout(() => { res.writeHead(200, { 'Content-Type': 'image/png' }); res.end(png); }, 3500);
+  }
+  if (rota.startsWith('/nao-existe')) { res.writeHead(404); return res.end(); }
   if (rota === '/curta') return html(200, pagina('Página curta', `<main><h1>Ateliê</h1><p>${LONGO}</p></main>`, ESTILO));
   const n = Number((req.url.match(/\d+/) || ['0'])[0]);
   const blocos = Array.from({ length: 8 }, (_, i) =>
@@ -98,6 +114,35 @@ servidor.listen(0, '127.0.0.1', async () => {
   const man3 = JSON.parse(fs.readFileSync(path.join(projeto2, 'referencias', 'referencias.json'), 'utf8'));
   checa('--limpar-ruins tira do manifesto só as ruins', man3.referencias.every((x) => x.captura.estado === 'ok') && man3.referencias.length === 3, String(man3.referencias.length));
   checa('--limpar-ruins move os PNG para descartados/referencias', fs.readdirSync(path.join(projeto2, 'descartados', 'referencias')).length >= 8);
+  // ---- 3.5.8: N1 (folha lisa e foto que não carregou), N2 (numeração), N3 (--remover) ----
+  const projeto3 = fs.mkdtempSync(path.join(os.tmpdir(), 'capturar-ref3-'));
+  const cap3 = (...urls) => rodar('node', [path.join(AQUI, 'capturar-referencias.mjs'), '--projeto', projeto3, '--tipo', 'design', '--minimo', '1', ...urls.map((u) => base + u)]);
+  const man = () => JSON.parse(fs.readFileSync(path.join(projeto3, 'referencias', 'referencias.json'), 'utf8'));
+  const est3 = (rota) => (man().referencias.find((x) => x.url === base + rota) || {}).captura || {};
+  const r3 = await cap3('/1', '/brancadobra', '/fotas', '/curta');
+  checa('N1: dobra toda branca é vazia, com o motivo', est3('/brancadobra').estado === 'vazia' && /dobra/.test(est3('/brancadobra').motivo || ''), JSON.stringify(est3('/brancadobra')));
+  checa('N1: meio com fotos que não carregaram é vazia, com o motivo', est3('/fotas').estado === 'vazia' && /meio/.test(est3('/fotas').motivo || ''), JSON.stringify(est3('/fotas')));
+  await cap3('/lentas');
+  checa('N1: foto preguiçosa que demora é esperada antes do print do meio (não vira vazia)', est3('/lentas').estado === 'ok' && est3('/lentas').imagens_sem_carregar === 0, JSON.stringify(est3('/lentas')));
+  fs.rmSync(path.join(projeto3, 'referencias'), { recursive: true, force: true });
+  await cap3('/1', '/brancadobra', '/fotas', '/curta');
+  checa('N1: página boa e página curta de verdade seguem ok', est3('/1').estado === 'ok' && est3('/curta').estado === 'ok', JSON.stringify([est3('/1'), est3('/curta')]));
+  checa('N1: a saída diz "vazia" e o gate de referências reprova a vazia', /vazia/.test(r3.stdout) && /vazia/.test((await rodar(process.execPath, [path.join(AQUI, 'py.mjs'), 'gate-referencias.py', '--projeto', projeto3])).stdout));
+  const antes = man().referencias.length;
+  await rodar('node', [path.join(AQUI, 'capturar-referencias.mjs'), '--projeto', projeto3, '--limpar-ruins']);
+  checa('N1: --limpar-ruins tira as vazias', man().referencias.every((x) => x.captura.estado === 'ok') && man().referencias.length === antes - 2, String(man().referencias.length));
+  await cap3('/2', '/cookie');
+  const prefixos = fs.readdirSync(path.join(projeto3, 'referencias')).filter((n) => n.endsWith('-dobra.png')).map((n) => n.split('-')[0]);
+  checa('N2: depois do --limpar-ruins a numeração não se repete', new Set(prefixos).size === prefixos.length && prefixos.length === 4, prefixos.join(','));
+  const usadosFora = fs.readdirSync(path.join(projeto3, 'descartados', 'referencias')).map((n) => n.split('-')[0]);
+  checa('N2: o número novo também não repete o de um print descartado', prefixos.slice(2).every((x) => !usadosFora.includes(x)), `${prefixos} x ${usadosFora}`);
+  const rem = await rodar('node', [path.join(AQUI, 'capturar-referencias.mjs'), '--projeto', projeto3, '--remover', base + '/curta']);
+  checa('N3: --remover tira do manifesto a referência ok que não serve e move os PNG', rem.status === 0 && !man().referencias.some((x) => x.url === base + '/curta') && fs.readdirSync(path.join(projeto3, 'descartados', 'referencias')).some((n) => /curta/.test(n)) && !fs.readdirSync(path.join(projeto3, 'referencias')).some((n) => /curta/.test(n)), rem.stdout + rem.stderr);
+  const ambig = await rodar('node', [path.join(AQUI, 'capturar-referencias.mjs'), '--projeto', projeto3, '--remover', '127.0.0.1']);
+  checa('N3: trecho que casa várias referências recusa e não mexe no manifesto', ambig.status === 1 && man().referencias.length === 3, `${ambig.status} ${man().referencias.length}`);
+  const nada = await rodar('node', [path.join(AQUI, 'capturar-referencias.mjs'), '--projeto', projeto3, '--remover', 'https://nao-esta.example/']);
+  checa('N3: endereço que não está no manifesto sai diferente de zero', nada.status === 1, String(nada.status));
+  fs.rmSync(projeto3, { recursive: true, force: true });
   fs.rmSync(projeto2, { recursive: true, force: true });
   servidor.close();
   fs.rmSync(projeto, { recursive: true, force: true });

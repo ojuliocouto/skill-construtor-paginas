@@ -98,6 +98,62 @@ class GateImagens(unittest.TestCase):
         problemas = " | ".join(gate.checar(self.projeto([SALA, OG_SALA], rodape)))
         self.assertIn("Estúdio iluminado", problemas)
 
+    # ---- 3.5.8 (N7, N8): crédito casado com a foto, hífen do título real ----
+    def tres_fotos_do_mesmo_autor(self, titulos, links=True, trocar=False):
+        """Três fotos do Ahmet Kurt, cada uma com seu título. Devolve (linhas, rodapé, imagens)."""
+        nomes = ["mesa", "estante", "cama"]
+        slugs = ["Mesa_de_jantar_em_madeira_clara", "Estante_com_livros_antigos", "Cama_de_casal_com_cabeceira_alta"]
+        linhas, itens = [], []
+        for i, (n, sl, t) in enumerate(zip(nomes, slugs, titulos)):
+            origem = f"https://commons.wikimedia.org/wiki/File:{sl}.jpg"
+            linhas.append(f"| {n}-480/800.webp | {origem} | Ahmet Kurt | {t} | Unsplash License (sem versão numerada) | https://unsplash.com/license | recorte | não | não se aplica | sim |\n")
+            itens.append((origem, t))
+        linhas.append(OG_SALA.replace("composição própria com sala-800.webp", "composição própria com mesa-800.webp").replace("| Sala de pilates |", f"| {titulos[0]} |"))
+        creditos = []
+        for k, (origem, t) in enumerate(itens):
+            citado = itens[(k + 1) % 3][1] if trocar else t
+            ancora = f' <a href="{origem}">fonte</a>' if links else ""
+            creditos.append(f'<li>Foto "{citado}", por Ahmet Kurt, Unsplash License.{ancora}</li>')
+        rodape = "<footer><p>Imagem ilustrativa: nenhuma foto mostra a casa do cliente.</p><ul>" + "".join(creditos) + "</ul></footer>"
+        imagens = tuple(f"imagens/{n}-{w}.webp" for n in nomes for w in (480, 800)) + ("og-image.jpg",)
+        return linhas, rodape, imagens
+
+    TITULOS3 = ["Mesa de jantar em madeira clara", "Estante com livros antigos", "Cama de casal com cabeceira alta"]
+
+    def test_N7_tres_fotos_do_mesmo_autor_com_credito_certo_passam(self):
+        linhas, rodape, imagens = self.tres_fotos_do_mesmo_autor(self.TITULOS3)
+        self.assertEqual(gate.checar(self.projeto(linhas, rodape, imagens=imagens)), [])
+
+    def test_N7_sem_link_de_origem_na_pagina_o_titulo_de_outra_foto_do_mesmo_autor_passa(self):
+        linhas, rodape, imagens = self.tres_fotos_do_mesmo_autor(self.TITULOS3, links=False)
+        self.assertEqual(gate.checar(self.projeto(linhas, rodape, imagens=imagens)), [])
+
+    def test_N7_mutante_titulo_inventado_com_tres_fotos_do_mesmo_autor_continua_reprovando(self):
+        linhas, rodape, imagens = self.tres_fotos_do_mesmo_autor(self.TITULOS3)
+        for links in (True, False):
+            linhas, rodape, imagens = self.tres_fotos_do_mesmo_autor(self.TITULOS3, links=links)
+            rodape = rodape.replace('Foto "Estante com livros antigos"', 'Foto "Prateleira inventada"')
+            problemas = " | ".join(gate.checar(self.projeto(linhas, rodape, imagens=imagens)))
+            self.assertIn("Prateleira inventada", problemas, f"links={links}")
+
+    def test_N7_mutante_credito_trocado_entre_fotos_do_mesmo_autor_reprova_quando_a_pagina_liga_o_credito_a_foto(self):
+        linhas, rodape, imagens = self.tres_fotos_do_mesmo_autor(self.TITULOS3, trocar=True)
+        problemas = " | ".join(gate.checar(self.projeto(linhas, rodape, imagens=imagens)))
+        self.assertIn("entre aspas como título", problemas)
+
+    def test_N8_titulo_real_com_hifen_passa_e_titulo_errado_com_hifen_continua_reprovando(self):
+        origem = "https://commons.wikimedia.org/wiki/File:Close-up_of_a_carpenters_hand_sandpapering_the_wood.jpg"
+        titulo = "Close-up of a carpenters hand sandpapering the wood"
+        linha = SALA.replace("https://unsplash.com/photos/x", origem).replace("| Sala de pilates |", f"| {titulo} |")
+        og = OG_SALA.replace("| Sala de pilates |", f"| {titulo} |")
+        rodape = RODAPE_OK.replace("Foto: Ahmet Kurt", f'Foto "{titulo}": Ahmet Kurt')
+        self.assertEqual(gate.checar(self.projeto([linha, og], rodape)), [])
+        errado = "Close-up of a joiners hand sanding the plank"
+        linha2 = linha.replace(f"| {titulo} |", f"| {errado} |")
+        og2 = og.replace(f"| {titulo} |", f"| {errado} |")
+        problemas = " | ".join(gate.checar(self.projeto([linha2, og2], rodape.replace(titulo, errado))))
+        self.assertRegex(problemas, r"n[ãa]o é o da fonte")
+
     def test_ilustracao_propria_dispensa_link_de_licenca(self):
         linha = "| aula-1200.webp | ilustração própria, feita para esta página | Studio | Avaliação postural | própria | | nenhuma | não | não se aplica | não |\n"
         og = "| og-image.jpg | ilustração própria, feita para esta página | Studio | Avaliação postural | própria | | texto ao lado | não | não se aplica | não |\n"
@@ -264,6 +320,28 @@ class GateImagensV35(unittest.TestCase):
         self.assertIn("tráfego real", r.stdout)
         r2 = subprocess.run([sys.executable, str(AQUI / "gate-imagens.py"), "--projeto", str(raiz), "--trafego-real"], capture_output=True, text=True, encoding="utf-8")
         self.assertEqual(r2.returncode, 1, r2.stdout)
+
+
+class DobraAviso(unittest.TestCase):
+    """N9: a mensagem diferencia 'fora da primeira tela' de 'texto não achado'."""
+
+    def test_aviso_fora_da_primeira_tela_mantem_a_mensagem(self):
+        problemas = []
+        gate.checar_dobra({"desk": {"foto": 0, "desenho": 0, "aviso": False, "avisoNaPagina": True}}, True, problemas)
+        self.assertTrue(any("fora da primeira tela" in p for p in problemas), problemas)
+
+    def test_aviso_que_nao_existe_na_pagina_diz_que_o_texto_nao_foi_achado(self):
+        problemas = []
+        gate.checar_dobra({"desk": {"foto": 0, "desenho": 0, "aviso": False, "avisoNaPagina": False}}, True, problemas)
+        self.assertEqual(len(problemas), 1, problemas)
+        self.assertIn("não achei o texto", problemas[0])
+        self.assertIn("imagens ilustrativas", problemas[0])
+        self.assertNotIn("fora da primeira tela", problemas[0])
+
+    def test_aviso_na_tela_nao_reprova(self):
+        problemas = []
+        gate.checar_dobra({"desk": {"foto": 100, "desenho": 0, "aviso": True, "avisoNaPagina": True}}, True, problemas)
+        self.assertEqual(problemas, [])
 
 
 if __name__ == "__main__":

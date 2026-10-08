@@ -37,6 +37,17 @@ sem lista fixa de endereços (site muda, cai e bloqueia; o que vale é o caminho
   "site oficial"), Google Maps e Google Business do bairro (o botão "site" leva ao oficial),
   diretórios de profissionais da área (o perfil aponta para o site do profissional).
 - **Perfil de rede social:** o link da bio de quem faz bem leva ao site.
+
+**Nomes de partida por ofício** (só nomes, não endereços: site muda, cai e bloqueia; abra o oficial de cada um e
+confirme que carrega antes de gastar leitura; lista curta de propósito, serve para destravar a busca, não para copiar):
+| Ofício | Nomes para abrir o site oficial |
+|---|---|
+| móvel e marcenaria de autor | Carl Hansen & Søn, Fritz Hansen, Vitra, Hay, Muuto, Etel Interiores, Lattoog |
+| cerâmica e objeto feito à mão | Heath Ceramics, Opinel (faca de ofício) |
+| produto e design industrial | Teenage Engineering, Plain English (cozinhas) |
+| estúdio de saúde e movimento | busque `<modalidade> studio` e as redes do ramo (ex.: fabricantes de aparelho listam estúdios parceiros) |
+Ofício que não está na tabela: use as três rotas acima (quem faz, quem reconhece o bom, quem lista com o endereço
+oficial) e anote no manifesto de onde veio o nome.
 - Para o tipo `design`, a galeria do parágrafo acima já resolve; filtre pelo tipo de página.
 
 Rode a captura nas candidatas e olhe o `estado` que ela imprime ANTES de gastar leitura: só
@@ -66,11 +77,23 @@ motivo (também gravado em `captura` no manifesto):
 | `bloqueada` | HTTP 401, 403 ou 429, ou texto de bloqueio (Forbidden, "Just a moment", captcha) dominando a página | trocar a URL |
 | `quebrada` | HTTP 400 ou mais, página sem folha de estilo aplicada, ou vazia | trocar a URL |
 | `coberta` | modal ou aviso cobrindo mais de 40% da janela mesmo depois de tentar fechar | trocar a URL, ou escolher uma página sem modal de região |
+| `vazia` | a primeira dobra é uma folha lisa (97% ou mais de uma cor só: o herói em vídeo ou imagem não rendeu), ou o print do meio é de uma cor só com fotos que não carregaram | trocar a URL |
+
+Antes do print do meio o script espera as fotos visíveis carregarem (até 6 s). Dobra com mais de 80% de uma
+cor só, mas menos de 97%, segue `ok` e imprime `AVISO`: abra o PNG antes de gastar leitura (página
+minimalista de verdade passa).
 
 O código de saída é diferente de zero enquanto houver menos de 6 referências `ok` no manifesto.
 `node <dir-da-skill>/scripts/capturar-referencias.mjs --projeto <dir> --limpar-ruins` tira do
 manifesto o que não é `ok` e move os PNG para `descartados/referencias/`. O gate reprova a
-referência que ficar no manifesto marcada como ruim. Página que pede login fica de fora. Página
+referência que ficar no manifesto marcada como ruim. O número do prefixo dos PNG segue do maior já
+usado (na pasta, em `descartados/` e no manifesto), então não se repete depois da limpeza.
+
+**Uma referência que saiu `ok` e não serve** (feia, aviso de cookies que ficou, foto que não é do ramo)
+sai pelo comando `--remover`, que aceita o endereço inteiro ou um trecho que só case uma referência
+(trecho que case várias recusa, sem mexer em nada) e move os PNG para `descartados/referencias/`:
+`node <dir-da-skill>/scripts/capturar-referencias.mjs --projeto <dir> --remover <url>`.
+Não edite o `referencias.json` à mão. Página que pede login fica de fora. Página
 curta de verdade (cabe numa janela) pode ter o print do meio igual ao da dobra.
 
 ## Como ler (o trabalho de verdade)

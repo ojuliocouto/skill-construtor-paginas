@@ -1,5 +1,45 @@
 # Changelog
 
+## 3.5.8 (08/10/2026): segunda rodada do teste de ponta a ponta (achados N1 a N21) e foto real no momento assinatura
+
+Um segundo teste criou uma página real do zero (`ACHADOS` N1 a N21). Teste vermelho antes de cada conserto; nenhum gate foi
+afrouxado: onde um gate passa a aceitar mais, há um teste de que o caso ruim original continua reprovando.
+
+### Corrigido
+- **N1** `capturar-referencias.mjs` e `qualidade-captura.mjs`: novo estado `vazia` (dobra com 97% ou mais de uma cor só, ou meio de
+  uma cor só com foto que não carregou); espera as fotos visíveis (até 6 s) antes do print do meio; dobra com mais de 80% de uma cor
+  só segue `ok` com `AVISO`. As medidas ficam em `captura` no manifesto.
+- **N2** o prefixo numérico dos PNG segue do maior já usado (pasta, `descartados/referencias/` e manifesto); recaptura da mesma URL
+  regrava os mesmos arquivos.
+- **N3** `--remover <url>` tira do manifesto uma referência `ok` que não serve e move os PNG para `descartados/referencias/`; trecho
+  ambíguo ou desconhecido recusa sem mexer em nada.
+- **N4** `pesquisa-de-referencias.md`: tabela de nomes de partida por ofício (só nomes, não endereços).
+- **N5** `assets-search.py --type commons`: descarta prova policial (`EFTA`), casa de boneca, reboque e museu e conta quantos tirou
+  (`--sem-filtro` mostra tudo); `--autor` e `--categoria` estreitam a busca; cada item traz miniatura de 500 px.
+- **N6** a saída mostra a versão de 1920 px quando a foto tem essa largura; `assets-sem-chave.md` diz que a Commons só serve 500, 960,
+  1280 e 1920 px (outra largura dá HTTP 400).
+- **N7** `gate-imagens.py`: o crédito é casado com a foto pelo link da origem dentro do item de crédito, não pelo nome do autor; sem
+  esse link, o título entre aspas vale se for de alguma foto do mesmo autor. Título que não é de nenhuma continua reprovando.
+- **N8** título real com hífen passa (comparação sem diferença entre hífen e espaço dos dois lados); título errado continua reprovando.
+- **N9** `medir-dobra.mjs`: "Imagens ilustrativas" (plural) conta como aviso; a mensagem separa "fora da primeira tela" de "não achei o texto".
+- **N10** `gate-verdade.py`: o contador animado (`<span class="contador" data-contador>`) fica dentro da frase, e o título que o carrega
+  abre a própria seção.
+- **N11** `gate-verdade.py`: telefone formatado na página casa com os dígitos do briefing (com ou sem o 55); número que o briefing
+  não tem, ou promessa na mesma frase, continua pedindo linha.
+- **N12** `gate-publicacao.py` e `criar.md`: a mensagem do ícone manda copiar o motivo, letra por letra, para um `data-desenho` e mostra
+  os que a página tem. A checagem não mudou.
+
+### Corrigido e novo, movimento, prova e auditor (N13 a N21)
+- `gate-movimento`: reconhece a rede de segurança (classe `js` e temporizador de `data-js-ok`) dentro de um `<script>` maior, por exemplo junto da medida do `--vh`; só o resto é removido ou atrasado na prova. Novo `scripts/rede-de-seguranca.cjs`. Antes dizia "falta a rede de segurança" com ela presente (N13).
+- `gate-responsivo`: o contraste botão/fundo mede também embaixo, à esquerda e à direita e só reprova se metade dos lados medidos está abaixo de 3:1; botão logo abaixo de bloco da cor da marca deixa de reprovar, botão dentro de bloco da própria cor continua reprovando, e a mensagem diz onde mediu (N14).
+- `receitas-de-movimento`: `abertura-do-topo` manda o que cai abaixo da dobra do celular para `revela`; regra "atraso longo é quadro-chave parado no começo, nunca `animation-delay`"; `gate-movimento` nomeia o elemento do item que chega parado (`div.item "Dois"`) e explica o `animation-delay` na mensagem (N15, N16).
+- `screenshot-prova.js`: o clique de prova em link externo (WhatsApp) é cancelado na própria página; o print de depois sai com a página e não em branco, e sai com 0. Navegação por script externa não gera print de depois (N17).
+- `references/caminhos/criar.md`: edição por script e gates encadeados com `&&` (N18); parágrafo "Roteiro próprio" com todos os limites do gravador e o roteiro do demo para página com painel (N20); clique de prova em link externo; `--produto-fisico` no gate de composição.
+- `pacote-auditoria.py`: o `briefing-do-auditor.md` leva a pasta absoluta do projeto, as 9 lentes, os critérios, o schema (com `gosto` e `eixos_abaixo`, e o da rodada 2), todas as referências, as telas de 360 e 320 e as pranchas de animação (N19).
+- `gravar-video.js` e `video/roteiro.cjs`: o validador do roteiro lista todos os limites quebrados de uma vez, inclusive a duração, e imprime os limites (N20).
+- Receita nova `foto-que-se-monta` (16ª) e seção "Escolha do momento assinatura": produto físico usa foto real do produto, nunca desenho; `gate-composicao.mjs --produto-fisico` avisa (não reprova) quando o momento assinatura é só SVG (N21).
+- Gates visuais: 85 para 97 controles; `test-gates-visuais-cobertura.py` guarda o mínimo de 97.
+
 ## 3.5.7 (08/10/2026): o que o CI do macOS ainda reprovou na 3.5.6
 
 ### Corrigido

@@ -313,5 +313,79 @@ class V356(unittest.TestCase):
         self.assertEqual(code, 1, out)
 
 
+# ----- v3.5.8: achados N10 (contador no meio da frase) e N11 (telefone formatado x dígitos) -----
+BRIEFING_N = """# Briefing
+1. O que vende: móveis sob medida de madeira maciça.
+2. Garantia: 5 anos na estrutura.
+3. Contato: WhatsApp fictício de teste: 5521900000000.
+"""
+
+TABELA_N = """| Frase da página | Linha do briefing que sustenta |
+|---|---|
+| Ateliê | interpretação: nome da marca |
+| Quem já recebeu o móvel em casa | interpretação: título de seção |
+| 5 anos de garantia na estrutura. | "Garantia: 5 anos na estrutura" |
+"""
+
+
+class V358(unittest.TestCase):
+    def rodar(self, corpo, tabela=TABELA_N, briefing=BRIEFING_N):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        r = pathlib.Path(tmp.name)
+        (r / "evidencias").mkdir()
+        (r / "evidencias" / "briefing.md").write_text(briefing, encoding="utf-8")
+        (r / "evidencias" / "sustentacao.md").write_text(tabela, encoding="utf-8")
+        (r / "index.html").write_text(f"<!doctype html><html><head><title>Ateliê</title></head><body>{corpo}</body></html>", encoding="utf-8")
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            code = gate.main(["--projeto", str(r)])
+        return code, saida.getvalue()
+
+    SECOES = ('<h1>Ateliê</h1><section><h2>Quem já recebeu o móvel em casa</h2><p>Gente que gostou.</p></section>'
+              '<section>{}</section>')
+
+    # N10: o número animado da receita vagas-que-se-preenchem fica dentro da frase, na seção certa
+    def test_n10_contador_no_meio_da_frase_nao_vira_frase_solta_e_fica_na_secao_certa(self):
+        corpo = self.SECOES.format('<h2 data-vagas><span class="contador" data-contador>5</span> anos de garantia na estrutura.</h2>')
+        code, out = self.rodar(corpo)
+        self.assertEqual(code, 0, out)
+
+    def test_n10_contador_com_numero_sem_linha_reprova_com_a_frase_inteira_e_a_secao_do_proprio_titulo(self):
+        corpo = self.SECOES.format('<h2 data-vagas><span class="contador" data-contador>9</span> anos de garantia na estrutura.</h2>')
+        code, out = self.rodar(corpo)
+        self.assertEqual(code, 1, out)
+        self.assertIn('"9 anos de garantia na estrutura."', out)
+        self.assertIn("[seção: 9 anos de garantia na estrutura.]", out)
+        self.assertNotIn('| "9" |', out)
+        self.assertNotIn("[seção: Quem já recebeu o móvel em casa]", out)
+
+    def test_n10_mutante_span_comum_continua_sendo_bloco_separado(self):
+        # span sem marca de contador segue dividindo o bloco (card com número e rótulo em spans)
+        corpo = self.SECOES.format('<p><span>5</span><span>anos de garantia na estrutura</span></p>')
+        code, out = self.rodar(corpo)
+        self.assertEqual(code, 1, out)
+
+    # N11: telefone formatado na página, dígitos no briefing
+    def test_n11_telefone_formatado_com_os_digitos_do_briefing_passa(self):
+        for fone in ("(21) 90000-0000", "+55 21 90000-0000", "21 90000 0000", "5521900000000"):
+            code, out = self.rodar(self.SECOES.format(f"<p>WhatsApp {fone}</p>"))
+            self.assertEqual(code, 0, f"{fone}\n{out}")
+
+    def test_n11_mutante_telefone_que_nao_esta_no_briefing_continua_reprovando(self):
+        code, out = self.rodar(self.SECOES.format("<p>WhatsApp (21) 98888-7777</p>"))
+        self.assertEqual(code, 1, out)
+        self.assertIn("98888-7777", out)
+
+    def test_n11_mutante_promessa_junto_do_telefone_continua_pedindo_linha(self):
+        code, out = self.rodar(self.SECOES.format("<p>Orçamento grátis pelo WhatsApp (21) 90000-0000</p>"))
+        self.assertEqual(code, 1, out)
+        self.assertIn("grátis", out)
+
+    def test_n11_mutante_ultimo_digito_diferente_reprova(self):
+        code, out = self.rodar(self.SECOES.format("<p>WhatsApp (21) 90000-0001</p>"))
+        self.assertEqual(code, 1, out)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

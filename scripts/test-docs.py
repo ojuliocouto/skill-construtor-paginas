@@ -245,7 +245,7 @@ class Estrutura(unittest.TestCase):
         self.assertIn("```json", ler(REF / "auditores.md").split("Rodada 2", 1)[1])
 
     def test_v354_versao_e_registro_de_mudancas(self):
-        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.7$")
+        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.8$")
         self.assertIn("## 3.5.4", ler(RAIZ / "CHANGELOG.md"))
         self.assertIn("## 3.5.5", ler(RAIZ / "CHANGELOG.md"))
         self.assertIn("3.5.5", ler(RAIZ / "README.md"))
@@ -253,6 +253,8 @@ class Estrutura(unittest.TestCase):
         self.assertIn("3.5.6", ler(RAIZ / "README.md"))
         self.assertIn("## 3.5.7", ler(RAIZ / "CHANGELOG.md"))
         self.assertIn("3.5.7", ler(RAIZ / "README.md"))
+        self.assertIn("## 3.5.8", ler(RAIZ / "CHANGELOG.md"))
+        self.assertIn("3.5.8", ler(RAIZ / "README.md"))
         self.assertIn("pacote-auditoria.py", ler(RAIZ / "README.md"))
         self.assertIn("pacote-auditoria.py", ler(SKILL))
 
@@ -467,6 +469,25 @@ class Travadas(unittest.TestCase):
                     if m.group(1).lower() in sem:
                         ruins.append(f"{p.name}:{n}: {m.group(1)}")
         self.assertEqual(len(ruins), 0, f"{len(ruins)} palavras sem acento, ex.: {ruins[:8]}")
+
+
+class RegrasDoTesteReal358(unittest.TestCase):
+    """Achados N17, N18 e N20 do teste de página do zero (3.5.8): o que o texto do caminho `criar` não dizia."""
+
+    def test_edicao_por_script_encadeia_com_e_comercial_duplo_antes_dos_gates(self):
+        criar = ler(CRIAR)
+        i = criar.index("edição por script")
+        self.assertRegex(criar[i:i + 900], r"&&", "a edição por script tem que ser ligada aos gates com && (se o assert falha, os gates não rodam)")
+        self.assertRegex(criar[i:i + 900], r"p[aá]gina velha")
+
+    def test_roteiro_proprio_diz_os_limites_antes_de_gravar(self):
+        criar = ler(CRIAR)
+        for trecho in ("Roteiro próprio", "1 a 45", "10 a 90", "300 a 3000", "roteiro-demo-receitas.json"):
+            self.assertIn(trecho, criar, f"criar.md: falta '{trecho}' na explicação do roteiro próprio")
+
+    def test_clique_de_prova_em_link_externo_esta_explicado(self):
+        criar = ler(CRIAR)
+        self.assertRegex(criar, r"(?s)--click.*link (de WhatsApp|externo).*n[aã]o sai da p[aá]gina")
 
 
 if __name__ == "__main__":

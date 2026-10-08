@@ -7,7 +7,8 @@
  *   foto:     área (px²) das <img> visíveis dentro da primeira tela;
  *   desenho:  área dos <svg> de topo com 40 px ou mais, fora de botão, link e rótulo, e sem
  *             `data-ilustracao-ok` (acento declarado pelo plano);
- *   aviso:    há um elemento com o texto "imagem ilustrativa" inteiro dentro da primeira tela
+ *   aviso:    há um elemento com o texto "imagem ilustrativa" (ou "imagens ilustrativas") inteiro dentro da primeira tela
+ *   avisoNaPagina: o texto existe, visível, em algum lugar da página (separa "fora da tela" de "não achei")
  *             (topo >= 0 e base <= altura da janela).
  * Imprime um JSON {desk:{foto,desenho,aviso,vw,vh}, mob:{...}} e nada mais.
  *
@@ -62,16 +63,18 @@ for (const [tag, w, h, movel] of [['desk', 1440, 900, false], ['mob', 390, 844, 
       if (!visivel(svg) || Math.min(c.width, c.height) < 40) continue;
       desenho += naTela(c);
     }
+    // singular ou plural ("Imagem ilustrativa", "Imagens ilustrativas"): 3.5.8, achado N9
+    const AVISO = /imag(?:em|ens)\s+ilustrativas?/i;
     const achados = [...document.querySelectorAll('body *')].filter((el) => {
-      if (!/imagem ilustrativa/i.test(el.textContent || '') || !visivel(el)) return false;
-      return ![...el.children].some((f) => /imagem ilustrativa/i.test(f.textContent || ''));
+      if (!AVISO.test(el.textContent || '') || !visivel(el)) return false;
+      return ![...el.children].some((f) => AVISO.test(f.textContent || ''));
     });
     const aviso = achados.some((el) => {
       const rg = document.createRange(); rg.selectNodeContents(el);
       const c = rg.getBoundingClientRect();
       return c.height > 0 && c.top >= 0 && c.bottom <= vh;
     });
-    return { foto: Math.round(foto), desenho: Math.round(desenho), aviso, vw, vh };
+    return { foto: Math.round(foto), desenho: Math.round(desenho), aviso, avisoNaPagina: achados.length > 0, vw, vh };
   });
   await ctx.close();
 }

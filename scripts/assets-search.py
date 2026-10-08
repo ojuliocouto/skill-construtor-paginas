@@ -53,12 +53,19 @@ PICSUM_URL = "https://picsum.photos"
 USER_AGENT = "construtor-paginas-assets-search/1.0"
 # Wikimedia Commons: segunda rota de foto com licença, sem chave, quando a Openverse não responde.
 COMMONS_API_URL = "https://commons.wikimedia.org/w/api.php"
-COMMONS_USER_AGENT = "construtor-paginas-assets-search/3.5.6 (page-building skill; licensed photo search)"
+COMMONS_USER_AGENT = "construtor-paginas-assets-search/3.5.8 (page-building skill; licensed photo search)"
 PAUSA_COMMONS = 1.0          # segundos antes de cada chamada: a Commons limita quem insiste (HTTP 429)
 TETO_ESPERA_COMMONS = 30     # nunca dorme mais que isso por causa de Retry-After
 # So entra o que uma pagina de cliente pode usar com credito: CC0, CC BY, CC BY-SA e dominio publico.
 # NC (nao comercial), ND (sem derivadas), GFDL e "uso livre" de cada pais ficam de fora.
 LICENCA_COMMONS_OK = re.compile(r"^(CC0(\s|$)|CC[ -]BY(-SA)?\s*\d|Public domain|PD[ -])", re.I)
+
+# 3.5.8 (N6): a Commons só serve miniatura nestas larguras; outra (480, 1500) volta HTTP 400.
+LARGURAS_COMMONS = (500, 960, 1280, 1920)
+# 3.5.8 (N5): títulos que a busca por palavra de móvel e ofício traz e não servem a página de cliente:
+# prova policial (prefixo EFTA + número), casa de boneca, reboque de cavalo e acervo de museu.
+ACERVO_RUIM_COMMONS = re.compile(
+    r"^EFTA[\s_-]?\d|\bdoll[ '_-]?s?[ _-]?house\b|\b(?:horse|livestock|cattle)[ _-]trailer\b|\b(?:museum|museu|museo|mus[ée]e)\b", re.I)
 
 # Openverse usa "aspect_ratio", o resto do script usa "orientation".
 ASPECTO_POR_ORIENTACAO = {
@@ -518,6 +525,18 @@ def _url_absoluta(url: str) -> str:
     return "https:" + url if url.startswith("//") else url
 
 
+def url_commons_na_largura(url: str, largura: int, largura_original: int = 0) -> str:
+    """URL da miniatura da Commons na largura padrão (500, 960, 1280 ou 1920) mais próxima que não seja menor que a pedida.
+    Devolve "" quando a URL não é de miniatura ou quando a foto original é mais estreita que a largura (a Commons responde 400)."""
+    achado = re.search(r"/thumb/.+/(\d+)px-[^/?]+", url or "")
+    if not achado:
+        return ""
+    alvo = next((w for w in LARGURAS_COMMONS if w >= largura), LARGURAS_COMMONS[-1])
+    if largura_original and alvo > largura_original:
+        return ""
+    return url[:achado.start(1)] + str(alvo) + url[achado.end(1):]
+
+
 def _normaliza_item_commons(pagina: dict):
     """Item no mesmo formato da Openverse, ou None se a licenca nao serve para pagina de cliente."""
     infos = pagina.get("imageinfo") or []
@@ -544,7 +563,7 @@ def _normaliza_item_commons(pagina: dict):
         "id": str(pagina.get("pageid") or ""),
         "titulo": titulo or "Sem titulo",
         "url": url,
-        "thumbnail": "",
+        "thumbnail": url_commons_na_largura(url, 500, info.get("width") or 0),
         "autor": _sem_html(artista) or "autor desconhecido",
         "autor_url": _url_absoluta(achado.group(1)) if achado else "",
         "licenca": licenca,
@@ -569,11 +588,15 @@ def _orientacao_bate(item: dict, orientation: str) -> bool:
     return 0.85 <= larg / alt <= 1.15
 
 
-def search_commons(query: str, limit: int = 6, orientation: str = "landscape") -> list:
+def search_commons(query: str, limit: int = 6, orientation: str = "landscape", autor: str = "",
+                   categoria: str = "", filtrar_acervo: bool = True) -> list:
     """Busca fotos na Wikimedia Commons (sem chave). Lista vazia em qualquer falha, com o motivo no stderr.
 
     Pausa antes da chamada e, em HTTP 429, espera o Retry-After (teto de TETO_ESPERA_COMMONS s) e tenta
     UMA vez: a Commons limita quem insiste, e laco de retentativa so piora o bloqueio.
+
+    3.5.8: `autor` e `categoria` estreitam a busca (a Commons rende por AUTOR ou por CATEGORIA de acervo; busca por
+    palavra solta de movel traz museu e lixo); `filtrar_acervo` tira prova policial, casa de boneca, reboque e museu.
     """
     try:
         pedido = int(limit)
@@ -582,7 +605,10 @@ def search_commons(query: str, limit: int = 6, orientation: str = "landscape") -
     pedido = max(1, min(pedido, 20))
     params = {
         "action": "query", "format": "json", "generator": "search",
-        "gsrsearch": "%s filetype:bitmap" % query, "gsrnamespace": "6", "gsrlimit": str(min(50, pedido * 4)),
+        "gsrsearch": ("%s%s%s filetype:bitmap" % (
+            query, (" " + autor.strip()) if autor and autor.strip() else "",
+            (' incategory:"%s"' % categoria.strip().replace('"', "")) if categoria and categoria.strip() else "")),
+        "gsrnamespace": "6", "gsrlimit": str(min(50, pedido * 4)),
         "prop": "imageinfo", "iiprop": "url|size|mime|extmetadata", "iiurlwidth": "1280",
         "iiextmetadatafilter": "LicenseShortName|LicenseUrl|Artist|AttributionRequired|ObjectName",
         "origin": "*",
@@ -629,6 +655,14 @@ def search_commons(query: str, limit: int = 6, orientation: str = "landscape") -
         return []
     paginas = sorted((p for p in paginas if isinstance(p, dict)), key=lambda p: p.get("index") or 0)
     itens = [i for i in (_normaliza_item_commons(p) for p in paginas) if i]
+    if filtrar_acervo:
+        bons = [i for i in itens if not ACERVO_RUIM_COMMONS.search(i["titulo"])]
+        if len(bons) != len(itens):
+            print("AVISO Wikimedia Commons: %d resultado(s) descartado(s) por serem acervo que não serve a página de cliente "
+                  "(prova policial, casa de boneca, reboque, museu). Para ver tudo: --sem-filtro. "
+                  "Busque por autor (--autor) ou por categoria (--categoria) quando a palavra solta rende pouco." % (len(itens) - len(bons)),
+                  file=sys.stderr)
+        itens = bons
     certos = [i for i in itens if _orientacao_bate(i, orientation)]
     resto = [i for i in itens if i not in certos]
     return (certos + resto)[:pedido]
@@ -676,7 +710,11 @@ def format_openverse(items: list, query: str, veio_de_fallback: bool = False,
         linhas.append("     %s | Por: %s | Licença: %s" % (dimensao, item["autor"], item["licenca"]))
         linhas.append("     Imagem:  %s" % item["url"])
         if item["thumbnail"]:
-            linhas.append("     Thumb:   %s" % item["thumbnail"])
+            linhas.append("     %s %s" % ("Miniatura (500 px):" if "/500px-" in item["thumbnail"] else "Thumb:   ", item["thumbnail"]))
+        grande = url_commons_na_largura(item["url"], 1920, item["largura"]) if "/thumb/" in item["url"] else ""
+        if grande and "/1920px-" in grande and "/1920px-" not in item["url"]:
+            linhas.append("     Versão 1920 px (herói): %s" % grande)
+            linhas.append("     (a Commons só serve miniatura em 500, 960, 1280 ou 1920 px; outra largura dá HTTP 400)")
         if item["pagina_origem"]:
             linhas.append("     Origem:  %s" % item["pagina_origem"])
         if item["licenca_url"]:
@@ -1096,6 +1134,9 @@ Exemplos:
         help="Orientacao do video/foto (default: landscape)"
     )
     parser.add_argument("--presets", action="store_true", help="Listar todos os presets de vídeo")
+    parser.add_argument("--autor", default="", help="Commons: estreita a busca pelo nome do autor (ex.: Shixart1985)")
+    parser.add_argument("--categoria", default="", help='Commons: estreita a busca pela categoria do acervo (ex.: "Wooden furniture")')
+    parser.add_argument("--sem-filtro", action="store_true", help="Commons: não descarta prova policial, casa de boneca, reboque e museu")
 
     args = parser.parse_args()
 
@@ -1129,6 +1170,8 @@ Exemplos:
 
     # Resolver preset
     query = PRESET_QUERIES.get(args.query, args.query)
+    if (args.autor or args.categoria or args.sem_filtro) and args.type != "commons":
+        print("AVISO: --autor, --categoria e --sem-filtro só valem com --type commons (a rota da Wikimedia Commons).", file=sys.stderr)
 
     if args.type == "video":
         items = search_videos(query, limit=args.limit, orientation=args.orientation)
@@ -1137,7 +1180,8 @@ Exemplos:
         items = search_openverse(query, limit=args.limit, orientation=args.orientation)
         print(format_openverse(items, query))
     elif args.type == "commons":
-        items = search_commons(query, limit=args.limit, orientation=args.orientation)
+        items = search_commons(query, limit=args.limit, orientation=args.orientation, autor=args.autor,
+                               categoria=args.categoria, filtrar_acervo=not args.sem_filtro)
         print(format_openverse(items, query, fonte="Wikimedia Commons"))
     elif args.type == "photo":
         resultado = buscar_fotos_com_fallback(

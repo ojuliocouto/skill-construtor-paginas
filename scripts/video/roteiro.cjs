@@ -64,11 +64,14 @@ function erroDoPasso(p, i) {
       if (!ehNumero(p.y) || p.y < 0) return `${rotulo} (rolar): "y" precisa ser um número maior ou igual a 0`;
       break;
     case 'rolar_pagina': {
+      // 3.5.8 (N20): todos os campos fora do limite saem de uma vez, não um por rodada
       const c = configDeRolarPagina(p);
-      if (!(c.passo >= 0.2 && c.passo <= 1)) return `${rotulo} (rolar_pagina): "passo" precisa ser de 0,2 a 1 (fração da altura da janela)`;
-      if (!(ehNumero(c.espera_ms) && c.espera_ms >= 300 && c.espera_ms <= 3000)) return `${rotulo} (rolar_pagina): "espera_ms" precisa ser de 300 a 3000`;
-      if (!(Number.isInteger(c.max_passos) && c.max_passos >= 1 && c.max_passos <= 45)) return `${rotulo} (rolar_pagina): "max_passos" precisa ser um inteiro de 1 a 45`;
-      if (!(Number.isInteger(c.prints) && c.prints >= 0 && c.prints <= 8)) return `${rotulo} (rolar_pagina): "prints" precisa ser um inteiro de 0 a 8`;
+      const e = [];
+      if (!(c.passo >= 0.2 && c.passo <= 1)) e.push('"passo" precisa ser de 0,2 a 1 (fração da altura da janela)');
+      if (!(ehNumero(c.espera_ms) && c.espera_ms >= 300 && c.espera_ms <= 3000)) e.push('"espera_ms" precisa ser de 300 a 3000');
+      if (!(Number.isInteger(c.max_passos) && c.max_passos >= 1 && c.max_passos <= 45)) e.push('"max_passos" precisa ser um inteiro de 1 a 45');
+      if (!(Number.isInteger(c.prints) && c.prints >= 0 && c.prints <= 8)) e.push('"prints" precisa ser um inteiro de 0 a 8');
+      if (e.length) return `${rotulo} (rolar_pagina): ${e.join('; ')}`;
       break;
     }
     case 'escolher':
@@ -83,6 +86,11 @@ function erroDoPasso(p, i) {
   return null;
 }
 
+/** Os limites que o validador cobra, em uma linha (a mensagem de erro e a documentação do roteiro citam o mesmo texto). */
+function limitesEmTexto() {
+  return `abrir é o primeiro passo; esperar de 0 a ${ESPERA_MAX_MS} ms; rolar_pagina com passo de 0,2 a 1, espera_ms de 300 a 3000, max_passos de 1 a 45 e prints de 0 a 8; no mínimo ${MIN_PRINTS} prints no roteiro; duracao_minima_s de ${PISO_S.min} a ${PISO_S.max}; duração prevista de ${FAIXA_S.min} a ${FAIXA_S.max} s (com rolar_pagina, o pior caso)`;
+}
+
 /** Duração prevista do roteiro (ms): esperas explícitas mais o custo médio de cada ação (rolar_pagina fica de fora: depende da altura). */
 function duracaoPrevistaMs(passos) {
   return (passos || []).reduce((soma, p) => soma + (p && p.acao === 'esperar' && ehNumero(p.ms) ? p.ms : 0) + (CUSTO_MS[p && p.acao] || 0), 0);
@@ -90,7 +98,7 @@ function duracaoPrevistaMs(passos) {
 
 /** Pior caso de cada rolar_pagina (ms): max_passos vezes (espera + 300 ms da rolagem suave) mais 1,2 s no fim. */
 function duracaoMaximaDaRolagemMs(passos) {
-  return (passos || []).filter((p) => p && p.acao === 'rolar_pagina').reduce((s, p) => { const c = configDeRolarPagina(p); return s + c.max_passos * (c.espera_ms + 300) + 1200; }, 0);
+  return (passos || []).filter((p) => p && p.acao === 'rolar_pagina').reduce((s, p) => { const c = configDeRolarPagina(p); const mp = Math.min(45, Math.max(1, Number(c.max_passos) || 45)); const es = Math.min(3000, Math.max(300, Number(c.espera_ms) || 1500)); return s + mp * (es + 300) + 1200; }, 0);
 }
 
 /** @returns {{ok:boolean, erros:string[], avisos:string[]}} */
@@ -108,7 +116,8 @@ function validarRoteiro(r) {
   if (r.duracao_minima_s !== undefined && !(ehNumero(r.duracao_minima_s) && r.duracao_minima_s >= PISO_S.min && r.duracao_minima_s <= PISO_S.max)) {
     erros.push(`"duracao_minima_s" precisa ser um número de ${PISO_S.min} a ${PISO_S.max} (o vídeo espera até esse tempo antes de fechar)`);
   }
-  if (!erros.length) {
+  // A duração entra na mesma lista de erros mesmo com outro limite quebrado (valores de rolar_pagina fora do limite contam no limite mais próximo)
+  if (r.passos.every((p) => p && ACOES.includes(p.acao))) {
     const rola = r.passos.some((p) => p && p.acao === 'rolar_pagina');
     const s = duracaoPrevistaMs(r.passos) / 1000;
     const maxS = s + duracaoMaximaDaRolagemMs(r.passos) / 1000;
@@ -134,4 +143,4 @@ const nomeDoVideo = (perfil) => { conferirPerfil(perfil); return `video-${perfil
 const nomeDoPrint = (perfil, n, nome) => { conferirPerfil(perfil); return `${perfil}-${String(n).padStart(2, '0')}-${nomeSeguro(nome)}.png`; };
 const caminhoDeSaida = (pasta, arquivo) => path.join(pasta, arquivo);
 
-module.exports = { ACOES, MIN_PRINTS, FAIXA_S, PISO_S, PERFIS, ROLAR_PAGINA_PADRAO, configDeRolarPagina, validarRoteiro, duracaoPrevistaMs, duracaoMaximaDaRolagemMs, montarPassos, nomeDoVideo, nomeDoPrint, caminhoDeSaida };
+module.exports = { limitesEmTexto, ACOES, MIN_PRINTS, FAIXA_S, PISO_S, PERFIS, ROLAR_PAGINA_PADRAO, configDeRolarPagina, validarRoteiro, duracaoPrevistaMs, duracaoMaximaDaRolagemMs, montarPassos, nomeDoVideo, nomeDoPrint, caminhoDeSaida };

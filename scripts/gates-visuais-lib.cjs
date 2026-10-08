@@ -30,6 +30,8 @@ const servidor = http.createServer((req, res) => {
   // A25: o clique de prova não sai da página de teste. Link para outro domínio: bloqueia a navegação, registra e conta como clique que funciona.
   if (rota === '/clique-externo') corpo = texto.replace(/<button[^>]*>Ver resultado<\/button>/, '<a id="ext" href="http://example.invalid/send?phone=5521900000000">Chamar no WhatsApp</a>');
   if (rota === '/clique-externo-blank') corpo = texto.replace(/<button[^>]*>Ver resultado<\/button>/, '<a id="ext" target="_blank" rel="noopener" href="http://example.invalid/outra">Chamar no WhatsApp</a>');
+  // N17 (3.5.8): navegação externa feita por SCRIPT (location.href) não tem como ser cancelada no clique: sem print de depois, saída 0.
+  if (rota === '/clique-externo-js') corpo = texto.replace(/<button[^>]*>Ver resultado<\/button>/, '<button id="ext" onclick="location.href=\'http://example.invalid/js?phone=5521900000000\'">Chamar no WhatsApp</button>');
   if (rota === '/inerte') corpo = texto.replace('onclick="this.textContent=\'Resultado confirmado\'"', '');
   if (rota === '/coberto') corpo += '<div style="position:fixed;inset:0;background:white;z-index:100"></div>';
   if (rota === '/overflow') corpo += '<div style="width:3000px">Conteúdo que excede a janela</div>';
@@ -62,6 +64,13 @@ const servidor = http.createServer((req, res) => {
   const cred = (css) => '<section class="cred"><style>.cred{padding:24px}.cred li{font:14px/22px Arial;margin:0;color:#444;max-width:300px}.cred a{background:transparent;color:#036;' + css + '}</style><h2>Créditos de imagem</h2><ul style="list-style:none;padding:0;margin:0"><li>Oficina: “Woodworking workshop” por <a href="#a">s w wengenroad</a>, <a href="#b">CC0 1.0</a>, via <a href="#c">Wikimedia Commons</a>. Imagem recortada a partir do original.</li><li>Aparas: “Hand inspecting wood shavings” por <a href="#d">Shixart1985</a>, <a href="#e">CC BY 2.0</a>, via <a href="#c">Wikimedia Commons</a>.</li></ul></section>';
   if (rota === '/creditos-padrao-44') corpo = texto + cred('display:inline-block;padding:11px;margin:-11px;font:inherit');
   if (rota === '/creditos-inline') corpo = texto + cred('display:inline;padding:0;margin:0;font:inherit');
+  // N14 (3.5.8): o contraste botão/fundo olha os quatro lados do botão. Bloco da cor da marca TERMINANDO logo acima do botão (12 px)
+  // não é fundo do botão; botão da cor do bloco em que ele está (todos os lados iguais) continua camuflado.
+  const botaoMarca = '<a href="#c" style="background:#036;color:#fff">Chamar agora</a>';
+  const tituloMarca = '<h1 style="color:#fff;margin:0;padding:24px">Controle da página</h1>';
+  const aviso = '<p style="margin:16px 24px">Texto de apoio curto sobre o resultado.</p>';
+  if (rota === '/cta-camuflado') corpo = '<section style="background:#036;padding:0 24px 40px">' + tituloMarca + botaoMarca + '</section>' + longo;
+  if (rota === '/cta-abaixo-de-bloco-da-marca') corpo = '<section style="padding:0"><div style="background:#036">' + tituloMarca + '</div><div style="height:12px"></div><div style="padding:0 24px 24px">' + botaoMarca + '</div></section>' + longo;
   if (rota === '/dois-botoes') corpo = texto.replace('</button>', '</button> <a href="#c">Agendar</a>');
   if (rota === '/botao-coberto') corpo = texto + (longo.repeat(2) + '<a href="#c">Agendar no meio</a>').repeat(6) + '<a href="#c" style="position:fixed;left:0;right:0;bottom:0;text-align:center">Agendar agora</a>';
   const foto = '<img src="/poster.png" width="320" height="180" alt="Foto de controle" style="display:block;width:100%;height:40vh;object-fit:cover">';
@@ -122,6 +131,16 @@ const servidor = http.createServer((req, res) => {
   if (rota === '/script-sem-rede') corpo = secoesMov('').replace(REDE, '<script>document.documentElement.classList.add("js")</script>');
   // rede lenta demais: o temporizador existe, mas só dispara aos 9 s (o gate espera 6 s)
   if (rota === '/script-rede-lenta') corpo = secoesMov('').replace('},5000)', '},9000)');
+  // N13 (3.5.8): a página é longa (a medida de invisíveis rola até o fim e passa dos 7 s do script atrasado). A rede de segurança e a medida do --vh (addEventListener) no MESMO <script>. O gate tratava o script inteiro como principal.
+  const REDE_CODIGO = REDE.slice('<script>'.length, -'</script>'.length);
+  const VH = 'var largura=0;function medir(){if(window.innerWidth===largura)return;largura=window.innerWidth;document.documentElement.style.setProperty("--vh",window.innerHeight/100+"px")}medir();window.addEventListener("resize",medir);';
+  const juntaRede = (html, rede) => html.replace(REDE, '').replace('<script>' + OK, '<div style="height:16000px"></div><script>' + rede + '\n' + VH + OK);
+  if (rota === '/rede-no-mesmo-script') corpo = juntaRede(secoesMov(''), REDE_CODIGO);
+  // o caso ruim continua ruim: script único SEM o temporizador da rede (só põe a classe js) deixa o conteúdo invisível sem o script
+  if (rota === '/rede-no-mesmo-script-sem-timer') corpo = juntaRede(secoesMov(''), 'document.documentElement.classList.add("js");');
+  // N16 (3.5.8): animação com animation-delay: o navegador só avisa o início no fim do atraso; a mensagem tem que dizer isso.
+  if (rota === '/movimento-atraso') corpo = '<style>@keyframes sobe{from{opacity:0}to{opacity:1}}.alta{min-height:1000px}.d{animation:sobe .6s ease 3s both}</style>' + texto
+    + [1, 2, 3].map((i) => `<section class="alta"><h2 class="d">Seção ${i}</h2></section>`).join('');
   if (rota === '/movimento-temporizador') corpo = secoesMov('setTimeout(function(){els.forEach(function(e){e.classList.add("visivel")})},3000);');
   if (rota === '/movimento-parado') corpo = secoesMov('', false);
   // ===== Auditoria da v5 (03/10/2026, nota 7,0: "correta, mas vazia") =====
@@ -169,6 +188,9 @@ const servidor = http.createServer((req, res) => {
   const marcar = (d) => d.replace('<svg ', '<svg data-assinatura ');
   if (rota === '/assinatura-repetida') corpo = texto + '<section><h2>Encaixe</h2>' + marcar(desenho('encaixe')) + '<p>Meio.</p>' + marcar(desenho('encaixe')) + '<p>Fecho.</p>' + marcar(desenho('encaixe')) + '</section>';
   if (rota === '/assinatura-e-repetido-fora') corpo = texto + '<section><h2>Encaixe</h2>' + marcar(desenho('encaixe')) + '<p>Meio.</p>' + marcar(desenho('encaixe')) + '<p>Fora.</p>' + desenho('encaixe') + '<p>Fora de novo.</p>' + desenho('encaixe') + '</section>';
+  // N21 (3.5.8): em produto físico o momento assinatura é foto real; o gate AVISA (não reprova) quando ele é só SVG, e só com --produto-fisico.
+  if (rota === '/assinatura-so-desenho') corpo = texto + '<section><h2>Mesa montada</h2>' + marcar(desenho('mesa de jantar montada tábua a tábua')) + '<p>Cada tábua entra no lugar.</p></section>';
+  if (rota === '/assinatura-com-foto') corpo = texto + '<section><h2>Mesa montada</h2><img src="/poster.png" width="320" height="180" alt="Mesa de jantar em madeira maciça" style="width:100%;height:auto">' + marcar(desenho('mesa de jantar montada tábua a tábua')) + '<p>Cada tábua entra no lugar.</p></section>';
   if (rota === '/acento-fraco') corpo = texto + situacao('#C99A1E');
   if (rota === '/acento-ok') corpo = texto + situacao('#7A5C0E');
   if (rota.startsWith('/dash')) corpo ='<h1>Painel 2026</h1><div class="kpi__value">' + (rota === '/dash-ok' ? 'R$ 150,00' : '&#8212;') + '</div>';
@@ -202,6 +224,8 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['identidade-positiva', 'screenshot-prova.js', [url + '/ok', path.join(pasta, 'identidade-positiva')], 0],
     ['identidade-negativa', 'screenshot-prova.js', [url + '/sem-identidade', path.join(pasta, 'identidade-negativa')], 1],
     ['clique-externo-bloqueado', 'screenshot-prova.js', [url + '/clique-externo', path.join(pasta, 'clique-externo'), '--click', '#ext'], 0, /o clique levaria a http:\/\/example\.invalid\/send\?phone=5521900000000/],
+    ['clique-externo-320-print-de-depois-nao-fica-em-branco', 'screenshot-prova.js', [url + '/clique-externo', path.join(pasta, 'clique-externo-320'), '--click', '#ext', '--com-320'], 0, /prova-mobile320-pos-clique\.png \(\d\d+KB\)/],
+    ['clique-externo-por-script-sem-print-em-branco', 'screenshot-prova.js', [url + '/clique-externo-js', path.join(pasta, 'clique-externo-js'), '--click', '#ext', '--com-320'], 0, /sem print de depois[\s\S]*example\.invalid\/js/],
     ['clique-externo-blank-bloqueado', 'screenshot-prova.js', [url + '/clique-externo-blank', path.join(pasta, 'clique-externo-blank'), '--click', '#ext'], 0, /o clique levaria a http:\/\/example\.invalid\/outra/],
     ['clique-inerte', 'screenshot-prova.js', [url + '/inerte', path.join(pasta, 'inerte'), '--click', 'button'], 1],
     ['clique-positivo', 'screenshot-prova.js', [url + '/ok', path.join(pasta, 'clique'), '--click', 'button'], 0],
@@ -216,6 +240,8 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['responsivo-sr-only', 'gate-responsivo.mjs', ['--url', url + '/sr-only'], 0],
     ['responsivo-botao-duas-linhas', 'gate-responsivo.mjs', ['--url', url + '/botao-duas-linhas'], 1, /quebra em \d linhas/],
     ['responsivo-sem-cta-longo', 'gate-responsivo.mjs', ['--url', url + '/sem-cta-longo'], 1, /sem nenhum bot[aã]o/],
+    ['responsivo-cta-camuflado-reprova', 'gate-responsivo.mjs', ['--url', url + '/cta-camuflado'], 1, /CTA camuflado no fundo/],
+    ['responsivo-cta-abaixo-de-bloco-da-marca-passa', 'gate-responsivo.mjs', ['--url', url + '/cta-abaixo-de-bloco-da-marca'], 0],
     ['responsivo-cta-fixo', 'gate-responsivo.mjs', ['--url', url + '/cta-fixo'], 0],
     ['responsivo-fixos-demais', 'gate-responsivo.mjs', ['--url', url + '/fixos-demais'], 1, /espa[cç]o fixo/],
     // A15: a mensagem diz QUAIS elementos somou, com o seletor e a altura de cada um.
@@ -248,6 +274,10 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['composicao-traco-opacity0-nao-conta', 'gate-composicao.mjs', ['--url', url + '/traco-opacity0'], 0],
     ['composicao-traco-visibility-nao-conta', 'gate-composicao.mjs', ['--url', url + '/traco-visibility'], 0],
     ['composicao-traco-display-none-nao-conta', 'gate-composicao.mjs', ['--url', url + '/traco-display-none'], 0],
+    ['composicao-assinatura-so-desenho-avisa-em-produto-fisico', 'gate-composicao.mjs', ['--url', url + '/assinatura-so-desenho', '--produto-fisico'], 0, /AVISO: momento assinatura só em desenho[\s\S]*foto real do produto[\s\S]*PASSA/],
+    ['composicao-assinatura-so-desenho-sem-a-marca-nao-avisa', 'gate-composicao.mjs', ['--url', url + '/assinatura-so-desenho'], 0, /^(?![\s\S]*AVISO: momento assinatura)[\s\S]*PASSA/],
+    ['composicao-assinatura-com-foto-nao-avisa', 'gate-composicao.mjs', ['--url', url + '/assinatura-com-foto', '--produto-fisico'], 0, /^(?![\s\S]*AVISO: momento assinatura)[\s\S]*PASSA/],
+    ['composicao-assinatura-so-desenho-continua-reprovando-o-resto', 'gate-composicao.mjs', ['--url', url + '/icone-generico', '--produto-fisico'], 1, /gen[eé]rico/],
     ['composicao-assinatura-repetida-passa', 'gate-composicao.mjs', ['--url', url + '/assinatura-repetida'], 0],
     ['composicao-repetido-fora-da-assinatura-reprova', 'gate-composicao.mjs', ['--url', url + '/assinatura-e-repetido-fora'], 1, /repetido[^\n]*2x/],
     ['composicao-icone-repetido', 'gate-composicao.mjs', ['--url', url + '/icone-repetido'], 1, /repetido/],
@@ -262,6 +292,9 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['movimento-script-sem-rede-reprova', 'gate-movimento.mjs', ['--url', url + '/script-sem-rede', '--so-prova-script'], 1, /script bloqueado: \d+ elemento\(s\) com texto ou imagem invis[ií]vel/],
     ['movimento-script-demora-sem-rede-reprova', 'gate-movimento.mjs', ['--url', url + '/script-sem-rede', '--so-prova-script'], 1, /script que demora 7 s: \d+ elemento/],
     ['movimento-script-rede-lenta-reprova-na-demora', 'gate-movimento.mjs', ['--url', url + '/script-rede-lenta', '--so-prova-script'], 1, /script que demora 7 s: \d+ elemento/],
+    ['movimento-rede-no-mesmo-script-passa', 'gate-movimento.mjs', ['--url', url + '/rede-no-mesmo-script', '--so-prova-script'], 0, /script bloqueado: 0 elemento/],
+    ['movimento-rede-no-mesmo-script-sem-timer-reprova', 'gate-movimento.mjs', ['--url', url + '/rede-no-mesmo-script-sem-timer', '--so-prova-script'], 1, /script que demora 7 s: \d+ elemento/],
+    ['movimento-atraso-diz-o-animation-delay', 'gate-movimento.mjs', ['--url', url + '/movimento-atraso', '--sem-prova-script'], 1, /fora da tela[\s\S]*animation-delay de 3\.0 s[\s\S]*quadro-chave parado/],
     ['movimento-temporizador', 'gate-movimento.mjs', ['--url', url + '/movimento-temporizador'], 1, /fora da tela/],
     ['movimento-parado', 'gate-movimento.mjs', ['--url', url + '/movimento-parado'], 1, /animam ao chegar/],
     ['identidade-320', 'screenshot-prova.js', [url + '/ok', path.join(pasta, 'identidade-320'), '--com-320'], 0, /topo +mobile320: scrollY 0/],
@@ -276,6 +309,7 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['simetria-passos-sem-caixa', 'gate-simetria.mjs', ['--url', url + '/passos-sem-caixa'], 1, /passos sem caixa/],
     ['simetria-passos-em-caixas', 'gate-simetria.mjs', ['--url', url + '/passos-em-caixas'], 0],
     ['movimento-por-grupo', 'gate-movimento.mjs', ['--url', url + '/movimento-grupo', '--espera', '1000'], 1, /chega(m)? parad[oa]s? .*300 px\/s/],
+    ['movimento-por-grupo-nomeia-o-elemento', 'gate-movimento.mjs', ['--url', url + '/movimento-grupo', '--espera', '1000'], 1, /^(?![\s\S]*"Grupo Um)[\s\S]*chegam parados[\s\S]*div\.item "(Um|Dois|Três|Quatro)"/],
     ['movimento-rolagem-suave', 'gate-movimento.mjs', ['--url', url + '/rolagem-suave', '--espera', '1000'], 1, /movimento reduzido/],
     ['movimento-rolagem-suave-ok', 'gate-movimento.mjs', ['--url', url + '/rolagem-suave-ok', '--espera', '1000'], 0],
     ['composicao-wireframe', 'gate-composicao.mjs', ['--url', url + '/desenho-wireframe'], 1, /l[eê] como wireframe/],

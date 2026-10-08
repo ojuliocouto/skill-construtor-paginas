@@ -36,6 +36,26 @@ teste('roteiro do demo (painel de cor): válido, com clique no [data-painel] e a
   assert.ok(demo.passos.filter((p) => p.acao === 'print' && /painel cobrindo/.test(p.nome)).length === 1, 'sem o quadro do painel cobrindo a tela');
 });
 
+teste('N20: o validador lista TODOS os limites quebrados de uma vez (passo e duração juntos)', () => {
+  const v = roteiro.validarRoteiro({ passos: [{ acao: 'abrir' }, { acao: 'rolar_pagina', max_passos: 60, espera_ms: 3000, prints: 9 }], duracao_minima_s: 30 });
+  const texto = v.erros.join(' | ');
+  assert.match(texto, /max_passos/); assert.match(texto, /prints/);
+  assert.match(texto, /duracao_minima_s/);
+  assert.match(texto, /duração prevista/);
+});
+
+teste('N20: roteiro bom continua passando, e o ruim original (rolagem sem fim e fora da faixa) continua reprovado', () => {
+  const v = roteiro.validarRoteiro({ passos: [{ acao: 'abrir' }, ...[1, 2, 3, 4, 5, 6].map((n) => ({ acao: 'print', nome: 'q' + n })), { acao: 'rolar_pagina', max_passos: 45, espera_ms: 3000 }] });
+  assert.match(v.erros.join(), /duração prevista/);
+  assert.equal(v.ok, false);
+});
+
+teste('N20: a mensagem de erro do roteiro cita os limites que valem (para o aluno acertar na primeira)', () => {
+  const v = roteiro.validarRoteiro({ passos: [{ acao: 'abrir' }, { acao: 'esperar', ms: 99999 }] });
+  assert.match(v.erros.join(), /0 a 10000/);
+  assert.match(roteiro.limitesEmTexto(), /1 a 45/); assert.match(roteiro.limitesEmTexto(), /10 a 90/); assert.match(roteiro.limitesEmTexto(), /300 a 3000/);
+});
+
 teste('a faixa desta skill é de 10 a 90 s (a do criador-dash era de 10 a 15)', () => {
   assert.deepEqual(roteiro.FAIXA_S, { min: 10, max: 90 });
 });

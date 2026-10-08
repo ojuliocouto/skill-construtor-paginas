@@ -442,16 +442,38 @@ async function main() {
           }
           return rota.continue();
         });
+        // 3.5.8 (N17): link para outro domínio (WhatsApp, e-mail da loja) NÃO deixa a página: o clique é capturado e a navegação
+        // cancelada ali mesmo (preventDefault), então o print de depois mostra a página, não a tela de erro em branco do navegador.
+        // O bloqueio por rota fica só de reserva para navegação feita por script (location.href, window.open).
+        await page.evaluate(() => {
+          window.__externasDoClique = [];
+          document.addEventListener('click', (ev) => {
+            const a = ev.target instanceof Element ? ev.target.closest('a[href]') : null;
+            if (!a) return;
+            let alvo = null;
+            try { alvo = new URL(a.href, location.href); } catch { return; }
+            if (/^https?:$/.test(alvo.protocol) && alvo.origin !== location.origin) { ev.preventDefault(); window.__externasDoClique.push(alvo.href); }
+          }, true);
+        });
         await el.click();
         await page.waitForTimeout(2500);
         await page.context().unroute('**/*').catch(() => {});
+        const noErro = page.url().startsWith('chrome-error:');
+        if (!noErro) externas.push(...await page.evaluate(() => window.__externasDoClique || []).catch(() => []));
 
         const fDepois = path.join(outdir, `prova-${vp.name}-pos-clique.png`);
-        await page.screenshot({ path: fDepois, fullPage: false });
-        const depois = await lerEstado(page, el);
-        shots.push(fAntes, fDepois);
+        let depois;
+        if (noErro) {
+          // a navegação por script foi barrada e o navegador mostra a tela de erro: esse print não prova nada, então não é tirado
+          depois = { scrollY: antes.scrollY, url: antes.url, texto: antes.texto };
+          shots.push(fAntes);
+        } else {
+          await page.screenshot({ path: fDepois, fullPage: false });
+          depois = await lerEstado(page, el);
+          shots.push(fAntes, fDepois);
+        }
 
-        const iguais = md5(fAntes) === md5(fDepois);
+        const iguais = noErro ? false : md5(fAntes) === md5(fDepois);
         console.log(`clique "${clickSel}" em ${vp.name}:`);
         console.log(`  scrollY          ${antes.scrollY} -> ${depois.scrollY}`);
         console.log(
@@ -459,7 +481,7 @@ async function main() {
         );
         console.log(`  texto do alvo    "${antes.texto}" -> "${depois.texto}"`);
         for (const u of [...new Set(externas)]) console.log(`  navegação externa  o clique levaria a ${u} (bloqueei a navegação: o teste não sai da página; conta como clique que funciona)`);
-        console.log(`  pixels do print  ${iguais ? 'IDENTICOS' : 'mudaram'}`);
+        console.log(noErro ? '  pixels do print  sem print de depois (a navegação externa foi barrada por script e o navegador mostra a tela de erro)' : `  pixels do print  ${iguais ? 'IDENTICOS' : 'mudaram'}`);
         if (iguais && !externas.length) {
           console.log('ATENCAO: o print pos-clique e identico ao anterior. O clique pode nao ter surtido efeito visivel.');
           cliquesInertes.push(vp.name);
