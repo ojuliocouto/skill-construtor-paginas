@@ -29,6 +29,9 @@ import re
 import sys
 import unicodedata
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from lancador import comando  # noqa: E402
+
 SECOES = [
     ("a", "Referências"),
     ("b", "Visual"),
@@ -259,12 +262,12 @@ def checar(caminho):
             for alvo, ok in imgs:
                 arquivos.add(alvo)
                 if not ok:
-                    erros.append(f"Visual: prévia {alvo} não existe ou não é PNG (rode scripts/previa-direcoes.mjs)")
+                    erros.append(f"Visual: prévia {alvo} não existe ou não é PNG (rode {comando('previa-direcoes.mjs')})")
         if len(direcoes) >= 3 and len(arquivos) < 3:
             erros.append("Visual: as 3 direções apontam para a mesma prévia")
         lado = [alvo for alvo, _ in imagens(c, base) if alvo.endswith("direcoes.png")]
         if not lado or not png_real(base / lado[0]):
-            erros.append("Visual: falta a comparação lado a lado plano/direcoes.png (scripts/previa-direcoes.mjs)")
+            erros.append(f"Visual: falta a comparação lado a lado plano/direcoes.png ({comando('previa-direcoes.mjs')})")
         if not re.search(r"(?i)escolha:.*\[x\]", c):
             erros.append("Visual: a linha 'Escolha:' não tem nenhuma direção marcada com [x]")
 
@@ -275,7 +278,7 @@ def checar(caminho):
         validas = [a for a, ok in minis if ok]
         if len(validas) < MIN_MINIATURAS:
             erros.append(f"Seções: {len(validas)} miniatura(s) no cardápio; mínimo {MIN_MINIATURAS} "
-                         "(scripts/previa-direcoes.mjs --miniaturas)")
+                         f"({comando('previa-direcoes.mjs')} --miniaturas)")
         for a, ok in minis:
             if not ok:
                 erros.append(f"Seções: miniatura {a} não existe ou não é PNG")

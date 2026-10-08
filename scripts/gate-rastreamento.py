@@ -15,8 +15,12 @@ Snippet e eventos: references/rastreamento.md.
 import argparse
 import pathlib
 import re
+import os
 import sys
 from html.parser import HTMLParser
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lancador import comando  # noqa: E402
 
 
 class Elementos(HTMLParser):
@@ -93,7 +97,7 @@ def main():
     if a.plano:
         pedido = pedido_do_plano(a.plano)
         if pedido is None:
-            print("REPROVA: o PLANO.md não tem a linha 'Pixel pedido:' (rode o gate-plano.py)")
+            print("REPROVA: o PLANO.md não tem a linha 'Pixel pedido:' (rode " + comando("gate-plano.py") + ")")
             return 1
     else:
         v = a.pedido.lower()

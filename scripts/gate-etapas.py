@@ -17,6 +17,9 @@ import sys
 import unicodedata
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lancador import comando  # noqa: E402
+
 PAGINAS = {
     "0": ("briefing", "inventario", "pendencias_cliente"),
     "1": ("referencias",),
@@ -31,14 +34,14 @@ def videos_da_prova(projeto, doc):
     """Etapa 5: a prova leva o vídeo da rolagem (gravar-video.js) junto dos prints, em desktop e celular."""
     v = doc.get("video")
     if not isinstance(v, dict) or not all(str(v.get(k) or "").strip() for k in ("desktop", "mobile")):
-        raise ValueError("Etapa 5: video é {desktop, mobile}, os dois .webm gravados por scripts/gravar-video.js (prova junto dos prints).")
+        raise ValueError(f"Etapa 5: video é {{desktop, mobile}}, os dois .webm gravados por {comando('gravar-video.js')} (prova junto dos prints).")
     achados = {}
     for perfil in ("desktop", "mobile"):
         p = (projeto / str(v[perfil])).resolve()
         if not p.is_relative_to(projeto) or p.suffix.lower() != ".webm":
             raise ValueError(f"Etapa 5: o vídeo de {perfil} precisa ser um .webm dentro do projeto.")
         if not p.is_file() or p.stat().st_size == 0:
-            raise ValueError(f"Etapa 5: vídeo de {perfil} ausente ou vazio ({p.name}). Grave com scripts/gravar-video.js.")
+            raise ValueError(f"Etapa 5: vídeo de {perfil} ausente ou vazio ({p.name}). Grave com {comando('gravar-video.js')}.")
         with p.open("rb") as f:
             if f.read(4).hex() != "1a45dfa3":
                 raise ValueError(f"Etapa 5: {p.name} não é um WebM (cabeçalho EBML ausente).")

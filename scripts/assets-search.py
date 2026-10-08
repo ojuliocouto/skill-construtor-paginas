@@ -34,6 +34,9 @@ import urllib.request
 import urllib.parse
 import urllib.error
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lancador import comando  # noqa: E402
+
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
 
@@ -485,7 +488,7 @@ def format_openverse(items: list, query: str, veio_de_fallback: bool = False) ->
         linhas.append('  Nenhuma foto encontrada na Openverse para: "%s"' % query)
         linhas.append(barra)
         linhas.append("  Tente termos em ingles e mais concretos, ex: \"team meeting office\".")
-        linhas.append("  Outras rotas sem chave: node scripts/py.mjs assets-search.py --type sem-chave")
+        linhas.append(f"  Outras rotas sem chave: {comando('assets-search.py')} --type sem-chave")
         linhas.append(barra)
         return "\n".join(linhas)
 
@@ -602,8 +605,8 @@ def show_sem_chave_resources() -> str:
     linhas.append("")
 
     linhas.append("  1. OPENVERSE: fotos reais, licenca Creative Commons (a melhor rota)")
-    linhas.append("     node scripts/py.mjs assets-search.py \"team meeting office\" --type openverse -n 6")
-    linhas.append("     node scripts/py.mjs assets-search.py \"sua busca\" --type photo   # cai aqui sozinho")
+    linhas.append(f"     {comando('assets-search.py')} \"team meeting office\" --type openverse -n 6")
+    linhas.append(f"     {comando('assets-search.py')} \"sua busca\" --type photo   # cai aqui sozinho")
     linhas.append("     Credito ao autor OBRIGATORIO (CC BY / BY-SA). Sai pronto na busca.")
     linhas.append("")
 
@@ -616,12 +619,12 @@ def show_sem_chave_resources() -> str:
 
     linhas.append("  3. UNDRAW: ilustracoes SVG tematicas, cor customizavel")
     linhas.append("     https://undraw.co/illustrations")
-    linhas.append("     node scripts/py.mjs assets-search.py --type illustrations \"team work\"")
+    linhas.append(f"     {comando('assets-search.py')} --type illustrations \"team work\"")
     linhas.append("     Sem obrigacao de credito. Boas pra secao de features e vazio de dados.")
     linhas.append("")
 
     linhas.append("  4. GRADIENTE E PATTERN SVG (background, nunca sozinho como 'imagem')")
-    linhas.append("     node scripts/py.mjs assets-search.py --type backgrounds")
+    linhas.append(f"     {comando('assets-search.py')} --type backgrounds")
     linhas.append("")
 
     linhas.append(barra)
@@ -869,8 +872,8 @@ def print_no_api_key(com_saida_alternativa: bool = True):
     if com_saida_alternativa:
         linhas += [
             "  SEM CHAVE VOCE AINDA TEM FOTO REAL:",
-            '      node scripts/py.mjs assets-search.py "sua busca" --type openverse',
-            "      node scripts/py.mjs assets-search.py --type sem-chave",
+            f'      {comando("assets-search.py")} "sua busca" --type openverse',
+            f"      {comando('assets-search.py')} --type sem-chave",
             "",
             "  A Openverse devolve fotos reais com licenca Creative Commons.",
             "  Nesse caso creditar o autor NAO e opcional.",
