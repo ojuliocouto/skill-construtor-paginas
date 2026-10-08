@@ -50,6 +50,10 @@ function prova(nome, ok, detalhe = '') {
 }
 
 // Registra cada mudança de fase do painel com o tempo desde o clique, e se o clique foi cancelado (defaultPrevented).
+// Posição de rolagem NO MOMENTO do pushState: é ela que o botão voltar devolve (a entrada anterior do histórico guarda a
+// rolagem de quando a pessoa saiu dela). Ler a rolagem ANTES do clique não serve: o clique do Playwright pode rolar
+// de novo para achar o link livre da barra fixa (no macOS do CI, 360 px: 9917 antes, 10020 no pushState).
+const GUARDA_ROLAGEM = `(function () { var o = history.pushState.bind(history); history.pushState = function () { window.__yPush = Math.round(window.scrollY); return o.apply(null, arguments); }; })();`;
 const OBSERVADOR = `
 window.__fases = []; window.__dp = null;
 document.addEventListener('DOMContentLoaded', function () {
@@ -65,6 +69,7 @@ async function abrir(navegador, [w, h, opc], extra = {}, init = []) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, ...opc, ...extra });
   ctx.setDefaultTimeout(8000);
   await ctx.addInitScript(OBSERVADOR);
+  await ctx.addInitScript(GUARDA_ROLAGEM);
   for (const s of init) await ctx.addInitScript(s);
   const p = await ctx.newPage();
   await p.goto(URL_ALVO, { waitUntil: 'load' });
@@ -127,10 +132,18 @@ for (const tela of LARGURAS) {
     medidas[`tempos_${w}`] = marcas;
     console.log('      fases e ms desde o clique: ' + JSON.stringify(marcas));
     // voltar
+    const yNoPush = await p.evaluate(() => window.__yPush);
     await p.goBack();
-    await espera(600);
-    const volta = await p.evaluate(() => ({ hash: location.hash, y: Math.round(window.scrollY) }));
-    prova(`${rotulo} o botão voltar tira o #${ALVO} e devolve a rolagem (${antes.y} -> ${volta.y})`, volta.hash === '' && Math.abs(volta.y - antes.y) <= 60, JSON.stringify(volta));
+    // espera a rolagem assentar: duas leituras iguais com 150 ms de intervalo (teto de 4 s)
+    let volta = null, ultimo = null;
+    for (let i = 0; i < 27; i++) {
+      await espera(150);
+      volta = await p.evaluate(() => ({ hash: location.hash, y: Math.round(window.scrollY) }));
+      if (ultimo !== null && volta.y === ultimo && i >= 3) break;
+      ultimo = volta.y;
+    }
+    prova(`${rotulo} o botão voltar tira o #${ALVO} e devolve a rolagem de quando o clique rolou a página (${yNoPush} -> ${volta.y}; lida antes do clique: ${antes.y})`,
+      volta.hash === '' && typeof yNoPush === 'number' && Math.abs(volta.y - yNoPush) <= 4, JSON.stringify(volta));
     await ctx.close();
   }
 }

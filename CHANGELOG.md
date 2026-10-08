@@ -1,5 +1,85 @@
 # Changelog
 
+## 3.5.6 (08/10/2026): correções do teste de ponta a ponta (achados A1 a A13)
+
+Um teste criou uma página real como aluno (Ateliê Veio) e anotou cada tropeço. Esta versão corrige o que era da
+skill, com teste vermelho antes de cada conserto. Nenhum gate foi afrouxado: onde um gate passa a aceitar mais,
+há um teste-mutante que prova que o que é ruim continua reprovando.
+
+### Corrigido
+- **A1, A2** `capturar-referencias.mjs` julga a captura (`ok`, `bloqueada`, `quebrada`, `coberta`, com o motivo), tenta
+  fechar o aviso de cookies, sai com código diferente de zero enquanto houver menos de 6 boas e ganhou `--limpar-ruins`
+  (módulo `qualidade-captura.mjs`). `gate-referencias.py` reprova referência ruim e aceita página curta de verdade com
+  o print do meio igual ao da dobra. `pesquisa-de-referencias.md` diz onde procurar quando a busca só dá classificado e loja.
+- **A3** `gate-verdade.py` sem `index.html` confere só a tabela contra o briefing e diz "página ainda não existe".
+- **A4** a citação é comparada com o briefing inteiro (espaços e quebras colapsados); citação que não está nele reprova.
+- **A5** crédito de imagem (bloco marcado) e identificador de licença não são promessa; rótulo curto herda a promessa
+  sustentada da mesma seção só com o mesmo número e unidade.
+- **A6** a `sustentacao.md` é a tabela viva (texto em `plano.md` e `criar.md`); a saída imprime a linha pronta por seção;
+  aviso quando a tabela do PLANO e a `sustentacao.md` divergem.
+- **A7** `assets-search.py` ganhou a Wikimedia Commons como segunda rota quando a Openverse não responde (mesmo formato
+  e campos de licença, só CC0, CC BY, CC BY-SA e domínio público, pausa e tratamento de HTTP 429), com a rota dita na saída
+  e `--type commons`; testada com resposta gravada, sem internet.
+- **A8** `Ícone do site: <motivo>` no modelo do PLANO, cobrado por `gate-plano.py` e pelo registro da etapa 2.
+- **A9** acentuação em todas as frases impressas pelos scripts, com `test-acentuacao.py`.
+- **A10** o próximo comando impresso traz o caminho completo da skill (`scripts/lancador.py`, `test-lancador.py`).
+- **A11** painel-de-cor: o texto bate com o código (0,8 + 0,15 + 0,8 = 1,75 s); teste confere tempos do texto contra o código.
+- **A12** assinatura-em-tres-estados com `colunas` e `montar()` iguais aos do demo; o par "título + lista vertical" declara
+  `data-assimetrico` na receita, na linha do tempo e na regra de design; teste de nome indefinido em JS (`js-livres.py`).
+- **A13** `screenshot-prova.js` espera a animação de entrada (teto de 4 s, diz quanto esperou) e congela as entradas
+  terminadas antes do print de página inteira, que reiniciava a animação; a receita abertura-do-topo fixa o estado final com `.pronto`.
+
+### Segunda leva (achados A14 a A25 e o aperto do A5)
+- **A5 (aperto)** bloco marcado como crédito só isenta frase com cara de crédito; R$, %, "garantia", "dias", "clientes",
+  "nota", "grátis" e afins dentro dele voltam a exigir linha (`gate-verdade.py`).
+- **A14** o link de pular (fora da janela, `clip`, `clip-path`, 1 px) não conta como botão de ação nem como espaço fixo
+  (`gate-responsivo.mjs`); dois botões visíveis continuam reprovando.
+- **A15** a mensagem do espaço fixo diz QUAIS elementos somou (seletor e altura); o limite de 15% não mudou. A receita da
+  assinatura traz a variante de celular (coluna fora do sticky abaixo de 900 px, estado 2 ao subir a coluna).
+- **A16** `data-assinatura` no SVG do momento assinatura (marcador da receita) e `data-icone-repetido-ok` entram no texto
+  (`ritmo-e-animacao.md` e a receita); o mesmo desenho fora da assinatura continua reprovando (`gate-composicao.mjs`).
+- **A17** o gate de contraste não mede o que está invisível (opacity 0 acima do SVG, visibility, display); cores do exemplo
+  da assinatura passam em fundo escuro e claro, conferidas no demo.
+- **A18** `data-assimetrico` no HTML de exemplo da assinatura e do título fixo (e conferência em teste).
+- **A19** a fórmula do limite de colunas (80 px) está no `criar.md` e a falha diz qual elemento mediu em cada coluna.
+- **A20** a receita da assinatura anima a cor da peça no mesmo laço do JS (sem transição de CSS); o demo passa no
+  `gate-movimento.mjs` (antes reprovava no celular) e isso virou teste (`test-assinatura-demo.cjs`).
+- **A21** o modelo de créditos traz o padrão de link com 44 px de alvo sem buraco entre linhas (medido em 390 e 360).
+- **A22** a mensagem do `uso-ferramentas.py` e a do `gate-etapas.py` dizem o que refazer, em ordem, com o caminho completo;
+  o `criar.md` avisa nos passos em que isso acontece.
+- **A23** `plano-para-secoes.py` gera o `secoes.json` da prova de animação a partir da tabela do PLANO (o que não dá para
+  inferir sai `PREENCHER` e o `anim.mjs` recusa); testado com o PLANO real do projeto de teste.
+- **A24** `baixar-fontes.mjs` baixa a fonte do Google Fonts (só o latino, woff2, variável quando existir) e imprime o
+  `@font-face`; testado com resposta gravada.
+- **A25** o `--click` do `screenshot-prova.js` não sai da página: navegação externa é bloqueada, registrada ("o clique
+  levaria a <url>") e conta como clique que funciona.
+
+### Terceira leva (CI real e achados A26 a A29)
+- **CI (macOS e Ubuntu, `test-assinatura-demo`)** causa reproduzida com CPU a 20x: "Vagas que se preenchem" animava fora da tela, porque
+  os temporizadores seguiam depois que a pessoa saía. A regra para todas as receitas: animação presa ao tempo vai ao estado final
+  quando a seção sai da janela (vagas, alinhar sozinha, marcos dos passos). `gate-movimento.mjs` ganhou `--cpu` e `--so-celular`.
+- **A26** lente `comparacao-referencias` reprovada lista os eixos abaixo (`--eixos-abaixo`) e manda corrigir a página; refazer o plano é ciclo novo.
+- **A27** briefing pronto do auditor com orçamento (`auditoria/briefing-do-auditor.md`, gerado pelo `pacote-auditoria.py`); `wave.py registrar`
+  guarda `--duracao-min` e `--chamadas` e `wave.py rodada` avisa quando passa do orçamento (15 min e 30 chamadas; 8 min e 15).
+- **A28** `gate-movimento.mjs` prova "script bloqueado" e "script que demora 7 s" (desktop e celular) e a receita-base traz a rede de
+  segurança (`.js` por script no `<head>` com temporizador e `onerror`); o demo usa. `gate-imagens.py` reprova foto de banco com nome de
+  pessoa em alt, legenda ou depoimento, salvo o campo `Negócio fictício de teste: sim` no briefing.
+- **A29** `gerar-og-image.mjs`: og:image 1200x630 com título, foto, faixa "Imagem ilustrativa" e a fonte da marca de `fonts/`.
+
+- **A30** (defeito real da 3.5.4) na última rodada do ciclo a ordem é crítico ou regressão aberta = NÃO ENTREGAR, senão ENTREGA COM
+  RESSALVAS (a lente de referências reprovada entra na lista, com os eixos); "voltar ao plano" nunca é ordem. Teste com os números do caso real.
+- **A31** na rodada 2 as lentes não medidas de novo mostram "nota da rodada 1 mantida" e a média não é apresentada como medida nova; cada
+  rodada grava o desfecho e o `gate-etapas.py registrar 5` recusa NÃO ENTREGAR, CONTINUA e auditoria pendente, e grava as ressalvas.
+- **A32** `gate-etapas.py revalidar --motivo "<texto>"`: mudança de briefing no meio revalida em ordem só as etapas em que SÓ o briefing mudou
+  (o gate delas roda de novo); qualquer outra evidência mudada continua exigindo o gate da etapa.
+- **Etapa 5 sem porta dos fundos** `gate-etapas.py registrar 5` recusa quando não há `.wave-auditoria.json`, quando faltam lentes das 9, quando há
+  autoavaliação ou quando o ciclo não fechou (mensagem com os comandos do passo g); EDITAR segue isento (não usa essas etapas).
+- **A33** `pacote-auditoria.py` exige a resposta `--briefing-reflete-pedido sim|nao` no checklist (ou usa `evidencias/pedidos.md` e avisa quando o
+  briefing é mais antigo que o último pedido).
+
+### Ainda não provado
+- Windows e Linux reais continuam como na 3.5.5. Nenhuma das correções acima foi rodada fora do macOS.
+
 ## 3.5.5 (08/10/2026): Windows, macOS e Linux, com trava e teste em máquina real
 
 A skill é usada ao vivo por alunos, muitos em Windows, e só tinha o mínimo (`py.mjs` e `sistemas.md`).

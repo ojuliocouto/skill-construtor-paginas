@@ -21,9 +21,13 @@ Uso: node scripts/py.mjs gate-animacao.py --pasta <saida do anim.mjs> [--plano <
 import argparse
 import importlib.util
 import json
+import os
 import sys
 import unicodedata
 from pathlib import Path
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lancador import comando  # noqa: E402
 
 MINIMO_PADRAO = 2.0
 MAXIMO_MESMO_TIPO = 2
@@ -79,7 +83,7 @@ def main():
     print("\nGATE DE ANIMAÇÃO  " + str(Path(a.pasta).resolve()))
     print("=" * 88)
     if not arq.is_file():
-        print(f"  FALHA: falta {arq}: rode anim.mjs e depois prancha.py")
+        print(f"  FALHA: falta {arq}: rode {comando('anim.mjs')} e depois {comando('prancha.py')}")
         print("\n  REPROVA: sem prova de animação.\n")
         return 1
     medidas = json.loads(arq.read_text(encoding="utf-8-sig"))

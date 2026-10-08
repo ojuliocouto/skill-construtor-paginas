@@ -77,12 +77,49 @@ def opcionais(raiz):
     return achados
 
 
+ORCAMENTO = {1: (15, 30), 2: (8, 15)}
+
+
+def briefing_do_auditor(rodada, url, itens, caminho):
+    """Texto pronto para colar no prompt do auditor, com os caminhos do pacote e o orçamento da rodada (A27)."""
+    minutos, chamadas = ORCAMENTO[rodada]
+    lista = "\n".join(f"- `{rel}`" for rel in sorted(itens)) or "- (pacote vazio: rode o pacote-auditoria.py de novo)"
+    conferencia = (
+        "\nEsta é a RODADA 2: é só conferência dos achados da rodada 1 (`auditoria/achados-rodada-1.*`), item por item: "
+        "corrigido, não corrigido, regressão. Não reabra as 9 lentes.\n" if rodada == 2 else "")
+    return f"""# Briefing do auditor, rodada {rodada} (caminho {caminho})
+
+Você é o auditor independente. Refute, não revise: ache o que está errado e diga onde, com a medida.
+{conferencia}
+## Pacote (já pronto: LEIA, não capture de novo)
+
+Página servida: {url}
+
+{lista}
+
+O manifesto está em `auditoria/pacote.json`.
+
+## Orçamento desta rodada
+
+- **{minutos} minutos** e no máximo **{chamadas} chamadas de ferramenta** (rodada 1: 15 minutos e 30 chamadas; rodada 2: 8 minutos e 15 chamadas).
+- **Proibido recapturar o que já está no pacote** (telas, pranchas, vídeo). Só abra a página para o que print não mostra:
+  interação, foco, hover, script bloqueado. No máximo **6 capturas próprias**.
+- O que não deu tempo de olhar volta como **"não verificado"**, por lente, em vez de estourar o tempo.
+- A resposta é o **schema** (um bloco por lente), sem relatório longo.
+- No fim, informe a duração em minutos e o número de chamadas que gastou: a sessão principal os registra com
+  `wave.py registrar ... --duracao-min <minutos> --chamadas <n>`, e o `wave.py rodada` avisa se passou do orçamento.
+"""
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--projeto", default=".")
     ap.add_argument("--url", default=None, help="endereço http(s) da página servida (obrigatório)")
     ap.add_argument("--rodada", type=int, choices=(1, 2), default=1)
     ap.add_argument("--caminho", choices=CAMINHOS, default="criar")
+    ap.add_argument("--briefing-reflete-pedido", dest="reflete", choices=("sim", "nao"), default=None,
+                    help="item obrigatório do checklist (A33): o evidencias/briefing.md reflete o ÚLTIMO pedido da pessoa? "
+                         "Dispensado quando existe evidencias/pedidos.md (a data decide e o pacote avisa)")
     args = ap.parse_args()
     raiz = Path(args.projeto).resolve()
     if not raiz.is_dir():
@@ -118,6 +155,27 @@ def main():
         itens.setdefault(rel, {"bytes": arq.stat().st_size, "modificado": datetime.datetime.fromtimestamp(arq.stat().st_mtime).isoformat(timespec="seconds")})
         print(f"  [opcional] {rel}")
 
+    # A33: o briefing reflete o último pedido da pessoa? Com `evidencias/pedidos.md` (registro de pedidos) a data decide e o
+    # pacote AVISA; sem o registro, a pergunta é obrigatória (--briefing-reflete-pedido sim|nao).
+    avisos = []
+    if args.caminho == "criar":
+        briefing_arq = raiz / "evidencias" / "briefing.md"
+        pedidos = raiz / "evidencias" / "pedidos.md"
+        if pedidos.is_file() and briefing_arq.is_file():
+            if briefing_arq.stat().st_mtime < pedidos.stat().st_mtime:
+                avisos.append("evidencias/briefing.md é mais antigo que o último pedido registrado (evidencias/pedidos.md): releia o briefing contra o que foi pedido por último antes de chamar o auditor")
+            print("  [ACHOU ] briefing reflete o último pedido  (conferido pela data do evidencias/pedidos.md)")
+        elif args.reflete == "sim":
+            print("  [ACHOU ] briefing reflete o último pedido  sim (declarado)")
+        elif args.reflete == "nao":
+            print("  [FALTA ] briefing reflete o último pedido  não: releia o briefing contra o que a pessoa pediu por último e atualize antes de chamar o auditor")
+            falta.append("briefing reflete o último pedido (resposta: não). Releia o briefing e atualize")
+        else:
+            print("  [FALTA ] briefing reflete o último pedido  sem resposta: rode de novo com --briefing-reflete-pedido `sim|nao`")
+            falta.append("briefing reflete o último pedido da pessoa (--briefing-reflete-pedido `sim|nao`, ou registre os pedidos em evidencias/pedidos.md)")
+    for av in avisos:
+        print(f"  [AVISO ] {av}")
+
     completo = not falta and not velhos
     saida = raiz / "auditoria"
     saida.mkdir(exist_ok=True)
@@ -127,9 +185,11 @@ def main():
         "completo": completo, "faltando": falta, "velhos": velhos, "itens": itens,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    (saida / "briefing-do-auditor.md").write_text(briefing_do_auditor(args.rodada, args.url, itens, args.caminho), encoding="utf-8")
     print("=" * 74)
     if completo:
-        print("  PACOTE COMPLETO. Passe auditoria/pacote.json ao auditor: ele lê, não captura de novo.\n")
+        print("  PACOTE COMPLETO. Cole auditoria/briefing-do-auditor.md no prompt do auditor (ele traz os caminhos e o orçamento):")
+        print("  ele lê o pacote, não captura de novo.\n")
         return 0
     if falta:
         print(f"  PACOTE INCOMPLETO: FALTA {', '.join(falta)}. Gere o que falta uma vez e rode de novo.")

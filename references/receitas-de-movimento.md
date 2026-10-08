@@ -21,6 +21,11 @@ nomes neutros pelos do assunto é o caminho curto; o que não pode mudar é a gr
 - **Cada item entra quando ELE chega na tela**, nunca o grupo inteiro de uma vez. Observador
   (`IntersectionObserver`) com `threshold: 0.18` e `rootMargin: '0px 0px -6% 0px'`; ao entrar, o
   item ganha a classe `visivel` e deixa de ser observado.
+- **Animação presa ao tempo se cancela ou vai direto ao estado final quando a seção sai da janela.** Temporizador
+  (`setTimeout`, laço de `requestAnimationFrame`) e classe trocada pela rolagem em máquina lenta terminam DEPOIS que a
+  pessoa saiu: o `gate-movimento.mjs` conta transição ou animação que começa com a seção fora da tela. Cada receita com
+  tempo confere, a cada passo, se a seção ainda está na janela; se saiu, aplica o estado final de uma vez, sem transição
+  (`vagas-que-se-preenchem`, `assinatura-em-tres-estados`, `texto-em-linhas` e o painel já fazem isso).
 - **Todo estado escondido fica atrás de `.js`.** O `<html>` nasce `class="no-js"` e um script de
   uma linha no `<head>` troca por `js`. Sem script, a página inteira aparece. Regra do gate:
   `opacity: 0`, `transform` de entrada e `clip-path` só em seletor que começa com `.js`.
@@ -38,8 +43,19 @@ Base mínima, comum a todas:
 ```html
 <html lang="pt-BR" class="no-js">
 <head>
-  <script>document.documentElement.classList.replace('no-js','js')</script>
+  <!-- rede de segurança: a classe .js só vale enquanto o script principal der sinal de vida -->
+  <script>(function (d) { d.classList.replace('no-js', 'js'); setTimeout(function () { if (!d.hasAttribute('data-js-ok')) d.classList.replace('js', 'no-js'); }, 5000); })(document.documentElement)</script>
+  <!-- script externo: se falhar ao carregar, devolve a página ao estado sem script na hora -->
+  <script src="app.js" defer onerror="document.documentElement.classList.replace('js','no-js')"></script>
 ```
+
+**Rede de segurança (conteúdo nunca fica invisível se o script não roda).** Todo estado escondido está atrás de `.js`, e a
+classe `.js` é posta por um script em linha no `<head>`. Se o script principal NÃO carregar (rede, bloqueio, erro) ou
+demorar, a página ficaria com `opacity: 0` para sempre. Por isso o script do `<head>` também arma um temporizador de 5 s:
+se o principal não confirmar (a PRIMEIRA linha dele é `document.documentElement.setAttribute('data-js-ok', '')`), a classe
+`.js` é retirada e a página volta a aparecer inteira. O `onerror` do `<script src>` faz o mesmo na hora, quando o arquivo
+nem chega. O `gate-movimento.mjs` prova isso em desktop e celular: `script bloqueado` e `script que demora 7 s`.
+O demo usa essa rede.
 
 ```css
 html { scroll-behavior: smooth; }
@@ -91,8 +107,19 @@ a imagem).
 .js .abertura-entra { opacity: 0; transform: translateY(22px); animation: sobe .9s cubic-bezier(.2,.8,.2,1) forwards; }
 .js .abertura-entra.d1 { animation-delay: .12s; } .js .abertura-entra.d2 { animation-delay: .26s; } .js .abertura-entra.d3 { animation-delay: .4s; }
 .js .abertura-foto .cena-quadro { animation: abreFoto 1.3s cubic-bezier(.2,.8,.2,1) both; }
+/* estado final fixo: ao terminar, o script (abaixo) põe .pronto e a animação não recomeça */
+.js .abertura-entra.pronto { opacity: 1; transform: none; animation: none; }
+.js .abertura-foto .cena-quadro.pronto { clip-path: none; animation: none; }
 @keyframes sobe { to { opacity: 1; transform: none; } }
 @keyframes abreFoto { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+```
+
+```js
+// Fixa o estado final: uma animação `forwards` recomeça se o navegador refizer o estilo (redimensionar
+// a janela, o print de página inteira, o foco que muda o layout) e o herói volta a sumir (achado A13)
+each(document.querySelectorAll('.abertura-entra, .abertura-foto .cena-quadro'), function (n) {
+  n.addEventListener('animationend', function (e) { if (e.target === n) n.classList.add('pronto'); });
+});
 ```
 
 Sem JS: roda só com CSS, na carga (não precisa de observador). Atrasos: 0, 0,12, 0,26 e 0,4 s.
@@ -159,42 +186,74 @@ peça a peça com a rolagem, a região acende, o marco do passo ativa e a linha 
 entrar no fecho, ela se alinha sozinha em 2,0 s.
 **Quando NÃO usar:** se o assunto não tem um objeto que muda de estado (não invente: use outra
 receita); por cima de foto de pessoa (fica AO LADO); em mais de uma assinatura por página.
+**Layout e gate:** a coluna fixa ao lado dos passos verticais é o par "título/coluna à esquerda + lista vertical à direita" que a regra de simetria reprova por padrão (`references/preferencias-de-design.md`). Quando o plano pede esta receita, declare `data-assimetrico="coluna fixa da assinatura ao lado dos passos, pedida no plano"` na `<section>`: o `gate-simetria.mjs` passa a avisar em vez de reprovar, com o motivo no relatório. Sem o atributo, reprova.
+**Celular (abaixo de 900 px):** a coluna deixa de ser `sticky` e vai para o fluxo, em faixa de 112 px antes dos
+passos. Sticky ali soma à barra fixa e ao cabeçalho e estoura os 15% de espaço fixo do `gate-responsivo.mjs`
+(medido: 146 px, 15,7% em 430x932; 198 px, 26,8% em 360x740). O limite de 15% não sobe. **O estado 2 no celular:** a
+coluna alinha enquanto sobe de 90% a 40% da tela (o JS lê `celular.matches`), os passos continuam acendendo pela
+rolagem, e o momento fica visível sem ocupar espaço fixo. O CSS e o JS da variante estão abaixo e no `demo.html`.
+**Desenho repetido (gate-composicao):** o momento assinatura repete o mesmo desenho em 3 ou mais seções por regra do
+plano, e o `gate-composicao.mjs` reprova desenho repetido. O SVG da assinatura leva `data-assinatura` (o marcador desta
+receita: o gate o reconhece como o momento assinatura). `data-icone-repetido-ok` no SVG faz o mesmo efeito para outros
+casos. O mesmo traçado FORA da assinatura continua reprovando.
+**Cores do traço:** o traço fino precisa de 3:1 contra o que está embaixo. O exemplo usa variáveis que passam em fundo
+escuro (padrão) e em fundo claro (`class="coluna sobre-claro"`), conferidas no demo. O gate não mede o que está invisível
+(opacity 0, `visibility: hidden`, `display: none`).
+**Sem transição de CSS que termine depois da seção:** a cor da peça muda no mesmo laço do JS (estados 2 e 3), nunca por
+`transition`, senão o fim da animação cai depois que a pessoa saiu da seção e o `gate-movimento.mjs` reprova.
 **Origem na v7:** `_app.js:8-14, 30, 44` (estado 1), `55-66, 93-116` (estado 2), `231-239`
 (estado 3); `_input.css:104-109, 116-117, 173, 180-181, 200, 371`. Na v7 as peças eram vértebras
 montadas pelo script; aqui elas já vêm no HTML (`data-dx`, `data-rot`, `data-cy`), então a página
 sem script mostra a pilha, e o script só inclina e alinha.
 
 ```html
-<svg class="coluna entra-pecas" data-coluna="rolagem" viewBox="0 0 120 232" role="img" aria-label="...">
+<div class="assin-grade" data-assimetrico="coluna fixa da assinatura ao lado dos passos, pedida no plano">
+<div class="assin-coluna">
+<svg class="coluna entra-pecas" data-coluna="rolagem" data-assinatura data-desenho="encaixe de peças que se alinham com a rolagem" data-icone-repetido-ok viewBox="0 0 120 232" role="img" aria-label="...">
   <polyline class="fio" points=""/>
-  <g class="peca" data-dx="6.23" data-rot="15.26" data-cy="11.5"><g class="peca-dentro" style="--i:0"><rect x="43" y="6" width="34" height="11" rx="4.6"/></g></g>
+  <g class="peca" data-dx="6.23" data-rot="15.26" data-cy="11.5"><g class="peca-dentro" style="--i:0"><ellipse class="corpo" cx="60" cy="11.5" rx="17" ry="5.5"/></g></g>
   <!-- uma .peca por peça; data-dx e data-rot são o desvio e a inclinação do estado torto -->
 </svg>
+</div>
 <ol class="passos"><li class="passo"><span class="marco"></span><h3>Passo</h3><p>Texto.</p></li></ol>
+</div>
 ```
 
 ```css
+/* cores com contraste medido (3:1 ou mais para traço fino): fundo escuro por padrão, .sobre-claro em fundo claro */
+.coluna { --traco: #a9bcb0; --peca: #33403a; --peca-alinhada: #4f7a63; --traco-alinhada: #cfe3d6; }
+.coluna.sobre-claro { --traco: #4a6b58; --peca: #d9d2c2; --peca-alinhada: #a9c9b5; --traco-alinhada: #2f4a3b; }
 .assin-coluna { position: sticky; top: calc(var(--vh, 1vh) * 12); height: calc(var(--vh, 1vh) * 70); }
-.coluna .peca rect { fill: #33403a; stroke: #a9bcb0; stroke-width: 1.2; transition: fill .45s ease; }
-.coluna .peca.alinhada rect { fill: var(--verde); }
-.coluna .fio { fill: none; stroke: #a9bcb0; stroke-width: 1.4; stroke-dasharray: 2 5; opacity: .7; }
+/* a cor da peça muda pelo JS, no mesmo laço do alinhamento: sem transição de CSS que termine depois da seção */
+.coluna .peca .corpo { fill: var(--peca); stroke: var(--traco); stroke-width: 1.2; }
+.coluna .peca.alinhada .corpo { stroke: var(--traco-alinhada); }
+.coluna .fio { fill: none; stroke: var(--traco); stroke-width: 1.4; stroke-dasharray: 2 5; }
+/* CELULAR (abaixo de 900 px): a coluna sai do sticky e vai para o fluxo, em faixa baixa antes dos passos.
+   Sticky no celular soma à barra fixa e ao cabeçalho e estoura os 15% de espaço fixo do gate-responsivo. */
+@media (max-width: 899px) {
+  .assin-grade { grid-template-columns: 1fr; }
+  .assin-coluna { position: static; height: 112px; }
+  .assin-coluna svg { width: auto; height: 100%; }
+}
 .peca-dentro { transform-box: fill-box; transform-origin: center; }
 .js .coluna.entra-pecas .peca-dentro { opacity: 0; }
 .js .coluna.entra-pecas.visivel .peca-dentro { animation: pecaEntra .7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(.45s + var(--i) * .05s); }
 @keyframes pecaEntra { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
 .passos::before { content: ""; position: absolute; left: 7px; top: 14px; width: 1.5px; height: var(--altura-linha, 0px); background: rgba(216,227,220,.25); }
 .passos::after { content: ""; position: absolute; left: 7px; top: 14px; width: 1.5px; background: var(--claro); height: calc(var(--altura-linha, 0px) * var(--enche, 0)); }
-.passo .marco { transition: background-color .4s ease, border-color .4s ease, transform .4s ease; }
+.passo .marco { transition: background-color .25s ease, border-color .25s ease, transform .25s ease; }
 .passo.ativo .marco { background: var(--claro); border-color: var(--claro); transform: scale(1.15); }
+.passo.instantaneo .marco { transition: none; }
 ```
 
 ```js
 function montar(svg) {
-  var grupos = [];
+  var grupos = [], cs = getComputedStyle(svg);
+  var rgb = function (v) { v = v.trim().replace('#', ''); return [0, 2, 4].map(function (i) { return parseInt(v.substr(i, 2), 16); }); };
   each(svg.querySelectorAll('.peca'), function (g) {
-    grupos.push({ g: g, cy: parseFloat(g.getAttribute('data-cy')), dx: parseFloat(g.getAttribute('data-dx')), rot: parseFloat(g.getAttribute('data-rot')) });
+    grupos.push({ g: g, corpo: g.querySelector('.corpo'), cy: parseFloat(g.getAttribute('data-cy')), dx: parseFloat(g.getAttribute('data-dx')), rot: parseFloat(g.getAttribute('data-rot')) });
   });
-  return { svg: svg, grupos: grupos, fio: svg.querySelector('.fio') };
+  return { svg: svg, grupos: grupos, fio: svg.querySelector('.fio'), de: rgb(cs.getPropertyValue('--peca')), para: rgb(cs.getPropertyValue('--peca-alinhada')) };
 }
 function aplicar(c, p) { // p de 0 (torto) a 1 (alinhado)
   var n = c.grupos.length, pts = [];
@@ -204,18 +263,34 @@ function aplicar(c, p) { // p de 0 (torto) a 1 (alinhado)
     var dx = o.dx * (1 - e), r = o.rot * (1 - e);
     o.g.setAttribute('transform', 'translate(' + dx.toFixed(2) + ' 0) rotate(' + r.toFixed(2) + ' 60 ' + o.cy.toFixed(1) + ')');
     if (local >= 1) o.g.classList.add('alinhada'); else o.g.classList.remove('alinhada');
+    o.corpo.style.fill = 'rgb(' + c.de.map(function (v, j) { return Math.round(v + (c.para[j] - v) * local); }).join(',') + ')';
     pts.push((60 + dx).toFixed(2) + ',' + o.cy.toFixed(1));
   });
   c.fio.setAttribute('points', pts.join(' '));
 }
-// Estado 2: presa à rolagem dos passos
+// Uma coluna por <svg data-coluna>: "rolagem" (estado 2) e, se houver, "sozinha" (estado 3)
+var colunas = {};
+each(document.querySelectorAll('svg[data-coluna]'), function (svg) { colunas[svg.getAttribute('data-coluna')] = montar(svg); });
+if (colunas.rolagem) aplicar(colunas.rolagem, reduz ? 1 : 0);
+if (colunas.sozinha) aplicar(colunas.sozinha, reduz ? 1 : 0);
+// Estado 2: presa à rolagem dos passos (no celular, ao subir da coluna: ver o CSS)
+var celular = window.matchMedia('(max-width: 899px)');
 var passos = document.querySelector('.passos'), listaPassos = passos.querySelectorAll('.passo');
 function progressoAssinatura() {
   var vh = window.innerHeight, p = 1;
-  if (!reduz) { var r = passos.getBoundingClientRect(); p = Math.min(1, Math.max(0, (vh * 0.62 - r.top) / Math.max(1, r.height - vh * 0.3))); }
+  if (!reduz && celular.matches) {
+    // celular: a coluna está no fluxo (sem sticky); alinha enquanto sobe de 90% a 40% da tela
+    var rc = colunas.rolagem.svg.getBoundingClientRect();
+    p = Math.min(1, Math.max(0, (vh * 0.9 - rc.top) / (vh * 0.5)));
+  } else if (!reduz) { var r = passos.getBoundingClientRect(); p = Math.min(1, Math.max(0, (vh * 0.62 - r.top) / Math.max(1, r.height - vh * 0.3))); }
   aplicar(colunas.rolagem, p);
   passos.style.setProperty('--enche', p.toFixed(3));
-  each(listaPassos, function (s) { if (reduz || s.getBoundingClientRect().top < vh * 0.62) s.classList.add('ativo'); else s.classList.remove('ativo'); });
+  each(listaPassos, function (s) {
+    var r = s.getBoundingClientRect();
+    // passo fora da janela (o quadro de rolagem atrasou numa máquina lenta) muda sem transição
+    s.classList.toggle('instantaneo', r.bottom < 0 || r.top > vh);
+    if (reduz || r.top < vh * 0.62) s.classList.add('ativo'); else s.classList.remove('ativo');
+  });
 }
 // Altura da linha: até o centro do último marco
 var marcos = passos.querySelectorAll('.marco'), ultimo = marcos[marcos.length - 1];
@@ -226,10 +301,18 @@ if (document.fonts) document.fonts.ready.then(function () { /* repita as duas li
 function alinharSozinha(col) {
   if (!col || reduz) return;
   var t0 = null;
-  var passo = function (ts) { if (!t0) t0 = ts; var k = Math.min(1, (ts - t0) / 2000); aplicar(col, 1 - Math.pow(1 - k, 2)); if (k < 1) window.requestAnimationFrame(passo); };
+  var passo = function (ts) {
+    if (!t0) t0 = ts;
+    var rc = col.svg.getBoundingClientRect();
+    var k = (rc.bottom < 0 || rc.top > window.innerHeight) ? 1 : Math.min(1, (ts - t0) / 2000); // saiu da janela: vai ao estado final
+    aplicar(col, 1 - Math.pow(1 - k, 2));
+    if (k < 1) window.requestAnimationFrame(passo);
+  };
   window.requestAnimationFrame(passo);
 }
-// Chame progressoAssinatura() dentro do quadro() da rolagem, io.observe(svg.entra-pecas) e io.observe(bloco do estado 3)
+// Chame progressoAssinatura() dentro do quadro() da rolagem, io.observe(svg.entra-pecas) e io.observe(bloco do estado 3):
+// ao entrar, alinharSozinha(colunas.sozinha). A versão que roda, com o quadro() e o observador, é o
+// script de references/receitas/demo.html (procure por "montar(svg)").
 ```
 
 **Reserva:** sem script a pilha aparece alinhada e sem inclinação (as peças estão no HTML) e a
@@ -338,13 +421,14 @@ Duração 0,95 s por linha, 0,14 s entre linhas, 0,45 s entre itens da lista.
 
 **Quando usar:** em tela larga, seção com título curto ao lado de uma lista longa: o título fica
 preso enquanto os itens passam.
+**Layout e gate:** título fixo ao lado de uma lista longa é o par "título à esquerda + lista vertical à direita" que a regra de simetria reprova por padrão. Quando o plano pede esta receita, declare `data-assimetrico="título fixo ao lado da lista, pedido no plano"` na seção (o gate vira aviso).
 **Quando NÃO usar:** no celular (coluna única, sem fixo); dentro de grid que termina depois do
 bloco de largura total (o título nunca solta). Regras e medidas em
 `references/sticky-e-sobreposicao.md`.
 **Origem na v7:** `_input.css:135`.
 
 ```html
-<div class="fixo-grade"><div class="fixo-titulo"><h2>Título</h2></div><ul class="fixo-lista"><li>Item</li></ul></div>
+<div class="fixo-grade" data-assimetrico="título fixo ao lado da lista, pedido no plano"><div class="fixo-titulo"><h2>Título</h2></div><ul class="fixo-lista"><li>Item</li></ul></div>
 ```
 
 ```css
@@ -450,17 +534,23 @@ mesmo da quantidade de marcas.
 .vagas i { width: 46px; height: 14px; border-radius: 7px; border: 1.5px solid var(--verde); background: transparent; transition: background-color .35s ease, transform .35s ease; }
 .vagas i.cheia, .no-js .vagas i { background: var(--verde); }
 .vagas i.cheia { transform: scaleY(1.15); }
+.vagas.sem-transicao i { transition: none; }
 .contador { display: inline-block; }
+.contador.pronto { color: var(--verde); }
 .contador.pulsa { animation: pulsa .7s cubic-bezier(.2,.8,.2,1); color: var(--verde); transition: color .6s ease; }
 @keyframes pulsa { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
 ```
 
 ```js
 function contar(h) {
-  var alvo = h.querySelector('[data-contador]'), vagas = document.querySelectorAll('.vagas i');
-  if (reduz) { each(vagas, function (v) { v.classList.add('cheia'); }); return; }
+  var alvo = h.querySelector('[data-contador]'), bloco = document.querySelector('.vagas'), vagas = bloco.querySelectorAll('i');
+  var fora = function () { var r = h.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight; };
+  // a pessoa saiu da seção no meio da contagem: vai direto ao estado final, sem transição nem pulso
+  var final = function () { bloco.classList.add('sem-transicao'); each(vagas, function (v) { v.classList.add('cheia'); }); if (alvo) alvo.classList.add('pronto'); };
+  if (reduz) { final(); return; }
   var n = 0;
   var tick = function () {
+    if (fora()) { final(); return; }
     if (vagas[n]) vagas[n].classList.add('cheia');
     n += 1;
     if (n < vagas.length) setTimeout(tick, 300); else if (alvo) { alvo.classList.add('pulsa'); }
@@ -700,8 +790,8 @@ corpo. Movimento reduzido: `.barra { transition: none; }` (aparece sem deslizar)
 
 `data-receita`: `painel-de-cor`. Nome: **Painel de cor na navegação interna** (a 15ª receita; aprovada pelo dono em protótipo com "Gostei muito desse").
 
-**Quando usar:** página com 2 ou mais links internos de destaque, como o botão do topo que leva para a oferta ou o botão do fim que volta ao formulário. Ao clicar, um painel na cor da marca sobe e cobre a tela em 0,8 s, a página troca de posição por baixo e o painel sai por cima em 0,8 s (mais uma pausa de 0,45 s coberto). Cada clique custa cerca de 2,1 s.
-**Quando NÃO usar:** em link de menu que o visitante clica várias vezes seguidas (1,8 s por clique cansa: use só no botão principal, com `data-painel` nele e em mais nenhum); em página com um link interno só; em link para outra página ou para fora; quando o destino está na própria tela (o painel cobre um movimento que ninguém precisava).
+**Quando usar:** página com 2 ou mais links internos de destaque, como o botão do topo que leva para a oferta ou o botão do fim que volta ao formulário. Ao clicar, um painel na cor da marca sobe e cobre a tela em 0,8 s, a página troca de posição por baixo e o painel sai por cima em 0,8 s (mais uma pausa de 0,15 s coberto: 0,8 + 0,15 + 0,8 = 1,75 s). Cada clique custa cerca de 1,8 s.
+**Quando NÃO usar:** em link de menu que o visitante clica várias vezes seguidas (cerca de 1,8 s por clique cansa: use só no botão principal, com `data-painel` nele e em mais nenhum); em página com um link interno só; em link para outra página ou para fora; quando o destino está na própria tela (o painel cobre um movimento que ninguém precisava).
 **Origem no protótipo v8:** `pagina-studio-v8-proto/_efeitos.js:76-106` e `_input.css:556-557` (o painel sobe em 0,77 s e sai em 0,79 s). Endurecido aqui: opt-in por `data-painel`, só clique simples em link da mesma página, `pushState` antes da rolagem (o botão voltar devolve a posição), foco no destino, pausa coberta que dá um quadro "cobre" mensurável, teto de tempo e cor pelo token `--marca`.
 
 ```html

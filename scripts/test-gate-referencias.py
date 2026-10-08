@@ -170,6 +170,65 @@ class GateReferencias(unittest.TestCase):
         self.assertEqual(len(validas), 7)
         self.assertEqual(problemas, [])
 
+    # ----- v3.5.6 (achados A1 e A2) -----
+    def marcar(self, indice, **campos):
+        arq = self.projeto / "referencias" / "referencias.json"
+        doc = json.loads(arq.read_text(encoding="utf-8"))
+        doc["referencias"][indice].update(campos)
+        arq.write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
+
+    def test_referencia_marcada_como_bloqueada_reprova(self):
+        self.montar(8)
+        self.marcar(2, captura={"estado": "bloqueada", "motivo": "HTTP 403: o site recusou o acesso automático"})
+        code, out = self.rodar()
+        self.assertEqual(code, 1, out)
+        self.assertIn("bloqueada", out)
+        self.assertIn("HTTP 403", out)
+
+    def test_referencia_quebrada_e_coberta_reprovam_e_ok_passa(self):
+        self.montar(8)
+        self.marcar(1, captura={"estado": "quebrada", "motivo": "sem estilo"})
+        self.marcar(3, captura={"estado": "coberta", "motivo": "modal cobre 77%"})
+        self.marcar(4, captura={"estado": "ok", "motivo": ""})
+        code, out = self.rodar()
+        self.assertEqual(code, 1, out)
+        self.assertIn("quebrada", out)
+        self.assertIn("coberta", out)
+        self.assertNotIn("exemplo4.com.br/: captura", out)
+
+    def test_ruins_fora_do_manifesto_e_seis_boas_passa(self):
+        self.montar(6)
+        for i in range(6):
+            self.marcar(i, captura={"estado": "ok", "motivo": ""})
+        code, out = self.rodar()
+        self.assertEqual(code, 0, out)
+
+    def test_pagina_curta_de_verdade_pode_ter_meio_igual_a_dobra(self):
+        self.montar(6)
+        dobra = (self.projeto / "referencias" / "03-dobra.png").read_bytes()
+        (self.projeto / "referencias" / "03-meio.png").write_bytes(dobra)
+        self.marcar(3, altura_pagina=900)
+        code, out = self.rodar()
+        self.assertEqual(code, 0, out)
+
+    def test_mutante_pagina_alta_com_meio_igual_a_dobra_continua_reprovando(self):
+        self.montar(6)
+        dobra = (self.projeto / "referencias" / "03-dobra.png").read_bytes()
+        (self.projeto / "referencias" / "03-meio.png").write_bytes(dobra)
+        self.marcar(3, altura_pagina=4200)
+        code, out = self.rodar()
+        self.assertEqual(code, 1, out)
+        self.assertIn("print repetido", out)
+
+    def test_mutante_pagina_curta_copiando_print_de_outra_referencia_reprova(self):
+        self.montar(6)
+        outra = (self.projeto / "referencias" / "00-dobra.png").read_bytes()
+        (self.projeto / "referencias" / "03-meio.png").write_bytes(outra)
+        self.marcar(3, altura_pagina=900)
+        code, out = self.rodar()
+        self.assertEqual(code, 1, out)
+        self.assertIn("print repetido", out)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

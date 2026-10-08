@@ -36,8 +36,10 @@ def montar_completo(raiz, t=1_000_000):
     tocar(raiz / "videos/prancha-mobile.png", b"\x89PNG", t + 10)
 
 
-def rodar(raiz, *extra, url=URL):
+def rodar(raiz, *extra, url=URL, reflete="sim"):
     args = [sys.executable, str(SCRIPT), "--projeto", str(raiz)]
+    if reflete and "--briefing-reflete-pedido" not in extra:
+        args += ["--briefing-reflete-pedido", reflete]
     if url:
         args += ["--url", url]
     r = subprocess.run(args + list(extra), capture_output=True, text=True, encoding="utf-8")
@@ -59,6 +61,62 @@ class Pacote(unittest.TestCase):
         self.assertEqual(m["rodada"], 1)
         self.assertTrue(m["completo"])
         self.assertIn("videos/prancha-desktop.png", m["itens"])
+
+    def test_gera_o_briefing_do_auditor_com_os_caminhos_e_o_orcamento(self):
+        # A27: o auditor levou 51 min e 113 chamadas porque ninguém lhe deu orçamento nem lhe disse o que NÃO fazer
+        montar_completo(self.raiz)
+        code, saida = rodar(self.raiz)
+        self.assertEqual(code, 0, saida)
+        b = (self.raiz / "auditoria/briefing-do-auditor.md").read_text(encoding="utf-8")
+        for trecho in ("15 minutos", "30 chamadas", "Proibido recapturar", "6 capturas próprias", "não verificado",
+                       "schema", URL, "`provas/prova-desktop.png`", "`videos/prancha-mobile.png`", "--duracao-min", "--chamadas"):
+            self.assertIn(trecho, b, trecho)
+        self.assertNotIn("RODADA 2", b)
+        self.assertIn("briefing-do-auditor.md", saida)
+
+    def test_briefing_da_rodada_2_tem_orcamento_menor_e_e_so_conferencia(self):
+        montar_completo(self.raiz)
+        tocar(self.raiz / "auditoria/achados-rodada-1.json", "{}", 1_000_100)
+        code, saida = rodar(self.raiz, "--rodada", "2")
+        self.assertEqual(code, 0, saida)
+        b = (self.raiz / "auditoria/briefing-do-auditor.md").read_text(encoding="utf-8")
+        self.assertIn("8 minutos", b)
+        self.assertIn("15 chamadas", b)
+        self.assertIn("RODADA 2", b)
+        self.assertIn("Não reabra as 9 lentes", b)
+
+    def test_pacote_incompleto_tambem_grava_o_briefing_mas_nao_manda_chamar(self):
+        code, saida = rodar(self.raiz)
+        self.assertEqual(code, 1)
+        self.assertNotIn("Cole auditoria/briefing", saida)
+
+    # A33: o briefing reflete o último pedido da pessoa? Obrigatório no checklist do pacote.
+    def test_sem_a_resposta_do_briefing_o_pacote_fica_incompleto(self):
+        montar_completo(self.raiz)
+        code, saida = rodar(self.raiz, reflete=None)
+        self.assertEqual(code, 1, saida)
+        self.assertIn("briefing reflete o último pedido", saida)
+        self.assertIn("--briefing-reflete-pedido", saida)
+
+    def test_resposta_nao_tambem_barra_e_manda_reler_o_briefing(self):
+        montar_completo(self.raiz)
+        code, saida = rodar(self.raiz, reflete="nao")
+        self.assertEqual(code, 1, saida)
+        self.assertIn("Releia o briefing", saida)
+
+    def test_briefing_mais_velho_que_o_ultimo_pedido_registrado_avisa(self):
+        montar_completo(self.raiz)
+        tocar(self.raiz / "evidencias/pedidos.md", "- o cliente trocou o prazo", 1_000_500)   # depois do briefing (1_000_000)
+        code, saida = rodar(self.raiz, reflete=None)
+        self.assertIn("AVISO", saida)
+        self.assertIn("evidencias/briefing.md é mais antigo que o último pedido registrado", saida)
+
+    def test_briefing_mais_novo_que_o_pedido_nao_avisa_e_dispensa_a_pergunta(self):
+        montar_completo(self.raiz)
+        tocar(self.raiz / "evidencias/pedidos.md", "- o cliente trocou o prazo", 999_000)
+        code, saida = rodar(self.raiz, reflete=None)
+        self.assertEqual(code, 0, saida)
+        self.assertNotIn("mais antigo que o último pedido", saida)
 
     def test_sem_prancha_do_video_falha_e_diz_qual(self):
         montar_completo(self.raiz)

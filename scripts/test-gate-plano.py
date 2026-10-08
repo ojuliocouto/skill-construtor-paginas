@@ -39,6 +39,8 @@ Pixel pedido: Meta e GA4
 
 Momento assinatura: a coluna vertebral em SVG; seções: topo, avaliação, fecho; estados: torta -> alinhada
 
+Ícone do site: a coluna vertebral em 32 px, em traço único
+
 Material da cliente pedido:
 - foto real da profissional
 - número do WhatsApp
@@ -248,6 +250,16 @@ class GatePlano(unittest.TestCase):
         code, out = self.rodar(lambda t: re.sub(r"Momento assinatura:.*\n", "", t))
         self.assertEqual(code, 1, out)
         self.assertIn("Momento assinatura", out)
+
+    # v3.5.6 (achado A8): o ícone do site é decidido no plano, não descoberto no passo e.4.
+    def test_sem_icone_do_site_reprova(self):
+        code, out = self.rodar(lambda t: re.sub(r"Ícone do site:.*\n", "", t))
+        self.assertEqual(code, 1, out)
+        self.assertIn("Ícone do site", out)
+
+    def test_icone_do_site_com_modelo_nao_preenchido_reprova(self):
+        code, out = self.rodar(lambda t: re.sub(r"Ícone do site:.*\n", "Ícone do site: <motivo>\n", t))
+        self.assertEqual(code, 1, out)
 
     def test_momento_assinatura_em_duas_secoes_reprova(self):
         code, out = self.rodar(lambda t: t.replace("seções: topo, avaliação, fecho", "seções: topo, fecho"))

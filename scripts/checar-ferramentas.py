@@ -77,7 +77,7 @@ def roda(cmd, timeout=25, env=None):
         argv = list(cmd) if isinstance(cmd, (list, tuple)) else shlex.split(cmd, posix=(plataforma.sistema() != "windows"))
         achado = shutil.which(argv[0])
         if not achado:
-            return False, f"programa nao encontrado: {argv[0]}"
+            return False, f"programa não encontrado: {argv[0]}"
         argv[0] = achado
         p = subprocess.run(argv, capture_output=True, text=True, timeout=timeout, env=env,
                            encoding="utf-8", errors="replace")
@@ -123,7 +123,7 @@ def estado_mcp(nome):
     """
     ok, saida = roda(["claude", "mcp", "list"], timeout=45)
     if not ok and not saida:
-        return "indeterminado", "nao consegui rodar `claude mcp list`"
+        return "indeterminado", "não consegui rodar `claude mcp list`"
     for linha in saida.splitlines():
         if not linha.strip().startswith(nome + ":") and f" {nome}:" not in linha:
             if not linha.strip().startswith(nome):
@@ -137,7 +137,7 @@ def estado_mcp(nome):
             return "tools_falharam", linha.strip()
         if "connected" in baixo:
             return "conectado", linha.strip()
-    return "ausente", f"'{nome}' nao aparece em `claude mcp list`"
+    return "ausente", f"'{nome}' não aparece em `claude mcp list`"
 
 
 def _post_json(url, corpo, cabecalhos, timeout=20):
@@ -176,15 +176,15 @@ def testar_21st():
         if est == "ausente":
             est, _ = estado_mcp("magic")
         if est == "ausente":
-            return False, "nao configurado (opcional): a pagina sai com componente a mao em Tailwind"
-        return False, (f"MCP {est} na lista, mas sem chave em {CHAVES_21ST[0]} nao da pra fazer a "
-                       "chamada real; lista de MCP nao prova que a chave vale")
+            return False, "não configurado (opcional): a página sai com componente a mao em Tailwind"
+        return False, (f"MCP {est} na lista, mas sem chave em {CHAVES_21ST[0]} não da pra fazer a "
+                       "chamada real; lista de MCP não prova que a chave vale")
     cab = {"x-api-key": chave}
     st, h, txt = _post_json(URL_21ST, {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
         "protocolVersion": "2025-03-26", "capabilities": {},
         "clientInfo": {"name": "checar-ferramentas", "version": "1"}}}, cab)
     if st != 200:
-        return False, f"initialize respondeu HTTP {st}: chave recusada ou servico fora ({txt[:60]})"
+        return False, f"initialize respondeu HTTP {st}: chave recusada ou serviço fora ({txt[:60]})"
     if h.get("mcp-session-id"):
         cab["mcp-session-id"] = h["mcp-session-id"]
     _post_json(URL_21ST, {"jsonrpc": "2.0", "method": "notifications/initialized"}, cab)
@@ -239,11 +239,11 @@ def checagens(opcionais=False):
     caminhos = [p for p in (os.environ.get("NODE_PATH"), global_npm) if p]
     ok, saida = roda(["node", os.path.join(str(RAIZ), "scripts", "screenshot-prova.js"), "--check"],
                      env={**os.environ, "NODE_PATH": os.pathsep.join(caminhos)})
-    yield ("Playwright", "prints das referencias e prova de entrega (Chromium baixado)",
+    yield ("Playwright", "prints das referências e prova de entrega (Chromium baixado)",
            CRITICIDADE["Playwright"], ok, saida.splitlines()[0][:110] if saida else "",
            como_instalar_playwright())
 
-    yield ("skill frontend-design", "plano visual antes do codigo (passo c do CRIAR)",
+    yield ("skill frontend-design", "plano visual antes do código (passo c do CRIAR)",
            CRITICIDADE["skill frontend-design"], skill_existe("frontend-design"), "",
            "npx -y skills add anthropics/skills --skill frontend-design --agent claude-code -g -y --copy")
 
@@ -253,20 +253,20 @@ def checagens(opcionais=False):
         tem_pn, det_pn = True, f"Pillow {PIL.__version__}, numpy {numpy.__version__}"
     except ImportError:
         tem_pn, det_pn = False, "ausentes neste Python: " + (sys.executable or "?")
-    yield ("Pillow e numpy", "repeticao e nitidez de foto (gate-imagens) e a prancha de animacao (opcional)",
+    yield ("Pillow e numpy", "repetição e nitidez de foto (gate-imagens) e a prancha de animação (opcional)",
            CRITICIDADE["Pillow e numpy"], tem_pn, det_pn, comando_pip("pillow numpy"))
 
     ok_prb, saida = roda(["ffprobe", "-version"])
     ok_mpg, saida_mpg = roda(["ffmpeg", "-version"])
     faltam = [n for n, o in (("ffmpeg", ok_mpg), ("ffprobe", ok_prb)) if not o]
-    yield ("ffmpeg/ffprobe", "gate de video (so em pagina com video)", CRITICIDADE["ffmpeg/ffprobe"],
+    yield ("ffmpeg/ffprobe", "gate de vídeo (só em página com vídeo)", CRITICIDADE["ffmpeg/ffprobe"],
            ok_prb and ok_mpg,
-           (f"nao encontrado: {', '.join(faltam)}" if faltam else (saida.splitlines()[0] if saida else "")),
+           (f"não encontrado: {', '.join(faltam)}" if faltam else (saida.splitlines()[0] if saida else "")),
            como_instalar_ffmpeg())
 
     TASTE = "npx skills add Leonxlnx/taste-skill -g -y --copy"
     for s, papel, fix in [
-        ("design-taste-frontend", "segunda opiniao anti-slop (opcional)", TASTE),
+        ("design-taste-frontend", "segunda opinião anti-slop (opcional)", TASTE),
         ("high-end-visual-design", "acabamento (opcional)", TASTE),
         ("animate", "movimento em React (opcional)",
          "npx -y skills add https://github.com/delphi-ai/animate-skill --agent claude-code -g -y --copy"),
@@ -279,9 +279,9 @@ def checagens(opcionais=False):
 
     if not opcionais:
         for rotulo, papel in [("21st", "componentes do 21st.dev"), ("stitch", "wireframe no Stitch"),
-                              ("Higgsfield CLI", "video gerado"),
-                              ("Assets sem chave (Openverse)", "busca de foto com licenca aberta")]:
-            yield (rotulo, papel, CRITICIDADE[rotulo], None, "nao checado (rode com --opcionais)", "")
+                              ("Higgsfield CLI", "vídeo gerado"),
+                              ("Assets sem chave (Openverse)", "busca de foto com licença aberta")]:
+            yield (rotulo, papel, CRITICIDADE[rotulo], None, "não checado (rode com --opcionais)", "")
         return
 
     ok21, det21 = testar_21st()
@@ -292,19 +292,19 @@ def checagens(opcionais=False):
 
     est, det = estado_mcp("stitch")
     yield ("stitch", "wireframe no Stitch (opcional)", CRITICIDADE["stitch"], est == "conectado",
-           f"{est}: {det[:110]}", "opcional. Confira quem esta na porta do proxy antes de reiniciar")
+           f"{est}: {det[:110]}", "opcional. Confira quem está na porta do proxy antes de reiniciar")
 
     ok, saida = roda(["higgsfield", "account", "status"])
-    yield ("Higgsfield CLI", "video gerado (opcional, conta paga)", CRITICIDADE["Higgsfield CLI"],
+    yield ("Higgsfield CLI", "vídeo gerado (opcional, conta paga)", CRITICIDADE["Higgsfield CLI"],
            ok and "plan" in saida.lower(), saida.splitlines()[0][:110] if saida else "",
            "opcional. npm i -g @higgsfield/cli && higgsfield auth login && higgsfield workspace set <id>")
 
     env_sem_chave = {k: v for k, v in os.environ.items() if k != "PEXELS_API_KEY"}
     ok, saida = roda([sys.executable, str(RAIZ / "scripts" / "assets-search.py"), "office",
                       "--type", "openverse", "-n", "1"], env=env_sem_chave)
-    yield ("Assets sem chave (Openverse)", "busca de foto com licenca aberta (opcional)",
+    yield ("Assets sem chave (Openverse)", "busca de foto com licença aberta (opcional)",
            CRITICIDADE["Assets sem chave (Openverse)"], ok and ("Imagem:" in saida or "http" in saida), "",
-           "checar rede; a rota nao precisa de chave")
+           "checar rede; a rota não precisa de chave")
 
 
 def main():
@@ -334,14 +334,14 @@ def main():
         avisos = [l for l in linhas if not l["critico"] and l["checado"] and not l["ok"]]
         print("=" * 72)
         if criticos:
-            print(f"  {len(criticos)} ferramenta(s) CRITICA(s) sem responder. Resolva antes de comecar:")
-            print("  sem elas nao ha print de referencia, nem plano visual, nem prova de entrega.\n")
+            print(f"  {len(criticos)} ferramenta(s) CRITICA(s) sem responder. Resolva antes de começar:")
+            print("  sem elas não há print de referência, nem plano visual, nem prova de entrega.\n")
         else:
-            print("  Tudo critico responde. Pode comecar o briefing.")
+            print("  Tudo crítico responde. Pode começar o briefing.")
             if avisos:
-                print(f"  {len(avisos)} opcional(is) ausente(s): nao bloqueia nada, a skill nao depende deles.")
+                print(f"  {len(avisos)} opcional(is) ausente(s): não bloqueia nada, a skill não depende deles.")
             if not opcionais:
-                print("  Opcionais de rede e MCP nao foram checados (rode com --opcionais se quiser usar).")
+                print("  Opcionais de rede e MCP não foram checados (rode com --opcionais se quiser usar).")
             print()
 
     return 1 if any(l["critico"] and not l["ok"] for l in linhas) else 0

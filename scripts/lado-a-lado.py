@@ -58,7 +58,7 @@ def main():
     ap.add_argument("versao")
     ap.add_argument("saida")
     ap.add_argument("--largura", type=int, default=760, help="largura de cada coluna")
-    ap.add_argument("--rotulos", default="ORIGINAL,SUA VERSAO")
+    ap.add_argument("--rotulos", default="ORIGINAL,SUA VERSÃO")
     args = ap.parse_args()
 
     rot_a, _, rot_b = args.rotulos.partition(",")
@@ -80,10 +80,10 @@ def main():
     folha.save(args.saida, quality=86)
     print(f"lado a lado: {args.saida}  ({folha.width}x{folha.height})")
     print("\nAgora OLHE, e responda com honestidade:")
-    print("  1. o dono veria a diferenca sem voce apontar?")
-    print("  2. quantos EIXOS de elevacao voce consegue nomear olhando? (composicao, escala,")
+    print("  1. o dono veria a diferenca sem você apontar?")
+    print("  2. quantos EIXOS de elevacao você consegue nomear olhando? (composição, escala,")
     print("     profundidade, movimento, densidade, elemento de assinatura)")
-    print("  Se a resposta 1 for 'nao', nao adianta a lista da resposta 2.\n")
+    print("  Se a resposta 1 for 'nao', não adianta a lista da resposta 2.\n")
 
 
 if __name__ == "__main__":

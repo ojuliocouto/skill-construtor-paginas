@@ -75,13 +75,13 @@ def cabecalhos() -> dict:
     if not kid or not ksec:
         sys.exit(
             "faltam HF_API_KEY_ID e HF_API_KEY_SECRET no ambiente.\n"
-            "Higgsfield e opcional e requer conta propria:\n"
+            "Higgsfield é opcional e requer conta própria:\n"
             "  1. crie uma conta em cloud.higgsfield.ai\n"
-            "  2. escolha um plano pago (o gratuito nao libera uso comercial)\n"
+            "  2. escolha um plano pago (o gratuito não libera uso comercial)\n"
             "  3. gere o par de credenciais no painel da conta\n"
             "  4. exporte: export HF_API_KEY_ID=... e export HF_API_KEY_SECRET=...\n"
             "Nunca commitar a chave no repositorio.\n"
-            "Sem conta propria, use a rota via Replicate em references/ai-video-generation.md."
+            "Sem conta própria, use a rota via Replicate em references/ai-video-generation.md."
         )
     return {"Authorization": f"Key {kid}:{ksec}", "Content-Type": "application/json"}
 
@@ -171,7 +171,7 @@ def baixa_e_nomeia(url: str, saida: str, base: str) -> tuple[str, str]:
     ptmp = os.path.join(saida, f".{base}.tmp.webp")
     poster = ""
     if not shutil.which("ffmpeg"):
-        print("  aviso: ffmpeg nao encontrado no PATH, pulando geracao de poster (mp4 e manifesto seguem normalmente)")
+        print("  aviso: ffmpeg não encontrado no PATH, pulando geração de poster (mp4 e manifesto seguem normalmente)")
     else:
         try:
             subprocess.run(
@@ -210,7 +210,7 @@ def uma(a: argparse.Namespace, headers: dict | None) -> dict:
         print("headers: Authorization: Key <KEY_ID>:<KEY_SECRET>")
         print(json.dumps(corpo, ensure_ascii=True, indent=1))
         if a.preset and a.preset not in PRESETS_WEB:
-            print(f"\nAVISO: '{a.preset}' nao esta na lista de presets de FUNDO DE SECAO.")
+            print(f"\nAVISO: '{a.preset}' não está na lista de presets de FUNDO DE SEÇÃO.")
             print(f"       preset com climax rouba a leitura do texto. seguros: {', '.join(PRESETS_WEB)}")
         return {"dry_run": True, "url": url, "corpo": corpo}
 
@@ -245,7 +245,7 @@ def uma(a: argparse.Namespace, headers: dict | None) -> dict:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Cliente Higgsfield para assets de pagina")
+    p = argparse.ArgumentParser(description="Cliente Higgsfield para assets de página")
     p.add_argument("--prompt")
     p.add_argument("--modelo", default="dop", help=f"atalho ou path. atalhos: {', '.join(ENDPOINTS)}")
     p.add_argument("--preset", help=f"preset de camera do DoP. seguros pra fundo: {', '.join(PRESETS_WEB)}")
@@ -267,15 +267,15 @@ def main() -> int:
         try:
             jobs = json.load(open(a.lote, encoding="utf-8-sig"))
         except FileNotFoundError:
-            sys.exit(f"arquivo de lote nao encontrado: {a.lote}")
+            sys.exit(f"arquivo de lote não encontrado: {a.lote}")
         except json.JSONDecodeError as e:
-            sys.exit(f"JSON invalido em {a.lote}: {e}")
+            sys.exit(f"JSON inválido em {a.lote}: {e}")
         # leva de uma vez porque credito nao faz rollover: o que sobra no ciclo morre
         print(f"leva de {len(jobs)} clipe(s)")
         razoes = {j.get("aspect", a.aspect) for j in jobs}
         if len(razoes) > 1:
             print(f"AVISO: a leva tem {len(razoes)} proporcoes ({', '.join(sorted(razoes))}).")
-            print("       uma trilha = UMA proporcao, senao o `cover` corta o que nao bate.")
+            print("       uma trilha = UMA proporcao, senao o `cover` corta o que não bate.")
         saida = []
         for j in jobs:
             sub = argparse.Namespace(**{**vars(a), **j, "lote": None})
@@ -286,7 +286,7 @@ def main() -> int:
         return 1 if ruins else 0
 
     if not a.prompt:
-        p.error("--prompt e obrigatorio quando nao se usa --lote")
+        p.error("--prompt é obrigatório quando não se usa --lote")
     r = uma(a, headers)
     return 0 if r.get("estado") in ("pronto",) or r.get("dry_run") else 1
 

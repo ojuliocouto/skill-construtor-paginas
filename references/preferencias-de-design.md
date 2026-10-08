@@ -50,7 +50,9 @@ originou; `scripts/test-preferencias.py` reprova se uma correção nova ficar se
   rolar. Item solto flutuando em alturas diferentes (escada) reprova. Sequência de passos
   também vira grade de caixas iguais (em linha no desktop, uma coluna no celular), com o
   título da seção em largura total em cima: "título à esquerda + lista vertical à direita"
-  reprova no desktop ("não tá simétrico"). Título de seção de processo fala com quem compra
+  reprova no desktop ("não tá simétrico"), salvo o par que o PLANO pede de propósito (a coluna
+  fixa da assinatura ao lado dos passos, a linha do tempo, o título fixo): esse leva
+  `data-assimetrico="motivo"` na seção e o gate vira aviso. Título de seção de processo fala com quem compra
   ("Como funciona para você começar"), não com quem constrói. <!-- gosto:15 -->
 - **[gate `gate-simetria.mjs`] Caixa de grade tem ícone animado ÚNICO e alturas iguais
   medidas.** Top e height iguais com 1 px de tolerância, medidos depois da animação; o texto

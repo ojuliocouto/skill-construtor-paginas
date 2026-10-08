@@ -193,6 +193,57 @@ async function pararNoTopo(page) {
   return fixos;
 }
 
+/** Espera a animação de ENTRADA acabar antes do print do topo (3.5.6, achado A13).
+ *
+ *  O print gravava o herói no meio da entrada (opacity 0 a 1 em até 1,5 s): faltavam a lista de
+ *  fatos e o encaixe, que existiam na página, e quem lê o PNG acha que o conteúdo sumiu. Espera as
+ *  animações FINITAS (CSS animation e transition, Web Animations) terminarem, com teto de 4 s;
+ *  animação infinita (loop decorativo) não conta, senão a prova nunca acabaria. Só libera depois
+ *  de duas leituras seguidas sem nenhuma animação finita rodando, porque a entrada pode começar um
+ *  instante depois que o observador de rolagem percebe o topo. Devolve quanto esperou. */
+async function esperarEntrada(page) {
+  const inicio = Date.now();
+  const fim = inicio + 4000;
+  let limpas = 0;
+  let rodando = 0;
+  while (Date.now() < fim) {
+    rodando = await page.evaluate(() => document.getAnimations().filter((a) => {
+      if (a.playState !== 'running' && a.playState !== 'pending') return false;
+      const t = a.effect && a.effect.getComputedTiming ? a.effect.getComputedTiming() : null;
+      return !!t && Number.isFinite(t.endTime) && t.iterations !== Infinity;
+    }).length);
+    limpas = rodando === 0 ? limpas + 1 : 0;
+    if (limpas >= 2) break;
+    await page.waitForTimeout(100);
+  }
+  await page.waitForTimeout(100);
+  return { ms: Date.now() - inicio, rodando };
+}
+
+/** Congela as entradas já terminadas no estado final, para o print de página inteira não as reiniciar.
+ *
+ *  O `fullPage` redimensiona a janela, e uma animação de CSS pode recomeçar nesse resize: no teste do
+ *  aluno (A13, atualização) o herói estava com opacidade 1 antes do print e saiu com 0,32, 0 e 0
+ *  nele (subtítulo, fatos e encaixe sumidos). Para cada animação CSS finita já terminada,
+ *  `commitStyles()` grava o estado final no `style` do elemento e `animation: none` impede que ela
+ *  recomece. Só mexe no que já acabou (esperarEntrada vem antes) e só na página da prova, nunca no
+ *  arquivo do aluno. Animação infinita fica como está. Devolve quantos elementos congelou. */
+async function congelarEntrada(page) {
+  return page.evaluate(() => {
+    const feitos = new Set();
+    for (const a of document.getAnimations()) {
+      const t = a.effect && a.effect.getComputedTiming ? a.effect.getComputedTiming() : null;
+      const el = a.effect && a.effect.target;
+      if (!t || !el || !el.style || !Number.isFinite(t.endTime) || a.playState !== 'finished') continue;
+      if (typeof CSSAnimation !== 'undefined' && !(a instanceof CSSAnimation)) continue;
+      try { a.commitStyles(); } catch { continue; }
+      feitos.add(el);
+    }
+    for (const el of feitos) el.style.setProperty('animation', 'none', 'important');
+    return feitos.size;
+  });
+}
+
 async function lerEstado(page, el) {
   const pagina = await page.evaluate(() => ({
     scrollY: Math.round(window.scrollY),
@@ -327,6 +378,10 @@ async function main() {
       const file = path.join(outdir, `prova-${vp.name}.png`);
       const fixos = await pararNoTopo(page);
       console.log(`  topo             ${vp.name}: scrollY 0 confirmado antes do print (${fixos} elemento(s) fixed/sticky no lugar certo)`);
+      const entrada = await esperarEntrada(page);
+      const congelados = await congelarEntrada(page);
+      console.log(`  entrada          ${vp.name}: esperou ${entrada.ms} ms a animação de entrada acabar${entrada.rodando ? ` (teto de 4 s: ainda rodavam ${entrada.rodando} animação(ões) finita(s); o print pode sair no meio da entrada)` : ''}`);
+      if (congelados) console.log(`  entrada          ${vp.name}: ${congelados} elemento(s) com a entrada já terminada ficaram no estado final (o print de página inteira redimensiona a janela e reiniciaria a animação)`);
       await page.screenshot({ path: file, fullPage: true });
       shots.push(file);
 
@@ -372,8 +427,24 @@ async function main() {
         await page.screenshot({ path: fAntes, fullPage: false });
         const antes = await lerEstado(page, el);
 
+        // O clique de prova NAO sai da pagina de teste (A25): navegacao para outro dominio (mesma aba ou
+        // target=_blank) e bloqueada, registrada com a URL, e conta como clique que funciona. Sem isto a prova
+        // abria o site real (api.whatsapp.com) em cada viewport.
+        const origemTeste = new URL(url).origin;
+        const externas = [];
+        await page.context().route('**/*', (rota) => {
+          const rq = rota.request();
+          let alvo = null;
+          try { alvo = new URL(rq.url()); } catch { /* url sem origem */ }
+          if (rq.isNavigationRequest() && alvo && /^https?:$/.test(alvo.protocol) && alvo.origin !== origemTeste) {
+            externas.push(rq.url());
+            return rota.abort('blockedbyclient');
+          }
+          return rota.continue();
+        });
         await el.click();
         await page.waitForTimeout(2500);
+        await page.context().unroute('**/*').catch(() => {});
 
         const fDepois = path.join(outdir, `prova-${vp.name}-pos-clique.png`);
         await page.screenshot({ path: fDepois, fullPage: false });
@@ -387,8 +458,9 @@ async function main() {
           `  URL              ${antes.url === depois.url ? `igual (${depois.url})` : `${antes.url} -> ${depois.url}`}`
         );
         console.log(`  texto do alvo    "${antes.texto}" -> "${depois.texto}"`);
+        for (const u of [...new Set(externas)]) console.log(`  navegação externa  o clique levaria a ${u} (bloqueei a navegação: o teste não sai da página; conta como clique que funciona)`);
         console.log(`  pixels do print  ${iguais ? 'IDENTICOS' : 'mudaram'}`);
-        if (iguais) {
+        if (iguais && !externas.length) {
           console.log('ATENCAO: o print pos-clique e identico ao anterior. O clique pode nao ter surtido efeito visivel.');
           cliquesInertes.push(vp.name);
         }

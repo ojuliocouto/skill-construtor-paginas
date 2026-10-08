@@ -136,7 +136,10 @@ class Demo(unittest.TestCase):
                 ruins.append(seletor[-60:])
         self.assertEqual(ruins, [], "estado escondido fora de .js")
         self.assertIn('class="no-js"', self.html)
-        self.assertIn("replace('no-js','js')", self.html)
+        self.assertRegex(self.html, r"classList\.replace\('no-js',\s*'js'\)")
+        # A28: o demo usa a rede de segurança (temporizador que retira .js se o principal não confirmar) e o principal confirma
+        self.assertRegex(self.html, r"setTimeout\(function \(\) \{ if \(!d\.hasAttribute\('data-js-ok'\)\) d\.classList\.replace\('js', 'no-js'\)")
+        self.assertIn("setAttribute('data-js-ok', '')", self.html)
 
     def test_sem_kicker_nem_numero_decorativo(self):
         r = subprocess.run([sys.executable, str(SCRIPTS / "gate-sem-kicker.py"), str(DEMO)], capture_output=True, text=True, encoding="utf-8")
@@ -194,6 +197,159 @@ class Ligacao(unittest.TestCase):
         s = ler(RAIZ / "SKILL.md")
         self.assertIn("references/receitas-de-movimento.md", s)
         self.assertLessEqual(len(s.splitlines()), 330)
+
+
+# ----- v3.5.6 (achados A11 e A12 do teste de ponta a ponta, 08/10/2026) -----
+def carregar_js_livres():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("js_livres", SCRIPTS / "js-livres.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def blocos(corpo, linguagem):
+    return re.findall(r"```%s\n(.*?)```" % linguagem, corpo, re.S)
+
+
+def sem_blocos(corpo):
+    return re.sub(r"```\w*\n.*?```", "", corpo, flags=re.S)
+
+
+class JsDasReceitas(unittest.TestCase):
+    """Todo trecho de JS de receita usa só nome que ele (ou a base mínima) define."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.js = carregar_js_livres()
+        topo = ler(MD).split("## Receita: ", 1)[0]
+        cls.contexto = set()
+        for b in blocos(topo, "js"):
+            cls.contexto |= cls.js.declarados(cls.js.limpa(b))
+
+    def test_o_verificador_pega_nome_sem_definicao(self):
+        self.assertEqual(self.js.livres("var a = 1; aplicar(colunas.rolagem, a);"), ["aplicar", "colunas"])
+        self.assertEqual(self.js.livres("var colunas = {}; function aplicar(c, p) { return c[p]; } aplicar(colunas, 1);"), [])
+        self.assertEqual(self.js.livres("each(x.querySelectorAll('.a'), function (n) { n.classList.add('v'); });", {"each"}), ["x"])
+        self.assertEqual(self.js.livres("var o = { chave: 1, outra: 2 }; var m = 1e9 + o.chave; // quadro()"), [])
+
+    def test_nenhum_trecho_de_js_usa_nome_indefinido(self):
+        ruins = {}
+        for nome, corpo in receitas().items():
+            livres = self.js.livres("\n".join(blocos(corpo, "js")), self.contexto)
+            if livres:
+                ruins[nome] = livres
+        self.assertEqual(ruins, {}, "trecho de receita usa nome que nem ele nem a base mínima definem")
+
+    def test_assinatura_traz_o_montar_e_o_colunas_iguais_aos_do_demo(self):
+        corpo = receitas()["assinatura-em-tres-estados"]
+        js = "\n".join(blocos(corpo, "js"))
+        demo = ler(DEMO)
+        colapsa = lambda s: re.sub(r"\s+", " ", s)
+        montar_demo = re.search(r"function montar\(svg\) \{.*?\n  \}\n", demo, re.S).group(0)
+        self.assertIn(colapsa(montar_demo.replace("\n  ", "\n")), colapsa(js), "montar() da receita difere do demo")
+        for linha in ("var colunas = {};",
+                      "colunas[svg.getAttribute('data-coluna')] = montar(svg);",
+                      "if (colunas.rolagem) aplicar(colunas.rolagem, reduz ? 1 : 0);"):
+            self.assertIn(linha, js, f"falta na receita: {linha}")
+
+
+class NumerosDoTexto(unittest.TestCase):
+    """O número do texto bate com a constante do código (achado A11: 0,45 s no texto, SEGURA = 150)."""
+
+    # Número em prosa que não é constante do código: teto/limite, valor derivado, origem no protótipo.
+    ISENTO = re.compile(r"(no máximo|até|teto de|cerca de|custa|mais de|menos de|abaixo de|acima de|=)\s*$", re.I)
+
+    def numeros(self, corpo):
+        achados = []
+        for linha in sem_blocos(corpo).splitlines():
+            if linha.startswith("**Origem"):
+                continue
+            for m in re.finditer(r"(\d+(?:[.,]\d+)?)\s*(ms|s)\b", linha):
+                if self.ISENTO.search(linha[:m.start()]):
+                    continue
+                v = float(m.group(1).replace(",", "."))
+                achados.append((m.group(0), round(v * 1000 if m.group(2) == "s" else v)))
+        return achados
+
+    def no_codigo(self, corpo):
+        js = "\n".join(blocos(corpo, "js") + blocos(corpo, "css") + blocos(corpo, "html"))
+        achados = set()
+        for m in re.finditer(r"(?<![\w.])(\d*\.?\d+)(ms|s)?\b", js):
+            v = float(m.group(1))
+            achados.add(round(v * 1000) if m.group(2) == "s" else round(v))
+            if m.group(2) is None:
+                achados.add(round(v * 1000))
+        return achados
+
+    def test_todo_tempo_dito_no_texto_existe_no_codigo_da_receita(self):
+        ruins = []
+        for nome, corpo in receitas().items():
+            codigo = self.no_codigo(corpo)
+            for texto, ms in self.numeros(corpo):
+                if ms > 0 and ms not in codigo:
+                    ruins.append(f"{nome}: o texto diz {texto} e o código não tem {ms} ms")
+        self.assertEqual(ruins, [], "\n" + "\n".join(ruins))
+
+    def test_painel_de_cor_soma_o_que_o_texto_diz(self):
+        corpo = receitas()["painel-de-cor"]
+        js = "\n".join(blocos(corpo, "js"))
+        c = {k: int(re.search(r"\b%s = (\d+)" % k, js).group(1)) for k in ("SOBE", "SEGURA", "SAI")}
+        total = (c["SOBE"] + c["SEGURA"] + c["SAI"]) / 1000
+        self.assertEqual(total, 1.75, c)
+        prosa = sem_blocos(corpo)
+        fmt = lambda ms: f"{ms / 1000:.2f}".replace(".", ",").rstrip("0").rstrip(",") + " s"
+        self.assertIn(f"em {fmt(c['SOBE'])}", prosa)
+        self.assertIn(f"pausa de {fmt(c['SEGURA'])}", prosa)
+        self.assertIn(f"cerca de {total:.1f} s".replace(".", ","), prosa)
+        self.assertNotIn("2,1 s", prosa)
+        self.assertNotIn("0,45 s", prosa)
+
+
+class RedeDeSeguranca(unittest.TestCase):
+    """A28: a receita-base traz a rede de segurança pronta."""
+
+    def test_regras_gerais_trazem_o_head_com_temporizador_e_o_onerror(self):
+        topo = ler(MD).split("## Receita: ", 1)[0]
+        self.assertIn("data-js-ok", topo)
+        self.assertIn("setTimeout(function () { if (!d.hasAttribute('data-js-ok'))", topo)
+        self.assertIn("onerror=\"document.documentElement.classList.replace('js','no-js')\"", topo)
+        self.assertIn("script bloqueado", topo)
+        self.assertIn("script que demora 7 s", topo)
+
+
+class EstadoFinalDaEntrada(unittest.TestCase):
+    """A entrada `forwards` recomeça quando o navegador refaz o estilo (achado A13, atualização)."""
+
+    def test_abertura_do_topo_fixa_o_estado_final_com_pronto(self):
+        corpo = receitas()["abertura-do-topo"]
+        self.assertIn(".js .abertura-entra.pronto { opacity: 1; transform: none; animation: none; }", corpo)
+        self.assertIn("animationend", corpo)
+        self.assertIn("classList.add('pronto')", corpo)
+
+    def test_demo_traz_o_mesmo_estado_final(self):
+        demo = ler(DEMO)
+        self.assertIn(".js .abertura-entra.pronto { opacity: 1; transform: none; animation: none; }", demo)
+        self.assertIn("classList.add('pronto')", demo)
+
+
+class AssimetriaDeclarada(unittest.TestCase):
+    """O par "título + lista vertical" que as receitas pedem declara `data-assimetrico` (achado A12)."""
+
+    def test_receitas_que_pedem_o_par_dizem_que_ele_usa_data_assimetrico(self):
+        for nome in ("assinatura-em-tres-estados", "titulo-fixo"):
+            self.assertIn("data-assimetrico", receitas()[nome], f"{nome}: falta dizer que o par declara data-assimetrico")
+        linha = (REF / "secoes" / "linha-do-tempo.md")
+        self.assertIn("data-assimetrico", ler(linha), "linha-do-tempo.md: falta data-assimetrico")
+
+    def test_a_regra_de_design_aponta_a_excecao_declarada(self):
+        regra = ler(REF / "preferencias-de-design.md")
+        i = regra.index("título à esquerda + lista vertical à direita")
+        self.assertIn("data-assimetrico", regra[i - 400:i + 700], "a regra reprova o par sem dizer a saída declarada")
+
+    def test_o_gate_de_simetria_le_o_atributo_na_lista_ao_lado_do_titulo(self):
+        gate = ler(SCRIPTS / "gate-simetria.mjs")
+        self.assertRegex(gate, r"reg\(out\.ladoTitulo,[^\n]*marcado\(")
 
 
 if __name__ == "__main__":

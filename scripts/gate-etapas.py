@@ -9,6 +9,7 @@ Perfil `paginas` (v3, caminho CRIAR): 0 briefing, 1 referências (roda o
 gate-referencias.py), 2 plano visual, 3 copy, 4 construção, 5 entrega.
 """
 import argparse
+import datetime
 import hashlib
 import importlib.util
 import json
@@ -16,6 +17,9 @@ import re
 import sys
 import unicodedata
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lancador import comando  # noqa: E402
 
 PAGINAS = {
     "0": ("briefing", "inventario", "pendencias_cliente"),
@@ -27,18 +31,63 @@ PAGINAS = {
 }
 
 
+def desfecho_do_ciclo(projeto):
+    """Lê o que o `wave.py rodada` gravou na última rodada: (desfecho, ressalvas), ou (None, []) se não há ciclo registrado."""
+    arq = projeto / ".wave-auditoria.json"
+    if not arq.is_file():
+        return None, []
+    try:
+        rodadas = json.loads(arq.read_text(encoding="utf-8-sig")).get("rodadas") or []
+    except (OSError, ValueError, AttributeError):
+        return None, []
+    if not rodadas or not isinstance(rodadas[-1], dict):
+        return None, []
+    return rodadas[-1].get("desfecho"), list(rodadas[-1].get("ressalvas") or [])
+
+
+def conferir_auditoria(projeto):
+    """A etapa 5 (entrega pronta) exige a auditoria registrada: as 9 lentes, nenhuma por autoavaliação e um ciclo fechado.
+
+    O caminho EDITAR (edição pontual) não passa por estas etapas e segue isento, como diz a tabela de caminhos do SKILL.md."""
+    spec = importlib.util.spec_from_file_location("wave_gate", Path(__file__).resolve().parent / "wave.py")
+    w = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(w)
+    volta = (f"Rode o passo g: {comando('pacote-auditoria.py')} --projeto {projeto.as_posix()} --url <url> --briefing-reflete-pedido sim, "
+             f"chame o auditor com o briefing pronto, registre as 9 lentes com {comando('wave.py')} --projeto {projeto.as_posix()} registrar <lente> ... --origem subagente "
+             f"e feche com {comando('wave.py')} --projeto {projeto.as_posix()} rodada ...")
+    arq = projeto / ".wave-auditoria.json"
+    if not arq.is_file():
+        raise ValueError("Etapa 5: não há registro de auditoria deste projeto (.wave-auditoria.json): a entrega não passa sem as 9 lentes do auditor. " + volta)
+    try:
+        dados = json.loads(arq.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        raise ValueError("Etapa 5: o registro de auditoria (.wave-auditoria.json) está ilegível. " + volta)
+    lentes = dados.get("lentes") if isinstance(dados, dict) else None
+    lentes = lentes if isinstance(lentes, dict) else {}
+    faltam = sorted(set(w.LENTES) - set(lentes))
+    if faltam:
+        raise ValueError(f"Etapa 5: o registro de auditoria não tem as 9 lentes (faltam {len(faltam)}: {', '.join(faltam)}). " + volta)
+    autos = sorted(n for n, v in lentes.items() if isinstance(v, dict) and v.get("veredito") != "nao_aplicavel"
+                   and v.get("origem") not in w.ORIGENS_INDEPENDENTES)
+    if autos:
+        raise ValueError(f"Etapa 5: {len(autos)} lente(s) registradas como autoavaliação ({', '.join(autos[:4])}{'...' if len(autos) > 4 else ''}): "
+                         "nota de quem construiu não libera entrega. " + volta)
+    if not (dados.get("rodadas") or []):
+        raise ValueError("Etapa 5: as lentes estão registradas, mas o ciclo não foi fechado (nenhuma rodada). " + volta)
+
+
 def videos_da_prova(projeto, doc):
     """Etapa 5: a prova leva o vídeo da rolagem (gravar-video.js) junto dos prints, em desktop e celular."""
     v = doc.get("video")
     if not isinstance(v, dict) or not all(str(v.get(k) or "").strip() for k in ("desktop", "mobile")):
-        raise ValueError("Etapa 5: video é {desktop, mobile}, os dois .webm gravados por scripts/gravar-video.js (prova junto dos prints).")
+        raise ValueError(f"Etapa 5: `video` é {{desktop, mobile}}, os dois .webm gravados por {comando('gravar-video.js')} (prova junto dos prints).")
     achados = {}
     for perfil in ("desktop", "mobile"):
         p = (projeto / str(v[perfil])).resolve()
         if not p.is_relative_to(projeto) or p.suffix.lower() != ".webm":
             raise ValueError(f"Etapa 5: o vídeo de {perfil} precisa ser um .webm dentro do projeto.")
         if not p.is_file() or p.stat().st_size == 0:
-            raise ValueError(f"Etapa 5: vídeo de {perfil} ausente ou vazio ({p.name}). Grave com scripts/gravar-video.js.")
+            raise ValueError(f"Etapa 5: vídeo de {perfil} ausente ou vazio ({p.name}). Grave com {comando('gravar-video.js')}.")
         with p.open("rb") as f:
             if f.read(4).hex() != "1a45dfa3":
                 raise ValueError(f"Etapa 5: {p.name} não é um WebM (cabeçalho EBML ausente).")
@@ -107,15 +156,19 @@ def validar(projeto, arquivo, etapa, campos, perfil):
     if perfil == "paginas" and etapa == "2":
         secoes = doc["secoes"]
         if not isinstance(secoes, list) or len(secoes) < 3 or not all(isinstance(s, dict) and all(str(s.get(k) or "").strip() for k in ("secao", "tratamento", "referencia")) for s in secoes):
-            raise ValueError("Etapa 2: secoes é uma lista de {secao, tratamento, referencia}, uma linha por seção (3 ou mais).")
+            raise ValueError("Etapa 2: `secoes` é uma lista de {`secao`, `tratamento`, `referencia`}, uma linha por seção (3 ou mais).")
         norm = [normalizar(s["tratamento"]) for s in secoes]
         for i in range(len(norm) - 2):
             if norm[i] == norm[i + 1] == norm[i + 2]:
                 raise ValueError(f"Etapa 2: '{secoes[i]['tratamento']}' em 3 seções seguidas ({secoes[i]['secao']}, {secoes[i + 1]['secao']}, {secoes[i + 2]['secao']}): cada seção ganha um tratamento próprio.")
+        # v3.5.6: o plano visual declara o ícone do site; o aluno não descobre a linha só no passo e.4.
+        pv = projeto / "plano-visual.md"
+        if pv.is_file() and not re.search(r"(?im)^\W*[ií]cone do site\W*:[ \t]*(?!<[^>]*>\s*$)\S", pv.read_text(encoding="utf-8-sig")):
+            raise ValueError("Etapa 2: plano-visual.md não declara 'Ícone do site: <motivo>' (o que o favicon desenha em 32 px).")
         for ic in doc.get("icones") or []:
             desenha = str((ic or {}).get("desenha") or "").strip() if isinstance(ic, dict) else ""
             if not desenha:
-                raise ValueError("Etapa 2: icones é uma lista de {secao, desenha}.")
+                raise ValueError("Etapa 2: `icones` é uma lista de {`secao`, `desenha`}.")
             if re.search(GENERICOS, normalizar(desenha)):
                 raise ValueError(f"Etapa 2: ícone de biblioteca ('{desenha}'): desenhe o assunto da seção.")
     if perfil == "paginas" and etapa == "3":
@@ -131,6 +184,15 @@ def validar(projeto, arquivo, etapa, campos, perfil):
         raise ValueError("Liste em arquivos as evidências reais desta etapa.")
     hashes = {}
     if perfil == "paginas" and etapa == "5":
+        # A31 (b): a etapa 5 é a entrega pronta. Ciclo que terminou em NÃO ENTREGAR (ou que ainda continua, ou com
+        # auditoria independente pendente) não vira entrega registrada; ENTREGA COM RESSALVAS registra e guarda as ressalvas.
+        conferir_auditoria(projeto)
+        desfecho, _ress = desfecho_do_ciclo(projeto)
+        if desfecho in ("NAO_ENTREGAR", "CONTINUA", "AUDITORIA_PENDENTE"):
+            nome = {"NAO_ENTREGAR": "NÃO ENTREGAR (crítico ou regressão aberta)", "CONTINUA": "CONTINUA (o ciclo ainda não fechou)",
+                    "AUDITORIA_PENDENTE": "AUDITORIA INDEPENDENTE PENDENTE"}[desfecho]
+            raise ValueError(f"Etapa 5: o ciclo de auditoria terminou em {nome}: não se registra a entrega como pronta. "
+                             f"Corrija e rode de novo o `wave.py rodada` (ou peça a rodada extra), depois registre a etapa 5.")
         hashes.update(videos_da_prova(projeto, doc))
     for nome in arquivos:
         p = (projeto / nome).resolve()
@@ -147,19 +209,87 @@ def conferir(projeto, registro, etapas):
             raise ValueError(f"Etapa {etapa} não registrada. Conclua e registre antes de avançar.")
         for nome, esperado in item["hashes"].items():
             if digest(projeto / nome) != esperado:
-                raise ValueError(f"Etapa {etapa}: evidência mudou ({nome}). Revalide esta etapa e as seguintes.")
+                # A22: diz exatamente o que refazer, na ordem: esta etapa e as registradas depois dela.
+                ordem = list(registro)
+                afetadas = [e for e in ordem if e >= etapa] or [etapa]
+                passos = []
+                for e in afetadas:
+                    hs = (registro.get(e) or {}).get("hashes") or {}
+                    json_da_etapa = list(hs)[-1] if hs else f"evidencias/etapa-{e}.json"
+                    passos.append(f"{comando('gate-etapas.py')} --projeto {projeto.as_posix()} registrar {e} --arquivo {json_da_etapa}")
+                raise ValueError(f"Etapa {etapa}: evidência mudou ({nome}). Revalide esta etapa e as seguintes. "
+                                 f"Se a mudança foi de propósito, refaça, nesta ordem: " + " ; ".join(passos)
+                                 + ". Antes, confira o JSON de cada etapa (ele aponta para o arquivo mudado) e, se o arquivo é "
+                                 "evidência de uma ferramenta, registre de novo com uso-ferramentas.py.")
+
+
+BRIEFING_NOMES = {"briefing.md", "briefing.txt"}
+
+
+def revalidar(projeto, registro, etapas, perfil, motivo):
+    """Mudança de briefing no meio (A32). Caminho curto, que NÃO pula etapa.
+
+    Para cada etapa registrada, em ordem: se nada mudou, fica como está; se SÓ o arquivo do briefing mudou, o gate da etapa
+    (`validar`) roda de novo sobre o JSON registrado e, passando, a etapa é re-registrada com o motivo gravado; se QUALQUER
+    outra evidência mudou (inclusive o JSON da etapa), a etapa continua exigindo o gate dela (`registrar`) e nada é gravado.
+    Devolve (registro novo, linhas do relatório); levanta ValueError quando bloqueia."""
+    novo, linhas = {e: dict(v) for e, v in registro.items()}, []
+    for e in [x for x in etapas if x in registro]:
+        hashes = registro[e].get("hashes") or {}
+        mudou = [n for n, h in hashes.items() if digest(projeto / n) != h]
+        if not mudou:
+            linhas.append(f"  etapa {e}: intacta (nada mudou nos arquivos dela)")
+            continue
+        fora = [n for n in mudou if Path(n).name not in BRIEFING_NOMES]
+        jsons = [n for n in hashes if n.endswith(".json")]
+        if fora or not jsons:
+            alvo = (jsons[-1] if jsons else f"evidencias/etapa-{e}.json")
+            raise ValueError(f"Etapa {e}: a evidência mudou além do briefing ({', '.join(fora or mudou)}); esta etapa continua exigindo o gate dela. "
+                             f"Refaça e registre: {comando('gate-etapas.py')} --projeto {projeto.as_posix()} registrar {e} --arquivo {alvo}")
+        arquivo = (projeto / jsons[-1]).resolve()
+        refeitos = validar(projeto, arquivo, e, etapas[e], perfil)       # o gate da etapa roda de novo
+        refeitos[jsons[-1]] = digest(arquivo)
+        novo[e] = {**novo[e], "hashes": refeitos, "revalidada": {"motivo": motivo, "arquivos": mudou,
+                                                                 "quando": datetime.datetime.now().isoformat(timespec="seconds")}}
+        linhas.append(f"  etapa {e}: revalidada (só o briefing mudou: {', '.join(mudou)}; o gate da etapa rodou de novo e passou)")
+        if "sustentacao" in (json.loads(arquivo.read_text(encoding="utf-8-sig")) if arquivo.is_file() else {}):
+            linhas.append(f"    atenção: a copy depende do briefing: rode {comando('gate-verdade.py')} --projeto {projeto.as_posix()} para conferir a tabela contra o briefing novo")
+    return novo, linhas
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--projeto", type=Path, required=True)
     ap.add_argument("--perfil", choices=["paginas", "dash"], default="paginas")
-    ap.add_argument("comando", choices=["registrar", "checar"])
-    ap.add_argument("etapa")
+    ap.add_argument("comando", choices=["registrar", "checar", "revalidar"])
+    ap.add_argument("etapa", nargs="?")
     ap.add_argument("--arquivo", type=Path)
+    ap.add_argument("--motivo", default=None, help="só no revalidar: por que o briefing mudou (fica gravado em cada etapa revalidada)")
     args = ap.parse_args()
     projeto = args.projeto.resolve()
     etapas = PAGINAS if args.perfil == "paginas" else DASH
+    if args.comando == "revalidar":
+        if len((args.motivo or "").strip()) < 15:
+            print("ERRO: revalidar exige --motivo com pelo menos 15 caracteres (o que o cliente pediu de diferente).", file=sys.stderr)
+            return 2
+        try:
+            alvo = projeto / REGISTRO
+            registro = json.loads(alvo.read_text(encoding="utf-8-sig")) if alvo.exists() else {}
+            if not isinstance(registro, dict) or not registro:
+                raise ValueError("Não há etapa registrada para revalidar.")
+            novo, linhas = revalidar(projeto, registro, etapas, args.perfil, args.motivo.strip())
+        except (OSError, ValueError, KeyError, TypeError) as e:
+            print(f"BLOQUEIA: {e}")
+            return 1
+        print("REVALIDAR (mudança de briefing)\n" + "\n".join(linhas))
+        if novo == registro:
+            print("  nada mudou: não há o que revalidar.")
+            return 0
+        alvo.write_text(json.dumps(novo, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"PASSA: etapas revalidadas em ordem; motivo gravado: {args.motivo.strip()}")
+        return 0
+    if args.etapa is None:
+        ap.error("registrar e checar pedem a etapa")
     try:
         if args.etapa not in etapas:
             raise ValueError("Etapa desconhecida para este perfil.")
@@ -181,6 +311,11 @@ def main():
             # Corrigir uma etapa invalida as seguintes; um resultado antigo não prova a versão nova.
             registro = {e: registro[e] for e in ordem[:indice]}
             registro[args.etapa] = {"hashes": hashes}
+            if args.perfil == "paginas" and args.etapa == "5":
+                desfecho, ressalvas = desfecho_do_ciclo(projeto)
+                if desfecho == "ENTREGA_COM_RESSALVAS":
+                    registro[args.etapa]["desfecho"] = desfecho
+                    registro[args.etapa]["ressalvas"] = ressalvas
             alvo.write_text(json.dumps(registro, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"PASSA: etapa {args.etapa}, sequência e integridade conferidas.")
         return 0

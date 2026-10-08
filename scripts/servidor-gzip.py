@@ -15,19 +15,22 @@ import os
 import socketserver
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lancador import comando  # noqa: E402
+
 
 def parse_args():
     p = argparse.ArgumentParser(
         description="Servidor estatico com gzip, para medir Lighthouse de forma honesta.",
-        epilog="Exemplo: node scripts/py.mjs servidor-gzip.py ./public 8900",
+        epilog=f"Exemplo: {comando('servidor-gzip.py')} ./public 8900",
     )
-    p.add_argument("raiz", nargs="?", default=".", help="diretorio a servir (default: .)")
+    p.add_argument("raiz", nargs="?", default=".", help="diretório a servir (default: .)")
     p.add_argument("porta", nargs="?", default="8900", help="porta TCP (default: 8900)")
     args = p.parse_args()
     try:
         porta = int(args.porta)
     except ValueError:
-        p.error(f"porta invalida: '{args.porta}' (precisa ser um numero inteiro)")
+        p.error(f"porta inválida: '{args.porta}' (precisa ser um número inteiro)")
     return args.raiz, porta
 
 

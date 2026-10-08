@@ -38,6 +38,34 @@ ser usado em página de cliente. Cada resultado sai com:
 Busque em inglês e com termos concretos. `team meeting office` traz resultado
 bom; `inovação disruptiva` não traz nada.
 
+### Segunda rota: Wikimedia Commons (quando a Openverse não responde)
+
+A Openverse às vezes não responde (rede da escola ou do escritório, proxy, a própria API fora do ar:
+`Connection reset by peer`). O script não para: na mesma busca `--type photo` (ou `--type openverse`) ele
+tenta a **Wikimedia Commons**, que também dispensa chave, e diz qual rota respondeu:
+
+```text
+Rota que respondeu: Wikimedia Commons (a Openverse não respondeu (...))
+```
+
+```bash
+# a mesma busca; a rota é escolhida sozinha
+node scripts/py.mjs assets-search.py "woodworking workshop" --type photo -n 6
+# pedir a Commons direto
+node scripts/py.mjs assets-search.py "woodworking workshop" --type commons -n 6
+```
+
+- **Mesma saída e mesmos campos de licença:** URL da imagem (1280 px), autor com link, rótulo e link da
+  licença, página de origem, crédito pronto e `<figure>` para colar.
+- **Só entra licença que uma página de cliente pode usar:** CC0, CC BY, CC BY-SA e domínio público. NC, ND,
+  GFDL e "uso livre" de cada país são descartadas. Crédito segue obrigatório em CC BY e CC BY-SA.
+- **Pausa e limite:** o script espera 1 s antes de chamar e, em HTTP 429 (limite da Commons), espera o
+  `Retry-After` (no máximo 30 s) e tenta **uma** vez. Se ainda der 429, devolve vazio e diz para esperar um
+  minuto: insistir só alonga o bloqueio.
+- **O acervo é diferente:** a Commons tem muita foto de ofício, lugar e objeto, e pouca de gente "natural,
+  30 a 55 anos". Para rosto de depoimento, a foto do cliente continua sendo o caminho.
+- A suíte testa essa rota com a resposta gravada (`scripts/fixtures/commons-resposta.json`), sem internet.
+
 ### O script já descarta link morto
 
 A Openverse indexa acervos de terceiros (Flickr, StockSnap). Foto apagada na
@@ -144,6 +172,20 @@ junte tudo numa seção "Créditos de imagem" no rodapé, com um item por foto:
   </ul>
 </section>
 ```
+
+**Link de crédito com alvo de toque de 44 px (padrão medido).** O `gate-responsivo.mjs` reprova alvo de toque menor
+que 44 px, e link dentro de frase tem uns 18 px de altura. Duas saídas que parecem boas e NÃO servem: `inline-flex` e
+`line-height: 44px` abrem buracos de 44 px entre as linhas do texto (visto no print). O que funciona: linha de 22 px e
+link em bloco em linha com 11 px de folga que a margem negativa devolve.
+
+```css
+.creditos li { font-size: 14px; line-height: 22px; }
+.creditos a { display: inline-block; padding: 11px; margin: -11px; }   /* 22 + 11 + 11 = 44 px de alvo, 0 px de buraco */
+```
+
+Medido em 390 e 360 px de largura: cada link com 44 px de altura, as linhas do texto na mesma distância de antes (22 px)
+e nenhum buraco entre elas. Link muito curto (duas letras) precisa de `min-width: 44px`. Abaixo de 14 px o gate reprova o texto de corpo; se a fonte for maior que 14 px,
+mantenha `line-height` = 44 menos duas vezes o `padding`.
 
 O crédito precisa estar visível na mesma página onde a imagem aparece. Crédito
 escondido em `alt`, em comentário de HTML ou em outra página não cumpre a

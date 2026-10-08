@@ -40,6 +40,9 @@ direção aqui custa uma conversa; depois do código, custa a página.
    `| Seção | Frase | Linha do briefing que sustenta |`. A sustentação é a linha do briefing
    entre aspas; o que o briefing não tem vira `PENDENTE: <o quê>` e entra em
    `### Pendências do cliente`. Essa tabela vira depois o `evidencias/sustentacao.md` do passo d.
+   Ela é o ponto de partida, não a fonte final: no passo d ela vira a `evidencias/sustentacao.md`, que
+   é a tabela VIVA. A copy final, as respostas da FAQ e os rótulos entram na `sustentacao.md` quando
+   entram na página, e o `gate-verdade.py` avisa (sem reprovar) quando as duas tabelas se afastam.
    A linha `Material da cliente pedido:` (v3.5) lista o que só a cliente tem: foto real da
    profissional, número do WhatsApp, depoimentos com autorização, registro no conselho.
 5. **Pixel e rastreamento (e):** pergunte se a página vai receber anúncio. A linha
@@ -66,6 +69,8 @@ Os títulos `## a.` a `## g.` são lidos pelo gate. Imagens com caminho relativo
 Pixel pedido: Meta e GA4
 
 Momento assinatura: <o elemento, em uma frase>; seções: <3 ou mais, separadas por vírgula>; estados: <de -> para>
+
+Ícone do site: <o que o favicon desenha em 32 px, ligado ao assunto>
 
 Material da cliente pedido:
 - <foto real da profissional>
@@ -147,7 +152,7 @@ miniaturas no cardápio ou sem `### Ordem escolhida` com 3 seções; tabela de c
 de sustentação, frase sem sustentação ou `PENDENTE` sem a lista de pendências; sem a linha
 `Pixel pedido:`, evento faltando quando há pixel, ID real de Meta Pixel ou GA4 no texto; código
 sem `noindex`, `robots` ou `og:image`; e qualquer caixa da aprovação desmarcada. Desde a 3.5, também:
-sem `Momento assinatura:` (elemento, 3 ou mais seções e os estados com `->`), sem a tabela
+sem `Momento assinatura:` (elemento, 3 ou mais seções e os estados com `->`), sem `Ícone do site:` (3.5.6), sem a tabela
 `Composição por seção` (uma linha por seção da ordem, célula vazia, mais de 2 seções com o mesmo
 tipo de animação) e sem `Material da cliente pedido:` (`nenhum` só com o motivo).
 

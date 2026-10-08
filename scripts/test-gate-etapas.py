@@ -15,7 +15,19 @@ class Etapas(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.pasta = pathlib.Path(self.temp.name)
         (self.pasta / 'briefing.txt').write_text('Documento de controle com informações confirmadas', encoding="utf-8")
+        self.escrever_auditoria()
         self.doc = {'briefing': dict.fromkeys(['nicho', 'local', 'publico', 'oferta', 'preco', 'acao'], 'Informado'), 'inventario': ['Fonte'], 'pendencias_cliente': ['Número do WhatsApp'], 'arquivos': ['briefing.txt']}
+
+    def escrever_auditoria(self, lentes=None, origem='subagente', desfecho='ENTREGA', ressalvas=None, rodadas=True):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('wave_t', pathlib.Path(__file__).with_name('wave.py'))
+        w = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(w)
+        nomes = list(w.LENTES) if lentes is None else lentes
+        d = {'lentes': {n: {'nota': 8, 'veredito': 'aprovado', 'origem': origem} for n in nomes}, 'gates': {}}
+        if rodadas:
+            d['rodadas'] = [{'n': 1, 'desfecho': 'CONTINUA'}, {'n': 2, 'desfecho': desfecho, 'ressalvas': ressalvas or []}]
+        (self.pasta / '.wave-auditoria.json').write_text(json.dumps(d), encoding='utf-8')
 
     def rodar(self, *args):
         (self.pasta / 'etapa.json').write_text(json.dumps(self.doc), encoding="utf-8")
@@ -48,6 +60,18 @@ class Etapas(unittest.TestCase):
                     'assinatura': 'x', 'referencias_usadas': ['x'], 'arquivos': ['briefing.txt']}
         self.assertEqual(self.rodar('registrar', '2', '--arquivo', 'etapa.json'), 1,
                          'plano visual registrado sem a etapa de referencias')
+
+    def test_evidencia_mudada_diz_o_que_refazer_na_ordem(self):
+        # A22 (segunda leva): a mensagem lista, na ordem, o registro das etapas afetadas, com o caminho completo.
+        import io, contextlib
+        self.assertEqual(self.rodar('registrar', '0', '--arquivo', 'etapa.json'), 0)
+        (self.pasta / 'briefing.txt').write_text('mudou', encoding="utf-8")
+        r = subprocess.run([sys.executable, str(SCRIPT), '--projeto', str(self.pasta), 'checar', '0'], capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn('briefing.txt', r.stdout)
+        self.assertRegex(r.stdout, r'refaça, nesta ordem')
+        self.assertRegex(r.stdout, r'gate-etapas\.py.* registrar 0 --arquivo etapa\.json')
+        self.assertIn('/scripts/py.mjs', r.stdout.replace('\\', '/'))
 
     def test_artefato_ausente_reprova(self):
         self.doc['arquivos'] = ['inexistente.txt']
@@ -106,6 +130,16 @@ class Etapas(unittest.TestCase):
         b['secoes'][2]['tratamento'] = 'linha do tempo'
         self.assertEqual(self.validar('2', b), 0, 'duas seguidas iguais é o limite')
 
+    # v3.5.6 (achado A8): a linha "Ícone do site: <motivo>" é cobrada quando o plano visual é
+    # registrado, não só no passo e.4, quando o aluno já construiu a página.
+    def test_plano_visual_sem_linha_do_icone_do_site_reprova(self):
+        (self.pasta / 'plano-visual.md').write_text('# Plano visual\n\nDireção: oficina.\n', encoding='utf-8')
+        self.assertEqual(self.validar('2', self.plano()), 1)
+        (self.pasta / 'plano-visual.md').write_text('# Plano visual\n\nÍcone do site: <motivo>\n', encoding='utf-8')
+        self.assertEqual(self.validar('2', self.plano()), 1, 'modelo não preenchido')
+        (self.pasta / 'plano-visual.md').write_text('# Plano visual\n\nÍcone do site: encaixe de duas peças de madeira\n', encoding='utf-8')
+        self.assertEqual(self.validar('2', self.plano()), 0)
+
     def test_plano_visual_reprova_icone_de_biblioteca(self):
         b = self.plano(icones=[{'secao': 'Como funciona', 'desenha': 'balão de conversa com três pontos'}])
         self.assertEqual(self.validar('2', b), 1)
@@ -156,6 +190,72 @@ class Etapas(unittest.TestCase):
         self.assertEqual(self.validar('5', self.etapa5(video={'desktop': d, 'mobile': vazio})), 1)
         self.assertEqual(self.validar('5', self.etapa5(video={'desktop': d, 'mobile': lixo})), 1)
 
+    # A31 (b): o registro da etapa 5 lê o desfecho do ciclo do wave.py
+    def wave(self, desfecho, ressalvas=None):
+        self.escrever_auditoria(desfecho=desfecho, ressalvas=ressalvas)
+
+    def etapa5_ok(self):
+        d, m = self.webm('video-desktop.webm'), self.webm('video-mobile.webm')
+        return self.etapa5(video={'desktop': d, 'mobile': m})
+
+    def test_etapa_5_recusa_quando_o_ciclo_terminou_em_nao_entregar(self):
+        self.wave('NAO_ENTREGAR')
+        self.assertEqual(self.validar('5', self.etapa5_ok()), 1)
+
+    def test_etapa_5_recusa_ciclo_que_ainda_continua_ou_com_auditoria_pendente(self):
+        for d in ('CONTINUA', 'AUDITORIA_PENDENTE'):
+            self.wave(d)
+            self.assertEqual(self.validar('5', self.etapa5_ok()), 1, d)
+
+    def test_etapa_5_aceita_entrega_aprovada(self):
+        self.wave('ENTREGA')
+        self.assertEqual(self.validar('5', self.etapa5_ok()), 0)
+
+    # A31 (c): sem auditoria não há entrega registrada (o caminho EDITAR não usa estas etapas e segue isento)
+    def test_etapa_5_recusa_sem_registro_de_auditoria(self):
+        (self.pasta / '.wave-auditoria.json').unlink()
+        self.assertEqual(self.validar('5', self.etapa5_ok()), 1)
+
+    def test_etapa_5_recusa_registro_incompleto_sem_as_9_lentes(self):
+        self.escrever_auditoria(lentes=['design-critic', 'cro-auditor'])
+        self.assertEqual(self.validar('5', self.etapa5_ok()), 1)
+
+    def test_etapa_5_recusa_autoavaliacao(self):
+        self.escrever_auditoria(origem='autoavaliacao')
+        self.assertEqual(self.validar('5', self.etapa5_ok()), 1)
+
+    def test_etapa_5_recusa_registro_de_lentes_sem_ciclo_fechado(self):
+        self.escrever_auditoria(rodadas=False)
+        self.assertEqual(self.validar('5', self.etapa5_ok()), 1)
+
+    def test_mensagem_diz_o_que_falta_e_o_comando_do_passo_g(self):
+        import importlib.util
+        (self.pasta / '.wave-auditoria.json').unlink()
+        spec = importlib.util.spec_from_file_location('ge3', SCRIPT)
+        ge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ge)
+        with self.assertRaises(ValueError) as e:
+            ge.validar(self.pasta.resolve(), (self.pasta / 'e.json').resolve() if (self.pasta / 'e.json').exists() else self._json5(), '5', ge.PAGINAS['5'], 'paginas')
+        msg = str(e.exception)
+        self.assertIn('auditoria', msg.lower())
+        self.assertIn('9 lentes', msg)
+        self.assertIn('wave.py', msg)
+        self.assertIn('pacote-auditoria.py', msg)
+
+    def _json5(self):
+        (self.pasta / 'e5.json').write_text(json.dumps(self.etapa5_ok()), encoding='utf-8')
+        return (self.pasta / 'e5.json').resolve()
+
+    def test_etapa_5_com_ressalvas_registra_e_grava_as_ressalvas_na_evidencia(self):
+        for e in ('0', '1', '2', '3', '4'):
+            self.registrar_fake(e)
+        self.wave('ENTREGA_COM_RESSALVAS', ['lente comparacao-referencias reprovada: eixos tipografia, imagem', '3 altos abertos'])
+        self.doc = self.etapa5_ok()
+        self.assertEqual(self.rodar('registrar', '5', '--arquivo', 'etapa.json'), 0)
+        reg = json.loads((self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8'))
+        self.assertEqual(reg['5']['ressalvas'], ['lente comparacao-referencias reprovada: eixos tipografia, imagem', '3 altos abertos'])
+        self.assertEqual(self.rodar('checar', '5'), 0)
+
     def test_etapa_5_video_fora_do_projeto_e_recusado(self):
         d = self.webm('video-desktop.webm')
         self.assertEqual(self.validar('5', self.etapa5(video={'desktop': d, 'mobile': '../fora.webm'})), 1)
@@ -169,6 +269,79 @@ class Etapas(unittest.TestCase):
         self.assertEqual(self.rodar('checar', '5'), 0)
         (self.pasta / m).write_bytes(bytes.fromhex('1a45dfa3') + b'\x01' * 64)
         self.assertEqual(self.rodar('checar', '5'), 1, 'trocar o vídeo depois de registrar invalida a etapa')
+
+    # A32: mudança de briefing no meio do trabalho, com o caminho curto `revalidar --motivo`
+    def montar_0_e_3(self):
+        """Etapa 0 registrada pelo CLI e a 3 (copy) registrada com o validar real; o briefing é evidência das duas."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('ge2', SCRIPT)
+        ge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ge)
+        self.ge = ge
+        self.assertEqual(self.rodar('registrar', '0', '--arquivo', 'etapa.json'), 0)
+        (self.pasta / 'sustentacao.md').write_text('| Frase | Linha |\n|---|---|\n| a | "x" |\n', encoding='utf-8')
+        doc3 = {'copy': 'copy.md', 'aprovacao': 'x', 'sustentacao': 'sustentacao.md', 'arquivos': ['briefing.txt', 'sustentacao.md']}
+        (self.pasta / 'etapa-3.json').write_text(json.dumps(doc3), encoding='utf-8')
+        h = ge.validar(self.pasta.resolve(), (self.pasta / 'etapa-3.json').resolve(), '3', ge.PAGINAS['3'], 'paginas')
+        h['etapa-3.json'] = ge.digest(self.pasta / 'etapa-3.json')
+        reg = json.loads((self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8'))
+        reg['3'] = {'hashes': h}
+        (self.pasta / '.etapas-verificadas.json').write_text(json.dumps(reg), encoding='utf-8')
+
+    def revalidar(self, motivo='o cliente trocou o preço e o prazo da oferta'):
+        args = [sys.executable, str(SCRIPT), '--projeto', str(self.pasta), 'revalidar']
+        if motivo is not None:
+            args += ['--motivo', motivo]
+        r = subprocess.run(args, capture_output=True, text=True, encoding='utf-8')
+        return r.returncode, r.stdout + r.stderr
+
+    def test_revalidar_so_o_briefing_mudou_revalida_em_ordem_e_grava_o_motivo(self):
+        self.montar_0_e_3()
+        (self.pasta / 'briefing.txt').write_text('Documento de controle: o cliente trocou o preço', encoding='utf-8')
+        self.assertEqual(self.rodar('checar', '0'), 1, 'antes: a mudança derruba a etapa 0')
+        code, out = self.revalidar()
+        self.assertEqual(code, 0, out)
+        self.assertIn('etapa 0', out.lower())
+        self.assertIn('etapa 3', out.lower())
+        self.assertIn('revalidada', out)
+        reg = json.loads((self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8'))
+        self.assertEqual(set(reg), {'0', '3'}, 'não perde as etapas seguintes')
+        self.assertIn('o cliente trocou o preço', reg['0']['revalidada']['motivo'])
+        self.assertIn('o cliente trocou o preço', reg['3']['revalidada']['motivo'])
+        self.assertEqual(self.rodar('checar', '0'), 0)
+
+    def test_revalidar_nao_e_atalho_outra_evidencia_mudou_e_a_etapa_continua_exigindo_o_gate(self):
+        self.montar_0_e_3()
+        (self.pasta / 'briefing.txt').write_text('briefing novo do cliente com outro preço', encoding='utf-8')
+        (self.pasta / 'sustentacao.md').write_text('| Frase | Linha |\n|---|---|\n| b | "y" |\n', encoding='utf-8')
+        antes = (self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8')
+        code, out = self.revalidar()
+        self.assertEqual(code, 1, out)
+        self.assertIn('sustentacao.md', out)
+        self.assertRegex(out, r'registrar 3')
+        self.assertEqual((self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8'), antes, 'nada foi gravado quando bloqueia')
+
+    def test_revalidar_json_da_etapa_mudado_tambem_bloqueia(self):
+        self.montar_0_e_3()
+        (self.pasta / 'briefing.txt').write_text('briefing novo', encoding='utf-8')
+        d = json.loads((self.pasta / 'etapa-3.json').read_text(encoding='utf-8'))
+        d['aprovacao'] = 'outra'
+        (self.pasta / 'etapa-3.json').write_text(json.dumps(d), encoding='utf-8')
+        code, out = self.revalidar()
+        self.assertEqual(code, 1, out)
+        self.assertIn('etapa-3.json', out)
+
+    def test_revalidar_exige_motivo_de_verdade(self):
+        self.montar_0_e_3()
+        (self.pasta / 'briefing.txt').write_text('briefing novo', encoding='utf-8')
+        self.assertEqual(self.revalidar(motivo=None)[0], 2)
+        self.assertEqual(self.revalidar(motivo='mudou')[0], 2)
+
+    def test_revalidar_sem_nada_mudado_diz_que_nao_ha_o_que_revalidar(self):
+        self.montar_0_e_3()
+        code, out = self.revalidar()
+        self.assertEqual(code, 0)
+        self.assertIn('nada mudou', out.lower())
 
     def registrar_fake(self, etapa):
         """Grava direto no registro as etapas anteriores, só para testar a 5 em sequência."""

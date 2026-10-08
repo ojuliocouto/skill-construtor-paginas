@@ -27,7 +27,14 @@
  *     movimento reduzido: os botões de âncora rolavam animados.
  * Fica de fora o que é fixo na tela (cabeçalho, barra do celular) e o cabeçalho.
  *
- * Uso: node scripts/gate-movimento.mjs --url <url> [--espera 8000]
+ *  5. (3.5.6, A28) CONTEÚDO INVISÍVEL SEM O SCRIPT. Duas provas, em desktop e celular: `script bloqueado` (os `.js` da própria
+ *     página abortados e o script principal em linha removido) e `script que demora 7 s` (o principal em linha só roda 7 s
+ *     depois e o externo demora 7 s). Em ambas, passado 6 s e rolando até o fim, nenhum elemento com texto ou imagem pode
+ *     ficar com opacidade 0, `visibility: hidden` ou recortado por `clip`. Ficam de pé só os scripts curtos que trocam a
+ *     classe do <html> (a rede de segurança da receita-base, que devolve a página ao estado sem script).
+ *     Fora da conta: `display: none`, `[hidden]`, o que é fixo (barra do celular) e o texto só para leitor de tela (1 px).
+ *
+ * Uso: node scripts/gate-movimento.mjs --url <url> [--espera 8000] [--so-prova-script | --sem-prova-script]
  */
 import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
@@ -47,6 +54,12 @@ const valor = (nome, padrao) => { const i = args.indexOf(nome); return i >= 0 &&
 const URL_ALVO = valor('--url');
 const ESPERA = Number(valor('--espera', '8000'));
 const MINIMO_SECOES = 2;
+// Ferramentas de prova (segunda leva da 3.5.6): `--cpu 4` reduz a CPU 4x pelo CDP (máquina lenta do CI) e `--so-celular`
+// roda só a visita do celular, para repetir o gate muitas vezes sem pagar o resto.
+const CPU = Number(valor('--cpu', '1'));
+const SO_CELULAR = args.includes('--so-celular');
+const SEM_PROVA_SCRIPT = args.includes('--sem-prova-script') || SO_CELULAR;
+const SO_PROVA_SCRIPT = args.includes('--so-prova-script');
 if (!URL_ALVO) {
   console.error('uso: node gate-movimento.mjs --url <url> [--espera 8000]');
   process.exit(2);
@@ -54,7 +67,7 @@ if (!URL_ALVO) {
 const TELAS = [
   ['desktop comum', 1440, 900, false],
   ['iphone padrao', 390, 844, true],
-];
+].filter(([nome]) => !SO_CELULAR || nome === 'iphone padrao');
 
 /** Instalado antes de qualquer script da página: registra cada animação com a posição da seção. */
 function escuta() {
@@ -133,14 +146,99 @@ const TELAS_ITEM = [
 
 const navegador = await chromium.launch();
 const falhas = [];
+
+/** O script principal em linha: tudo que não é o script curto que só troca a classe do <html> (a rede de segurança). */
+function ehScriptPrincipal(codigo) {
+  return codigo.length > 600 || /IntersectionObserver|addEventListener|querySelector|requestAnimationFrame|fetch\(|getBoundingClientRect/.test(codigo);
+}
+
+/** Troca o HTML para simular o script principal falhando (modo 'bloqueado') ou chegando só 7 s depois (modo 'demora'). */
+function reescrever(html, modo) {
+  return html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (todo, attrs, codigo) => {
+    if (/\bsrc\s*=/.test(attrs)) return modo === 'bloqueado' ? '' : todo;   // externo: abortado/atrasado pela rota
+    if (!codigo.trim() || !ehScriptPrincipal(codigo)) return todo;            // a rede de segurança fica de pé
+    return modo === 'bloqueado' ? '' : `<script${attrs}>setTimeout(function(){${codigo}\n},7000)</script>`;
+  });
+}
+
+/** Elementos com texto ou imagem que a pessoa não consegue ver (opacidade 0, hidden, clip), com o caminho curto de cada um. */
+async function invisiveis(page) {
+  return page.evaluate(async () => {
+    const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
+    for (let y = 0; y <= document.documentElement.scrollHeight; y += Math.round(window.innerHeight * 0.8)) { window.scrollTo(0, y); await dorme(60); }
+    window.scrollTo(0, document.documentElement.scrollHeight);
+    await dorme(300);
+    const caminho = (el) => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
+    const achados = [];
+    for (const el of document.querySelectorAll('body *')) {
+      if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'SVG', 'PATH'].includes(el.tagName.toUpperCase()) || el.closest('svg, [hidden], noscript, template, [aria-hidden="true"]')) continue;
+      const temTexto = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 1);
+      const ehMidia = ['IMG', 'VIDEO', 'PICTURE'].includes(el.tagName);
+      if (!temTexto && !ehMidia) continue;
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none') continue;
+      let fixo = false, op = 1, oculto = false;
+      for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+        const c = getComputedStyle(n);
+        if (c.display === 'none') { oculto = true; break; }
+        if (c.position === 'fixed') fixo = true;
+        op *= parseFloat(c.opacity);
+        if (n.tagName === 'DETAILS' && !n.open && el.tagName !== 'SUMMARY' && !el.closest('summary')) { oculto = true; break; }
+      }
+      if (oculto || fixo) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width <= 1 && r.height <= 1) continue;               // texto só para leitor de tela
+      const clip = /rect\(\s*0(px)?[ ,]+0(px)?[ ,]+0(px)?[ ,]+0(px)?\s*\)/.test(cs.clip || '') || /inset\((50|100)%\)/.test(cs.clipPath || '');
+      let porque = null;
+      if (op < 0.05) porque = 'opacidade 0';
+      else if (cs.visibility === 'hidden') porque = 'visibility: hidden';
+      else if (clip) porque = 'recortado por clip';
+      if (porque) achados.push(`${caminho(el)} (${porque}) "${(el.innerText || el.getAttribute('alt') || '').trim().slice(0, 24)}"`);
+    }
+    return achados;
+  });
+}
+
+async function provaScript(nome, w, h, mob, modo) {
+  const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
+  const origem = new URL(URL_ALVO).origin;
+  await ctx.route('**/*', async (rota) => {
+    const rq = rota.request();
+    if (rq.resourceType() === 'document' && rq.url().split('#')[0] === URL_ALVO.split('#')[0]) {
+      const r = await rota.fetch();
+      return rota.fulfill({ response: r, body: reescrever(await r.text(), modo) });
+    }
+    if (rq.resourceType() === 'script' && rq.url().startsWith(origem)) {
+      if (modo === 'bloqueado') return rota.abort('failed');
+      await new Promise((ok) => setTimeout(ok, 7000));
+      return rota.continue();
+    }
+    return rota.continue();
+  });
+  const page = await ctx.newPage();
+  try { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); } catch { /* segue: medimos o que carregou */ }
+  await page.waitForTimeout(6000);   // a rede de segurança dispara aos 5 s; o script atrasado só chega aos 7 s
+  const lista = await invisiveis(page);
+  const rotulo = modo === 'bloqueado' ? 'script bloqueado' : 'script que demora 7 s';
+  console.log(`${(nome + ' (' + w + 'x' + h + ')').padEnd(30)} ${lista.length ? 'FALHA' : 'ok'}  ${rotulo}: ${lista.length} elemento(s) com texto ou imagem invisível(is)`);
+  if (lista.length) falhas.push(`${nome} (${w}x${h}): ${rotulo}: ${lista.length} elemento(s) com texto ou imagem invisível(is) sem o script (${lista.slice(0, 4).join('; ')}${lista.length > 4 ? '; ...' : ''}). Falta a rede de segurança: classe \`js\` posta por script em linha no <head> e retirada por temporizador se o script principal não confirmar (references/receitas-de-movimento.md)`);
+  await ctx.close();
+}
+
 console.log('\nGATE DE MOVIMENTO NA VISITA  ' + URL_ALVO);
 console.log(`visita: ${ESPERA / 1000} s parada no topo, depois rolagem em passos de 40% da tela`);
 console.log('='.repeat(88));
 
-for (const [nome, w, h, mob] of TELAS) {
+if (!SEM_PROVA_SCRIPT) {
+  console.log('conteúdo sem o script (6 s de espera por prova):');
+  for (const [nome, w, h, mob] of TELAS) for (const modo of ['bloqueado', 'demora']) await provaScript(nome, w, h, mob, modo);
+}
+
+for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
   await ctx.addInitScript(escuta);
   const page = await ctx.newPage();
+  if (CPU > 1) await (await ctx.newCDPSession(page)).send('Emulation.setCPUThrottlingRate', { rate: CPU });
   try { await page.goto(URL_ALVO, { waitUntil: 'load', timeout: 45000 }); }
   catch { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
   const secoes = await page.evaluate(() => [...document.querySelectorAll('section, footer')].map((s, i) => {
@@ -185,7 +283,7 @@ for (const [nome, w, h, mob] of TELAS) {
 }
 // 3. Item por item, numa rolagem contínua a 300 px/s.
 console.log(`por item: rolagem contínua a ${VELOCIDADE} px/s`);
-for (const [nome, w, h, mob] of TELAS_ITEM) {
+for (const [nome, w, h, mob] of ((SO_CELULAR || SO_PROVA_SCRIPT) ? [] : TELAS_ITEM)) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
   await ctx.addInitScript(escutaItens);
   const page = await ctx.newPage();

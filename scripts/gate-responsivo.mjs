@@ -425,6 +425,17 @@ for (const [nome, w, h, mob] of TELAS) {
       const tela = await page.evaluate(() => {
         const vh = window.innerHeight;
         const ehVisivel = (el) => !el.checkVisibility || el.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+        // Elemento que não está visível NA JANELA não conta (A14): o link "Pular para o conteúdo" fica em
+        // left:-999px, ou recortado (clip, clip-path, 1 px), até receber foco.
+        const naJanela = (el) => {
+          const c = el.getBoundingClientRect();
+          if (c.right <= 0 || c.left >= window.innerWidth || c.bottom <= 0 || c.top >= vh) return false;
+          const cs = getComputedStyle(el);
+          if (/rect\(\s*0(px)?[ ,]+0(px)?[ ,]+0(px)?[ ,]+0(px)?\s*\)/.test(cs.clip || '')) return false;
+          if (/inset\((50|100)%\)/.test(cs.clipPath || '')) return false;
+          return c.width > 1 && c.height > 1;
+        };
+        const nome = (el) => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
         // O que fica fixo na tela: cabecalho sticky grudado no topo, barra fixa, e so o de fora
         // (barra dentro de barra conta uma vez).
         const fixos = [];
@@ -433,7 +444,7 @@ for (const [nome, w, h, mob] of TELAS) {
           if (cs.position !== 'fixed' && cs.position !== 'sticky') continue;
           if (!ehVisivel(el) || parseFloat(cs.opacity) < 0.05) continue;
           const c = el.getBoundingClientRect();
-          if (c.height < 20 || c.width < window.innerWidth * 0.5 || c.bottom <= 0 || c.top >= vh) continue;
+          if (c.height < 20 || c.width < window.innerWidth * 0.5 || c.bottom <= 0 || c.top >= vh || !naJanela(el)) continue;
           if (cs.position === 'sticky' && c.top > 1) continue;
           let dentro = false;
           for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
@@ -446,7 +457,7 @@ for (const [nome, w, h, mob] of TELAS) {
           const cs = getComputedStyle(el);
           const txt = (el.innerText || '').trim();
           const temCaixa = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || el.hasAttribute('data-cta');
-          if (!temCaixa || txt.length < 4 || txt.length > 60 || !ehVisivel(el)) return false;
+          if (!temCaixa || txt.length < 4 || txt.length > 60 || !ehVisivel(el) || !naJanela(el)) return false;
           const c = el.getBoundingClientRect();
           return c.width >= 40 && c.height >= 20 && c.bottom > 0 && c.top < vh;
         });
@@ -466,11 +477,12 @@ for (const [nome, w, h, mob] of TELAS) {
           nBotoes: botoes.length,
           nomes: botoes.map((b) => (b.innerText || '').trim().slice(0, 22)),
           fixo: Math.round(fixos.reduce((s, f) => s + f.alt, 0)),
+          fixosLista: fixos.map((f) => `${nome(f.el)} (${Math.round(f.alt)}px)`),
           cobertos,
         };
       });
       const visivel = tela.visivel;
-      if (!r.fixoDemais || tela.fixo > r.fixoDemais.px) r.fixoDemais = { px: tela.fixo, y: yy };
+      if (!r.fixoDemais || tela.fixo > r.fixoDemais.px) r.fixoDemais = { px: tela.fixo, y: yy, itens: tela.fixosLista };
       if (tela.nBotoes > 1 && (!r.botoesNaTela || tela.nBotoes > r.botoesNaTela.n)) r.botoesNaTela = { n: tela.nBotoes, y: yy, nomes: tela.nomes };
       r.maxBotoes = Math.max(r.maxBotoes || 0, tela.nBotoes);
       for (const c of tela.cobertos) r.cobertos.push(`${c} (scrollY ${yy})`);
@@ -509,7 +521,7 @@ for (const [nome, w, h, mob] of TELAS) {
   if (r.botaoQuebrado?.length) falhas.push(`${onde}: botao em mais de uma linha: ${r.botaoQuebrado.slice(0, 3).join(', ')}`);
   if (r.trechoSemBotao) falhas.push(`${onde}: ${r.trechoSemBotao.telas.toFixed(1)} telas sem nenhum botao visivel a partir de y ${r.trechoSemBotao.de} (maximo 2): barra fixa no celular ou botao repetido`);
   if (mob && r.fixoDemais && r.fixoDemais.px > LIMITE_FIXO * h)
-    falhas.push(`${onde}: espaço fixo de ${r.fixoDemais.px}px (${(100 * r.fixoDemais.px / h).toFixed(1)}% da tela, máximo ${LIMITE_FIXO * 100}%) em scrollY ${r.fixoDemais.y}: cabeçalho fixo e barra fixa somados`);
+    falhas.push(`${onde}: espaço fixo de ${r.fixoDemais.px}px (${(100 * r.fixoDemais.px / h).toFixed(1)}% da tela, máximo ${LIMITE_FIXO * 100}%) em scrollY ${r.fixoDemais.y}: somados: ${(r.fixoDemais.itens || []).join(' + ') || 'cabeçalho fixo e barra fixa'}`);
   if (mob && r.botoesNaTela)
     falhas.push(`${onde}: ${r.botoesNaTela.n} botões de ação na mesma tela em scrollY ${r.botoesNaTela.y} (${r.botoesNaTela.nomes.slice(0, 3).join(' | ')}): no máximo 1 por tela; a barra fixa some quando há botão da página à vista`);
   if (mob && r.cobertos.length)

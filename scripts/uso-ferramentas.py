@@ -37,14 +37,17 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lancador import comando  # noqa: E402
+
 RAIZ = Path(__file__).resolve().parent.parent
 REGISTRO = ".ferramentas-usadas.json"
 
 # Ferramentas que, ESTANDO VIVAS, precisam ter sido usadas. Na v3 sao so as criticas. A chave
 # casa com o rotulo do checar-ferramentas.py; o valor explica o que se espera ver.
 COBRADAS = {
-    "Playwright": "prints das referencias e prova de tela da pagina (PNG desktop e mobile)",
-    "skill frontend-design": "plano visual escrito antes do codigo (plano-visual.md)",
+    "Playwright": "prints das referências e prova de tela da página (PNG desktop e mobile)",
+    "skill frontend-design": "plano visual escrito antes do código (plano-visual.md)",
 }
 
 # Opcionais: aceitam registro (aparece no relatorio), nunca sao cobradas.
@@ -52,12 +55,12 @@ OPCIONAIS = {
     "magic": "componente de UI vindo do 21st.dev",
     "stitch": "wireframe no Stitch",
     "Higgsfield CLI": "movimento ou b-roll gerado",
-    "ffmpeg/ffprobe": "gate de video (so quando a pagina tem video)",
-    "skill design-taste-frontend": "segunda opiniao anti-slop",
+    "ffmpeg/ffprobe": "gate de vídeo (só quando a página tem vídeo)",
+    "skill design-taste-frontend": "segunda opinião anti-slop",
     "skill high-end-visual-design": "passe de acabamento",
     "skill animate": "movimento em React",
     "Banco de design": "consulta ao banco (search.py)",
-    "Assets sem chave (Openverse)": "foto com licenca aberta via Openverse",
+    "Assets sem chave (Openverse)": "foto com licença aberta via Openverse",
 }
 
 
@@ -104,7 +107,7 @@ def motivo_recusado(motivo):
     if len(m) < 15:
         return "dispensa exige motivo de verdade (>= 15 caracteres)"
     if any(r in m for r in MOTIVOS_RECUSADOS):
-        return "'nao usei' nao e motivo: diga por que a ferramenta nao se aplica a esta pagina"
+        return "'nao usei' não é motivo: diga por que a ferramenta não se aplica a esta página"
     return None
 
 
@@ -127,12 +130,12 @@ def salvar(projeto, dados):
         json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def evidencia_vale(ev, projeto):
+def evidencia_vale(ev, projeto, ferramenta=None):
     """Confere a evidencia DE NOVO, agora. Registro cujo artefato sumiu nao conta.
 
     Devolve (ok, motivo)."""
     if not isinstance(ev, dict):
-        return False, "registro sem evidencia"
+        return False, "registro sem evidência"
     tipo = ev.get("tipo")
     valor = ev.get("valor", "")
     if tipo in ("arquivo", "codigo") and not str(valor).strip():
@@ -152,25 +155,30 @@ def evidencia_vale(ev, projeto):
         # arquivo daquela hora; arquivo mudado pede a ferramenta de novo e um registro novo.
         esperado = ev.get("sha256")
         if esperado and hashlib.sha256(alvo.read_bytes()).hexdigest() != esperado:
-            return False, f"o arquivo mudou depois do registro ({valor}): acione a ferramenta de novo na versão revisada e registre"
+            nome = ferramenta or "<ferramenta>"
+            return False, (f"o arquivo mudou depois do registro ({valor}). Refaça nesta ordem: "
+                           f"1) acione de novo a ferramenta '{nome}' na versão revisada do arquivo; "
+                           f"2) registre: {comando('uso-ferramentas.py')} registrar {nome} --arquivo {valor} --detalhe \"o que a ferramenta fez na versão nova\"; "
+                           f"3) se o arquivo também é evidência de uma etapa, refaça o registro das etapas dele em ordem crescente: "
+                           f"{comando('gate-etapas.py')} --projeto <dir> registrar <N> --arquivo evidencias/etapa-<N>.json")
         return True, f"arquivo presente ({valor})"
     if tipo == "codigo":
         base = Path(ev.get("em") or projeto)
         if not base.exists():
-            return False, f"pasta de busca nao existe: {base}"
+            return False, f"pasta de busca não existe: {base}"
         # Busca de texto fixo em todos os arquivos (nao depende de extensao nem de encoding).
         # --exclude do proprio registro: sem isso o gate se AUTO-VALIDA, porque o trecho
         # procurado tambem esta gravado dentro do .ferramentas-usadas.json. Pego em teste:
         # apaguei o componente do codigo e o gate continuou dizendo "usada".
         achou = _trecho_no_codigo(valor, base)
         if not achou:
-            return False, f"o trecho registrado nao esta mais no codigo: {valor[:60]!r}"
-        return True, f"trecho encontrado no codigo ({valor[:40]!r})"
+            return False, f"o trecho registrado não está mais no código: {valor[:60]!r}"
+        return True, f"trecho encontrado no código ({valor[:40]!r})"
     if tipo == "declarado":
         # Ultimo recurso, para ferramenta que nao deixa artefato no disco. Nao e prova,
         # e declaracao assinada: aparece no relatorio como tal, para o dono cobrar.
         return False, "declaração sem artefato não comprova uso; registre a evidência ou dispense com motivo"
-    return False, f"tipo de evidencia desconhecido: {tipo}"
+    return False, f"tipo de evidência desconhecido: {tipo}"
 
 
 def _trecho_no_codigo(valor, base):
@@ -202,7 +210,7 @@ def estado_das_ferramentas():
     """Roda o gate de entrada e devolve {rotulo: ok}. Sem ele nao da pra saber o que cobrar."""
     checador = RAIZ / "scripts" / "checar-ferramentas.py"
     if not checador.exists():
-        return None, f"nao achei {checador}"
+        return None, f"não achei {checador}"
     try:
         r = subprocess.run([sys.executable, str(checador), "--json"],
                            capture_output=True, text=True, timeout=600, encoding="utf-8")
@@ -211,7 +219,7 @@ def estado_das_ferramentas():
             return None, "gate de entrada reprovado; resolva as ferramentas críticas antes da entrega"
         return {l["ferramenta"]: bool(l["ok"]) for l in linhas}, None
     except (subprocess.TimeoutExpired, json.JSONDecodeError, KeyError, OSError) as e:
-        return None, f"nao consegui ler o estado das ferramentas: {e!r}"
+        return None, f"não consegui ler o estado das ferramentas: {e!r}"
 
 
 def cmd_registrar(args):
@@ -229,9 +237,9 @@ def cmd_registrar(args):
     else:
         print("ERRO: escolha --arquivo, --no-codigo ou --sem-artefato", file=sys.stderr)
         return 2
-    ok, motivo = evidencia_vale(ev, projeto)
+    ok, motivo = evidencia_vale(ev, projeto, ferramenta=args.ferramenta)
     if not ok:
-        print(f"ERRO: a evidencia nao confere AGORA, entao nao registro: {motivo}", file=sys.stderr)
+        print(f"ERRO: a evidência não confere AGORA, entao não registro: {motivo}", file=sys.stderr)
         return 1
     dados[args.ferramenta] = {
         "quando": datetime.datetime.now().isoformat(timespec="seconds"),
@@ -251,8 +259,8 @@ def cmd_dispensar(args):
         print(f"ERRO: {erro}.", file=sys.stderr)
         return 2
     if args.ferramenta in criticas():
-        print(f"ERRO: {args.ferramenta} e CRITICA e nao aceita dispensa. Use a ferramenta e registre "
-              "a evidencia; se ela nao responde, o checar-ferramentas.py ja a marca como ausente.",
+        print(f"ERRO: {args.ferramenta} é CRÍTICA e não aceita dispensa. Use a ferramenta e registre "
+              "a evidência; se ela não responde, o checar-ferramentas.py já a marca como ausente.",
               file=sys.stderr)
         return 2
     dados = carregar(args.projeto)
@@ -262,7 +270,7 @@ def cmd_dispensar(args):
         "motivo": args.motivo.strip(),
     }
     salvar(args.projeto, dados)
-    print(f"dispensada: {args.ferramenta} (motivo vai no relatorio e na entrega)")
+    print(f"dispensada: {args.ferramenta} (motivo vai no relatório e na entrega)")
     return 0
 
 def cmd_checar(args):
@@ -271,8 +279,8 @@ def cmd_checar(args):
     estados, erro = estado_das_ferramentas()
     if estados is None:
         print(f"\nGATE DE USO INDETERMINADO: {erro}")
-        print("Sem saber quais ferramentas estavam vivas, nao da pra cobrar uso. Resolva isso")
-        print("antes de entregar: um gate que nao consegue medir nao aprova por omissao.\n")
+        print("Sem saber quais ferramentas estavam vivas, não da pra cobrar uso. Resolva isso")
+        print("antes de entregar: um gate que não consegue medir não aprova por omissao.\n")
         return 1
 
     # O verificador usa nomes diferentes para o mesmo MCP; nenhum pode escapar da cobrança.
@@ -291,19 +299,19 @@ def cmd_checar(args):
     for f, papel in sorted(vivas.items()):
         reg = dados.get(f)
         if not reg:
-            faltando.append((f, papel, "nao aparece no registro de uso"))
+            faltando.append((f, papel, "não aparece no registro de uso"))
             continue
         if reg.get("dispensada"):
             if f in sem_dispensa:
-                faltando.append((f, papel, "ferramenta CRITICA nao aceita dispensa: use e registre a evidencia"))
+                faltando.append((f, papel, "ferramenta CRÍTICA não aceita dispensa: use e registre a evidência"))
                 continue
             erro = motivo_recusado(reg.get("motivo"))
             if erro:
-                faltando.append((f, papel, f"dispensa invalida: {erro}"))
+                faltando.append((f, papel, f"dispensa inválida: {erro}"))
                 continue
             dispensadas.append((f, reg.get("motivo", "")))
             continue
-        ok, motivo = evidencia_vale(reg.get("evidencia"), projeto)
+        ok, motivo = evidencia_vale(reg.get("evidencia"), projeto, ferramenta=f)
         if ok:
             ok_list.append((f, motivo, reg.get("detalhe", "")))
         else:
@@ -315,7 +323,7 @@ def cmd_checar(args):
 
     print("\nGATE DE USO DAS FERRAMENTAS\n" + "=" * 74)
     print(f"  caminho: {getattr(args, 'caminho', 'criar')} "
-          f"({'cobra tudo que estiver vivo' if modo == 'completo' else 'edicao pontual: cobra so a prova'})")
+          f"({'cobra tudo que estiver vivo' if modo == 'completo' else 'edição pontual: cobra só a prova'})")
     for f, motivo, detalhe in ok_list:
         print(f"  [USADA] {f}")
         print(f"          {detalhe or '(sem detalhe)'}  |  {motivo}")
@@ -326,30 +334,30 @@ def cmd_checar(args):
         print(f"  [DISPENSADA] {f}")
         print(f"          motivo: {motivo}")
     for f in mortas:
-        print(f"  [n/a  ] {f}: nao respondeu no gate de entrada, uso nao cobrado")
+        print(f"  [n/a  ] {f}: não respondeu no gate de entrada, uso não cobrado")
     for f, detalhe in opcionais_usadas:
-        print(f"  [opcional] {f}: {detalhe or 'registrada'} (opcional, nao cobrada)")
+        print(f"  [opcional] {f}: {detalhe or 'registrada'} (opcional, não cobrada)")
     print("=" * 74)
 
     if faltando:
-        print(f"  {len(faltando)} ferramenta(s) estavam VIVAS e nao foram usadas.")
-        print("  Isto REPROVA a entrega. Ferramenta viva nao se pula: ou ela entra no")
-        print("  resultado, ou o resultado sai pior sem ninguem saber, que foi o defeito")
+        print(f"  {len(faltando)} ferramenta(s) estavam VIVAS e não foram usadas.")
+        print("  Isto REPROVA a entrega. Ferramenta viva não se pula: ou ela entra no")
+        print("  resultado, ou o resultado sai pior sem ninguém saber, que foi o defeito")
         print("  que este gate existe pra impedir.\n")
         return 1
     if not vivas:
-        print("  Nenhuma ferramenta cobravel estava viva. Gate vazio: confira o gate de entrada.\n")
+        print("  Nenhuma ferramenta cobrável estava viva. Gate vazio: confira o gate de entrada.\n")
         return 1
     declaradas = [f for f, _, _ in ok_list
                   if dados[f]["evidencia"].get("tipo") == "declarado"]
-    print(f"  {len(ok_list)} de {len(vivas)} ferramentas vivas usadas com evidencia.")
+    print(f"  {len(ok_list)} de {len(vivas)} ferramentas vivas usadas com evidência.")
     if dispensadas:
         print(f"  {len(dispensadas)} DISPENSADA(S) com motivo. Copie estas linhas para o bloco")
-        print("  de entrega: dispensa que o dono nao le e pulo com papel passado.")
+        print("  de entrega: dispensa que o dono não le e pulo com papel passado.")
         for f, motivo in dispensadas:
             print(f"    - {f}: {motivo}")
     if declaradas:
-        print(f"  ATENCAO: {len(declaradas)} entraram como DECLARADAS (sem artefato): {', '.join(declaradas)}")
+        print(f"  ATENÇÃO: {len(declaradas)} entraram como DECLARADAS (sem artefato): {', '.join(declaradas)}")
     print()
     return 0
 
@@ -359,24 +367,24 @@ def main():
     ap.add_argument("--projeto", default=os.getcwd(), help="pasta do projeto (default: cwd)")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    r = sub.add_parser("registrar", help="registra o uso de uma ferramenta, com evidencia")
+    r = sub.add_parser("registrar", help="registra o uso de uma ferramenta, com evidência")
     r.add_argument("ferramenta")
     r.add_argument("--arquivo", help="artefato produzido (PNG, mp4, arquivo gerado)")
-    r.add_argument("--no-codigo", help="trecho que deve ser encontrado no codigo")
+    r.add_argument("--no-codigo", help="trecho que deve ser encontrado no código")
     r.add_argument("--em", help="pasta onde procurar o trecho (default: projeto)")
     r.add_argument("--detalhe", help="o que foi feito com a ferramenta")
     r.add_argument("--sem-artefato", action="store_true",
-                   help="ultimo recurso: declara sem prova (aparece marcado no relatorio)")
+                   help="último recurso: declara sem prova (aparece marcado no relatório)")
     r.set_defaults(func=cmd_registrar)
 
     d = sub.add_parser("dispensar", help="dispensa uma ferramenta COM MOTIVO (aparece na entrega)")
     d.add_argument("ferramenta")
-    d.add_argument("--motivo", required=True, help="por que ela nao se aplica a esta pagina")
+    d.add_argument("--motivo", required=True, help="por que ela não se aplica a esta página")
     d.set_defaults(func=cmd_dispensar)
 
-    c = sub.add_parser("checar", help="reprova se ferramenta viva nao foi usada")
+    c = sub.add_parser("checar", help="reprova se ferramenta viva não foi usada")
     c.add_argument("--caminho", default="criar", choices=sorted(CAMINHOS),
-                   help="criar/clonar/melhorar cobram tudo; editar cobra so a prova do ponto alterado")
+                   help="criar/clonar/melhorar cobram tudo; editar cobra só a prova do ponto alterado")
     c.set_defaults(func=cmd_checar)
 
     args = ap.parse_args()

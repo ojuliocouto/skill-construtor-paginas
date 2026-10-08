@@ -27,6 +27,10 @@
  *     SEM CAIXA: ol (ou [data-passos]) com 3 a 6 passos lado a lado sem fundo, borda nem sombra
  *     (regra 15: sequência de passos também vira grade de caixas iguais).
  *
+ *  A FÓRMULA do limite (A19): para cada filho, a base é a base da caixa (se ele tem fundo, borda ou sombra)
+ *     ou o fim do último texto ou ilustração visível dentro dele; o limite é de 80 px de diferença entre
+ *     as bases de dois filhos lado a lado. A saída diz qual elemento mediu em cada coluna e onde terminou.
+ *
  * Exceção declarada: `data-simetria-ok="motivo"` no contêiner (e cabeçalho, rodapé, nav e
  * aria-hidden ficam de fora). O motivo aparece na saída.
  *
@@ -237,19 +241,25 @@ for (const [nome, w, h] of TELAS) {
     // Ilustração em fluxo com aria-hidden é decorativa para leitor de tela, mas é o conteúdo
     // visual da coluna (v5: a coluna vertebral da avaliação contava como coluna vazia).
     const ilustracao = (n) => ['svg', 'IMG', 'PICTURE', 'CANVAS', 'VIDEO'].includes(n.tagName) && n.getBoundingClientRect().width >= 80 && n.getBoundingClientRect().height >= 80;
-    const baseVisual = (el) => {
-      if (temCaixa(el)) return el.getBoundingClientRect().bottom;
-      let m = -Infinity;
+    const seletor = (el) => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
+    // Devolve onde a coluna termina E o que mediu: a caixa (se o filho tem fundo, borda ou sombra) ou o
+    // último texto/ilustração (A19: o gate dizia só o número; agora diz qual elemento terminou onde).
+    const baseDetalhe = (el) => {
+      if (temCaixa(el)) return { y: el.getBoundingClientRect().bottom, quem: seletor(el), tipo: 'base da caixa' };
+      let m = null;
       for (const n of el.childNodes) {
+        let r = null;
         if (n.nodeType === 3 && n.textContent.trim()) {
           const rg = document.createRange(); rg.selectNodeContents(n);
-          const b = rg.getBoundingClientRect(); if (b.height) m = Math.max(m, b.bottom);
+          const b = rg.getBoundingClientRect(); if (b.height) r = { y: b.bottom, quem: seletor(el), tipo: 'último texto' };
         } else if (n.nodeType === 1 && visivel(n) && !solto(n) && (n.getAttribute('aria-hidden') !== 'true' || ilustracao(n))) {
-          m = Math.max(m, baseVisual(n));
+          r = baseDetalhe(n);
         }
+        if (r && (!m || r.y > m.y)) m = r;
       }
-      return m === -Infinity ? el.getBoundingClientRect().top : m;
+      return m || { y: el.getBoundingClientRect().top, quem: seletor(el), tipo: 'topo (sem conteúdo medido)' };
     };
+    const baseVisual = (el) => baseDetalhe(el).y;
     const tituloDe = (card) => [...card.querySelectorAll('h2, h3, h4, dt, [data-titulo]')]
       .find((el) => visivel(el) && !el.closest('[aria-hidden="true"]')) || null;
     const maiorBuraco = (card) => {
@@ -271,8 +281,9 @@ for (const [nome, w, h] of TELAS) {
           const vizinhos = (a.right <= b.left + 2 || b.right <= a.left + 2) && a.top < b.bottom && b.top < a.bottom;
           if (!vizinhos) continue;
           const mrc = marcado(pai, filhos[i], filhos[j]);
-          const d = Math.abs(baseVisual(filhos[i]) - baseVisual(filhos[j]));
-          if (d > limite) reg(out.colunas, 'colunas desbalanceadas', mrc, `"${rotulo(filhos[i])}" e "${rotulo(filhos[j])}" terminam com ${Math.round(d)} px de diferença`);
+          const bi = baseDetalhe(filhos[i]), bj = baseDetalhe(filhos[j]);
+          const d = Math.abs(bi.y - bj.y);
+          if (d > limite) reg(out.colunas, 'colunas desbalanceadas', mrc, `"${rotulo(filhos[i])}" (${bi.tipo} ${bi.quem}, termina em y ${Math.round(bi.y)}) e "${rotulo(filhos[j])}" (${bj.tipo} ${bj.quem}, termina em y ${Math.round(bj.y)}) terminam com ${Math.round(d)} px de diferença`);
           // 4 (auditoria da v4): DENTRO dos cards vizinhos. Caixa igual não basta: o título de um
           // card ficava 147 px acima do título do vizinho, e um card tinha um buraco no meio.
           // Título com título vale para coluna com ou sem caixa (v5: duas colunas sem caixa).

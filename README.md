@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.5)
+SKILL.md                       router (v3.5.6)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,21 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.5.6
+
+Fixes from an end-to-end test where a student built a real page with the skill and logged every stumble (`ACHADOS`, A1 to A13).
+
+- **Reference capture judges what it captured.** `capturar-referencias.mjs` reports `ok`, `bloqueada` (HTTP 401/403/429, "Forbidden", "Just a moment", captcha), `quebrada` (HTTP 400+, no stylesheet applied, empty page) or `coberta` (a modal covering more than 40% of the window after trying to close the cookie notice), with the reason. It exits non-zero until 6 good references exist, and `--limpar-ruins` moves the bad ones out. `gate-referencias.py` fails a reference marked bad and accepts a really short page whose middle print equals its first screen. `references/pesquisa-de-referencias.md` says where to look when search only returns classifieds and shops.
+- **Truth gate fits the workflow.** Without `index.html` (copy step) it checks only the support table against the brief and says so; citations may cross `;`, `.` and line breaks (a citation that is not in the brief still fails); image credits (`data-credito`, `id="creditos"` or class `creditos`) and bare licence identifiers are not promises; a missing line prints a ready-to-paste row grouped by section; a PLAN-vs-`sustentacao.md` drift is a warning. A short label such as "5 anos" inherits a promise already supported in the same section, only with the same number and unit.
+- **Second photo route.** When Openverse does not answer, `assets-search.py` falls back to the Wikimedia Commons (same output and licence fields, only CC0, CC BY, CC BY-SA and public domain, pause between calls, HTTP 429 handled) and says which route answered; `--type commons` asks for it directly.
+- **Icon line in the PLAN.** `Ícone do site: <motivo>` is in the PLAN model, required by `gate-plano.py` and by the stage 2 registration.
+- **Commands and text.** The "next command" the scripts print carries the full skill path (`scripts/lancador.py`); every script message has correct accents (`test-acentuacao.py`).
+- **Motion recipes.** Colour-panel text matches the code (0.8 + 0.15 + 0.8 = 1.75 s); the signature recipe now defines `colunas`; the pair "title + vertical list" declares `data-assimetrico`; the opening recipe keeps its final state with `.pronto`; tests check that no recipe JS uses an undefined name and that times in the text exist in the code.
+- **Second round (A14 to A25).** Credit blocks no longer hide commercial promises; the skip-to-content link is not an action button; fixed-space failures name the elements; `data-assinatura` marks the signature drawing; the contrast gate ignores invisible strokes; the signature recipe has a phone variant and no CSS transition outliving the section; the credits model has a 44 px link pattern; failed registrations tell what to redo in order; `plano-para-secoes.py` builds `secoes.json` from the PLAN; `baixar-fontes.mjs` downloads Google Fonts (latin subset, woff2); the `--click` proof never leaves the test page.
+- **Third round.** Timer-driven recipe animations jump to their end state when the section leaves the window (the CI failure); the motion gate proves the page without its script (blocked and 7 s late) and the base recipe ships the safety net; the lens that compares with references lists the weak axes instead of ordering a rebuild; the auditor gets a ready briefing with a time and call budget; stock photos with a person's name in a testimonial fail unless the brief declares a fictional test business; `gerar-og-image.mjs` builds the 1200x630 preview.
+- **Fourth round (A30 to A33).** The last audit round orders: open critical or regression = do not deliver, otherwise deliver with caveats (a failed references lens is a caveat, never an order to rebuild); round 2 shows which lens scores were kept from round 1; `gate-etapas.py registrar 5` refuses a cycle that ended in do-not-deliver; `gate-etapas.py revalidar --motivo` handles a mid-way brief change without skipping a stage; the audit package asks whether the brief reflects the person's last request.
+- **Proof screenshot waits for the entrance** (up to 4 s, says how long) and freezes finished entrances so the full-page print does not restart them.
 
 ## What is new in 3.5.5
 

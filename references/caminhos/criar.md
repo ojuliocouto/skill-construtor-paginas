@@ -45,6 +45,14 @@ faltar vira lista de pendências do cliente e não aparece na página até ser c
 interativo: as cinco de interpretação saem como `SUPOSICAO`, o preço fica PENDENTE e o botão leva
 para a conversa.
 
+**Modelo do `evidencias/briefing.md`: um campo próprio para o teste fictício.** Quando o negócio é inventado para testar a
+skill, o briefing traz, numa linha sozinha, `Negócio fictício de teste: sim`. Sem essa linha o negócio é real, e o
+`gate-imagens.py` REPROVA foto de banco cujo `alt`, legenda ou bloco de depoimento atribui um nome próprio de pessoa
+("Marina Coutinho, Icaraí" ao lado de um retrato de banco afirma que aquela é a Marina). Com a linha, o gate deixa passar e
+imprime "permitido porque o briefing declara teste fictício". Frase solta no texto ("é um negócio fictício") não vale: tem de
+ser o campo, com "sim". Em projeto real, o retrato de banco leva alt ilustrativo e nenhum nome, ou entra a foto do cliente
+com autorização.
+
 Grave `evidencias/briefing.md` e `evidencias/etapa-0.json` (campos em `references/gate-etapas.md`):
 `node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir> registrar 0 --arquivo evidencias/etapa-0.json`
 
@@ -123,10 +131,19 @@ ANTES de qualquer código:
 - **Assinatura**: o elemento único pelo qual a página vai ser lembrada, e o risco estético
   que ela assume. Ela mora AO LADO da foto, nunca por cima de gente: linha, grade ou forma que
   atravessa rosto ou corpo de pessoa reprova (na v3, o prumo cortava a cabeça da modelo)
+- **Ícone do site**: uma linha `Ícone do site: <motivo>` (o que o favicon desenha em 32 px, ligado ao
+  assunto e à assinatura). O gate da etapa 2 cobra a linha; o passo e.4 só gera os PNG a partir dela
 - **Revisão**: o que mudou entre a primeira e a segunda passada, e por quê. Os três visuais
   padrão de IA (creme com serifa e terracota; quase preto com um acento ácido; "jornal de
   filetes": muitos fios finos, uma palavra em itálico colorida em vários títulos e fundo de
   grade decorativo) só entram se o briefing pediu
+
+**Arquivo registrado que muda derruba o registro (acontece aqui).** O `plano-visual.md` é evidência da etapa 2 e da
+`frontend-design` no `uso-ferramentas.py`, e cada registro guarda o hash do arquivo. Se você editar o arquivo DEPOIS de
+registrar (acontece quando a linha `Ícone do site:` ou a paleta muda no passo e), o `uso-ferramentas.py checar` e o
+`gate-etapas.py` reprovam em cascata, e a mensagem de cada um já traz os comandos na ordem: acionar a ferramenta de
+novo, `uso-ferramentas.py registrar ... --arquivo`, e `gate-etapas.py registrar` das etapas 2, 3 e 4, nessa ordem.
+Para não passar por isso: feche o plano visual (com a linha do ícone) ANTES de registrar a etapa 2.
 
 **Precedência:** identidade real do cliente (logo, cor, fonte que ele já usa) vence
 `references/preferencias-de-design.md`, que vence o plano. O banco de design
@@ -163,6 +180,21 @@ crases com o que a página não pode insinuar. Caso real: com "se a avaliação 
 mesmo dia" pendente, "Você chega, faz a avaliação postural e começa" e "aula grátis com avaliação
 postural" afirmam as duas coisas. A forma honesta: "Antes da primeira aula, você passa por uma
 avaliação postural", em frase própria, sem "grátis" e sem "no mesmo dia".
+
+A `evidencias/sustentacao.md` é a tabela VIVA: nasce com a copy do PLANO e cresce até a página
+final. A copy final, as respostas da FAQ, os rótulos de barra e qualquer frase nova com promessa
+entram nela quando entram na página; a tabela da seção d do PLANO fica como foto do plano e
+deixa de ser a fonte. A citação pode ser copiada do briefing tal e qual, inclusive com ponto e
+vírgula ou quebra de linha no meio. O crédito de imagem (bloco com `data-credito`, `id="creditos"`
+ou classe `creditos`) não é promessa e não entra na tabela, desde que a frase tenha cara de crédito (licença, autor,
+fonte, título da obra). Frase ali dentro com R$, %, "garantia", "dias", "clientes", "nota", "grátis" e afins continua
+exigindo linha: marcar um bloco como crédito não é porta dos fundos. Quando falta linha, o gate imprime a
+linha pronta pra colar, por seção; a citação você preenche com o briefing, nunca com palavra sua.
+
+No passo d a página ainda não existe, então o gate roda sem `index.html` e confere SÓ a tabela
+contra o briefing (citação existe, não é PENDENTE, promessa não se apoia em "interpretação",
+nenhum padrão de "Não afirmar" aparece nas frases). Ele diz: "página ainda não existe: conferi só a
+tabela; rode de novo no passo f". A conferência completa, com a página, é a do passo f.
 
 `node <dir-da-skill>/scripts/py.mjs gate-verdade.py --projeto <dir>`
 
@@ -249,6 +281,11 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    inteira logo abaixo da primeira tela, por cima da foto (medido na v4).
    **Peso:** fonte só nos pesos e estilos usados (itálico de 144 KiB para 3 palavras foi achado
    da v3); CSS em linha na publicação (`montar-dist.py --css-em-linha`).
+   **Baixar a fonte:** `node <dir-da-skill>/scripts/baixar-fontes.mjs --familia "Bricolage Grotesque" --pesos 400,700 --saida fonts`
+   baixa do Google Fonts só o subconjunto latino em woff2 (um arquivo variável quando a família tem eixo de peso, senão um
+   por peso), grava em `fonts/` e imprime o `@font-face` pronto, com `font-display: swap` e o `url()` relativo. Cole no CSS,
+   dê `<link rel="preload" as="font" type="font/woff2" crossorigin>` à fonte do título e liste só os pesos que a página usa.
+   Sem internet ele diz qual endereço não respondeu e não deixa arquivo pela metade.
 3b. **Padrão da v7 na construção** (cada item custou retrabalho): a animação de cada seção sai
    do repertório (`references/receitas-de-movimento.md`, com a página `references/receitas/demo.html`
    para ver cada uma andando) ou declara `criação nova: <motivo>` no PLANO; o momento assinatura do plano
@@ -264,8 +301,11 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    Favicon: recorte quadrado primeiro, depois redimensione. **O ícone é a identidade ATUAL:** o
    plano declara `Ícone do site: <motivo>`, o motivo é desenhado em `icones/icone.svg` (com o
    mesmo `data-motivo`, e a página desenha esse motivo em algum `data-desenho`) e os PNG saem de
-   `node <dir-da-skill>/scripts/gerar-icones.mjs --projeto <dir>`. A v5 publicou o favicon da v3
-   (md5 igual), com um motivo que a página já tinha abandonado.
+   `node <dir-da-skill>/scripts/gerar-icones.mjs --projeto <dir>`. **A og:image sai de um comando** (1200x630, o título, a foto e a
+   faixa "Imagem ilustrativa" quando a foto é de banco, com a fonte da marca de `fonts/`; sem fonte, usa a do sistema e diz que é reserva):
+   `node <dir-da-skill>/scripts/gerar-og-image.mjs --projeto <dir> --titulo "<título>" --foto imagens/hero.jpg --ilustrativa`. A v5 publicou o favicon da v3
+   (md5 igual), com um motivo que a página já tinha abandonado. Se o motivo do ícone mudar aqui, o `plano-visual.md` muda e os registros dele caem (ver o aviso do passo c): refaça
+   na ordem que a mensagem do gate mostra.
 5. **Fora do domínio final, a página nasce `noindex`:** `<meta name="robots" content="noindex,
    nofollow">`, `robots.txt` com `Disallow: /`, sem sitemap, `canonical` apontando para o site
    do cliente quando existir.
@@ -295,12 +335,37 @@ Rode cada gate e registre o exit REAL na wave:
 `node <dir-da-skill>/scripts/gate-responsivo.mjs --url http://localhost:8765/` (12 telas)
 `node <dir-da-skill>/scripts/gate-oclusao.mjs --url http://localhost:8765/` (texto coberto ou cortado)
 `node <dir-da-skill>/scripts/gate-simetria.mjs --url http://localhost:8765/` (itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos com 4 px de folga, conteúdo interno sem buraco, texto das caixas na mesma faixa de linhas e passos em caixas)
+
+**Limite de colunas desbalanceadas (`gate-simetria.mjs`): 80 px.** Para cada filho de um grid ou flex em linha, a base
+é a base da caixa (se ele tem fundo, borda ou sombra) ou o fim do último texto ou ilustração visível dentro dele. Dois
+filhos lado a lado não podem terminar com mais de 80 px de diferença entre as bases. A falha diz qual elemento mediu em
+cada coluna e onde terminou (`último texto p.fatos, termina em y 812` contra `base da caixa figure.foto, termina em y
+893`). Se a coluna de texto termina antes, prenda o último bloco ao rodapé (`margin-top: auto` com o grid esticado) ou
+estique a foto até a mesma altura; se a assimetria é pedida no plano, declare `data-assimetrico="motivo"`.
 `node <dir-da-skill>/scripts/gate-texto.mjs --url http://localhost:8765/` (viúva em título e subtítulo, de h1 a h4, dt e summary, e em parágrafo na fonte do título ou dentro de caixa, em 7 telas de 320 a 1440; item em minúscula; itálico colorido repetido)
 `node <dir-da-skill>/scripts/gate-composicao.mjs --url http://localhost:8765/ --projeto <dir>` (mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, desenho que lê como wireframe, linha do tempo que passa do último marco, nenhuma pessoa na primeira tela para público de pessoas, destaque abaixo de 3:1)
 `node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, pelo menos 2 seções animam ao chegar, nenhum item chega parado numa rolagem de 300 px/s em 1440, 390 e 320, e rolagem sem animação com movimento reduzido)
 `node <dir-da-skill>/scripts/py.mjs gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas, e o dono nomeado no briefing no corpo da página)
 `node <dir-da-skill>/scripts/py.mjs gate-imagens.py --projeto <dir> --url http://localhost:8765/` (licença com versão e link, crédito no HTML com o título real da fonte, aviso no og-image; foto repetida entre seções por pHash e origem, nitidez abaixo de 100, "imagem ilustrativa" e 60% de foto na primeira tela medidos no navegador; pessoa identificável de banco é aviso de tráfego real, e `--trafego-real` a reprova)
 `node <dir-da-skill>/scripts/gate-ritmo.mjs --url http://localhost:8765/` (duas seções vizinhas com o mesmo esqueleto e mais de 1 "título centralizado + cartões")
+O `secoes.json` sai da tabela "Composição por seção" do PLANO, sem escrever à mão:
+`node <dir-da-skill>/scripts/py.mjs plano-para-secoes.py --projeto <dir> --html index.html --saida <dir>/prova/anim/secoes.json`.
+Ele infere o nome, o título, o tipo (`assinatura-em-tres-estados` vira `assinatura`), o modo (`heroi` para
+`abertura-do-topo`, `rolagem` para a assinatura em "estado 2"), o clique da FAQ (`<seletor> summary`) e o seletor de cada
+seção (`#id` ou a primeira classe, pela ordem, só quando o HTML tem o mesmo número de `<section>` que a tabela). O que não
+dá para inferir sai como `PREENCHER: ...` e o `anim.mjs` se recusa a rodar até você trocar; carrossel no celular vira aviso
+(acrescente `rolarHorizontal`). Exemplo completo, gerado do PLANO do Ateliê Veio:
+
+```json
+[
+ {"nome": "01-primeira-dobra", "seletor": ".heroi", "titulo": "Primeira dobra", "tipo": "abertura-do-topo", "modo": "heroi"},
+ {"nome": "04-depoimentos", "seletor": "#depoimentos", "titulo": "Depoimentos", "tipo": "revelar-ao-entrar"},
+ {"nome": "06-como-funciona", "seletor": "#como-funciona", "titulo": "Como funciona", "tipo": "assinatura", "modo": "rolagem"},
+ {"nome": "08-duvidas", "seletor": "#duvidas", "titulo": "Dúvidas", "tipo": "pergunta-que-abre", "clique": "#duvidas summary"},
+ {"nome": "09-fecho", "seletor": "#fecho", "titulo": "Fecho", "tipo": "assinatura"}
+]
+```
+
 `node <dir-da-skill>/scripts/anim.mjs --url http://localhost:8765/ --saida <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` e `node <dir-da-skill>/scripts/py.mjs prancha.py --pasta <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` (3 quadros por seção em 1440 e 390 e a prancha com a porcentagem de pixels que mudou; abra as pranchas)
 `node <dir-da-skill>/scripts/py.mjs gate-animacao.py --pasta <dir>/prova/anim --plano <dir>/PLANO.md` (menos de 2% de pixels mudando entre início e fim, mais de 2 seções com o mesmo tipo, menos pranchas que linhas da tabela do plano)
 `node <dir-da-skill>/scripts/sobreposicao.mjs --url http://localhost:8765/ --fixo "<seletor do sticky>" --contra "<seletor do bloco largo>"` (um para cada elemento fixo: 0 px² em 1024 a 1920)
@@ -337,12 +402,25 @@ põe a página ao lado das referências mais fortes do passo b) são CRITÉRIOS.
 subagente auditor independente que as percorre numa passada só** e devolve um bloco por lente.
 Uma lente por subagente é modo opcional, só se a pessoa pedir auditoria profunda.
 
+**Checklist do pacote, obrigatório (A33): o briefing reflete o último pedido da pessoa?** Antes de chamar o auditor, releia o
+`evidencias/briefing.md` contra o que foi pedido POR ÚLTIMO e responda `--briefing-reflete-pedido sim|nao` (sem a resposta, ou com
+`nao`, o pacote fica incompleto). Se você registra os pedidos em `evidencias/pedidos.md` (um por linha, o arquivo é tocado a cada
+pedido novo), a data decide: briefing mais antigo que o último pedido dá AVISO e a pergunta é dispensada. Motivo: no teste real o
+cliente mudou o pedido no meio e o auditor conferiu a página contra um briefing velho.
+
+**Briefing pronto, com orçamento.** O `pacote-auditoria.py` grava `auditoria/briefing-do-auditor.md`: cole-o no prompt do
+auditor. Ele traz os caminhos do pacote e o orçamento (rodada 1: 15 minutos e 30 chamadas de ferramenta; rodada 2: 8 minutos
+e 15 chamadas), proíbe recapturar o que já está no pacote (só abre a página para interação, foco, hover e script bloqueado,
+no máximo 6 capturas próprias), manda devolver "não verificado" por lente o que não deu tempo, e pede só o schema. Informe a
+duração e as chamadas no `wave.py registrar` (`--duracao-min`, `--chamadas`); o `wave.py rodada` avisa se passou. (A auditoria
+real levou 51 minutos e 113 chamadas sem esse teto.)
+
 **Antes de chamar o auditor, junte o pacote de evidência UMA vez** (ele não captura as telas de
 novo). Gere o que ainda não existir, nesta ordem, e confira:
 
 1. Prints: `node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/provas --com-360 --com-320` (os gates do passo f já geram parte).
 2. Vídeo de prova: `node <dir-da-skill>/scripts/gravar-video.js http://localhost:8765/ --saida <dir>/videos` (passo h, item 3b, que reaproveita estes arquivos).
-3. `node <dir-da-skill>/scripts/py.mjs pacote-auditoria.py --projeto <dir> --url http://localhost:8765/`
+3. `node <dir-da-skill>/scripts/py.mjs pacote-auditoria.py --projeto <dir> --url http://localhost:8765/` `--briefing-reflete-pedido sim|nao`
 
 O pacote tem: a URL, a `dist/`, o briefing (`evidencias/briefing.md`), o `PLANO.md`, a tabela de
 sustentação, a pasta `referencias/` (síntese e `*-dobra.png`), as capturas dos gates
@@ -363,7 +441,7 @@ deu média 7,78 e "tells 0"; o auditor independente deu 5,5 e cinco achados grav
 `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> registrar <lente> --veredito <aprovado|reprovado> --nota <0-10> --origem <subagente|sessao-independente|pessoa|autoavaliacao> --achados "<o que olhou e achou>"`
 A `comparacao-referencias` responde também, com `--gosto bonito|correto`, a pergunta do dono
 depois da SobrAI (9,05 nas lentes e "que página FEIA"): **isso é bonito ou só está correto?**
-"correto" não aprova e a rodada volta ao plano visual; sem resposta, a rodada também volta.
+"correto" não aprova e a rodada não entrega: corrija os eixos abaixo das referências (`--eixos-abaixo`); sem resposta, a rodada também não entrega.
 `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> checar`
 `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`
 
@@ -373,8 +451,9 @@ em `auditoria/achados-rodada-1.json`) e fecha a rodada 2, que é de CONFERÊNCIA
 "Rodada 2"): o mesmo auditor confere se cada achado foi corrigido, se a correção quebrou outra
 coisa, e mais nada; não reabre as 9 lentes. Depois dela o ciclo fecha SEMPRE: aprovado, ENTREGA COM
 RESSALVAS (achados que sobraram e nota real, na entrega) ou NÃO ENTREGAR: crítico aberto. Terceira
-rodada só se a pessoa pedir (`--rodada-extra-pedida`, registrada). **Lente `comparacao-referencias` reprovada = volta ao passo c**, refaz o plano a partir
-das referências e reconstrói; não se compensa com nota nas outras lentes. Fechado o ciclo, o
+rodada só se a pessoa pedir (`--rodada-extra-pedida`, registrada). **Lente `comparacao-referencias` reprovada NÃO manda reconstruir sozinha** (o teto é 2 rodadas e a segunda é
+conferência): o `wave.py rodada` lista os eixos abaixo das referências e você os corrige na página, entre as rodadas;
+refazer o plano visual e reconstruir é um ciclo novo, só se a pessoa pedir. Não se compensa com nota nas outras lentes. Fechado o ciclo, o
 passe de gosto: tells antes e depois, o depois é 0.
 
 ## h. Prova e entrega
@@ -412,3 +491,12 @@ passe de gosto: tells antes e depois, o depois é 0.
 Registre a sessão em `references/sessions/AAAA-MM-DD-<projeto>.md` e o projeto em
 `references/projects/<projeto>.md` (locais, fora do Git; modelos em `EXAMPLE.md`). Medição
 real (mapa de calor, conversão) só depois de tráfego: primeira leitura em 48 horas.
+
+## Mudança de briefing no meio do trabalho (A32)
+
+Se o cliente pediu outra coisa depois de etapas já registradas, não refaça tudo nem pule etapa: atualize o `evidencias/briefing.md` e rode
+`node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir> revalidar --motivo "<o que mudou no pedido>"`. Em ordem, para cada
+etapa registrada: se nada mudou, fica; se SÓ o briefing mudou, o gate da etapa roda de novo sobre o JSON dela e, passando, ela é
+re-registrada com o motivo gravado (`revalidada`); se QUALQUER outra evidência mudou (a tabela de sustentação, o plano, o próprio JSON),
+a etapa continua exigindo o gate dela (`registrar`) e nada é gravado. Revalidar NÃO é atalho: a copy que depende do briefing pede
+`gate-verdade.py` de novo (o comando avisa). O motivo tem 15 caracteres no mínimo.

@@ -84,10 +84,10 @@ COLUNAS = {
     "autor": ("autor",),
     "titulo": ("titulo",),
     "licenca": ("licenca",),
-    "link": ("link da licenca",),
+    "link": ("link da licença",),
     "alteracao": ("alteracao",),
     "pessoa": ("pessoa identificavel",),
-    "autorizacao": ("autorizacao de imagem",),
+    "autorizacao": ("autorização de imagem",),
     "aviso": ("aviso de ilustrativa",),
 }
 
@@ -109,7 +109,7 @@ def ler_tabela(md):
             mapa = {}
             for chave, nomes in COLUNAS.items():
                 for j, c in enumerate(cab):
-                    if c in nomes:
+                    if c in [norm(n) for n in nomes]:
                         mapa[chave] = j
                         break
             itens = []
@@ -139,11 +139,11 @@ def eh_cc(licenca):
 
 
 def do_cliente(item):
-    return any(k in norm(item.get("origem", "") + " " + item.get("licenca", "")) for k in ("do cliente", "da cliente", "propria do cliente"))
+    return any(norm(k) in norm(item.get("origem", "") + " " + item.get("licenca", "")) for k in ("do cliente", "da cliente", "própria do cliente"))
 
 
 def propria(item):
-    return any(k in norm(item.get("origem", "")) for k in ("ilustracao propria", "desenho proprio", "ilustracoes proprias"))
+    return any(norm(k) in norm(item.get("origem", "")) for k in ("ilustração própria", "desenho próprio", "ilustrações próprias"))
 
 
 def titulo_da_url(origem):
@@ -412,6 +412,109 @@ def checar_dobra(medida, precisa_aviso, problemas):
                              "foto real, do cliente ou de banco livre como ponte, antes de ilustração chapada; ilustração só como acento")
 
 
+# ---- A28: foto de banco com NOME de pessoa em alt, legenda ou depoimento --------------------------------------
+# Em projeto de cliente real, "Marina Coutinho" no depoimento ao lado de um retrato de banco afirma que aquela pessoa é a
+# Marina: afirmação falsa. Exceção única e explícita: o briefing declara `Negócio fictício de teste: sim`.
+NOME_PROPRIO = re.compile(r"\b[A-ZÀ-Ý][a-zà-ÿ]{2,}(?:\s+(?:d[aeo]s?\s+)?[A-ZÀ-Ý][a-zà-ÿ]{2,})+\b")
+BLOCO_DEPOIMENTO = re.compile(r"depoimento|testemunho|testimonial|review|avalia[cç]|cliente-diz|citacao", re.I)
+CAMPO_TESTE = re.compile(r"(?im)^\s*[-*]?\s*neg[oó]cio\s+fict[ií]cio\s+de\s+teste\s*:\s*(sim|true|verdadeiro)\b")
+VAZIOS_HTML = {"img", "br", "meta", "link", "input", "source", "hr", "wbr", "area", "base", "col", "embed", "track"}
+
+
+class _No:
+    def __init__(self, tag, attrs, pai):
+        self.tag, self.attrs, self.pai, self.filhos, self.pedacos = tag, dict(attrs), pai, [], []
+
+    def texto(self):
+        return re.sub(r"\s+", " ", " ".join(self.pedacos + [f.texto() for f in self.filhos])).strip()
+
+
+def _arvore(html_txt):
+    raiz = _No("raiz", [], None)
+
+    class P(HTMLParser):
+        atual = raiz
+
+        def handle_starttag(self, tag, attrs):
+            n = _No(tag, attrs, self.atual)
+            self.atual.filhos.append(n)
+            if tag not in VAZIOS_HTML:
+                self.atual = n
+
+        def handle_endtag(self, tag):
+            n = self.atual
+            while n is not raiz and n.tag != tag:
+                n = n.pai
+            if n is not raiz:
+                self.atual = n.pai
+
+        def handle_data(self, data):
+            if self.atual.tag not in ("script", "style"):
+                self.atual.pedacos.append(data)
+
+    P(convert_charrefs=True).feed(html_txt)
+    return raiz
+
+
+def _todos(no):
+    yield no
+    for f in no.filhos:
+        yield from _todos(f)
+
+
+def banco_com_nome(pagina, usados, briefing_txt):
+    """Devolve (problemas, avisos): foto que não é do cliente nem própria com nome de pessoa atribuído."""
+    if not pagina:
+        return [], []
+    arvore = _arvore(pagina)
+    nos = list(_todos(arvore))
+    titulo = " ".join(n.texto() for n in nos if n.tag == "title").lower()
+    achados = []
+    for img in (n for n in nos if n.tag == "img"):
+        src = img.attrs.get("src") or ""
+        for rel, it in usados:
+            if Path(rel).name not in src and base(Path(rel).name) not in Path(src).name:
+                continue
+            if do_cliente(it) or propria(it):
+                continue
+            contextos = [("o alt", img.attrs.get("alt") or "")]
+            n = img.pai
+            fig = None
+            while n is not None and n.tag != "raiz":
+                if n.tag == "figure":
+                    fig = n
+                    break
+                n = n.pai
+            if fig is not None:
+                for f in _todos(fig):
+                    if f.tag == "figcaption":
+                        contextos.append(("a legenda", f.texto()))
+            n = img.pai
+            while n is not None and n.tag != "raiz":
+                if n.tag in ("blockquote", "article") or BLOCO_DEPOIMENTO.search(" ".join([n.attrs.get("class") or "", n.attrs.get("id") or ""])):
+                    contextos.append(("o bloco de depoimento", n.texto()))
+                    break
+                n = n.pai
+            for onde, txt in contextos:
+                for m in NOME_PROPRIO.finditer(txt):
+                    nome_prop = m.group(0)
+                    if nome_prop.lower() in titulo or any(w.lower() in titulo for w in nome_prop.split() if len(w) > 4):
+                        continue  # o nome do próprio negócio, no título da página
+                    achados.append((rel, onde, nome_prop))
+                    break
+    if not achados:
+        return [], []
+    if CAMPO_TESTE.search(briefing_txt or ""):
+        nomes = "; ".join(sorted({f"{r} com \"{n}\"" for r, _o, n in achados}))
+        return [], [f"foto de banco com nome de pessoa ({nomes}): permitido porque o briefing declara teste fictício ('Negócio fictício de teste: sim')"]
+    problemas = []
+    for rel, onde, nome_prop in dict.fromkeys(achados):
+        problemas.append(f"{rel}: foto de banco com nome de pessoa atribuído em {onde} (\"{nome_prop}\"): em projeto de cliente real é afirmação falsa "
+                         "(a pessoa da foto não é essa); use retrato ilustrativo sem nome, ou a foto do cliente com autorização. "
+                         "Só passa se o evidencias/briefing.md declarar, num campo próprio, 'Negócio fictício de teste: sim'")
+    return problemas, []
+
+
 def avaliar(projeto, dist=None, trafego_real=False, url=None):
     """Devolve (problemas, avisos). Problema reprova (exit 1); aviso não reprova."""
     projeto = Path(projeto)
@@ -480,7 +583,7 @@ def avaliar(projeto, dist=None, trafego_real=False, url=None):
             if link and link not in hrefs:
                 problemas.append(f"{nome}: a página não tem link para a licença ({link})")
             alterada = norm(it["alteracao"]) not in ("", "nenhuma", "nao", "-")
-            if alterada and re.search(r"BY-?\s?SA", licenca, re.I) and "mesma licenca" not in texto_n:
+            if alterada and re.search(r"BY-?\s?SA", licenca, re.I) and norm("mesma licença") not in texto_n:
                 problemas.append(f"{nome}: versão alterada de CC BY-SA sem \"mesma licença\" escrito no crédito da página")
         slug = titulo_da_url(it.get("origem", ""))
         titulo = it.get("titulo", "").strip()
@@ -496,6 +599,10 @@ def avaliar(projeto, dist=None, trafego_real=False, url=None):
             else:
                 avisos.append(f"{nome}: pessoa identificável sem autorização das retratadas: bloqueia tráfego real (a licença do banco não cobre quem aparece). "
                               "Serve à página de teste com \"imagem ilustrativa\" na primeira tela; antes de anunciar, entra a foto da cliente com autorização (--trafego-real reprova)")
+    briefing = projeto / "evidencias" / "briefing.md"
+    pb, ab = banco_com_nome(pagina, usados, briefing.read_text(encoding="utf-8-sig") if briefing.is_file() else "")
+    problemas += pb
+    avisos += ab
     if algum_terceiro and "ilustrativa" not in texto_n:
         problemas.append("página: imagem que não é do cliente sem \"imagem ilustrativa\" no texto publicado")
 

@@ -19,6 +19,7 @@ v3.5 (padrão da v7, 04/10/2026). Cobra também o que fez a v7 sair melhor que a
     escolhida, nenhuma célula vazia e no máximo 2 seções com o mesmo tipo de animação (o tipo é
     o que vem antes dos dois pontos da célula; o tipo `assinatura` é o próprio momento
     assinatura, que aparece em 3 seções por regra, e fica fora da contagem);
+  - (3.5.6) `Ícone do site: <motivo>`: o favicon é decidido no plano, não no passo e.4;
   - `Material da cliente pedido:` com a lista do que só a cliente tem (foto real, número do
     WhatsApp, depoimento com autorização). `nenhum` só vale com o motivo.
 """
@@ -27,6 +28,9 @@ import pathlib
 import re
 import sys
 import unicodedata
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from lancador import comando  # noqa: E402
 
 SECOES = [
     ("a", "Referências"),
@@ -112,6 +116,15 @@ def checar_assinatura(texto):
         erros.append("Momento assinatura: faltam os estados com a mudança ('torta -> alinhada'); "
                      "o elemento tem de mudar de estado ao longo da página")
     return erros
+
+
+def checar_icone(texto):
+    """v3.5.6: o ícone do site é decidido no plano (o motivo desenhado em 32 px), não no passo e.4."""
+    m = re.search(r"(?mi)^\W*[ií]cone do site\W*:[ \t]*(.*)$", texto)
+    if not m or vazio(m.group(1)):
+        return ["Ícone do site: falta a linha 'Ícone do site: <motivo>' (o que o favicon desenha em 32 px, "
+                "ligado ao assunto e à assinatura; o gate de publicação e o gerar-icones.mjs leem esse motivo)"]
+    return []
 
 
 def tipo_da_animacao(celula):
@@ -216,6 +229,7 @@ def checar(caminho):
         erros.append(f"ID real de GA4 no plano ({m.group(0)}): use G-XXXXXXXX no texto")
 
     erros += checar_assinatura(texto)
+    erros += checar_icone(texto)
     erros += checar_material(texto)
 
     # a. Referências
@@ -248,12 +262,12 @@ def checar(caminho):
             for alvo, ok in imgs:
                 arquivos.add(alvo)
                 if not ok:
-                    erros.append(f"Visual: prévia {alvo} não existe ou não é PNG (rode scripts/previa-direcoes.mjs)")
+                    erros.append(f"Visual: prévia {alvo} não existe ou não é PNG (rode {comando('previa-direcoes.mjs')})")
         if len(direcoes) >= 3 and len(arquivos) < 3:
             erros.append("Visual: as 3 direções apontam para a mesma prévia")
         lado = [alvo for alvo, _ in imagens(c, base) if alvo.endswith("direcoes.png")]
         if not lado or not png_real(base / lado[0]):
-            erros.append("Visual: falta a comparação lado a lado plano/direcoes.png (scripts/previa-direcoes.mjs)")
+            erros.append(f"Visual: falta a comparação lado a lado plano/direcoes.png ({comando('previa-direcoes.mjs')})")
         if not re.search(r"(?i)escolha:.*\[x\]", c):
             erros.append("Visual: a linha 'Escolha:' não tem nenhuma direção marcada com [x]")
 
@@ -264,7 +278,7 @@ def checar(caminho):
         validas = [a for a, ok in minis if ok]
         if len(validas) < MIN_MINIATURAS:
             erros.append(f"Seções: {len(validas)} miniatura(s) no cardápio; mínimo {MIN_MINIATURAS} "
-                         "(scripts/previa-direcoes.mjs --miniaturas)")
+                         f"({comando('previa-direcoes.mjs')} --miniaturas)")
         for a, ok in minis:
             if not ok:
                 erros.append(f"Seções: miniatura {a} não existe ou não é PNG")

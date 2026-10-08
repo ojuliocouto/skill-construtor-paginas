@@ -104,12 +104,24 @@ class Estrutura(unittest.TestCase):
         self.assertRegex(plano, r"Skill tool")
         self.assertRegex(plano.lower(), r"search\.py.{0,200}(opcional|nunca decide)|(opcional|nunca decide).{0,200}search\.py")
 
+    def test_a26_a27_texto_do_briefing_e_da_regra_de_referencias(self):
+        aud = ler(REF / "auditores.md")
+        criar = ler(REF / "caminhos" / "criar.md")
+        for trecho in ("briefing-do-auditor.md", "15 minutos", "30 chamadas", "8 minutos", "15 chamadas", "Proibido recapturar",
+                       "6 capturas próprias", "não verificado", "--duracao-min", "--chamadas"):
+            self.assertIn(trecho, aud, trecho)
+        for trecho in ("briefing-do-auditor.md", "15 minutos", "30 chamadas", "8 minutos", "6 capturas próprias", "--eixos-abaixo"):
+            self.assertIn(trecho, criar, trecho)
+        self.assertNotRegex(criar + aud, r"(?i)reprovada\s*=\s*volta ao passo c")
+        self.assertIn("ciclo novo", criar)
+        self.assertIn("ciclo novo", aud)
+
     def test_v3_auditores_subagente_ou_sequencial_e_nona_lente(self):
         a = ler(REF / "auditores.md")
         self.assertRegex(a.lower(), r"subagente")
         self.assertRegex(a.lower(), r"sequ[eê]ncia")
         self.assertIn("comparacao-referencias", a)
-        self.assertRegex(a.lower(), r"volta ao plano visual")
+        self.assertRegex(a.lower(), r"eixos abaixo")
         w = wave()
         self.assertIn("comparacao-referencias", w.LENTES)
         for lente in w.LENTES:
@@ -233,10 +245,12 @@ class Estrutura(unittest.TestCase):
         self.assertIn("```json", ler(REF / "auditores.md").split("Rodada 2", 1)[1])
 
     def test_v354_versao_e_registro_de_mudancas(self):
-        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.5$")
+        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.6$")
         self.assertIn("## 3.5.4", ler(RAIZ / "CHANGELOG.md"))
         self.assertIn("## 3.5.5", ler(RAIZ / "CHANGELOG.md"))
         self.assertIn("3.5.5", ler(RAIZ / "README.md"))
+        self.assertIn("## 3.5.6", ler(RAIZ / "CHANGELOG.md"))
+        self.assertIn("3.5.6", ler(RAIZ / "README.md"))
         self.assertIn("pacote-auditoria.py", ler(RAIZ / "README.md"))
         self.assertIn("pacote-auditoria.py", ler(SKILL))
 
