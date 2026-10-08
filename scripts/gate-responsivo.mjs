@@ -381,8 +381,28 @@ for (const [nome, w, h, mob] of TELAS) {
       }
       if (!fundo) continue;
       const [br, bg, bb] = (info.cor.match(/[\d.]+/g) || [0, 0, 0]).slice(0, 3).map(Number);
-      const c = contraste(lum(br, bg, bb), lum(...fundo));
-      if (c < 3) r.ctaSemContraste.push(`${info.texto} (${c.toFixed(2)}:1)`);
+      const corBotao = lum(br, bg, bb);
+      const emCima = contraste(corBotao, lum(...fundo));
+      if (emCima >= 3) continue;
+      // 3.5.8 (N14): a faixa de cima (10 a 30 px acima) pode ser de um bloco vizinho que termina logo acima do botão (foto, faixa da
+      // cor da marca), e não o fundo dele. Confere os outros lados (embaixo, esquerda, direita) que cabem na tela. O botão só é
+      // camuflado se pelo menos metade dos lados medidos também tem menos de 3:1 (botão dentro de bloco da própria cor: todos).
+      const vp = page.viewportSize();
+      const lados = [['em cima', null, fundo]];
+      const tiras = [
+        ['embaixo', { x: Math.round(cx.x), y: Math.round(cx.y + cx.height) + 10, width: Math.min(Math.round(cx.width), w - Math.round(cx.x)), height: 20 }],
+        ['à esquerda', { x: Math.round(cx.x) - 30, y: Math.round(cx.y), width: 20, height: Math.round(cx.height) }],
+        ['à direita', { x: Math.round(cx.x + cx.width) + 10, y: Math.round(cx.y), width: 20, height: Math.round(cx.height) }],
+      ];
+      for (const [lado, clip] of tiras) {
+        if (clip.x < 0 || clip.y < 0 || clip.x + clip.width > w || clip.y + clip.height > vp.height) continue;
+        lados.push([lado, null, await fundoAssentado(page, clip)]);
+      }
+      const ruins = lados.filter(([, , f]) => contraste(corBotao, lum(...f)) < 3);
+      if (ruins.length * 2 >= lados.length) {
+        const rgb = (f) => 'rgb(' + f.map((v) => Math.round(v)).join(', ') + ')';
+        r.ctaSemContraste.push(`${info.texto} (${emCima.toFixed(2)}:1 contra a faixa medida 10 a 30 px acima do botão, ${rgb(fundo)}; ${ruins.length} de ${lados.length} lados medidos sem contraste: ${ruins.map(([l]) => l).join(', ')})`);
+      }
     } catch { /* elemento saiu da arvore: ignora */ }
   }
   // BOTAO A NO MAXIMO 2 TELAS (celular). Rola a pagina de verdade, um terco de tela por vez, e

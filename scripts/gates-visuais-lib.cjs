@@ -62,6 +62,13 @@ const servidor = http.createServer((req, res) => {
   const cred = (css) => '<section class="cred"><style>.cred{padding:24px}.cred li{font:14px/22px Arial;margin:0;color:#444;max-width:300px}.cred a{background:transparent;color:#036;' + css + '}</style><h2>Créditos de imagem</h2><ul style="list-style:none;padding:0;margin:0"><li>Oficina: “Woodworking workshop” por <a href="#a">s w wengenroad</a>, <a href="#b">CC0 1.0</a>, via <a href="#c">Wikimedia Commons</a>. Imagem recortada a partir do original.</li><li>Aparas: “Hand inspecting wood shavings” por <a href="#d">Shixart1985</a>, <a href="#e">CC BY 2.0</a>, via <a href="#c">Wikimedia Commons</a>.</li></ul></section>';
   if (rota === '/creditos-padrao-44') corpo = texto + cred('display:inline-block;padding:11px;margin:-11px;font:inherit');
   if (rota === '/creditos-inline') corpo = texto + cred('display:inline;padding:0;margin:0;font:inherit');
+  // N14 (3.5.8): o contraste botão/fundo olha os quatro lados do botão. Bloco da cor da marca TERMINANDO logo acima do botão (12 px)
+  // não é fundo do botão; botão da cor do bloco em que ele está (todos os lados iguais) continua camuflado.
+  const botaoMarca = '<a href="#c" style="background:#036;color:#fff">Chamar agora</a>';
+  const tituloMarca = '<h1 style="color:#fff;margin:0;padding:24px">Controle da página</h1>';
+  const aviso = '<p style="margin:16px 24px">Texto de apoio curto sobre o resultado.</p>';
+  if (rota === '/cta-camuflado') corpo = '<section style="background:#036;padding:0 24px 40px">' + tituloMarca + botaoMarca + '</section>' + longo;
+  if (rota === '/cta-abaixo-de-bloco-da-marca') corpo = '<section style="padding:0"><div style="background:#036">' + tituloMarca + '</div><div style="height:12px"></div><div style="padding:0 24px 24px">' + botaoMarca + '</div></section>' + longo;
   if (rota === '/dois-botoes') corpo = texto.replace('</button>', '</button> <a href="#c">Agendar</a>');
   if (rota === '/botao-coberto') corpo = texto + (longo.repeat(2) + '<a href="#c">Agendar no meio</a>').repeat(6) + '<a href="#c" style="position:fixed;left:0;right:0;bottom:0;text-align:center">Agendar agora</a>';
   const foto = '<img src="/poster.png" width="320" height="180" alt="Foto de controle" style="display:block;width:100%;height:40vh;object-fit:cover">';
@@ -223,6 +230,8 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['responsivo-sr-only', 'gate-responsivo.mjs', ['--url', url + '/sr-only'], 0],
     ['responsivo-botao-duas-linhas', 'gate-responsivo.mjs', ['--url', url + '/botao-duas-linhas'], 1, /quebra em \d linhas/],
     ['responsivo-sem-cta-longo', 'gate-responsivo.mjs', ['--url', url + '/sem-cta-longo'], 1, /sem nenhum bot[aã]o/],
+    ['responsivo-cta-camuflado-reprova', 'gate-responsivo.mjs', ['--url', url + '/cta-camuflado'], 1, /CTA camuflado no fundo/],
+    ['responsivo-cta-abaixo-de-bloco-da-marca-passa', 'gate-responsivo.mjs', ['--url', url + '/cta-abaixo-de-bloco-da-marca'], 0],
     ['responsivo-cta-fixo', 'gate-responsivo.mjs', ['--url', url + '/cta-fixo'], 0],
     ['responsivo-fixos-demais', 'gate-responsivo.mjs', ['--url', url + '/fixos-demais'], 1, /espa[cç]o fixo/],
     // A15: a mensagem diz QUAIS elementos somou, com o seletor e a altura de cada um.
