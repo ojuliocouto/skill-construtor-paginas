@@ -153,6 +153,14 @@ class Estrutura(unittest.TestCase):
         self.assertIn("references/sessions/*", gi)
         self.assertIn("references/preferencias-dono-ea.md", gi)
 
+    def test_registro_de_sessao_vai_na_pasta_do_projeto_nunca_na_da_skill(self):
+        """3.5.9 (N25): SKILL.md e criar.md mandavam gravar em references/sessions/, e gate-etapas.md proíbe dado de cliente na pasta da skill."""
+        textos = {"SKILL.md": ler(SKILL), "caminhos/criar.md": ler(CAMINHOS / "criar.md")}
+        for nome, t in textos.items():
+            self.assertNotRegex(t, r"(?i)(registre|salve|grave|atualize)[^\n.]*`references/(sessions|projects)/(AAAA|<projeto>)", nome)
+            self.assertIn("<projeto>/sessoes/", t, nome)
+        self.assertRegex(ler(REF / "gate-etapas.md"), r"Nunca use a pasta da skill para\s+guardar dados de cliente")
+
     def test_v3_readme_em_ingles_e_changelog(self):
         r = ler(RAIZ / "README.md")
         self.assertRegex(r, r"(?i)what it is")

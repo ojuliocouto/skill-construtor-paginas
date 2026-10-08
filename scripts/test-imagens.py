@@ -322,6 +322,45 @@ class GateImagensV35(unittest.TestCase):
         self.assertEqual(r2.returncode, 1, r2.stdout)
 
 
+class AssinaturaEmFoto(GateImagensV35):
+    """3.5.9 (N22): o momento assinatura em FOTO real repete a MESMA foto em 3 seções. data-assinatura (na <figure> ou na <img>)
+    libera essa foto; a mesma foto sem a marca continua reprovando, e a marca em fotos diferentes reprova."""
+
+    def fig(self, nome, arquivo, marca=True):
+        m = " data-assinatura" if marca else ""
+        return f'<section id="{nome}"><h2>{nome}</h2><figure{m}><img src="img/{arquivo}" alt="foto" width="640" height="480"></figure></section>'
+
+    def avaliar(self, secoes, n_fotos=2):
+        fotos = {f"foto{i}-800.jpg": (i, True) for i in range(1, n_fotos + 1)}
+        raiz = self.projeto(secoes, [self.foto_ok(i) for i in range(1, n_fotos + 1)], fotos)
+        return gate.avaliar(raiz)[0]
+
+    def test_mesma_foto_em_tres_secoes_com_a_marca_na_figure_passa(self):
+        p = self.avaliar([self.fig("topo", "foto1-800.jpg"), self.fig("meio", "foto1-800.jpg"), self.fig("fecho", "foto1-800.jpg")], 1)
+        self.assertEqual(p, [], p)
+
+    def test_marca_na_propria_img_tambem_libera(self):
+        img = '<section id="{n}"><h2>{n}</h2><img data-assinatura src="img/foto1-800.jpg" alt="foto" width="640" height="480"></section>'
+        p = self.avaliar([img.format(n="topo"), img.format(n="meio"), img.format(n="fecho")], 1)
+        self.assertEqual(p, [], p)
+
+    def test_mesma_foto_em_tres_secoes_sem_a_marca_continua_reprovando(self):
+        p = self.avaliar([self.fig("topo", "foto1-800.jpg", False), self.fig("meio", "foto1-800.jpg", False), self.fig("fecho", "foto1-800.jpg", False)], 1)
+        self.assertTrue(any("repetida" in x for x in p), p)
+
+    def test_a_mesma_foto_solta_numa_seção_sem_a_marca_reprova(self):
+        p = self.avaliar([self.fig("topo", "foto1-800.jpg"), self.fig("meio", "foto1-800.jpg"), self.fig("outra", "foto1-800.jpg", False)], 1)
+        self.assertTrue(any("repetida" in x and "outra" in x for x in p), p)
+
+    def test_marca_em_duas_fotos_diferentes_reprova(self):
+        p = self.avaliar([self.fig("topo", "foto1-800.jpg"), self.fig("meio", "foto1-800.jpg"), self.fig("fecho", "foto2-800.jpg")], 2)
+        self.assertTrue(any("data-assinatura em 2 fotos diferentes" in x for x in p), p)
+
+    def test_foto_diferente_sem_marca_ao_lado_da_assinatura_passa(self):
+        p = self.avaliar([self.fig("topo", "foto1-800.jpg"), self.fig("meio", "foto1-800.jpg"), self.fig("fecho", "foto2-800.jpg", False)], 2)
+        self.assertEqual(p, [], p)
+
+
 class DobraAviso(unittest.TestCase):
     """N9: a mensagem diferencia 'fora da primeira tela' de 'texto não achado'."""
 

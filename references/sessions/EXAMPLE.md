@@ -1,8 +1,8 @@
 # Sessão: {Nome do Projeto}: {AAAA-MM-DD}
 
-> Template. Ao concluir uma sessão, salve um log em
-> `references/sessions/{AAAA-MM-DD}-{slug}.md`. Arquivos LOCAIS (gitignored):
-> servem para continuidade entre sessões do mesmo projeto.
+> Modelo para copiar. Ao concluir uma sessão, salve o log na pasta do PROJETO, em
+> `<projeto>/sessoes/{AAAA-MM-DD}.md`, nunca dentro da pasta da skill (dado de cliente não mora lá).
+> Serve para continuidade entre sessões do mesmo projeto.
 
 ## O que foi pedido
 (resumo do brief desta sessão)

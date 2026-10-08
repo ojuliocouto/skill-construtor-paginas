@@ -171,6 +171,11 @@ Em `auditores.md`, cada lente tem a sua seção com o que reprova. As lentes:
 - **Proibido recapturar o que já está no pacote** (telas, pranchas, vídeo). Só abra a página para o que print não mostra:
   interação, foco, hover, script bloqueado. No máximo **6 capturas próprias**.
 - O que não deu tempo de olhar volta como **"não verificado"**, por lente, em vez de estourar o tempo.
+- **O orçamento de tempo conta até a resposta chegar**, não até a última ferramenta: escrever a resposta também gasta tempo
+  (medido: 15,1 min de trabalho e mais 5,6 min só para escrever 9 blocos). Reserve os últimos minutos para a resposta e comece
+  a escrever antes de esgotar o tempo.
+- **Blocos curtos por lente:** no máximo 5 achados por lente (os mais graves primeiro; o resto vira uma linha "outros: ..."),
+  cada um com a evidência em UMA linha (medida, seletor ou caminho do print), sem parágrafo de contexto.
 - A resposta é o **schema** abaixo ({'um item por achado da rodada 1' if rodada == 2 else 'um bloco por lente'}), sem relatório longo.
 - No fim, informe a duração em minutos e o número de chamadas que gastou: a sessão principal os registra com
   `wave.py registrar ... --duracao-min <minutos> --chamadas <n>`, e o `wave.py rodada` avisa se passou do orçamento.

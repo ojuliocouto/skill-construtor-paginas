@@ -119,6 +119,19 @@ O `wave.py rodada` nunca pede terceira rodada sozinho e recusa a terceira chamad
 só acontece se a PESSOA pedir, com `rodada --rodada-extra-pedida ...`; o pedido fica registrado no
 histórico, a terceira também fecha sempre e não existe quarta. A nota real vai escrita na entrega, sempre.
 
+**Mudança grande do dono ENTRE as rodadas reabre a rodada 1 (3.5.9).** Se a pessoa pediu uma mudança que mexe em boa parte da
+página (trocar o desenho por foto, refazer uma seção, mudar a paleta) depois que a rodada 1 fechou, a rodada de conferência
+não é o lugar de auditar isso: ela gastaria o ciclo com o que o dono pediu. Rode
+`wave.py --projeto <dir> reabrir --motivo "<o que o dono pediu>"`: o histórico vai para `ciclos_anteriores`, lentes e gates
+recomeçam e a rodada 1 começa de novo (e a conferência continua existindo). Vale **uma vez por ciclo** e fica registrada com
+o motivo; a segunda tentativa é recusada. Correção PEQUENA, achada pela rodada de conferência e feita depois dela, não reabre
+nada (veja abaixo).
+
+**Sessão não interativa (ninguém para autorizar a rodada extra).** A rodada 2 fechou em NÃO ENTREGAR e você corrigiu o
+achado depois do ciclo: não registre nota de autoavaliação para liberar. Feche o trabalho em NÃO ENTREGAR, liste na
+entrega cada correção feita depois do ciclo (o achado, o que mudou, a medida que mostra o conserto) e peça a rodada extra por
+escrito (`rodada --rodada-extra-pedida` quando a pessoa disser sim).
+
 Compare ACHADOS entre rodadas, nunca notas: cada rodada é um olhar novo e a nota não é medida
 calibrada. Nota que cai pode ser régua mais fina, não página pior.
 
@@ -253,7 +266,7 @@ página? Alguém de fora diz o que cada desenho é sem ler o texto? Existe um mo
 surpreende? A ordem das seções é a de qualquer landing ou a das referências?
 **Reprova se:** a resposta honesta é não, se dois ou mais eixos ficaram abaixo, ou se a página
 é só correta (`--gosto correto`). Reprovada,
-registre os eixos abaixo (`--eixos-abaixo composicao,tipografia,imagem,ritmo`, só os que ficaram abaixo): a correção é desses
+registre os eixos abaixo (`--eixos-abaixo composicao,tipografia,imagem,ritmo,acabamento`, só os que ficaram abaixo; são os cinco eixos acima): a correção é desses
 eixos, na página, entre as rodadas, com o que faltou escrito nos achados. Voltar ao plano visual (passo c) e reconstruir é
 um ciclo novo, que a pessoa decide ("refazer o plano e reconstruir custa mais que a rodada 2"). No caminho
 CLONAR a referência é a página original. Esta lente não aceita "não aplicável".

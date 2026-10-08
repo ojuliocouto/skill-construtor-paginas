@@ -530,5 +530,111 @@ class CasoRealA30(unittest.TestCase):
         self.assertIn("regressão", o2)
 
 
+class CincoEixosEReabrir(unittest.TestCase):
+    """3.5.9: N23 (acabamento é o quinto eixo) e N27 (mudança grande do dono entre as rodadas reabre a rodada 1, uma vez)."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.projeto = self.temp.name
+
+    def montar(self, nota=7, gosto="bonito"):
+        lentes = {n: {"nota": nota, "veredito": "aprovado", "origem": "subagente", "gosto": "bonito",
+                      "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES}
+        lentes["comparacao-referencias"]["gosto"] = gosto
+        d = wave.carregar(self.projeto)
+        d["lentes"] = lentes
+        d["gates"] = {n: {"exit": 0, "detalhe": "ok"} for n in wave.GATES}
+        wave.salvar(self.projeto, d)
+
+    def rodada(self, criticos=0, altos=1, reg=0, extra=False):
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, criticos=criticos, altos=altos, regressoes=reg,
+                                                      pendencias_do_usuario=0, rodada_extra_pedida=extra))
+        return code, saida.getvalue()
+
+    def reabrir(self, motivo="o dono pediu foto real no lugar do desenho em três seções"):
+        err = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            code = wave.cmd_reabrir(argparse.Namespace(projeto=self.projeto, motivo=motivo))
+        return code, err.getvalue()
+
+    def test_N23_registrar_aceita_acabamento_e_guarda(self):
+        base = dict(projeto=self.projeto, lente="comparacao-referencias", veredito="reprovado", nota=5.0, origem="subagente",
+                    gosto="correto", achados="Comparei a dobra com as referências lado a lado")
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(wave.cmd_registrar(argparse.Namespace(**base, eixos_abaixo="imagem,acabamento")), 0)
+            self.assertEqual(wave.cmd_registrar(argparse.Namespace(**base, eixos_abaixo="imagem,brilho")), 2)
+        self.assertEqual(wave.carregar(self.projeto)["lentes"]["comparacao-referencias"]["eixos_abaixo"], ["imagem", "acabamento"])
+
+    def test_N23_os_cinco_eixos_sao_os_do_auditores_md(self):
+        ref = (pathlib.Path(__file__).resolve().parent.parent / "references" / "auditores.md").read_text(encoding="utf-8")
+        self.assertRegex(ref, r"composição, tipografia, imagem, ritmo,\s+acabamento")
+        self.assertEqual(wave.EIXOS, ("composicao", "tipografia", "imagem", "ritmo", "acabamento"))
+
+    def test_N27_nao_entregar_na_rodada_2_ensina_o_que_fazer_em_sessao_nao_interativa(self):
+        self.montar()
+        self.rodada()
+        self.montar()
+        code, out = self.rodada(criticos=1)
+        self.assertEqual(code, 1)
+        self.assertIn("NÃO ENTREGAR", out)
+        self.assertRegex(out, r"Sessão não interativa")
+        self.assertIn("liste na entrega cada correção", out)
+        self.assertIn("wave.py reabrir --motivo", out)
+
+    def test_N27_reabrir_zera_o_ciclo_registra_o_motivo_e_nao_gasta_a_rodada_de_conferencia(self):
+        self.montar()
+        self.rodada()
+        code, _ = self.reabrir()
+        self.assertEqual(code, 0)
+        d = wave.carregar(self.projeto)
+        self.assertEqual(d["rodadas"], [])
+        self.assertEqual(d["lentes"], {})
+        self.assertEqual(d["gates"], {})
+        self.assertEqual(len(d["ciclos_anteriores"]), 1)
+        self.assertIn("foto real", d["reaberturas"][0]["motivo"])
+        # a nova rodada 1 e a rodada 2 de conferência existem de novo, sem pedir rodada extra
+        self.montar(nota=6)
+        c1, o1 = self.rodada()
+        self.assertIn("RODADA 1", o1)
+        self.montar(nota=8)
+        c2, o2 = self.rodada()
+        self.assertIn("RODADA 2", o2)
+        self.assertNotIn("ERRO", o2)
+
+    def test_N27_so_uma_reabertura_por_ciclo(self):
+        self.montar()
+        self.rodada()
+        self.assertEqual(self.reabrir()[0], 0)
+        self.montar()
+        self.rodada()
+        code, err = self.reabrir("outra mudança grande que o dono pediu")
+        self.assertEqual(code, 2)
+        self.assertIn("já foi reaberto uma vez", err)
+        self.assertEqual(len(wave.carregar(self.projeto)["ciclos_anteriores"]), 1)
+
+    def test_N27_reabrir_exige_motivo_e_uma_rodada_fechada(self):
+        self.assertEqual(self.reabrir()[0], 2)   # nada fechado: não há o que reabrir
+        self.montar()
+        self.rodada()
+        self.assertEqual(self.reabrir("curto")[0], 2)
+        self.assertEqual(self.reabrir("")[0], 2)
+        self.assertEqual(wave.carregar(self.projeto).get("reaberturas"), None)
+
+    def test_N27_sem_reabrir_a_rodada_3_continua_exigindo_o_pedido_da_pessoa(self):
+        self.montar()
+        self.rodada()
+        self.montar()
+        self.rodada()
+        self.montar()
+        err = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, criticos=0, altos=1, regressoes=0, pendencias_do_usuario=0))
+        self.assertEqual(code, 2)
+        self.assertIn("--rodada-extra-pedida", err.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
