@@ -268,3 +268,7 @@ depois, e o depois tem que ser 0, mais a lista do que foi inspecionado.
 O `wave.py rodada` grava o desfecho de cada rodada (`CONTINUA`, `NAO_ENTREGAR`, `ENTREGA`, `ENTREGA_COM_RESSALVAS`, `AUDITORIA_PENDENTE`) em
 `.wave-auditoria.json`. O `gate-etapas.py registrar 5` lê o último: recusa registrar a entrega pronta quando terminou em NÃO ENTREGAR, em
 CONTINUA ou com auditoria independente pendente; com ENTREGA COM RESSALVAS registra e grava as ressalvas na evidência da etapa.
+
+Sem auditoria não há entrega registrada: o `gate-etapas.py registrar 5` também recusa quando não existe `.wave-auditoria.json`, quando o registro
+não tem as 9 lentes, quando alguma lente é autoavaliação ou quando o ciclo não foi fechado, e a mensagem traz os comandos do passo g. O caminho
+EDITAR (edição pontual) não passa por essas etapas e segue isento de auditoria completa, como diz a tabela de caminhos do `SKILL.md`.

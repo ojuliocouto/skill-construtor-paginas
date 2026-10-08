@@ -15,7 +15,19 @@ class Etapas(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.pasta = pathlib.Path(self.temp.name)
         (self.pasta / 'briefing.txt').write_text('Documento de controle com informações confirmadas', encoding="utf-8")
+        self.escrever_auditoria()
         self.doc = {'briefing': dict.fromkeys(['nicho', 'local', 'publico', 'oferta', 'preco', 'acao'], 'Informado'), 'inventario': ['Fonte'], 'pendencias_cliente': ['Número do WhatsApp'], 'arquivos': ['briefing.txt']}
+
+    def escrever_auditoria(self, lentes=None, origem='subagente', desfecho='ENTREGA', ressalvas=None, rodadas=True):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('wave_t', pathlib.Path(__file__).with_name('wave.py'))
+        w = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(w)
+        nomes = list(w.LENTES) if lentes is None else lentes
+        d = {'lentes': {n: {'nota': 8, 'veredito': 'aprovado', 'origem': origem} for n in nomes}, 'gates': {}}
+        if rodadas:
+            d['rodadas'] = [{'n': 1, 'desfecho': 'CONTINUA'}, {'n': 2, 'desfecho': desfecho, 'ressalvas': ressalvas or []}]
+        (self.pasta / '.wave-auditoria.json').write_text(json.dumps(d), encoding='utf-8')
 
     def rodar(self, *args):
         (self.pasta / 'etapa.json').write_text(json.dumps(self.doc), encoding="utf-8")
@@ -180,8 +192,7 @@ class Etapas(unittest.TestCase):
 
     # A31 (b): o registro da etapa 5 lê o desfecho do ciclo do wave.py
     def wave(self, desfecho, ressalvas=None):
-        (self.pasta / '.wave-auditoria.json').write_text(json.dumps({'rodadas': [
-            {'n': 1, 'desfecho': 'CONTINUA'}, {'n': 2, 'desfecho': desfecho, 'ressalvas': ressalvas or []}]}), encoding='utf-8')
+        self.escrever_auditoria(desfecho=desfecho, ressalvas=ressalvas)
 
     def etapa5_ok(self):
         d, m = self.webm('video-desktop.webm'), self.webm('video-mobile.webm')
@@ -196,11 +207,44 @@ class Etapas(unittest.TestCase):
             self.wave(d)
             self.assertEqual(self.validar('5', self.etapa5_ok()), 1, d)
 
-    def test_etapa_5_aceita_entrega_e_sem_registro_do_wave(self):
+    def test_etapa_5_aceita_entrega_aprovada(self):
         self.wave('ENTREGA')
         self.assertEqual(self.validar('5', self.etapa5_ok()), 0)
-        (self.pasta / '.wave-auditoria.json').write_text('{}', encoding='utf-8')
-        self.assertEqual(self.validar('5', self.etapa5_ok()), 0, 'sem rodadas registradas: o resto do gate segue valendo')
+
+    # A31 (c): sem auditoria não há entrega registrada (o caminho EDITAR não usa estas etapas e segue isento)
+    def test_etapa_5_recusa_sem_registro_de_auditoria(self):
+        (self.pasta / '.wave-auditoria.json').unlink()
+        self.assertEqual(self.validar('5', self.etapa5_ok()), 1)
+
+    def test_etapa_5_recusa_registro_incompleto_sem_as_9_lentes(self):
+        self.escrever_auditoria(lentes=['design-critic', 'cro-auditor'])
+        self.assertEqual(self.validar('5', self.etapa5_ok()), 1)
+
+    def test_etapa_5_recusa_autoavaliacao(self):
+        self.escrever_auditoria(origem='autoavaliacao')
+        self.assertEqual(self.validar('5', self.etapa5_ok()), 1)
+
+    def test_etapa_5_recusa_registro_de_lentes_sem_ciclo_fechado(self):
+        self.escrever_auditoria(rodadas=False)
+        self.assertEqual(self.validar('5', self.etapa5_ok()), 1)
+
+    def test_mensagem_diz_o_que_falta_e_o_comando_do_passo_g(self):
+        import importlib.util
+        (self.pasta / '.wave-auditoria.json').unlink()
+        spec = importlib.util.spec_from_file_location('ge3', SCRIPT)
+        ge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ge)
+        with self.assertRaises(ValueError) as e:
+            ge.validar(self.pasta.resolve(), (self.pasta / 'e.json').resolve() if (self.pasta / 'e.json').exists() else self._json5(), '5', ge.PAGINAS['5'], 'paginas')
+        msg = str(e.exception)
+        self.assertIn('auditoria', msg.lower())
+        self.assertIn('9 lentes', msg)
+        self.assertIn('wave.py', msg)
+        self.assertIn('pacote-auditoria.py', msg)
+
+    def _json5(self):
+        (self.pasta / 'e5.json').write_text(json.dumps(self.etapa5_ok()), encoding='utf-8')
+        return (self.pasta / 'e5.json').resolve()
 
     def test_etapa_5_com_ressalvas_registra_e_grava_as_ressalvas_na_evidencia(self):
         for e in ('0', '1', '2', '3', '4'):

@@ -72,6 +72,8 @@ há um teste-mutante que prova que o que é ruim continua reprovando.
   rodada grava o desfecho e o `gate-etapas.py registrar 5` recusa NÃO ENTREGAR, CONTINUA e auditoria pendente, e grava as ressalvas.
 - **A32** `gate-etapas.py revalidar --motivo "<texto>"`: mudança de briefing no meio revalida em ordem só as etapas em que SÓ o briefing mudou
   (o gate delas roda de novo); qualquer outra evidência mudada continua exigindo o gate da etapa.
+- **Etapa 5 sem porta dos fundos** `gate-etapas.py registrar 5` recusa quando não há `.wave-auditoria.json`, quando faltam lentes das 9, quando há
+  autoavaliação ou quando o ciclo não fechou (mensagem com os comandos do passo g); EDITAR segue isento (não usa essas etapas).
 - **A33** `pacote-auditoria.py` exige a resposta `--briefing-reflete-pedido sim|nao` no checklist (ou usa `evidencias/pedidos.md` e avisa quando o
   briefing é mais antigo que o último pedido).
 

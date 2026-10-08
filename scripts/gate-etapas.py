@@ -45,6 +45,37 @@ def desfecho_do_ciclo(projeto):
     return rodadas[-1].get("desfecho"), list(rodadas[-1].get("ressalvas") or [])
 
 
+def conferir_auditoria(projeto):
+    """A etapa 5 (entrega pronta) exige a auditoria registrada: as 9 lentes, nenhuma por autoavaliação e um ciclo fechado.
+
+    O caminho EDITAR (edição pontual) não passa por estas etapas e segue isento, como diz a tabela de caminhos do SKILL.md."""
+    spec = importlib.util.spec_from_file_location("wave_gate", Path(__file__).resolve().parent / "wave.py")
+    w = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(w)
+    volta = (f"Rode o passo g: {comando('pacote-auditoria.py')} --projeto {projeto.as_posix()} --url <url> --briefing-reflete-pedido sim, "
+             f"chame o auditor com o briefing pronto, registre as 9 lentes com {comando('wave.py')} --projeto {projeto.as_posix()} registrar <lente> ... --origem subagente "
+             f"e feche com {comando('wave.py')} --projeto {projeto.as_posix()} rodada ...")
+    arq = projeto / ".wave-auditoria.json"
+    if not arq.is_file():
+        raise ValueError("Etapa 5: não há registro de auditoria deste projeto (.wave-auditoria.json): a entrega não passa sem as 9 lentes do auditor. " + volta)
+    try:
+        dados = json.loads(arq.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        raise ValueError("Etapa 5: o registro de auditoria (.wave-auditoria.json) está ilegível. " + volta)
+    lentes = dados.get("lentes") if isinstance(dados, dict) else None
+    lentes = lentes if isinstance(lentes, dict) else {}
+    faltam = sorted(set(w.LENTES) - set(lentes))
+    if faltam:
+        raise ValueError(f"Etapa 5: o registro de auditoria não tem as 9 lentes (faltam {len(faltam)}: {', '.join(faltam)}). " + volta)
+    autos = sorted(n for n, v in lentes.items() if isinstance(v, dict) and v.get("veredito") != "nao_aplicavel"
+                   and v.get("origem") not in w.ORIGENS_INDEPENDENTES)
+    if autos:
+        raise ValueError(f"Etapa 5: {len(autos)} lente(s) registradas como autoavaliação ({', '.join(autos[:4])}{'...' if len(autos) > 4 else ''}): "
+                         "nota de quem construiu não libera entrega. " + volta)
+    if not (dados.get("rodadas") or []):
+        raise ValueError("Etapa 5: as lentes estão registradas, mas o ciclo não foi fechado (nenhuma rodada). " + volta)
+
+
 def videos_da_prova(projeto, doc):
     """Etapa 5: a prova leva o vídeo da rolagem (gravar-video.js) junto dos prints, em desktop e celular."""
     v = doc.get("video")
@@ -155,6 +186,7 @@ def validar(projeto, arquivo, etapa, campos, perfil):
     if perfil == "paginas" and etapa == "5":
         # A31 (b): a etapa 5 é a entrega pronta. Ciclo que terminou em NÃO ENTREGAR (ou que ainda continua, ou com
         # auditoria independente pendente) não vira entrega registrada; ENTREGA COM RESSALVAS registra e guarda as ressalvas.
+        conferir_auditoria(projeto)
         desfecho, _ress = desfecho_do_ciclo(projeto)
         if desfecho in ("NAO_ENTREGAR", "CONTINUA", "AUDITORIA_PENDENTE"):
             nome = {"NAO_ENTREGAR": "NÃO ENTREGAR (crítico ou regressão aberta)", "CONTINUA": "CONTINUA (o ciclo ainda não fechou)",
