@@ -99,6 +99,8 @@ refaça uma delas antes de mostrar.
 declarado, o momento assinatura, a composição por seção, o material da cliente e todas as caixas
 marcadas), o plano visual e o código não começam.
 
+**Momento assinatura em negócio de produto físico.** Quando o que se vende é algo que a pessoa toca, come, veste, habita ou dirige (móveis, comida, imóvel, moda, obra, carro, joia, planta), o momento assinatura é FOTO REAL do produto, nunca desenho nem ilustração figurativa. A receita é `foto-que-se-monta`: a foto do produto se monta em faixas até ficar inteira, com um rótulo ou cota por cima no fim (ex.: "Carvalho maciço, quatro tábuas, montada na sua casa"). Se o cliente ainda não mandou a foto, declare a foto como pendência do plano e use a melhor foto de ambiente do acervo; nunca desenhe o produto no lugar. Desenho só entra quando o que se vende não tem imagem (serviço abstrato, método, software), e mesmo nesse caso a tela real do produto vem antes de qualquer ilustração. Nesses negócios rode o `gate-composicao.mjs` com `--produto-fisico`: ele avisa se o momento assinatura ficou só em SVG. Palavras do dono: "Considerando que se trata de móveis, visual real conta mais que qualquer outra coisa."
+
 ## c. Plano visual, pela skill `frontend-design`
 
 Acione a skill de verdade (Skill tool, `frontend-design`) com o briefing, a síntese das

@@ -1,8 +1,8 @@
 # Changelog
 
-## 3.5.8 (08/10/2026): captura, busca de foto e gates de verdade e de imagem (achados N1 a N12 da segunda rodada)
+## 3.5.8 (08/10/2026): segunda rodada do teste de ponta a ponta (achados N1 a N21) e foto real no momento assinatura
 
-Um segundo teste criou uma página real do zero (`ACHADOS` N1 a N20). Teste vermelho antes de cada conserto; nenhum gate foi
+Um segundo teste criou uma página real do zero (`ACHADOS` N1 a N21). Teste vermelho antes de cada conserto; nenhum gate foi
 afrouxado: onde um gate passa a aceitar mais, há um teste de que o caso ruim original continua reprovando.
 
 ### Corrigido
@@ -29,8 +29,16 @@ afrouxado: onde um gate passa a aceitar mais, há um teste de que o caso ruim or
 - **N12** `gate-publicacao.py` e `criar.md`: a mensagem do ícone manda copiar o motivo, letra por letra, para um `data-desenho` e mostra
   os que a página tem. A checagem não mudou.
 
-### Corrigido, movimento e prova de clique (N13 a N20)
-- (as linhas do outro grupo entram aqui)
+### Corrigido e novo, movimento, prova e auditor (N13 a N21)
+- `gate-movimento`: reconhece a rede de segurança (classe `js` e temporizador de `data-js-ok`) dentro de um `<script>` maior, por exemplo junto da medida do `--vh`; só o resto é removido ou atrasado na prova. Novo `scripts/rede-de-seguranca.cjs`. Antes dizia "falta a rede de segurança" com ela presente (N13).
+- `gate-responsivo`: o contraste botão/fundo mede também embaixo, à esquerda e à direita e só reprova se metade dos lados medidos está abaixo de 3:1; botão logo abaixo de bloco da cor da marca deixa de reprovar, botão dentro de bloco da própria cor continua reprovando, e a mensagem diz onde mediu (N14).
+- `receitas-de-movimento`: `abertura-do-topo` manda o que cai abaixo da dobra do celular para `revela`; regra "atraso longo é quadro-chave parado no começo, nunca `animation-delay`"; `gate-movimento` nomeia o elemento do item que chega parado (`div.item "Dois"`) e explica o `animation-delay` na mensagem (N15, N16).
+- `screenshot-prova.js`: o clique de prova em link externo (WhatsApp) é cancelado na própria página; o print de depois sai com a página e não em branco, e sai com 0. Navegação por script externa não gera print de depois (N17).
+- `references/caminhos/criar.md`: edição por script e gates encadeados com `&&` (N18); parágrafo "Roteiro próprio" com todos os limites do gravador e o roteiro do demo para página com painel (N20); clique de prova em link externo; `--produto-fisico` no gate de composição.
+- `pacote-auditoria.py`: o `briefing-do-auditor.md` leva a pasta absoluta do projeto, as 9 lentes, os critérios, o schema (com `gosto` e `eixos_abaixo`, e o da rodada 2), todas as referências, as telas de 360 e 320 e as pranchas de animação (N19).
+- `gravar-video.js` e `video/roteiro.cjs`: o validador do roteiro lista todos os limites quebrados de uma vez, inclusive a duração, e imprime os limites (N20).
+- Receita nova `foto-que-se-monta` (16ª) e seção "Escolha do momento assinatura": produto físico usa foto real do produto, nunca desenho; `gate-composicao.mjs --produto-fisico` avisa (não reprova) quando o momento assinatura é só SVG (N21).
+- Gates visuais: 85 para 97 controles; `test-gates-visuais-cobertura.py` guarda o mínimo de 97.
 
 ## 3.5.7 (08/10/2026): o que o CI do macOS ainda reprovou na 3.5.6
 
