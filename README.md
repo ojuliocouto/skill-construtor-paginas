@@ -161,6 +161,10 @@ data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
 
+## What is new in 3.5.7
+
+- Late `IntersectionObserver` callbacks no longer play transitions after the person scrolled past (`.instantaneo` jumps to the end state); the motion gate names the first animation it caught off-screen; the visual gate test is split into three files by gate family (same 85 controls, guarded by `test-gates-visuais-cobertura.py`).
+
 ## What is new in 3.5.6
 
 Fixes from an end-to-end test where a student built a real page with the skill and logged every stumble (`ACHADOS`, A1 to A13).
@@ -236,7 +240,7 @@ node scripts/test-roteiro-de-video.cjs
 node scripts/test-gravar-video-integracao.cjs
 node scripts/test-previa-direcoes.cjs
 node scripts/test-capturar-referencias.cjs
-node scripts/test-gates-visuais.cjs
+node scripts/test-gates-visuais-responsivo.cjs   # e -composicao.cjs, -movimento.cjs
 node scripts/test-gates-v35.cjs
 node scripts/test-print-cabecalho.cjs
 node --test scripts/extrai-identidade.test.mjs

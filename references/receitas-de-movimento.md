@@ -60,14 +60,20 @@ O demo usa essa rede.
 ```css
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+/* estado final de uma vez (a seção já saiu da janela quando o observador avisou): sem transição e sem animação */
+.js .instantaneo, .js .instantaneo * { opacity: 1 !important; transform: none !important; clip-path: none !important; transition: none !important; animation: none !important; }
 ```
 
 ```js
 var reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var each = function (lista, f) { Array.prototype.forEach.call(lista, f); };
+var fora = function (n) { var r = n.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight; };
 var io = new IntersectionObserver(function (es) {
   es.forEach(function (e) {
     if (!e.isIntersecting) return;
+    // O aviso do observador pode chegar atrasado (máquina lenta): se a pessoa já passou, o estado final entra de uma vez,
+    // sem transição nem animação (classe .instantaneo, no CSS abaixo). Senão a animação rodaria com a seção fora da janela.
+    if (fora(e.target)) e.target.classList.add('instantaneo');
     e.target.classList.add('visivel');
     io.unobserve(e.target);
   });
@@ -544,7 +550,9 @@ mesmo da quantidade de marcas.
 ```js
 function contar(h) {
   var alvo = h.querySelector('[data-contador]'), bloco = document.querySelector('.vagas'), vagas = bloco.querySelectorAll('i');
-  var fora = function () { var r = h.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight; };
+  // 'fora' com folga: a barra só anima enquanto está bem dentro da janela (entre 20% e 80% da altura). O evento da transição chega
+// um quadro depois da troca de classe e, numa máquina lenta, a rolagem pode passar nesse intervalo; com folga, esse quadro ainda é dentro.
+var fora = function () { var r = bloco.getBoundingClientRect(); return r.bottom < window.innerHeight * 0.2 || r.top > window.innerHeight * 0.8; };
   // a pessoa saiu da seção no meio da contagem: vai direto ao estado final, sem transição nem pulso
   var final = function () { bloco.classList.add('sem-transicao'); each(vagas, function (v) { v.classList.add('cheia'); }); if (alvo) alvo.classList.add('pronto'); };
   if (reduz) { final(); return; }

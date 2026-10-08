@@ -3,7 +3,7 @@
  * O que fazer quando o ffmpeg ou o ffprobe não existem na máquina: dizer o comando de instalar
  * do sistema da pessoa, em vez de estourar `spawnSync ffmpeg ENOENT`.
  *
- * Usado por gate-video.mjs (para o aluno) e por test-gates-visuais.cjs (teste: PULADO fora do
+ * Usado por gate-video.mjs (para o aluno) e por gates-visuais-lib.cjs (teste: PULADO fora do
  * CI, FALHA no CI, onde o ffmpeg é instalado de propósito).
  */
 const { spawnSync } = require('node:child_process');

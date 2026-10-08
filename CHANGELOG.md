@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.5.7 (08/10/2026): o que o CI do macOS ainda reprovou na 3.5.6
+
+### Corrigido
+- **`test-assinatura-demo.cjs` no macOS do CI:** na visita normal do `gate-movimento.mjs` (8 s parada no topo, depois passos de 40% da tela)
+  sobrava 1 animação com a seção "Vagas que se preenchem" fora da janela. A mensagem do gate agora diz QUAL foi (tipo, propriedade e
+  elemento da primeira). A causa inferida (ver o relatório): o aviso do `IntersectionObserver` chega atrasado numa máquina lenta, já com a
+  pessoa além da seção, e a classe `.visivel` dispara a transição fora da janela. A receita-base e o demo ganharam a classe
+  `.instantaneo` (estado final de uma vez, sem transição nem animação), posta no callback quando a seção já saiu da janela.
+- **`test-gates-visuais.cjs` estourava o teto de 20 min por arquivo no macOS do CI (saída 124 em 1200 s; o arquivo levava ~990 s no macOS,
+  ~830 s no Linux e ~890 s no Windows antes de crescer):** dividido por família de gate em `test-gates-visuais-responsivo.cjs`,
+  `-composicao.cjs` e `-movimento.cjs`, sobre `gates-visuais-lib.cjs`. Nenhum controle sumiu: 85 antes, 85 depois, e o
+  `test-gates-visuais-cobertura.py` (portátil) reprova se algum controle ficar sem família. O filtro `GATES_FILTRO=<prefixo>` segue valendo.
+
 ## 3.5.6 (08/10/2026): correções do teste de ponta a ponta (achados A1 a A13)
 
 Um teste criou uma página real como aluno (Ateliê Veio) e anotou cada tropeço. Esta versão corrige o que era da
