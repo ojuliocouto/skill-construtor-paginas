@@ -123,6 +123,8 @@ ANTES de qualquer código:
 - **Assinatura**: o elemento único pelo qual a página vai ser lembrada, e o risco estético
   que ela assume. Ela mora AO LADO da foto, nunca por cima de gente: linha, grade ou forma que
   atravessa rosto ou corpo de pessoa reprova (na v3, o prumo cortava a cabeça da modelo)
+- **Ícone do site**: uma linha `Ícone do site: <motivo>` (o que o favicon desenha em 32 px, ligado ao
+  assunto e à assinatura). O gate da etapa 2 cobra a linha; o passo e.4 só gera os PNG a partir dela
 - **Revisão**: o que mudou entre a primeira e a segunda passada, e por quê. Os três visuais
   padrão de IA (creme com serifa e terracota; quase preto com um acento ácido; "jornal de
   filetes": muitos fios finos, uma palavra em itálico colorida em vários títulos e fundo de
@@ -163,6 +165,19 @@ crases com o que a página não pode insinuar. Caso real: com "se a avaliação 
 mesmo dia" pendente, "Você chega, faz a avaliação postural e começa" e "aula grátis com avaliação
 postural" afirmam as duas coisas. A forma honesta: "Antes da primeira aula, você passa por uma
 avaliação postural", em frase própria, sem "grátis" e sem "no mesmo dia".
+
+A `evidencias/sustentacao.md` é a tabela VIVA: nasce com a copy do PLANO e cresce até a página
+final. A copy final, as respostas da FAQ, os rótulos de barra e qualquer frase nova com promessa
+entram nela quando entram na página; a tabela da seção d do PLANO fica como foto do plano e
+deixa de ser a fonte. A citação pode ser copiada do briefing tal e qual, inclusive com ponto e
+vírgula ou quebra de linha no meio. O crédito de imagem (bloco com `data-credito`, `id="creditos"`
+ou classe `creditos`) não é promessa e não entra na tabela. Quando falta linha, o gate imprime a
+linha pronta pra colar, por seção; a citação você preenche com o briefing, nunca com palavra sua.
+
+No passo d a página ainda não existe, então o gate roda sem `index.html` e confere SÓ a tabela
+contra o briefing (citação existe, não é PENDENTE, promessa não se apoia em "interpretação",
+nenhum padrão de "Não afirmar" aparece nas frases). Ele diz: "página ainda não existe: conferi só a
+tabela; rode de novo no passo f". A conferência completa, com a página, é a do passo f.
 
 `node <dir-da-skill>/scripts/py.mjs gate-verdade.py --projeto <dir>`
 
