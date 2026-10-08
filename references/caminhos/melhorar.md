@@ -17,7 +17,7 @@ estreita de navegador de desktop.
 
 ## 2. Diagnóstico com evidência
 
-Rode as 9 lentes de `references/auditores.md` sobre a página ATUAL e liste os problemas com
+Passe as 9 lentes de `references/auditores.md` (um auditor, uma passada, com o pacote de evidência) sobre a página ATUAL e liste os problemas com
 severidade e evidência. Para a lente `comparacao-referencias`, faça a pesquisa de referências
 do CRIAR (`references/pesquisa-de-referencias.md`): ela mostra até onde a página pode chegar.
 

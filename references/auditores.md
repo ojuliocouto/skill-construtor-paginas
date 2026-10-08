@@ -1,34 +1,62 @@
 # Auditores adversariais (passo g do CRIAR)
 
 A auditoria nunca é feita pelo mesmo olhar que construiu: quem construiu não enxerga o
-próprio erro. Por isso a página passa por **9 lentes independentes**, as mesmas do
-`scripts/wave.py` (dicionário `LENTES`): design-critic, assets-auditor, visual-auditor,
-motion-auditor, responsive-auditor, cro-auditor, a11y-auditor, content-auditor e
-comparacao-referencias. Quem decide se entrega é o ciclo (`wave.py rodada`), não a nota.
+próprio erro. Por isso a página passa por **um subagente auditor independente que percorre as
+9 lentes numa passada só**. As 9 lentes são CRITÉRIOS, as mesmas do `scripts/wave.py`
+(dicionário `LENTES`): design-critic, assets-auditor, visual-auditor, motion-auditor,
+responsive-auditor, cro-auditor, a11y-auditor, content-auditor e comparacao-referencias.
+Quem decide se entrega é o ciclo (`wave.py rodada`), não a nota. O ciclo tem **teto de 2
+rodadas** e a segunda é de conferência, não uma auditoria nova (seção mais abaixo).
+
+Por que um só (v3.5.4): o dono perguntou "esses 9 revisores são necessários?", a regra dele é
+teto de 2 rodadas de corrigir e auditar, e a skill roda ao vivo em aula, onde a página demorar
+a ficar pronta é o problema. Nove subagentes por rodada capturavam as mesmas telas nove vezes.
+Os critérios continuam todos; muda quantos agentes rodam e quantas rodadas.
 
 ## Como rodar
 
 1. A página servida com compressão (`scripts/servidor-gzip.py`) e os gates do passo f verdes.
-2. **Quando o ambiente permite subagentes (o padrão):** a rodada roda com subagente auditor
-   independente (o tipo `auditor`, ou um subagente comum com mandato de refutar), uma lente por
-   subagente ou um auditor para as nove, recebendo só a URL, a `dist/`, o briefing, a tabela
-   de sustentação, a pasta `referencias/` e as preferências, sem o histórico da construção.
-   Com a tool `Workflow`, uma chamada `parallel`; com `Agent`/`Task`, um subagente por lente.
-   Registro com `--origem subagente`.
-3. **Quando não permite** (sem subagente, pedido de agente único): a MESMA checagem roda em
+2. **O pacote de evidência, juntado UMA vez pela sessão principal, antes de chamar o auditor.**
+   O auditor recebe a evidência pronta e não captura as telas de novo. O pacote tem:
+   - a URL da página servida;
+   - a `dist/` (`dist/index.html`);
+   - o briefing (`evidencias/briefing.md`), o `PLANO.md`, a tabela de sustentação
+     (`evidencias/sustentacao.md`) e, quando existir, o `plano-visual.md`;
+   - a pasta `referencias/` (a `sintese.md` e os `*-dobra.png`);
+   - as capturas de tela que os gates já produziram: `prova-desktop.png` e `prova-mobile.png`
+     (`screenshot-prova.js`), com as de 360 e 320 se foram feitas;
+   - as pranchas do vídeo de prova: `prancha-desktop.png` e `prancha-mobile.png`
+     (`gravar-video.js`), mais as pranchas de animação por seção quando existirem;
+   - as preferências do dono da skill, quando o projeto as usa.
+   Gere uma vez o que ainda não existir (prints e vídeo, `references/caminhos/criar.md` passo g) e confira:
+   `python3 <dir-da-skill>/scripts/pacote-auditoria.py --projeto <dir> --url <url>`.
+   Ele lista o que achou, o que falta e o que está velho (capturado antes da última mudança da
+   página), grava `auditoria/pacote.json` e sai 1 se faltar item obrigatório. Não chame o auditor
+   com pacote incompleto: ele ia capturar por conta própria, de novo.
+3. **Quando o ambiente permite subagentes (o padrão):** UM subagente auditor independente (o
+   tipo `auditor`, ou um subagente comum com mandato de refutar), que recebe o pacote e as
+   preferências, sem o histórico da construção. Ele percorre as 9 lentes numa passada, lê o
+   pacote, só abre a página para o que as capturas não mostram (interação, foco, hover) e
+   devolve o schema abaixo: um bloco por lente. O registro continua um por lente (as 9 notas e
+   vereditos), com `--origem subagente`.
+   **Modo opcional, auditoria profunda:** uma lente por subagente (com a tool `Workflow`, uma
+   chamada `parallel`; com `Agent`/`Task`, um por lente) só quando a pessoa pedir auditoria
+   profunda, com essas palavras ou equivalentes. Nunca por padrão.
+4. **Quando não permite** (sem subagente, pedido de agente único): a MESMA checagem roda em
    sequência, uma lente por vez, para achar e corrigir defeito. Ela é autoavaliação, e **nota de
    autoavaliação não libera entrega**: o registro leva `--origem autoavaliacao` e o `wave.py rodada` responde
    AUDITORIA INDEPENDENTE PENDENTE até a rodada independente acontecer em outra sessão, sem o
    histórico (`--origem sessao-independente`), ou com outra pessoa (`--origem pessoa`). Custo
    medido de confiar na autoavaliação (02/10/2026): média 7,78 e "tells 0" contra 5,5 e cinco
    achados graves do auditor independente, na mesma página.
-4. Cada lente devolve o schema abaixo e se registra:
+5. Cada lente devolvida se registra:
    `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> registrar <lente> --veredito <aprovado|reprovado> --nota <0-10> --origem <subagente|sessao-independente|pessoa|autoavaliacao> --achados "<o que olhou, o que mediu, o que achou>"`
-5. Master: `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> checar` (todas as lentes e
+6. Master: `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> checar` (todas as lentes e
    todos os gates registrados).
-6. Ciclo: `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`.
-   Saiu CONTINUA: corrija, refaça os gates que a correção toca, rode de novo as lentes que
-   tinham achado, feche outra rodada.
+7. Ciclo: `python3 <dir-da-skill>/scripts/wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`.
+   Saiu CONTINUA (rodada 1): corrija, refaça os gates que a correção toca, junte o pacote de novo
+   (a página mudou, os prints antigos ficam velhos), salve os achados da rodada 1 em
+   `auditoria/achados-rodada-1.json` e feche a rodada de conferência (a seção sobre a segunda rodada, abaixo).
 
 ## Schema de retorno (toda lente)
 
@@ -57,12 +85,57 @@ comparacao-referencias. Quem decide se entrega é o ciclo (`wave.py rodada`), n�
 2. Nenhuma regressão (achado causado pela correção da rodada anterior).
 3. A lente `comparacao-referencias` não pode estar reprovada: se estiver, o ciclo manda voltar
    ao plano visual (passo c), com qualquer nota nas outras.
-4. Depois disso, fecha quando a gravidade secou (zero crítico e zero alto), ou a média chegou a
-   8,0 com nenhuma lente abaixo de 7, ou duas rodadas seguidas subiram menos de 0,3, ou bateu o
-   teto de 4 rodadas. A nota real vai escrita na entrega, sempre.
+4. Auditoria independente: nota de autoavaliação não libera (AUDITORIA INDEPENDENTE PENDENTE).
+5. Depois disso, fecha quando a gravidade secou (zero crítico e zero alto), ou a média chegou a
+   8,0 com nenhuma lente abaixo de 7, ou **bateu o teto de 2 rodadas**.
+
+**Teto de 2 rodadas, e depois dele o ciclo fecha SEMPRE.** A segunda rodada termina em uma de
+três saídas: aprovado; **ENTREGA COM RESSALVAS**, que lista os achados que sobraram e a nota
+real, e as duas vão escritas na entrega; ou **NÃO ENTREGAR: crítico aberto** (ou regressão
+aberta). O teto fecha o ciclo e não afrouxa nada: crítico aberto, regressão, conteúdo falso
+(o `content-auditor` reprovado por dado inventado é crítico), lente de referências reprovada e
+auditoria independente pendente continuam barrando a entrega na segunda rodada, e nunca viram ressalva.
+O `wave.py rodada` nunca pede terceira rodada sozinho e recusa a terceira chamada. Uma terceira
+só acontece se a PESSOA pedir, com `rodada --rodada-extra-pedida ...`; o pedido fica registrado no
+histórico, a terceira também fecha sempre e não existe quarta. A nota real vai escrita na entrega, sempre.
 
 Compare ACHADOS entre rodadas, nunca notas: cada rodada é um olhar novo e a nota não é medida
 calibrada. Nota que cai pode ser régua mais fina, não página pior.
+
+## Rodada 2: conferência, não auditoria nova
+
+A rodada 2 existe para confirmar a correção, e o auditor é o mesmo da rodada 1 (a mesma
+instância, quando o ambiente deixa continuar a conversa com ele, ou um novo recebendo a lista).
+Ele recebe o pacote refeito (prints e pranchas capturados DEPOIS da correção; o
+`pacote-auditoria.py --rodada 2` confere) e a lista de achados da rodada 1, e confere três
+coisas, e mais nada:
+
+1. cada achado foi corrigido, com evidência;
+2. a correção não quebrou outra coisa (regressão), olhando só o que a correção tocou;
+3. mais nada. Ele não reabre as 9 lentes do zero, não procura achado novo fora do que a
+   correção tocou e não troca a régua. Defeito grave que apareça no caminho entra como
+   `regressão` ou `não corrigido`, nunca como lista nova.
+
+Schema de retorno (um item por achado da rodada 1):
+
+```json
+{
+  "rodada": 2,
+  "achados": [
+    { "achado": "string (o item da rodada 1, com a lente)", "estado": "corrigido|não corrigido|regressão", "evidencia": "string" }
+  ]
+}
+```
+
+- **corrigido:** a evidência mostra o que mudou (print do mesmo recorte, medida, trecho com linha).
+- **não corrigido:** a evidência mostra que o defeito segue lá. Segue como achado aberto com a
+  mesma severidade.
+- **regressão:** a evidência mostra o que a correção quebrou. Conta em `--regressoes` e, se for
+  crítico, em `--criticos`.
+
+A sessão registra de novo só as lentes cujos achados mudaram de estado (`registrar`, mesma
+`--origem subagente`), conta `--criticos`, `--altos` e `--regressoes` do que ficou aberto e fecha:
+`wave.py rodada ...`. O ciclo para aí (ENTREGA COM RESSALVAS ou NÃO ENTREGAR).
 
 ## As 9 lentes
 

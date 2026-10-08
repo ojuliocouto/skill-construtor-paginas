@@ -170,6 +170,81 @@ class Estrutura(unittest.TestCase):
             self.assertRegex(t.lower(), r"subagente auditor independente")
             self.assertRegex(t.lower(), r"autoavalia[cç][aã]o n[aã]o libera entrega")
 
+    # v3.5.4 (08/10/2026): um auditor para as nove lentes, pacote de evidência pronto, teto de 2 rodadas
+    # e segunda rodada de conferência. O dono perguntou "esses 9 revisores são necessários?" e a regra
+    # dele é teto de 2 rodadas de corrigir e auditar.
+    def _compacto(self, p):
+        return re.sub(r"\s+", " ", ler(p))
+
+    def test_v354_um_auditor_para_as_nove_lentes_e_o_padrao(self):
+        for p in (REF / "auditores.md", CRIAR, SKILL):
+            t = self._compacto(p).lower()
+            self.assertRegex(t, r"um (único )?subagente auditor", p.name)
+            self.assertRegex(t, r"uma passada", p.name)
+        a = self._compacto(REF / "auditores.md").lower()
+        self.assertRegex(a, r"uma lente por subagente.{0,200}(opcional|só quando|somente quando).{0,200}profunda")
+        self.assertRegex(a, r"auditoria profunda")
+
+    def test_v354_nenhum_texto_manda_nove_subagentes_nem_teto_de_quatro(self):
+        proibidos = (r"teto de 4 rodadas", r"4 rodadas", r"quatro rodadas", r"9 lentes por subagente",
+                     r"nove lentes por subagente", r"um subagente por lente")
+        for p, t in textos("SKILL.md", "README.md", "references/*.md", "references/caminhos/*.md"):
+            t = re.sub(r"\s+", " ", t).lower()
+            for pr in proibidos:
+                self.assertNotRegex(t, pr, f"{p.name}: {pr}")
+            for m in re.finditer(r"uma lente por subagente", t):
+                contexto = t[max(0, m.start() - 250): m.end() + 250]
+                self.assertRegex(contexto, r"opcional|profunda|deixa de ser o padr", f"{p.name}: 'uma lente por subagente' sem ser modo opcional")
+
+    def test_v354_registro_continua_um_por_lente_com_origem(self):
+        a = self._compacto(REF / "auditores.md").lower()
+        self.assertRegex(a, r"registro.{0,200}(um por lente|cada lente)")
+        self.assertIn("--origem subagente", a)
+        self.assertRegex(a, r"autoavalia[cç][aã]o n[aã]o libera entrega")
+
+    def test_v354_pacote_de_evidencia_com_lista_e_comando(self):
+        for p in (REF / "auditores.md", CRIAR):
+            t = self._compacto(p)
+            self.assertIn("scripts/pacote-auditoria.py", t, p.name)
+            for item in ("dist/", "PLANO.md", "prancha-desktop.png", "prancha-mobile.png", "referencias/", "briefing"):
+                self.assertIn(item, t, f"{p.name}: pacote sem {item}")
+            self.assertRegex(t.lower(), r"n[aã]o captura(m)? de novo|n[aã]o capturam? (as telas )?de novo|sem capturar de novo", p.name)
+        self.assertTrue((RAIZ / "scripts" / "pacote-auditoria.py").is_file())
+        self.assertTrue((RAIZ / "scripts" / "test-pacote-auditoria.py").is_file())
+
+    def test_v354_teto_de_duas_rodadas_e_ressalvas(self):
+        for p in (REF / "auditores.md", CRIAR, SKILL):
+            t = self._compacto(p)
+            self.assertRegex(t.lower(), r"teto de 2 rodadas", p.name)
+        a = self._compacto(REF / "auditores.md")
+        for item in ("ENTREGA COM RESSALVAS", "NÃO ENTREGAR: crítico aberto", "--rodada-extra-pedida"):
+            self.assertIn(item, a, item)
+        self.assertRegex(a.lower(), r"nunca pede (a )?terceira rodada sozinh")
+        self.assertEqual(wave().TETO_RODADAS, 2)
+
+    def test_v354_rodada_2_e_conferencia_com_schema(self):
+        a = self._compacto(REF / "auditores.md")
+        i = a.index("Rodada 2")
+        trecho = a[i:i + 2500].lower()
+        for item in ("conferência", "corrigido", "não corrigido", "regressão", "evidência", "achado", "estado"):
+            self.assertIn(item, trecho, item)
+        self.assertRegex(trecho, r"n[aã]o reabre as 9 lentes")
+        self.assertRegex(trecho, r"mais nada")
+        self.assertIn("```json", ler(REF / "auditores.md").split("Rodada 2", 1)[1])
+
+    def test_v354_versao_e_registro_de_mudancas(self):
+        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.4$")
+        self.assertIn("## 3.5.4", ler(RAIZ / "CHANGELOG.md"))
+        self.assertIn("3.5.4", ler(RAIZ / "README.md"))
+        self.assertIn("pacote-auditoria.py", ler(RAIZ / "README.md"))
+        self.assertIn("pacote-auditoria.py", ler(SKILL))
+
+    def test_v354_zero_travessao_nos_textos_da_skill(self):
+        for p, t in textos("SKILL.md", "README.md", "CHANGELOG.md", "references/*.md", "references/caminhos/*.md"):
+            self.assertNotIn("\u2014", t, p.name)
+        for f in ("pacote-auditoria.py", "test-pacote-auditoria.py", "wave.py"):
+            self.assertNotIn("\u2014", ler(RAIZ / "scripts" / f), f)
+
     def test_v31_jornal_de_filetes_e_tell(self):
         a = ler(REF / "anti-vibe-coding.md")
         self.assertRegex(a, r"V16 \| \*\*\"Jornal de filetes\"")

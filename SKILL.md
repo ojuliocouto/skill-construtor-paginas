@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.5.3
+version: 3.5.4
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -11,8 +11,8 @@ aprovadas em gate. A versão 3 depende de **três coisas, e só delas**:
 
 1. **A skill `frontend-design`**, acionada de verdade para escrever o plano visual antes do
    código.
-2. **Auditores adversariais**: 9 lentes independentes que procuram o defeito, inclusive a que
-   compara a página com as referências.
+2. **Auditor adversarial**: um subagente independente que percorre as 9 lentes (critérios) numa
+   passada e procura o defeito, inclusive o da lente que compara a página com as referências.
 3. **Pesquisa de referências reais**: 6 a 10 páginas de verdade, abertas num navegador headless,
    printadas e lidas, antes de qualquer decisão visual.
 
@@ -39,7 +39,7 @@ Cada comando vai inteiro na linha: guardar comando em variável não roda no zsh
 
 **Glossário curto:**
 - **gate**: checagem que REPROVA (sai com código 1) e impede avançar.
-- **lente**: um auditor com um critério só; as 9 lentes formam a rodada de auditoria.
+- **lente**: um critério de auditoria; um único auditor percorre as 9 lentes numa passada.
 - **tell**: sinal que entrega página feita por IA (rótulo em caixa alta em cima do título,
   número gigante decorativo, numeração 01/02/03, brilho difuso atrás do texto).
 - **kicker**: rótulo curto em caixa alta, com letra espaçada, em cima do título. Proibido.
@@ -117,15 +117,14 @@ revisão. Nenhuma linha de código antes dele. O banco de design (`scripts/searc
 `data/*.csv`) é consulta opcional: dá ideia, nunca decide.
 
 ### Auditores adversariais (passo g do CRIAR)
-As 9 lentes de `references/auditores.md`: design-critic, assets-auditor, visual-auditor,
+As 9 lentes de `references/auditores.md` (design-critic, assets-auditor, visual-auditor,
 motion-auditor, responsive-auditor, cro-auditor, a11y-auditor, content-auditor e
-**comparacao-referencias** (a página está no nível das referências printadas? Se não, volta ao
-plano visual). A rodada roda com **subagente auditor independente quando o ambiente permite**;
-quando não permite, a mesma checagem em sequência serve para achar defeito, mas é
-autoavaliação, e **nota de autoavaliação não libera entrega**: o `wave.py rodada` responde
-AUDITORIA INDEPENDENTE PENDENTE até uma rodada de outra sessão ou de outra pessoa. Cada lente
-se registra no `scripts/wave.py` com `--origem`; o master confere que todas rodaram e o ciclo
-decide se entrega.
+**comparacao-referencias**, que reprova e manda voltar ao plano visual) são critérios. A rodada é
+**um subagente auditor independente** que as percorre numa passada, com o pacote de evidência
+juntado uma vez (`scripts/pacote-auditoria.py`): ele não captura as telas de novo. Uma lente por
+subagente só se a pessoa pedir auditoria profunda. **Teto de 2 rodadas**, a segunda só de
+conferência; depois dela o ciclo fecha (ENTREGA COM RESSALVAS ou NÃO ENTREGAR). Sem subagente é
+autoavaliação, e **nota de autoavaliação não libera entrega**. Registro: `scripts/wave.py --origem`.
 
 ---
 
@@ -142,7 +141,7 @@ Detalhe, comandos e gates de cada passo: `references/caminhos/criar.md`.
 | d. Copy | texto de cada seção, só com fato do briefing, e a tabela frase da página -> linha do briefing | `gate-verdade.py` e `registrar 3` |
 | e. Construção | HTML + Tailwind compilado na ordem do PLANO, hero primeiro, imagens com licença, pixel se pedido | `gate-plano.py` verde antes e `registrar 4` |
 | f. Gates mecânicos | sem kicker, classes mortas, 12 telas, oclusão, simetria, texto, ritmo, animação (prancha por seção), imagens, verdade, publicação, identidade, uso, referências, rastreamento | cada exit no `wave.py gate` |
-| g. Auditores | 9 lentes por subagente independente, ciclo fechado, passe de gosto com 0 tells | `wave.py checar` e `wave.py rodada` |
+| g. Auditores | pacote de evidência, 1 auditor nas 9 lentes, teto de 2 rodadas, passe de gosto com 0 tells | `wave.py checar` e `wave.py rodada` |
 | h. Prova | prints desktop 1440 e celular 390 e 360 lidos, vídeo da rolagem, clique testado, deploy só da `dist/`, bloco de entrega | `registrar 5` |
 
 **Ordem:** briefing, referências, PLANO aprovado, plano visual, copy, código. O PLANO vem das
@@ -252,7 +251,8 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `gate-relatorio.py` | o relatório final só afirma medida que um gate gravou: cada número cita o arquivo e está nele, nada anterior à `dist/` | h |
 | `gate-video.mjs` | as 7 checagens de vídeo (só em página com vídeo) | f |
 | `uso-ferramentas.py` | Playwright e `frontend-design` foram usados de verdade | f |
-| `wave.py` | registro das 9 lentes (a de referências responde "bonito ou só correto?"), auditor master e ciclo de rodadas | f, g |
+| `wave.py` | registro das 9 lentes (a de referências responde "bonito ou só correto?"), auditor master e ciclo de 2 rodadas | f, g |
+| `pacote-auditoria.py` | junta e confere o pacote de evidência do auditor (sai 1 se faltar item) | g |
 | `lado-a-lado.py` | duas imagens lado a lado na mesma escala | g, CLONAR, MELHORAR |
 | `extrai-identidade.mjs` | paleta real, variáveis CSS, h1, CTA e imagens de uma URL | CLONAR |
 
@@ -271,7 +271,7 @@ Testes: `scripts/test-*.py` e `scripts/test-*.cjs` (lista e comando no `README.m
 | `references/vh-estavel.md`, `references/sticky-e-sobreposicao.md`, `references/texto-em-linhas.md` | `--vh` medido, sticky fora do grid com bloco largo, divisão em linhas e `li > span` |
 | `secoes/README.md` | passo b2 e e: o cardápio de seções por objetivo, um arquivo e um HTML por formato |
 | `rastreamento.md` | passo b2 e e: Meta Pixel, GA4, onde pegar cada ID e os eventos por `data-evento` |
-| `auditores.md` | passo g: as 9 lentes, o schema, a régua do ciclo, o passe de gosto |
+| `auditores.md` | passo g: o pacote, as 9 lentes, o schema, a rodada 2, a régua do ciclo, o passe de gosto |
 | `preferencias-de-design.md` | antes do plano visual, em toda página |
 | `anti-vibe-coding.md` | os tells V1 a V15 que a lente design-critic conta |
 | `copy-servico-local.md` | passo d, para estúdio, clínica, consultório, salão |

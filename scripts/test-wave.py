@@ -51,7 +51,7 @@ class Ciclo(unittest.TestCase):
 
     def test_alto_que_depende_do_cliente_nao_segura_o_ciclo(self):
         # Relatorio do aluno: numero do WhatsApp e prova social so a cliente tem. Sem o campo,
-        # "zero alto" nunca fica verdadeiro e so o teto de 4 rodadas solta.
+        # "zero alto" nunca fica verdadeiro e so o teto de rodadas solta.
         self.assertEqual(self.executar(nota=6, altos=2, pendencias=2), 0)
 
     def test_pendencia_do_usuario_nao_apaga_alto_de_verdade(self):
@@ -189,6 +189,119 @@ class Ciclo(unittest.TestCase):
 
     def test_rodada_sem_a_pergunta_de_gosto_nao_entrega(self):
         self.assertEqual(self.executar(nota=9, altos=0, gosto=None), 1)
+
+
+class TetoDeDuasRodadas(unittest.TestCase):
+    """v3.5.4: o ciclo fecha SEMPRE na segunda rodada; terceira só se a pessoa pedir."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.projeto = self.temp.name
+
+    def preparar(self, nota=6.0, origem="subagente"):
+        wave.salvar(self.projeto, {
+            "lentes": {n: {"nota": nota, "veredito": "aprovado", "origem": origem, "gosto": "bonito",
+                           "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES},
+            "gates": {n: {"exit": 0, "detalhe": "Controle positivo"} for n in wave.GATES},
+            "rodadas": [],
+        })
+
+    def rodar(self, criticos=0, altos=3, regressoes=0, extra=False):
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida), contextlib.redirect_stderr(saida):
+            code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, criticos=criticos, altos=altos,
+                                                      regressoes=regressoes, pendencias_do_usuario=0,
+                                                      rodada_extra_pedida=extra))
+        return code, saida.getvalue()
+
+    def test_teto_e_dois(self):
+        self.assertEqual(wave.TETO_RODADAS, 2)
+
+    def test_primeira_rodada_com_alto_continua(self):
+        self.preparar()
+        code, _ = self.rodar()
+        self.assertEqual(code, 1)
+
+    def test_segunda_rodada_fecha_com_ressalvas_e_nota_real(self):
+        self.preparar()
+        self.rodar()
+        code, texto = self.rodar()
+        self.assertEqual(code, 0)
+        self.assertIn("ENTREGA COM RESSALVAS", texto)
+        self.assertIn("6.00", texto)
+
+    def test_ressalvas_listam_o_que_sobrou(self):
+        self.preparar()
+        self.rodar()
+        code, texto = self.rodar(altos=3)
+        self.assertIn("3 alto(s)", texto)
+        self.assertIn("design-critic", texto)
+
+    def test_segunda_rodada_com_critico_nao_entrega(self):
+        self.preparar()
+        self.rodar()
+        code, texto = self.rodar(criticos=1)
+        self.assertEqual(code, 1)
+        self.assertIn("NÃO ENTREGAR: crítico aberto", texto)
+        self.assertNotIn("RESSALVAS", texto)
+
+    def test_segunda_rodada_com_regressao_nao_entrega(self):
+        self.preparar()
+        self.rodar()
+        code, texto = self.rodar(regressoes=1)
+        self.assertEqual(code, 1)
+        self.assertIn("NÃO ENTREGAR", texto)
+
+    def test_segunda_rodada_com_autoavaliacao_continua_pendente(self):
+        self.preparar(origem="autoavaliacao")
+        self.rodar()
+        code, texto = self.rodar()
+        self.assertEqual(code, 1)
+        self.assertIn("AUDITORIA INDEPENDENTE PENDENTE", texto)
+
+    def test_segunda_rodada_com_referencias_reprovada_volta_ao_plano(self):
+        self.preparar()
+        d = wave.carregar(self.projeto)
+        d["lentes"]["comparacao-referencias"]["veredito"] = "reprovado"
+        wave.salvar(self.projeto, d)
+        self.rodar()
+        code, texto = self.rodar()
+        self.assertEqual(code, 1)
+        self.assertIn("VOLTA PRO PLANO VISUAL", texto)
+
+    def test_terceira_rodada_sem_pedido_e_recusada_e_nao_grava(self):
+        self.preparar()
+        self.rodar()
+        self.rodar()
+        code, texto = self.rodar()
+        self.assertEqual(code, 2)
+        self.assertIn("--rodada-extra-pedida", texto)
+        self.assertEqual(len(wave.carregar(self.projeto)["rodadas"]), 2)
+
+    def test_terceira_rodada_pedida_roda_fecha_e_fica_registrada(self):
+        self.preparar()
+        self.rodar()
+        self.rodar()
+        code, texto = self.rodar(extra=True)
+        self.assertEqual(code, 0)
+        self.assertIn("ENTREGA COM RESSALVAS", texto)
+        d = wave.carregar(self.projeto)
+        self.assertEqual(len(d["rodadas"]), 3)
+        self.assertTrue(d["rodadas"][-1].get("rodada_extra_pedida"))
+
+    def test_quarta_rodada_nunca_mesmo_com_pedido(self):
+        self.preparar()
+        self.rodar()
+        self.rodar()
+        self.rodar(extra=True)
+        code, _ = self.rodar(extra=True)
+        self.assertEqual(code, 2)
+
+    def test_flag_existe_na_linha_de_comando(self):
+        import subprocess, sys
+        fonte = pathlib.Path(__file__).with_name("wave.py").read_text(encoding="utf-8")
+        self.assertIn("--rodada-extra-pedida", fonte)
 
 
 if __name__ == "__main__":
