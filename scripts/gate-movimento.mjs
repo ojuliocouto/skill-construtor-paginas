@@ -58,6 +58,9 @@ const MINIMO_SECOES = 2;
 // roda só a visita do celular, para repetir o gate muitas vezes sem pagar o resto.
 const CPU = Number(valor('--cpu', '1'));
 const SO_CELULAR = args.includes('--so-celular');
+// `--engasgo N`: a thread principal da página trava N ms a cada ~120 ms (máquina que engasga: o aviso do observador e o evento da
+// transição chegam atrasados). A CPU reduzida sozinha não reproduziu o defeito do CI do macOS; o engasgo reproduz o atraso.
+const ENGASGO = Number(valor('--engasgo', '0'));
 const SEM_PROVA_SCRIPT = args.includes('--sem-prova-script') || SO_CELULAR;
 const SO_PROVA_SCRIPT = args.includes('--so-prova-script');
 if (!URL_ALVO) {
@@ -94,6 +97,7 @@ function escuta() {
     const r = alvo.getBoundingClientRect();
     window.__mov.push({
       t: performance.now(), tipo: ev.type, prop: ev.propertyName || ev.animationName,
+      alvo: el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : ''),
       secao: sec ? secoes().indexOf(sec) : -1,
       fora: r.bottom <= 0 || r.top >= window.innerHeight,
       sy: Math.round(window.scrollY),
@@ -237,6 +241,7 @@ if (!SEM_PROVA_SCRIPT) {
 for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
   await ctx.addInitScript(escuta);
+  if (ENGASGO > 0) await ctx.addInitScript(`setInterval(function(){var f=performance.now()+${ENGASGO};while(performance.now()<f){}},120)`);
   const page = await ctx.newPage();
   if (CPU > 1) await (await ctx.newCDPSession(page)).send('Emulation.setCPUThrottlingRate', { rate: CPU });
   try { await page.goto(URL_ALVO, { waitUntil: 'load', timeout: 45000 }); }
@@ -262,7 +267,7 @@ for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
   const fora = new Map();
   for (const e of eventos) {
     if (!e.fora || e.secao < 0) continue;
-    const s = fora.get(e.secao) || { n: 0, t: e.t, sy: e.sy };
+    const s = fora.get(e.secao) || { n: 0, t: e.t, sy: e.sy, ex: `${e.tipo} ${e.prop} em ${e.alvo}` };
     s.n++; fora.set(e.secao, s);
   }
   const abaixo = secoes.filter((s) => s.abaixo && s.alta);
@@ -272,7 +277,7 @@ for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
   const lista = [];
   for (const [i, s] of fora) {
     const sec = secoes[i] || { nome: `seção ${i}` };
-    lista.push(`seção "${sec.nome}": ${s.n} animação(ões) rodaram com a seção fora da tela (aos ${(s.t / 1000).toFixed(1)} s, scrollY ${s.sy}): a visita chega nela já revelada e parada`);
+    lista.push(`seção "${sec.nome}": ${s.n} animação(ões) rodaram com a seção fora da tela (aos ${(s.t / 1000).toFixed(1)} s, scrollY ${s.sy}; a primeira: ${s.ex}): a visita chega nela já revelada e parada`);
   }
   if (animam.length < minimo) {
     lista.push(`só ${animam.length} de ${abaixo.length} seções abaixo da dobra animam ao chegar (mínimo ${minimo}): ${abaixo.filter((s) => !chegaram.has(s.i)).map((s) => `"${s.nome}"`).slice(0, 6).join(', ')} chegam paradas`);

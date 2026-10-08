@@ -1,4 +1,10 @@
-/** Páginas locais controladas isolam defeitos sem depender de site de cliente. */
+/** Páginas locais controladas isolam defeitos sem depender de site de cliente.
+ *
+ *  Base dos testes `test-gates-visuais-responsivo.cjs`, `-composicao.cjs` e `-movimento.cjs` (3.5.7): um único arquivo passou
+ *  de 1200 s no macOS do CI (teto de 20 min por arquivo), então os controles se dividem por FAMÍLIA (o prefixo do nome do
+ *  controle) em três processos, cada um bem abaixo do teto. O servidor e as páginas de controle são os mesmos; `iniciar(familias)`
+ *  roda só os controles das famílias pedidas. `GATES_FILTRO=<prefixo>` continua valendo dentro da família.
+ *  Quem garante que nenhum controle sumiu na divisão é o `test-gates-visuais-cobertura.py`. */
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -188,6 +194,7 @@ function rodar(nome, script, args, esperado, padrao) {
   });
 }
 
+function iniciar(familias) {
 servidor.listen(0, '127.0.0.1', async () => {
   const url = `http://127.0.0.1:${servidor.address().port}`;
   const script = nome => path.join(__dirname, nome);
@@ -287,7 +294,7 @@ servidor.listen(0, '127.0.0.1', async () => {
     casos.push(['dash-vazio', dash, [url + '/dash-vazio', '--out', path.join(pasta, 'dash-vazio')], 1]);
   }
   const resultados = [];
-  const selecionados = casos.filter(([nome]) => !process.env.GATES_FILTRO || nome.startsWith(process.env.GATES_FILTRO));
+  const selecionados = casos.filter(([nome]) => (!familias || familias.includes(nome.split('-')[0])) && (!process.env.GATES_FILTRO || nome.startsWith(process.env.GATES_FILTRO)));
   if (!selecionados.length) throw new Error('O filtro não selecionou nenhum controle.');
   // Duas execuções por vez evitam que falta de memória pareça defeito da página; GATES_PARALELO=1
   // roda um navegador por vez.
@@ -301,3 +308,6 @@ servidor.listen(0, '127.0.0.1', async () => {
   servidor.close();
   process.exitCode = resultados.every(Boolean) ? 0 : 1;
 });
+}
+
+module.exports = { iniciar };
