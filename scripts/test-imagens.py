@@ -8,6 +8,7 @@ fisioterapeuta" sem "imagem ilustrativa".
 """
 import importlib.util
 import pathlib
+import re
 import subprocess
 import sys
 import tempfile
@@ -374,16 +375,100 @@ class SequenciaDeEstados(GateImagensV35):
             a += f' data-assinatura-estado="{estado}"'
         return f'<section id="{secao}"><h2>{secao}</h2><figure{a}><img src="img/{arquivo}" alt="foto" width="640" height="480"></figure>{extra}</section>'
 
-    def avaliar(self, secoes, n_fotos=3):
+    def plano_de(self, estados):
+        nomes = ["cru", "torrado", "na xícara", "passado", "servido"][:estados]
+        return ("# Plano\n\nMomento assinatura: o produto em foto real; seções: " + ", ".join(f"seção {i}" for i in range(1, max(estados, 3) + 1)) + "; estados: " + " -> ".join(nomes) + "\n")
+
+    def avaliar(self, secoes, n_fotos=3, plano="auto"):
+        """3.5.13 (achado 2): a sequência só vale com o PLANO.md declarando o momento assinatura e os estados. `plano="auto"` declara
+        tantos estados quantos a página numera; um texto declara o que se quiser; None não cria PLANO.md."""
         fotos = {f"foto{i}-800.jpg": (i, True) for i in range(1, n_fotos + 1)}
         raiz = self.projeto(secoes, [self.foto_ok(i) for i in range(1, n_fotos + 1)], fotos)
+        if plano == "auto":
+            nums = [int(x) for x in re.findall(r'data-assinatura-estado="(\d+)"', "".join(secoes))]
+            plano = self.plano_de(max(nums)) if nums and max(nums) >= 2 else None
+        if plano:
+            (raiz / "PLANO.md").write_text(plano, encoding="utf-8")
         return gate.avaliar(raiz)[0]
 
     def tres(self, **kw):
         return [self.fig("sitios", "foto1-800.jpg", 1), self.fig("semana", "foto2-800.jpg", 2), self.fig("fecho", "foto3-800.jpg", 3)]
 
-    def test_tres_fotos_diferentes_em_tres_secoes_com_estados_1_2_3_passam(self):
+    def test_tres_fotos_diferentes_em_tres_secoes_com_estados_1_2_3_e_o_plano_declarando_passam(self):
         self.assertEqual(self.avaliar(self.tres()), [])
+
+    # ---- 3.5.13 (achado 2): a sequência amarrada ao PLANO.md ----
+    def test_tres_fotos_de_ruido_marcadas_1_2_3_sem_o_plano_reprovam(self):
+        # as 3 fotos são ruído de sementes 1, 2 e 3 (não têm relação nenhuma): sem o PLANO declarando o momento assinatura, reprova
+        p = self.avaliar(self.tres(), plano=None)
+        self.assertTrue(any("PLANO.md" in x and "sequência" in x for x in p), p)
+
+    def test_plano_sem_a_linha_de_momento_assinatura_reprova(self):
+        p = self.avaliar(self.tres(), plano="# Plano\n\nSem assinatura aqui.\n")
+        self.assertTrue(any("PLANO.md" in x and "Momento assinatura" in x for x in p), p)
+
+    def test_plano_com_menos_estados_que_a_pagina_reprova(self):
+        p = self.avaliar(self.tres(), plano=self.plano_de(2))
+        self.assertTrue(any("3 estados" in x and "PLANO.md" in x and "2" in x for x in p), p)
+
+    def test_plano_com_mais_estados_que_a_pagina_reprova(self):
+        p = self.avaliar([self.fig("a", "foto1-800.jpg", 1), self.fig("b", "foto2-800.jpg", 2)], 2, plano=self.plano_de(3))
+        self.assertTrue(any("2 estados" in x and "PLANO.md" in x and "3" in x for x in p), p)
+
+    def test_plano_com_estado_sem_a_seta_nao_conta_como_declaracao(self):
+        p = self.avaliar(self.tres(), plano="Momento assinatura: o produto; seções: a, b, c; estados: cru\n")
+        self.assertTrue(any("PLANO.md" in x for x in p), p)
+
+    def test_plano_com_menos_de_estados_secoes_reprova(self):
+        p = self.avaliar(self.tres(), plano="Momento assinatura: o produto; seções: a, b; estados: x -> y -> z\n")
+        self.assertTrue(any("seções" in x and "PLANO.md" in x for x in p), p)
+
+    def test_a_mensagem_da_regra_8_sem_o_plano_manda_declarar_no_plano_e_nao_sugere_a_troca_de_atributo(self):
+        f = lambda n, a: f'<section id="{n}"><h2>{n}</h2><figure data-assinatura><img src="img/{a}" alt="f" width="640" height="480"></figure></section>'
+        p = [x for x in self.avaliar([f("sitios", "foto1-800.jpg"), f("semana", "foto2-800.jpg"), f("fecho", "foto3-800.jpg")], plano=None) if "data-assinatura em 3 fotos" in x]
+        self.assertTrue(p and "PLANO.md" in p[0], p)
+        self.assertNotIn('data-assinatura-estado="1"', p[0])
+
+    def test_a_mensagem_da_regra_8_com_o_plano_declarando_sugere_a_sequencia(self):
+        f = lambda n, a: f'<section id="{n}"><h2>{n}</h2><figure data-assinatura><img src="img/{a}" alt="f" width="640" height="480"></figure></section>'
+        p = [x for x in self.avaliar([f("sitios", "foto1-800.jpg"), f("semana", "foto2-800.jpg"), f("fecho", "foto3-800.jpg")], plano=self.plano_de(3)) if "data-assinatura em 3 fotos" in x]
+        self.assertTrue(p and 'data-assinatura-estado="1"' in p[0], p)
+
+    def test_estado_zero_reprova(self):
+        p = self.avaliar([self.fig("a", "foto1-800.jpg", 0), self.fig("b", "foto2-800.jpg", 1), self.fig("c", "foto3-800.jpg", 2)])
+        self.assertTrue(any("número" in x and "0" in x for x in p), p)
+
+    # ---- 3.5.13 (achados 4 e 5): cada estado na sua seção, a foto só no vizinho, ordem crescente ----
+    def test_foto_do_estado_1_em_cinco_secoes_e_a_do_2_numa_sexta_reprova(self):
+        s = [self.fig(n, "foto1-800.jpg", 1) for n in "abcde"] + [self.fig("f", "foto2-800.jpg", 2)]
+        p = self.avaliar(s, 2)
+        self.assertTrue(any("estado 1" in x and "numa seção só" in x for x in p), p)
+
+    def test_tres_estados_lado_a_lado_numa_secao_com_copias_do_1_em_outras_duas_reprova(self):
+        unica = '<section id="unica"><h2>u</h2>' + "".join(f'<figure data-assinatura-estado="{i}"><img src="img/foto{i}-800.jpg" alt="f" width="640" height="480"></figure>' for i in (1, 2, 3)) + "</section>"
+        s = [unica, self.fig("x", "foto1-800.jpg", 1), self.fig("y", "foto1-800.jpg", 1)]
+        p = self.avaliar(s)
+        self.assertTrue(any("estado 2" in x and "sem seção própria" in x for x in p), p)
+        self.assertTrue(any("estado 1" in x and "numa seção só" in x for x in p), p)
+
+    def test_a_foto_do_estado_1_reaparecendo_na_secao_do_3_reprova(self):
+        fantasma = '<img src="img/foto1-800.jpg" alt="" aria-hidden="true" data-assinatura-estado="1" width="640" height="480">'
+        s = self.tres()
+        s[2] = s[2].replace("</section>", fantasma + "</section>")
+        p = self.avaliar(s)
+        self.assertTrue(any("estado 1" in x and "fecho" in x and "não é a dela" in x for x in p), p)
+
+    def test_estados_fora_de_ordem_na_pagina_reprovam(self):
+        s = [self.fig("sitios", "foto3-800.jpg", 3), self.fig("semana", "foto2-800.jpg", 2), self.fig("fecho", "foto1-800.jpg", 1)]
+        p = self.avaliar(s)
+        self.assertTrue(any("fora de ordem" in x for x in p), p)
+
+    def test_o_fantasma_na_secao_do_estado_seguinte_continua_passando(self):
+        fantasma = '<img class="antes" src="img/foto1-800.jpg" alt="" aria-hidden="true" data-assinatura-estado="1" width="640" height="480">'
+        s = [self.fig("sitios", "foto1-800.jpg", 1),
+             f'<section id="semana"><h2>semana</h2><figure data-assinatura-estado="2">{fantasma}<img src="img/foto2-800.jpg" alt="foto" width="640" height="480"></figure></section>',
+             self.fig("fecho", "foto3-800.jpg", 3)]
+        self.assertEqual(self.avaliar(s), [])
 
     def test_dois_estados_em_duas_secoes_passam(self):
         self.assertEqual(self.avaliar([self.fig("a", "foto1-800.jpg", 1), self.fig("b", "foto2-800.jpg", 2)], 2), [])
@@ -413,9 +498,9 @@ class SequenciaDeEstados(GateImagensV35):
     # ---- o caso ruim original segue reprovando ----
     def test_tres_fotos_diferentes_com_data_assinatura_simples_continuam_reprovando(self):
         f = lambda n, a: f'<section id="{n}"><h2>{n}</h2><figure data-assinatura><img src="img/{a}" alt="f" width="640" height="480"></figure></section>'
-        p = self.avaliar([f("sitios", "foto1-800.jpg"), f("semana", "foto2-800.jpg"), f("fecho", "foto3-800.jpg")])
+        p = self.avaliar([f("sitios", "foto1-800.jpg"), f("semana", "foto2-800.jpg"), f("fecho", "foto3-800.jpg")], plano=self.plano_de(3))
         self.assertTrue(any("data-assinatura em 3 fotos diferentes" in x for x in p), p)
-        self.assertTrue(any("data-assinatura-estado" in x for x in p), "a mensagem aponta a saída: " + str(p))
+        self.assertTrue(any("data-assinatura-estado" in x for x in p), "a mensagem aponta a saída quando o PLANO declara: " + str(p))
 
     def test_duas_fotos_diferentes_com_data_assinatura_simples_continuam_reprovando(self):
         f = lambda n, a: f'<section id="{n}"><h2>{n}</h2><figure data-assinatura><img src="img/{a}" alt="f" width="640" height="480"></figure></section>'
@@ -452,12 +537,13 @@ class SequenciaDeEstados(GateImagensV35):
 
     def test_o_ultimo_estado_em_outro_grupo_deixa_buraco_e_reprova(self):
         s = [self.fig("a", "foto1-800.jpg", 1, "cafe"), self.fig("b", "foto2-800.jpg", 2, "cafe"), self.fig("c", "foto3-800.jpg", 3, "outro")]
-        self.assertNotEqual(self.avaliar(s), [])
+        p = self.avaliar(s)
+        self.assertTrue(any("falta o estado 3" in x or "estado 3" in x and "grupo" in x for x in p) or any("2 grupos" in x for x in p), p)
 
     def test_sequencia_mais_data_assinatura_simples_em_outra_foto_reprova(self):
         s = self.tres() + ['<section id="extra"><h2>extra</h2><figure data-assinatura><img src="img/foto4-800.jpg" alt="f" width="640" height="480"></figure></section>']
         p = self.avaliar(s, 4)
-        self.assertTrue(any("sequência" in x and "data-assinatura" in x for x in p), p)
+        self.assertTrue(any("sequência de estados (data-assinatura-estado) e data-assinatura simples em outra foto" in x for x in p), p)
 
     def test_o_mesmo_estado_em_duas_fotos_diferentes_reprova(self):
         s = [self.fig("a", "foto1-800.jpg", 1), self.fig("b", "foto2-800.jpg", 2), self.fig("c", "foto3-800.jpg", 2)]

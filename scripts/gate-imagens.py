@@ -407,20 +407,49 @@ def origem_normalizada(origem):
     return re.sub(r"[?#].*$", "", m.group(0)).rstrip("/").lower() if m else ""
 
 
+def ler_plano_assinatura(projeto):
+    """3.5.13 (achado 2): lê do PLANO.md do projeto a linha `Momento assinatura: <elemento>; seções: a, b, c; estados: x -> y -> z`.
+    Devolve {'estados': n, 'secoes': m} ou None quando o PLANO não existe, não tem a linha ou os estados não têm a mudança (->)."""
+    arq = Path(projeto) / "PLANO.md"
+    if not arq.is_file():
+        return None
+    texto = arq.read_text(encoding="utf-8-sig")
+    m = re.search(r"(?mi)^\W*momento assinatura\W*:(.*)$", texto)
+    if not m:
+        return None
+    linhas = [m.group(1)]
+    for l in texto[m.end():].splitlines()[1:]:
+        if not l.strip() or l.lstrip().startswith(("#", "|")):
+            break
+        linhas.append(l)
+    bloco = "\n".join(linhas)
+    est = re.search(r"(?i)estados?\s*:\s*([^;|\n]+)", bloco)
+    partes = [x.strip() for x in re.split(r"->|→", est.group(1))] if est and re.search(r"->|→", est.group(1)) else []
+    partes = [x for x in partes if x]
+    if len(partes) < 2:
+        return None
+    sec = re.search(r"(?i)se[cç][õo]es\s*:\s*([^;|\n]+)", bloco)
+    secoes = [x for x in re.split(r"\s*(?:,|\be\b)\s*", sec.group(1)) if x.strip()] if sec else []
+    return {"estados": len(partes), "secoes": len(secoes)}
+
+
 def _lista_pt(itens):
     itens = [str(i) for i in itens]
     return itens[0] if len(itens) == 1 else ", ".join(itens[:-1]) + " e " + itens[-1]
 
 
-def checar_sequencias(regioes, cena_de, com_marca, problemas):
+def checar_sequencias(regioes, cena_de, com_marca, problemas, plano_assinatura=None):
     """3.5.11 (P5): valida a sequência declarada com data-assinatura-estado. `cena_de(base)` devolve a cena da foto (o agrupamento por
-    origem e pHash). Devolve, por foto (base), as seções onde ela leva a marca de estado (contam como uma só na regra da foto repetida)."""
+    origem e pHash). Devolve, por foto (base), as seções onde ela leva a marca de estado (contam como uma só na regra da foto repetida).
+    3.5.13 (auditoria, achados 2, 4, 5 e 9): a sequência só vale se o PLANO.md declara o momento assinatura com os estados e as seções
+    e o número de estados bate com o da página; cada estado mora na sua seção (a primeira em que ele é o estado mais novo), distintas;
+    a foto do estado k só pode aparecer na seção dela e na do estado k+1 (por baixo do quadro seguinte); a ordem é crescente na página."""
     seqs = {}      # grupo -> estado -> base -> seções
     ilegiveis = set()
     for chave in regioes.ordem:
         for nome, grupo, bruto in regioes.estados[chave]:
             m = re.fullmatch(r"\s*(\d+)\s*", bruto or "")
-            if not m:
+            if not m or int(m.group(1)) == 0:
                 ilegiveis.add(bruto)
                 continue
             seqs.setdefault(grupo, {}).setdefault(int(m.group(1)), {}).setdefault(base(nome), set()).add(chave)
@@ -429,6 +458,10 @@ def checar_sequencias(regioes, cena_de, com_marca, problemas):
     liberadas = {}
     if not seqs:
         return liberadas
+    if plano_assinatura is None:
+        problemas.append("sequência de estados (data-assinatura-estado) sem o PLANO.md declarando o momento assinatura: a sequência só vale quando o plano traz "
+                         "'Momento assinatura: <elemento>; seções: <a, b, c>; estados: <x -> y -> z>' com a mesma quantidade de estados da página; "
+                         "sem isso, fotos sem relação marcadas 1, 2 e 3 passariam como sequência")
     if len(seqs) > 1:
         problemas.append(f"data-assinatura-estado em {len(seqs)} grupos ({', '.join(sorted(seqs))}): um momento assinatura só por página, "
                          "uma sequência só; junte os estados no mesmo grupo ou tire a marca do que sobra")
@@ -439,6 +472,13 @@ def checar_sequencias(regioes, cena_de, com_marca, problemas):
     for grupo, estados in sorted(seqs.items()):
         nome = f" no grupo '{grupo}'" if len(seqs) > 1 else ""
         n = max(estados)
+        if plano_assinatura is not None:
+            if plano_assinatura["estados"] != n:
+                problemas.append(f"a página declara {n} estados{nome} e o PLANO.md declara {plano_assinatura['estados']} no Momento assinatura: "
+                                 "o número de estados da página é o do plano; corrija um dos dois")
+            if plano_assinatura["secoes"] < n:
+                problemas.append(f"o PLANO.md lista {plano_assinatura['secoes']} seções no Momento assinatura e a sequência tem {n} estados{nome}: "
+                                 "cada estado mora na sua seção, declare as seções do momento assinatura no plano")
         if n > MAXIMO_ESTADOS:
             problemas.append(f"sequência de {n} estados{nome}: o máximo é {MAXIMO_ESTADOS}; junte estados parecidos")
         elif len(estados) == 1:
@@ -466,10 +506,44 @@ def checar_sequencias(regioes, cena_de, com_marca, problemas):
         if 2 <= len(estados) and n <= MAXIMO_ESTADOS and len(secoes) < n:
             problemas.append(f"a sequência de {n} estados{nome} atravessa só {len(secoes)} seção(ões): cada estado mora na sua seção, "
                              f"{n} estados pedem {n} seções")
+        # 3.5.13 (achados 4 e 5): a seção própria de cada estado é a primeira em que ele é o estado mais novo presente.
+        por_secao = {}
+        for k, bases in estados.items():
+            for secoes_b in bases.values():
+                for c in secoes_b:
+                    if c != "(fora de seção)":
+                        por_secao.setdefault(c, set()).add(k)
+        casas = {}
+        for chave in regioes.ordem:
+            if chave in por_secao:
+                casas.setdefault(max(por_secao[chave]), []).append(chave)
+        if n <= MAXIMO_ESTADOS and len(estados) >= 2:
+            for k in range(1, n + 1):
+                if k not in estados:
+                    continue
+                if k not in casas:
+                    problemas.append(f"estado {k}{nome} sem seção própria: nenhuma seção tem ele como o estado mais novo; "
+                                     "cada estado mora na sua seção, distintas das outras")
+                elif len(casas[k]) > 1:
+                    problemas.append(f"estado {k}{nome} em {len(casas[k])} seções ({', '.join(casas[k])}): cada estado mora numa seção só; "
+                                     f"a foto dele só reaparece na seção do estado {k + 1}, por baixo do quadro")
+            for k, bases in sorted(estados.items()):
+                if k not in casas:
+                    continue
+                permitidas = set(casas[k]) | set(casas.get(k + 1, [])[:1])
+                fora = sorted({c for ss in bases.values() for c in ss if c not in permitidas and c != "(fora de seção)"})
+                for c in fora:
+                    problemas.append(f"a foto do estado {k}{nome} aparece na seção {c}, que não é a dela nem a do estado {k + 1}: é repetição, "
+                                     "a foto do estado só aparece na própria seção e por baixo do quadro da seção seguinte")
+            ordem = [(k, casas[k][0]) for k in range(1, n + 1) if k in casas]
+            for (k1, c1), (k2, c2) in zip(ordem, ordem[1:]):
+                if regioes.ordem.index(c1) >= regioes.ordem.index(c2):
+                    problemas.append(f"os estados estão fora de ordem na página{nome}: o estado {k1} ({c1}) vem depois do estado {k2} ({c2}); "
+                                     "a primeira seção de cada estado vem em ordem crescente")
     return liberadas
 
 
-def checar_fotos(dist, usados, regioes, problemas, avisos):
+def checar_fotos(dist, usados, regioes, problemas, avisos, plano_assinatura=None):
     """Regras 8 e 9: foto repetida entre seções e nitidez."""
     np, Image = carregar_medidas()
     if np is None:
@@ -536,9 +610,12 @@ def checar_fotos(dist, usados, regioes, problemas, avisos):
         quem_marcou = "; ".join(" + ".join(sorted(b for b in m if marcadas_de.get(b))) for m in com_marca)
         problemas.append(f"data-assinatura em {len(com_marca)} fotos diferentes ({quem_marcou}): só uma foto pode ser a do momento assinatura; "
                          "tire a marca das outras (a exceção libera a MESMA foto em várias seções, não fotos diferentes). "
-                         "Se o produto muda de foto de verdade (cru, torrado, na xícara), declare a sequência: "
-                         'data-assinatura-estado="1", "2" e "3", um número por foto, no lugar do data-assinatura')
-    liberadas_de = checar_sequencias(regioes, lambda b: raiz(b) if b in pai else b, com_marca, problemas)
+                         + ("O PLANO.md declara os estados do momento assinatura: se o produto muda de foto de verdade, use a sequência "
+                            'data-assinatura-estado="1", "2" e "3", um número por foto, no lugar do data-assinatura'
+                            if plano_assinatura is not None else
+                            "Se o produto muda de foto de verdade (cru, torrado, na xícara), declare PRIMEIRO no PLANO.md a linha "
+                            "'Momento assinatura: <elemento>; seções: <a, b, c>; estados: <x -> y -> z>'; só então a página pode numerar os estados"))
+    liberadas_de = checar_sequencias(regioes, lambda b: raiz(b) if b in pai else b, com_marca, problemas, plano_assinatura)
     for membros in grupos.values():
         secoes = set()
         for b in membros:
@@ -808,7 +885,7 @@ def avaliar(projeto, dist=None, trafego_real=False, url=None):
     if medida:
         checar_dobra({t: {**m, "aviso": True} for t, m in medida.items()}, False, problemas)
     if usados:
-        checar_fotos(dist, usados, regioes, problemas, avisos)
+        checar_fotos(dist, usados, regioes, problemas, avisos, ler_plano_assinatura(projeto))
     return problemas, avisos
 
 
