@@ -18,7 +18,9 @@
  *
  * O que este gate faz: rola ate CADA bloco de texto visivel, pergunta ao navegador quem esta
  * naquele pixel (`elementFromPoint`) e reprova quando a resposta nao e o proprio elemento.
- * Tambem pega texto cortado pela caixa (overflow escondendo linha).
+ * Tambem pega texto cortado pela caixa (overflow escondendo linha) e, desde a 3.5.10 (P13a), mede POR LINHA de texto: cada
+ * linha renderizada tem de responder com o proprio elemento; linha recortada por clip-path (span em linha que quebra em 2
+ * linhas e e recortado pela caixa da 1a) reprova como CORTADO.
  *
  * Uso:
  *   node scripts/gate-oclusao.mjs --url <url> [--min-chars 3]
@@ -80,6 +82,7 @@ for (const tela of TELAS) {
     const dorme = (ms) => new Promise((res) => setTimeout(res, ms));
     const cobertos = [];
     const cortados = [];
+    const recortados = [];
 
     // Folhas de texto: elementos sem filho-elemento, com texto de verdade.
     const folhas = [...document.querySelectorAll('p, h1, h2, h3, h4, li, span, a, dt, dd, figcaption, blockquote')]
@@ -100,23 +103,61 @@ for (const tela of TELAS) {
       const c = el.getBoundingClientRect();
       if (c.bottom < 0 || c.top > window.innerHeight) continue;
 
-      // Tres pontos: se o elemento e largo, a borda pode estar livre e o meio coberto.
-      const ys = [c.y + c.height / 2];
-      const xs = [c.x + c.width * 0.25, c.x + c.width * 0.5, c.x + c.width * 0.75];
-      let cobriuEm = null;
-      for (const x of xs) {
-        for (const y of ys) {
-          if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) continue;
-          const frente = document.elementFromPoint(Math.round(x), Math.round(y));
-          if (!frente) continue;
-          const meu = frente === el || el.contains(frente) || frente.contains(el);
-          if (!meu) {
-            cobriuEm = `${frente.tagName.toLowerCase()}.${(frente.className || '').toString().split(' ').slice(0, 2).join('.')}`;
-          }
+      // POR LINHA DE TEXTO (3.5.10, P13a). Antes eram tres pontos na altura do meio da CAIXA, e o pai contava como "dono" do
+      // ponto: um span em linha de 2 linhas com clip-path (o Chromium recorta pela caixa da 1a linha) perdia a 2a linha inteira
+      // e o gate passava, porque o meio da caixa cai entre as linhas e o ponto recortado responde com o paragrafo pai. Agora
+      // cada linha renderizada do texto (Range.getClientRects) e testada em tres pontos, e o pai so e "dono" quando nao ha
+      // clip-path entre ele e o elemento.
+      const linhasDe = (alvo) => {
+        const rg = document.createRange();
+        rg.selectNodeContents(alvo);
+        const porTopo = [];
+        for (const q of rg.getClientRects()) {
+          if (q.width < 1 || q.height < 1) continue;
+          const l = porTopo.find((x) => Math.abs(x.top - q.top) < 3);
+          if (l) { l.left = Math.min(l.left, q.left); l.right = Math.max(l.right, q.right); l.bottom = Math.max(l.bottom, q.bottom); }
+          else porTopo.push({ top: q.top, bottom: q.bottom, left: q.left, right: q.right });
         }
+        return porTopo.sort((a, b) => a.top - b.top);
+      };
+      const nomeDe = (n) => `${n.tagName.toLowerCase()}${n.className && typeof n.className === 'string' && n.className.trim() ? '.' + n.className.trim().split(/\s+/).slice(0, 2).join('.') : ''}`;
+      const medirLinhas = () => {
+        if (getComputedStyle(el).pointerEvents === 'none') return { cobriuEm: null, cortada: null };
+        const ls = linhasDe(el);
+        let cobriuEm = null, cortada = null;
+        ls.forEach((l, i) => {
+          const y = (l.top + l.bottom) / 2;
+          if (y < 0 || y > window.innerHeight) return;
+          for (const f of [0.25, 0.5, 0.75]) {
+            const x = l.left + (l.right - l.left) * f;
+            if (x < 0 || x > window.innerWidth) continue;
+            const frente = document.elementFromPoint(Math.round(x), Math.round(y));
+            if (!frente || frente === el || el.contains(frente)) continue;
+            if (frente.contains(el)) {
+              // o ponto caiu no pai: so e defeito se ha recorte (clip-path ou clip) entre o elemento e esse pai
+              for (let n = el; n && n !== frente; n = n.parentElement) {
+                const c = getComputedStyle(n);
+                if ((c.clipPath && c.clipPath !== 'none') || (c.clip && c.clip !== 'auto')) {
+                  if (!cortada) cortada = { linha: i + 1, de: ls.length, quem: nomeDe(n), regra: c.clipPath !== 'none' ? 'clip-path' : 'clip' };
+                  break;
+                }
+              }
+            } else if (!cobriuEm) cobriuEm = nomeDe(frente);
+          }
+        });
+        return { cobriuEm, cortada };
+      };
+      let { cobriuEm, cortada } = medirLinhas();
+      if (cobriuEm || cortada) {
+        // pode ser animacao de entrada no meio (recorte que abre, faixa que passa): espera ate 2,5 s e mede de novo
+        await Promise.race([Promise.all(document.getAnimations().map((a) => a.finished.catch(() => null))), dorme(2500)]);
+        ({ cobriuEm, cortada } = medirLinhas());
       }
       if (cobriuEm) {
         cobertos.push({ texto: (el.innerText || '').trim().slice(0, 46), porQuem: cobriuEm });
+      }
+      if (cortada) {
+        recortados.push({ texto: (el.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 46), ...cortada });
       }
 
       // Texto cortado pela propria caixa (overflow comendo linha).
@@ -129,7 +170,7 @@ for (const tela of TELAS) {
         });
       }
     }
-    return { cobertos, cortados, analisados: folhas.length };
+    return { cobertos, cortados, recortados, analisados: folhas.length };
   }, MIN);
 
   console.log(`\n[${tela.nome}] ${r.analisados} blocos de texto analisados`);
@@ -141,7 +182,11 @@ for (const tela of TELAS) {
     console.log(`   CORTADO  "${c.texto}"  (${c.sobra}px sobrando fora da caixa)`);
     achados.push({ tela: tela.nome, tipo: 'cortado', ...c });
   }
-  if (!r.cobertos.length && !r.cortados.length) console.log('   ok       nada coberto, nada cortado');
+  for (const c of r.recortados) {
+    console.log(`   CORTADO  "${c.texto}" linha ${c.linha} de ${c.de} recortada por ${c.regra} em ${c.quem}`);
+    achados.push({ tela: tela.nome, tipo: 'recortado', ...c });
+  }
+  if (!r.cobertos.length && !r.cortados.length && !r.recortados.length) console.log('   ok       nada coberto, nada cortado');
   await ctx.close();
 }
 await navegador.close();
@@ -152,7 +197,10 @@ if (achados.length) {
   console.log('  Causa quase sempre a mesma: camada decorativa (textura, veu, gradiente) com');
   console.log('  `absolute inset-0` e SEM z-index, pintando por cima do conteudo. Mande a');
   console.log('  decoracao pra tras (-z-10) e declare a ordem entre as secoes com z explicito,');
-  console.log('  em vez de depender da ordem do documento.\n');
+  console.log('  em vez de depender da ordem do documento.');
+  console.log('  Linha recortada por clip-path: o elemento em linha (span, a, strong) que quebra em');
+  console.log('  mais de uma linha e recortado pela caixa da 1a linha. Ponha display: block ou');
+  console.log('  inline-block nele, ou o recorte no bloco de fora.\n');
   process.exit(1);
 }
 console.log('  PASSA: nenhum texto coberto ou cortado, nas duas telas.\n');
