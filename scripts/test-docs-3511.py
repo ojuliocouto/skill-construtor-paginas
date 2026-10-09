@@ -1,5 +1,5 @@
 """3.5.11: a variante de 3 fotos do momento assinatura (P5) precisa estar nos textos que o aluno e o agente leem, e a versão
-tem que ser a 3.5.11 onde a 3.5.10 era a atual. O gate e a receita têm testes próprios (test-imagens.py, test-receitas.py)."""
+tem que ser a 3.5.11 onde a 3.5.10 era a atual (a 3.5.12 já é a atual: os testes de versão olham o histórico). O gate e a receita têm testes próprios (test-imagens.py, test-receitas.py)."""
 import pathlib
 import re
 import unittest
@@ -21,9 +21,9 @@ def plano(t):
 
 class Versao3511(unittest.TestCase):
     def test_versao_nos_tres_lugares(self):
-        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.11$")
-        self.assertIn("router (v3.5.11)", ler(README))
-        self.assertTrue(ler(CHANGELOG).startswith("# Changelog\n\n## 3.5.11"))
+        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.12$")
+        self.assertIn("router (v3.5.12)", ler(README))
+        self.assertIn("\n## 3.5.11 (09/10/2026)", ler(CHANGELOG))
         self.assertIn("## What is new in 3.5.11", ler(README))
 
     def test_skill_md_nao_passa_de_330_linhas(self):
