@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.5.8
+version: 3.5.9
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -204,13 +204,13 @@ Crítico, e só isto: Python 3, node, Playwright com o Chromium baixado e a skil
 instalada. Faltando crítico, conduza a instalação (o comando sai pronto na tela) em vez de só
 avisar. Opcional ausente não bloqueia nada. `--opcionais` também checa os MCPs e a rede.
 
-**Contexto de projeto (local, fora do Git):** se existir `references/projects/<projeto>.md`,
-leia antes do código, e a sessão mais recente do mesmo projeto em `references/sessions/`.
-Respeite as decisões já tomadas ali.
+**Contexto de projeto (na pasta do PROJETO, nunca na da skill):** se existir `<projeto>/contexto-do-projeto.md`,
+leia antes do código, e a sessão mais recente do mesmo projeto em `<projeto>/sessoes/`.
+Respeite as decisões já tomadas ali. Dado de cliente nunca mora na pasta da skill (`references/gate-etapas.md`).
 
-**Ao concluir:** registre `references/sessions/AAAA-MM-DD-<projeto>.md` (o que foi pedido, o que
-foi entregue, o que se aprendeu, arquivos alterados) e atualize `references/projects/<projeto>.md`.
-Modelos em `EXAMPLE.md`. Aprendizado novo da skill vira regra no arquivo do caminho que a
+**Ao concluir:** registre `<projeto>/sessoes/AAAA-MM-DD.md` (o que foi pedido, o que
+foi entregue, o que se aprendeu, arquivos alterados) e atualize `<projeto>/contexto-do-projeto.md`.
+Os modelos (só leitura) são `references/sessions/EXAMPLE.md` e `references/projects/EXAMPLE.md`; copie para a pasta do projeto. Aprendizado novo da skill vira regra no arquivo do caminho que a
 executa, nunca uma lista solta no fim de um arquivo.
 
 ---
@@ -243,7 +243,7 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `anim.mjs` + `prancha.py` | 3 quadros por seção em 1440 e 390 (`secoes.json`) e a prancha com a % de pixels que mudou | f |
 | `gate-animacao.py` | seção com menos de 2% de pixels mudando, mais de 2 seções com o mesmo tipo de animação, menos pranchas que linhas do plano | f |
 | `sobreposicao.mjs` | varredura de rolagem: elemento fixo (sticky) cobrindo um bloco, em px² por tela | f |
-| `gate-movimento.mjs` | visita real: 8 s parada no topo, depois rola; reprova animação que roda fora da tela, página que não anima ao chegar, item que chega parado a 300 px/s e rolagem suave com movimento reduzido | f |
+| `gate-movimento.mjs` | visita real: 8 s parada no topo, depois rola; reprova animação que roda fora da tela, página que não anima ao chegar, item que chega parado a 300 px/s, rolagem suave e qualquer animação em curso (mais de 0,2 s) com movimento reduzido | f |
 | `gate-verdade.py` | toda promessa (e a meta description) com linha do briefing que sustente; dono nomeado no briefing aparece no corpo | d, f |
 | `gate-imagens.py` | licença completa, crédito com o título real, aviso no og-image; foto repetida entre seções (pHash e origem), nitidez relativa (abaixo de 2,5 reprova, abaixo de 6 avisa), aviso e 60% de foto na primeira tela (`--url`), pessoa de banco como aviso (`--trafego-real` reprova) | e, f |
 | `gerar-icones.mjs` | favicon e ícone de tela inicial gerados do `icones/icone.svg` do motivo do plano, com registro | e |
@@ -278,7 +278,7 @@ Testes: `scripts/test-*.py` e `scripts/test-*.cjs` (lista e comando no `README.m
 | `page-types.md` | passo d, seções por tipo de página (o modelo geral) |
 | `assets-sem-chave.md` | passo e, foto com licença aberta e como creditar |
 | `gate-etapas.md` | campos de cada etapa e quando re-registrar |
-| `projects/`, `sessions/` | contexto local de projeto (fora do Git) |
+| `projects/`, `sessions/` | só os modelos `EXAMPLE.md` do contexto e da sessão; o registro real fica na pasta do projeto |
 | `arquivo/` | referências da v2, fora do fluxo; nenhum caminho depende delas |
 
 ---

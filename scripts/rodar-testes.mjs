@@ -53,6 +53,7 @@ const PRECISAM = {
   'test-receitas-navegador.cjs': 'navegador (prova as receitas de movimento)',
   'test-animacao.py': 'Pillow e numpy (prancha de animação)',
   'test-imagens.py': 'Pillow e numpy (repetição e nitidez de foto)',
+  'test-folha-assets.py': 'Pillow (monta a folha de contato numerada da busca de foto)',
 };
 
 function achar() {

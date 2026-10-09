@@ -123,7 +123,7 @@ const servidor = http.createServer((req, res) => {
   // Rede de segurança da receita-base (A28): `.js` posto no <head> e retirado se o script principal não confirmar em 5 s.
   const REDE = '<script>(function(d){d.classList.add("js");setTimeout(function(){if(!d.hasAttribute("data-js-ok"))d.classList.remove("js")},5000)})(document.documentElement)</script>';
   const OK = 'document.documentElement.setAttribute("data-js-ok","");';
-  const secoesMov = (extra, comMovimento = true) => '<style>.js .revela{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}.js .revela.visivel{opacity:1;transform:none}.alta{min-height:1000px}</style>'+REDE+''
+  const secoesMov = (extra, comMovimento = true) => '<style>.js .revela{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}.js .revela.visivel{opacity:1;transform:none}@media (prefers-reduced-motion: reduce){.js .revela{transition:none}}.alta{min-height:1000px}</style>'+REDE+''
     + texto + [1, 2, 3].map((i) => `<section class="alta"><h2 class="${comMovimento ? 'revela' : ''}">Seção ${i}</h2><p class="${comMovimento ? 'revela' : ''}">Texto da seção ${i} que entra ao rolar a página.</p></section>`).join('')
     + '<script>'+OK+'var els=document.querySelectorAll(".revela");var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("visivel");io.unobserve(e.target)}})});els.forEach(function(e){io.observe(e)});' + extra + '</script>';
   if (rota === '/movimento-ok') corpo = secoesMov('');
@@ -168,6 +168,15 @@ const servidor = http.createServer((req, res) => {
   // movimento reduzido: a v5 mantinha html{scroll-behavior:smooth} para quem pediu menos movimento.
   if (rota === '/rolagem-suave') corpo = '<style>html{scroll-behavior:smooth}</style>' + secoesMov('');
   if (rota === '/rolagem-suave-ok') corpo = '<style>html{scroll-behavior:smooth}@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}</style>' + secoesMov('');
+  // 3.5.9 (N26): com prefers-reduced-motion: reduce o gate mede document.getAnimations(), não só o scroll-behavior.
+  // A entrada animada do título e dos botões (a "sobe" do h1 que o auditor achou em curso) sem a regra de movimento reduzido reprova.
+  const ENTRADA = '@keyframes sobe{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}.entra{animation:sobe 1.4s ease both}.alta{min-height:1000px}';
+  const paginaEntrada = (css) => '<style>' + css + '</style><section class="alta"><h1 class="entra">Título que sobe</h1><p class="botoes entra">Botões que sobem</p></section>' + secoesMov('');
+  if (rota === '/reduzido-anima') corpo = paginaEntrada(ENTRADA);
+  if (rota === '/reduzido-ok') corpo = paginaEntrada(ENTRADA + '@media (prefers-reduced-motion: reduce){.entra{animation:none}}');
+  const cartao = (tempo) => '<style>.cartao{background:#eee;padding:16px;transition:background-color ' + tempo + '}.cartao.ativo{background:#ccd}</style><section class="alta"><p class="cartao" id="c">Caixa que muda de cor</p></section><script>setTimeout(function(){document.getElementById("c").classList.add("ativo")},300)</script>' + secoesMov('');
+  if (rota === '/reduzido-transicao') corpo = cartao('.8s');
+  if (rota === '/reduzido-curta-passa') corpo = cartao('.15s');
   // gate-composicao: plantas baixas que liam como retângulo de wireframe, linha do tempo que
   // passava 311 px do último marco, nenhuma pessoa na página e acento amarelo a 2,07:1.
   if (rota === '/desenho-wireframe') corpo = texto + '<section><h2>Duas formas</h2><svg data-desenho="planta baixa de uma sala com quatro aparelhos" width="200" height="130" viewBox="0 0 200 130" fill="none" stroke="#24525A" stroke-width="2"><path d="M6 6h188v118H6z"/><path d="M20 22h72v20H20zM108 22h72v20h-72z"/><rect x="20" y="88" width="72" height="20"/><path d="M30 26h20v12H30z"/></svg></section>';
@@ -312,6 +321,11 @@ servidor.listen(0, '127.0.0.1', async () => {
     ['movimento-por-grupo-nomeia-o-elemento', 'gate-movimento.mjs', ['--url', url + '/movimento-grupo', '--espera', '1000'], 1, /^(?![\s\S]*"Grupo Um)[\s\S]*chegam parados[\s\S]*div\.item "(Um|Dois|Três|Quatro)"/],
     ['movimento-rolagem-suave', 'gate-movimento.mjs', ['--url', url + '/rolagem-suave', '--espera', '1000'], 1, /movimento reduzido/],
     ['movimento-rolagem-suave-ok', 'gate-movimento.mjs', ['--url', url + '/rolagem-suave-ok', '--espera', '1000'], 0],
+    // 3.5.9 (N26): animação em curso com movimento reduzido reprova; a mesma página com a regra passa.
+    ['movimento-reduzido-animacao-em-curso-reprova', 'gate-movimento.mjs', ['--url', url + '/reduzido-anima', '--espera', '1000', '--sem-prova-script'], 1, /movimento reduzido[^\n]*animação CSS de sobe em h1\.entra[^\n]*prefers-reduced-motion/],
+    ['movimento-reduzido-com-a-regra-passa', 'gate-movimento.mjs', ['--url', url + '/reduzido-ok', '--espera', '1000', '--sem-prova-script'], 0, /0 animações em curso/],
+    ['movimento-reduzido-transicao-longa-reprova', 'gate-movimento.mjs', ['--url', url + '/reduzido-transicao', '--espera', '1000', '--sem-prova-script'], 1, /transição de background-color em p#c/],
+    ['movimento-reduzido-transicao-curta-passa', 'gate-movimento.mjs', ['--url', url + '/reduzido-curta-passa', '--espera', '1000', '--sem-prova-script'], 0, /0 animações em curso/],
     ['composicao-wireframe', 'gate-composicao.mjs', ['--url', url + '/desenho-wireframe'], 1, /l[eê] como wireframe/],
     ['composicao-linha-tempo-passa', 'gate-composicao.mjs', ['--url', url + '/linha-tempo-passa'], 1, /passa do [uú]ltimo marco/],
     ['composicao-linha-tempo-ok', 'gate-composicao.mjs', ['--url', url + '/linha-tempo-ok'], 0],

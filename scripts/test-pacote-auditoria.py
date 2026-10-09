@@ -240,6 +240,13 @@ class BriefingProntoParaColar(unittest.TestCase):
                     "provas/prova-mobile320.png", "provas/anim/01-primeira-dobra.png", "provas/anim/02-moveis.png"):
             self.assertIn(f"`{rel}`", self.b, rel)
 
+    def test_orcamento_conta_ate_a_resposta_chegar_e_pede_blocos_curtos(self):
+        """N24 (3.5.9): o auditor parou de usar ferramenta aos 15 min e levou mais 5,6 min escrevendo 9 blocos; o briefing não dizia qual tempo vale."""
+        self.assertRegex(self.b, r"(?i)orçamento de tempo conta até a resposta chegar")
+        self.assertRegex(self.b, r"(?i)escrever a resposta também gasta tempo")
+        self.assertRegex(self.b, r"(?i)no máximo 5 achados por lente")
+        self.assertRegex(self.b, r"(?i)evidência em UMA linha")
+
     def test_rodada_2_traz_o_schema_da_conferencia(self):
         tocar(self.raiz / "auditoria/achados-rodada-1.json", "{}", 1_000_100)
         code, saida = rodar(self.raiz, "--rodada", "2")

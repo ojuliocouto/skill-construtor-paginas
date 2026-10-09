@@ -153,6 +153,14 @@ class Estrutura(unittest.TestCase):
         self.assertIn("references/sessions/*", gi)
         self.assertIn("references/preferencias-dono-ea.md", gi)
 
+    def test_registro_de_sessao_vai_na_pasta_do_projeto_nunca_na_da_skill(self):
+        """3.5.9 (N25): SKILL.md e criar.md mandavam gravar em references/sessions/, e gate-etapas.md proíbe dado de cliente na pasta da skill."""
+        textos = {"SKILL.md": ler(SKILL), "caminhos/criar.md": ler(CAMINHOS / "criar.md")}
+        for nome, t in textos.items():
+            self.assertNotRegex(t, r"(?i)(registre|salve|grave|atualize)[^\n.]*`references/(sessions|projects)/(AAAA|<projeto>)", nome)
+            self.assertIn("<projeto>/sessoes/", t, nome)
+        self.assertRegex(ler(REF / "gate-etapas.md"), r"Nunca use a pasta da skill para\s+guardar dados de cliente")
+
     def test_v3_readme_em_ingles_e_changelog(self):
         r = ler(RAIZ / "README.md")
         self.assertRegex(r, r"(?i)what it is")
@@ -245,7 +253,7 @@ class Estrutura(unittest.TestCase):
         self.assertIn("```json", ler(REF / "auditores.md").split("Rodada 2", 1)[1])
 
     def test_v354_versao_e_registro_de_mudancas(self):
-        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.8$")
+        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.9$")
         self.assertIn("## 3.5.4", ler(RAIZ / "CHANGELOG.md"))
         self.assertIn("## 3.5.5", ler(RAIZ / "CHANGELOG.md"))
         self.assertIn("3.5.5", ler(RAIZ / "README.md"))
@@ -255,6 +263,8 @@ class Estrutura(unittest.TestCase):
         self.assertIn("3.5.7", ler(RAIZ / "README.md"))
         self.assertIn("## 3.5.8", ler(RAIZ / "CHANGELOG.md"))
         self.assertIn("3.5.8", ler(RAIZ / "README.md"))
+        self.assertIn("## 3.5.9", ler(RAIZ / "CHANGELOG.md"))
+        self.assertIn("3.5.9", ler(RAIZ / "README.md"))
         self.assertIn("pacote-auditoria.py", ler(RAIZ / "README.md"))
         self.assertIn("pacote-auditoria.py", ler(SKILL))
 

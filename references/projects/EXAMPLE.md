@@ -1,7 +1,7 @@
 # {Nome do Projeto}: Referência de Contexto
 
-> Template. Copie para `references/projects/{slug-do-projeto}.md` e preencha. Estes
-> arquivos são LOCAIS (gitignored): guardam contexto reutilizável de um projeto/cliente
+> Modelo para copiar. Copie para `<projeto>/contexto-do-projeto.md`, na pasta do PROJETO (nunca na da skill:
+> dado de cliente não mora lá), e preencha. O arquivo guarda contexto reutilizável de um projeto/cliente
 > entre sessões. Ler ANTES de qualquer código quando o projeto já foi trabalhado antes.
 
 ## Identidade Visual

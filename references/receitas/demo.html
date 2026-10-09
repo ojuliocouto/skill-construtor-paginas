@@ -222,11 +222,12 @@ img, svg { display: block; max-width: 100%; }
   .js [data-linhas].dividido .linha { transform: none; transition: none; opacity: 1; clip-path: none; }
   .js .contorno .arco-traco path { stroke-dashoffset: 0; transition: none; }
   .marcas .traco { stroke-dashoffset: 0; transition: none; }
-  .js .coluna.entra-pecas .peca-dentro { animation: none; opacity: 1; }
+  .js .coluna.entra-pecas .peca-dentro, .js .coluna.entra-pecas.visivel .peca-dentro { animation: none; opacity: 1; transform: none; }
   .js .quadro-horas:not(.visivel) .qh-linha dd i { transform: none; }
   .contador.pulsa { animation: none; }
+  .passo .marco, .passo.ativo .marco { transition: none; }
   .botao, .botao svg, .faq summary svg { transition: none; }
-  .barra { transition: none; }
+  .barra, .barra.mostra { transition: none; }
   .js .monta-foto { opacity: 1; transition: none; }
   .js .monta-peca { display: none; }
   .js .monta-rotulo { opacity: 1; transform: none; transition: none; }
