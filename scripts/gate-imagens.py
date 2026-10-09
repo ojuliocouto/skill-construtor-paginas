@@ -61,6 +61,8 @@ em sequência. A regra 8 e `data-assinatura` simples aceitam UMA foto só; a seq
      3.5.13 (auditoria): a sequência só vale com o PLANO.md declarando `Momento assinatura: ...; seções: ...; estados: x -> y -> z` e o
      mesmo número de estados da página; cada estado mora na sua seção (a primeira em que é o estado mais novo), distintas e em ordem
      crescente; a foto do estado k só aparece na seção dela e na do estado k+1; estado 0 não existe.
+     3.5.14 (auditoria, achados 10 e 11): a mesma foto do estado com `data-assinatura` simples tem mensagem própria (não é "outra foto"); o parser
+     das seções fecha o que o HTML fecha sozinho (p, li, dt, dd, option, tr, td, th, tbody, thead, tfoot).
 Mede com Pillow e numpy (`pip install pillow numpy`).
 
 Uso: node scripts/py.mjs gate-imagens.py --projeto <dir> [--dist <dir>/dist] [--url <url>] [--trafego-real]
