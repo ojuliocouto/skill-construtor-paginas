@@ -79,7 +79,7 @@ const checa = (nome, cond, detalhe = '') => {
   const arquivoLocal = await mod.conferirServidor(pathToFileURL(path.join(tmp, 'index.html')).href, { tentativas: 1 });
   checa('conferirServidor: file:// não tem servidor para conferir', arquivoLocal.ok === true);
   const msg = mod.mensagemServidorFora(url, 'nada ouve nessa porta (conexão recusada)');
-  checa('a mensagem não tem travessão', !msg.includes('—'));
+  checa('a mensagem não tem travessão', !msg.includes(String.fromCharCode(0x2014)));
   checa('a mensagem diz que não é veredito sobre a página', /não é veredito sobre a página/.test(msg));
 
   process.exitCode = falhas ? 1 : 0;
