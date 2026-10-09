@@ -131,3 +131,42 @@ test("N3: acharReferencia casa por endereço exato (com ou sem barra final) e po
   assert.equal(acharReferencia(refs, "c.com").erro, "nenhuma");
   assert.equal(acharReferencia(refs, "https://b.com/y").url, "https://b.com/y");
 });
+
+// ---- 3.5.10, achado P1: tela de bloqueio de robô com cabeçalho do site não é ok ----
+test("P1: 'We couldn't verify the security of your connection' é bloqueada (Um Coffee, 3.5.8 marcou ok)", () => {
+  const texto = "Compre Aqui Clube de Assinatura Cursos Sobre nós Máquinas Clique aqui! We couldn't verify the security of your connection. Access to this content has been restricted. Contact your internet service provider for help.";
+  const r = classificar({ ...base, titulo: "Um Coffee Co", texto, altura: 900 });
+  assert.equal(r.estado, "bloqueada");
+  assert.match(r.motivo, /bloqueio|desafio/);
+});
+
+test("P1: variantes comuns de bloqueio de robô (Cloudflare, Akamai, Incapsula, PerimeterX) são bloqueada", () => {
+  const variantes = [
+    "Performance & security by Cloudflare. Ray ID: 8a1b2c3d4e5f",
+    "Access Denied. Reference #18.2f6b3e17.1696243200.1a2b3c4d",
+    "Request unsuccessful. Incapsula incident ID: 123000540000-4567",
+    "Press & Hold to confirm you are a human (and not a bot).",
+    "Our systems have detected unusual traffic from your computer network.",
+    "Sorry, you have been blocked. You are unable to access this site.",
+    "Please verify you are a human to continue. Security check in progress.",
+    "Too many requests. You are being rate limited.",
+    "Why have I been blocked? This website is using a security service to protect itself from online attacks.",
+    "Não foi possível verificar a segurança da sua conexão. O acesso foi restrito.",
+    "Detectamos atividade incomum na sua rede. Confirme que você não é um robô.",
+  ];
+  for (const texto of variantes) {
+    const r = classificar({ ...base, titulo: "Site", texto: "Início Contato " + texto, altura: 900 });
+    assert.equal(r.estado, "bloqueada", texto);
+  }
+});
+
+test("P1: a frase forte pega mesmo quando o cabeçalho e o rodapé do site passam de 800 caracteres", () => {
+  const texto = "Menu ".repeat(200) + "We couldn't verify the security of your connection. " + "Rodapé ".repeat(100);
+  assert.ok(texto.length > 800);
+  assert.equal(classificar({ ...base, titulo: "Loja", texto, altura: 900 }).estado, "bloqueada");
+});
+
+test("P1: mutante: página longa e boa que fala de segurança de conexão em outro contexto continua ok", () => {
+  const texto = TEXTO_BOM + " Nossa política: protegemos a segurança da sua conexão com criptografia. " + TEXTO_BOM;
+  assert.equal(classificar({ ...base, texto }).estado, "ok");
+});

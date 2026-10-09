@@ -27,6 +27,20 @@ const BLOQUEIO = [
   /verifique que voc[eê] [eé] humano/i, /captcha/i, /attention required/i, /are you a robot/i,
   /you have been blocked/i, /request blocked/i, /pardon our interruption/i, /enable javascript and cookies/i,
   /access to this page has been denied/i, /bot detection/i,
+  /too many requests/i, /verify (that )?you are (a )?human/i, /confirm you are (a )?human/i, /security check/i,
+];
+// 3.5.10 (P1): frases tão específicas de tela de bloqueio de robô que valem em qualquer tamanho de texto.
+// A tela da Um Coffee tinha o cabeçalho e o menu do site em volta da frase e passou como ok na 3.5.8.
+// Frases que podem aparecer num texto comum (too many requests, verify you are human) ficam na lista curta.
+const BLOQUEIO_FORTE = [
+  /couldn['\u2019]?t verify the security of your connection/i, /verify the security of your connection/i,
+  /n[aã]o foi poss[ií]vel verificar a seguran[cç]a da sua conex[aã]o/i,
+  /performance (&|&amp;|and) security by cloudflare/i, /\bray id\s*:\s*[0-9a-f]{8,}/i,
+  /sorry,? you have been blocked/i, /why have i been blocked/i, /you are being rate limited/i,
+  /incapsula incident id/i, /request unsuccessful\. incapsula/i, /reference\s*#\s*\d+\.[0-9a-f]+\.\d+\.[0-9a-f]+/i,
+  /press (&|&amp;|and) hold to confirm you are a human/i, /unusual traffic from your computer network/i,
+  /detected unusual (traffic|activity)/i, /detectamos (tr[aá]fego|atividade) (incomum|incomuns|at[ií]pic[oa])/i,
+  /confirm(e)? que voc[eê] n[aã]o [eé] um rob[oô]/i, /access to this (content|site|website) has been (restricted|denied|blocked)/i,
 ];
 const TITULO_BLOQUEIO = [/just a moment/i, /attention required/i, /access denied/i, /forbidden/i, /^403/, /acesso negado/i, /security check/i, /are you a robot/i];
 const TEXTO_CURTO = 800; // abaixo disso, a frase de bloqueio domina a página
@@ -37,6 +51,8 @@ export function classificar({ http, titulo = '', texto = '', temEstilo = true, a
   const pct = (x) => `${Math.round(x * 100)}%`;
   if ([401, 403, 429].includes(http)) return { estado: 'bloqueada', motivo: `HTTP ${http}: o site recusou o acesso automático` };
   if (TITULO_BLOQUEIO.some((r) => r.test(String(titulo || '')))) return { estado: 'bloqueada', motivo: `título de bloqueio ("${String(titulo).slice(0, 60)}")` };
+  const forte = BLOQUEIO_FORTE.map((r) => r.exec(t)).find(Boolean);
+  if (forte) return { estado: 'bloqueada', motivo: `texto de bloqueio ou desafio de navegador na página ("${t.slice(Math.max(0, forte.index - 10), forte.index + 70).trim()}")` };
   if (t.length < TEXTO_CURTO && BLOQUEIO.some((r) => r.test(t))) return { estado: 'bloqueada', motivo: `texto de bloqueio ou desafio de navegador domina a página ("${t.slice(0, 70)}")` };
   if (http >= 400) return { estado: 'quebrada', motivo: `HTTP ${http}: a página não existe ou deu erro` };
   if (!temEstilo) return { estado: 'quebrada', motivo: 'a página não rendeu estilo (nenhuma folha de estilo aplicada)' };
