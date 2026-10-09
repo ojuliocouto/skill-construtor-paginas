@@ -361,6 +361,129 @@ class AssinaturaEmFoto(GateImagensV35):
         self.assertEqual(p, [], p)
 
 
+class SequenciaDeEstados(GateImagensV35):
+    """3.5.11 (P5): o momento assinatura de produto físico que muda de FOTO (grão cru, torrado, na xícara) é uma sequência declarada
+    com data-assinatura-estado="1", "2", "3" (de 2 a 4 estados, sem buraco, mesmo grupo). Só assim `data-assinatura` pode estar em
+    fotos diferentes. Duas ou três fotos diferentes com data-assinatura simples, sem a declaração, continuam reprovando."""
+
+    def fig(self, secao, arquivo, estado=None, grupo=None, extra=""):
+        a = ""
+        if grupo is not None:
+            a += f' data-assinatura-grupo="{grupo}"'
+        if estado is not None:
+            a += f' data-assinatura-estado="{estado}"'
+        return f'<section id="{secao}"><h2>{secao}</h2><figure{a}><img src="img/{arquivo}" alt="foto" width="640" height="480"></figure>{extra}</section>'
+
+    def avaliar(self, secoes, n_fotos=3):
+        fotos = {f"foto{i}-800.jpg": (i, True) for i in range(1, n_fotos + 1)}
+        raiz = self.projeto(secoes, [self.foto_ok(i) for i in range(1, n_fotos + 1)], fotos)
+        return gate.avaliar(raiz)[0]
+
+    def tres(self, **kw):
+        return [self.fig("sitios", "foto1-800.jpg", 1), self.fig("semana", "foto2-800.jpg", 2), self.fig("fecho", "foto3-800.jpg", 3)]
+
+    def test_tres_fotos_diferentes_em_tres_secoes_com_estados_1_2_3_passam(self):
+        self.assertEqual(self.avaliar(self.tres()), [])
+
+    def test_dois_estados_em_duas_secoes_passam(self):
+        self.assertEqual(self.avaliar([self.fig("a", "foto1-800.jpg", 1), self.fig("b", "foto2-800.jpg", 2)], 2), [])
+
+    def test_quatro_estados_em_quatro_secoes_passam(self):
+        s = [self.fig(n, f"foto{i}-800.jpg", i) for i, n in enumerate("abcd", 1)]
+        self.assertEqual(self.avaliar(s, 4), [])
+
+    def test_o_fantasma_do_estado_anterior_na_secao_seguinte_passa(self):
+        # a foto do estado 1 reaparece (marcada com o estado 1) por baixo do quadro do estado 2: é a transição, não repetição
+        fantasma = '<img class="antes" src="img/foto1-800.jpg" alt="" aria-hidden="true" data-assinatura-estado="1" width="640" height="480">'
+        s = [self.fig("sitios", "foto1-800.jpg", 1),
+             f'<section id="semana"><h2>semana</h2><figure data-assinatura-estado="2">{fantasma}<img src="img/foto2-800.jpg" alt="foto" width="640" height="480"></figure></section>',
+             self.fig("fecho", "foto3-800.jpg", 3)]
+        self.assertEqual(self.avaliar(s), [])
+
+    def test_a_marca_pode_estar_na_propria_img_ou_num_div_que_a_envolve(self):
+        s = ['<section id="a"><h2>a</h2><img data-assinatura-estado="1" src="img/foto1-800.jpg" alt="f" width="640" height="480"></section>',
+             '<section id="b"><h2>b</h2><div class="quadro" data-assinatura-estado="2"><img src="img/foto2-800.jpg" alt="f" width="640" height="480"></div></section>',
+             '<section id="c"><h2>c</h2><picture data-assinatura-estado="3"><img src="img/foto3-800.jpg" alt="f" width="640" height="480"></picture></section>']
+        self.assertEqual(self.avaliar(s), [])
+
+    def test_o_grupo_declarado_nas_tres_passa(self):
+        s = [self.fig("a", "foto1-800.jpg", 1, "cafe"), self.fig("b", "foto2-800.jpg", 2, "cafe"), self.fig("c", "foto3-800.jpg", 3, "cafe")]
+        self.assertEqual(self.avaliar(s), [])
+
+    # ---- o caso ruim original segue reprovando ----
+    def test_tres_fotos_diferentes_com_data_assinatura_simples_continuam_reprovando(self):
+        f = lambda n, a: f'<section id="{n}"><h2>{n}</h2><figure data-assinatura><img src="img/{a}" alt="f" width="640" height="480"></figure></section>'
+        p = self.avaliar([f("sitios", "foto1-800.jpg"), f("semana", "foto2-800.jpg"), f("fecho", "foto3-800.jpg")])
+        self.assertTrue(any("data-assinatura em 3 fotos diferentes" in x for x in p), p)
+        self.assertTrue(any("data-assinatura-estado" in x for x in p), "a mensagem aponta a saída: " + str(p))
+
+    def test_duas_fotos_diferentes_com_data_assinatura_simples_continuam_reprovando(self):
+        f = lambda n, a: f'<section id="{n}"><h2>{n}</h2><figure data-assinatura><img src="img/{a}" alt="f" width="640" height="480"></figure></section>'
+        p = self.avaliar([f("a", "foto1-800.jpg"), f("b", "foto2-800.jpg")], 2)
+        self.assertTrue(any("data-assinatura em 2 fotos diferentes" in x for x in p), p)
+
+    # ---- a declaração tem que estar certa ----
+    def test_buraco_na_numeracao_reprova(self):
+        p = self.avaliar([self.fig("a", "foto1-800.jpg", 1), self.fig("b", "foto3-800.jpg", 3)], 3)
+        self.assertTrue(any("falta o estado 2" in x for x in p), p)
+
+    def test_sequencia_que_nao_comeca_no_1_reprova(self):
+        p = self.avaliar([self.fig("a", "foto1-800.jpg", 2), self.fig("b", "foto2-800.jpg", 3)], 2)
+        self.assertTrue(any("falta o estado 1" in x for x in p), p)
+
+    def test_um_estado_so_reprova(self):
+        p = self.avaliar([self.fig("a", "foto1-800.jpg", 1), self.fig("b", "foto2-800.jpg")], 2)
+        self.assertTrue(any("1 estado" in x and "data-assinatura" in x for x in p), p)
+
+    def test_cinco_estados_reprova(self):
+        s = [self.fig(n, f"foto{i}-800.jpg", i) for i, n in enumerate("abcde", 1)]
+        p = self.avaliar(s, 5)
+        self.assertTrue(any("5 estados" in x and "4" in x for x in p), p)
+
+    def test_estado_que_nao_e_numero_reprova(self):
+        p = self.avaliar([self.fig("a", "foto1-800.jpg", "cru"), self.fig("b", "foto2-800.jpg", 2)], 2)
+        self.assertTrue(any("número" in x and "cru" in x for x in p), p)
+
+    def test_dois_grupos_reprovam_um_momento_assinatura_so(self):
+        s = [self.fig("a", "foto1-800.jpg", 1, "cafe"), self.fig("b", "foto2-800.jpg", 2, "cafe"),
+             self.fig("c", "foto3-800.jpg", 1, "xicara"), self.fig("d", "foto4-800.jpg", 2, "xicara")]
+        p = self.avaliar(s, 4)
+        self.assertTrue(any("2 grupos" in x for x in p), p)
+
+    def test_o_ultimo_estado_em_outro_grupo_deixa_buraco_e_reprova(self):
+        s = [self.fig("a", "foto1-800.jpg", 1, "cafe"), self.fig("b", "foto2-800.jpg", 2, "cafe"), self.fig("c", "foto3-800.jpg", 3, "outro")]
+        self.assertNotEqual(self.avaliar(s), [])
+
+    def test_sequencia_mais_data_assinatura_simples_em_outra_foto_reprova(self):
+        s = self.tres() + ['<section id="extra"><h2>extra</h2><figure data-assinatura><img src="img/foto4-800.jpg" alt="f" width="640" height="480"></figure></section>']
+        p = self.avaliar(s, 4)
+        self.assertTrue(any("sequência" in x and "data-assinatura" in x for x in p), p)
+
+    def test_o_mesmo_estado_em_duas_fotos_diferentes_reprova(self):
+        s = [self.fig("a", "foto1-800.jpg", 1), self.fig("b", "foto2-800.jpg", 2), self.fig("c", "foto3-800.jpg", 2)]
+        p = self.avaliar(s)
+        self.assertTrue(any("estado 2" in x and "fotos diferentes" in x for x in p), p)
+
+    def test_estados_diferentes_na_mesma_foto_reprovam(self):
+        s = [self.fig("a", "foto1-800.jpg", 1), self.fig("b", "foto1-800.jpg", 2)]
+        p = self.avaliar(s, 1)
+        self.assertTrue(any("estados 1 e 2" in x and "mesma foto" in x for x in p), p)
+
+    def test_todos_os_estados_numa_secao_so_nao_atravessam_e_reprovam(self):
+        s = ['<section id="unica"><h2>u</h2>' + "".join(f'<figure data-assinatura-estado="{i}"><img src="img/foto{i}-800.jpg" alt="f" width="640" height="480"></figure>' for i in (1, 2, 3)) + "</section>"]
+        p = self.avaliar(s)
+        self.assertTrue(any("atravessa" in x and "3 seções" in x for x in p), p)
+
+    def test_foto_do_estado_solta_em_outra_secao_sem_a_marca_e_repeticao(self):
+        s = self.tres() + [self.fig("extra", "foto2-800.jpg")]
+        p = self.avaliar(s)
+        self.assertTrue(any("repetida" in x and "extra" in x for x in p), p)
+
+    def test_foto_diferente_sem_marca_ao_lado_da_sequencia_passa(self):
+        s = self.tres() + [self.fig("extra", "foto4-800.jpg")]
+        self.assertEqual(self.avaliar(s, 4), [])
+
+
 class DobraAviso(unittest.TestCase):
     """N9: a mensagem diferencia 'fora da primeira tela' de 'texto não achado'."""
 

@@ -49,6 +49,15 @@ no lugar da ilustração chapada, e isso trouxe cinco regras que nenhum gate cob
      de foto (img) é pelo menos 60% da área de imagem (foto + desenho em SVG). Acento pequeno
      passa; ilustração chapada como imagem principal reprova. `data-ilustracao-ok="motivo"` no
      SVG o tira da conta.
+
+v3.5.11 (P5 da Torra Clara): o produto que muda de FOTO ao longo da página (grão cru, torrado, na xícara) é o momento assinatura
+em sequência. A regra 8 e `data-assinatura` simples aceitam UMA foto só; a sequência é declarada com `data-assinatura-estado`:
+ 13. SEQUÊNCIA DE ESTADOS: `data-assinatura-estado="1"`, `"2"`, `"3"` (na <img>, na <figure>/<picture> ou num <div> que a envolve;
+     `data-assinatura-grupo="nome"` opcional, o mesmo em todas). Vale quando são de 2 a 4 estados, sem buraco na numeração, cada
+     estado em UMA foto (a cópia dela por baixo do quadro seguinte, a transição, leva o número do estado dela), fotos diferentes
+     entre os estados, tudo no mesmo grupo e espalhado por pelo menos tantas seções quanto estados. Um momento assinatura só:
+     sequência mais `data-assinatura` simples em outra foto reprova, e 2 ou mais fotos diferentes com `data-assinatura` simples,
+     sem a declaração, continuam reprovando (regra 8). A mesma foto do estado numa seção sem a marca é repetição.
 Mede com Pillow e numpy (`pip install pillow numpy`).
 
 Uso: node scripts/py.mjs gate-imagens.py --projeto <dir> [--dist <dir>/dist] [--url <url>] [--trafego-real]
@@ -206,6 +215,11 @@ def citacoes_do_credito(texto, autor):
     return achados
 
 
+GRUPO_PADRAO = "assinatura"
+MAXIMO_ESTADOS = 4
+VAZIOS_PAGINA = {"img", "source", "br", "meta", "link", "input", "hr", "wbr", "area", "base", "col", "embed", "track", "param"}
+
+
 class _Regioes(HTMLParser):
     """Divide o corpo em regiões (cada <section> de topo; header, footer e nav fora delas) e anota,
     por região, as imagens que ela usa e o texto que ela mostra."""
@@ -219,6 +233,8 @@ class _Regioes(HTMLParser):
         self.imagens = {}
         self.marcadas = {}   # 3.5.9 (N22): por região, as imagens marcadas com data-assinatura (na <img> ou na <figure>/<picture> que a envolve)
         self.pilha_marca = []
+        self.estados = {}    # 3.5.11 (P5): por região, (arquivo, grupo, estado como escrito) das imagens com data-assinatura-estado
+        self.pilha = []      # (tag, grupo, estado) de cada elemento aberto: o estado e o grupo valem para tudo que está dentro
         self.texto = {}
         self.cabeca = False
         self.ignorar = 0
@@ -229,16 +245,27 @@ class _Regioes(HTMLParser):
             self.ordem.append(chave)
             self.imagens[chave] = []
             self.marcadas[chave] = set()
+            self.estados[chave] = []
             self.texto[chave] = []
 
-    def _ref(self, valor, marcada=False):
+    def _estado_em_vigor(self):
+        """(grupo, estado) do elemento aberto mais perto de quem pergunta que declarou data-assinatura-estado."""
+        for _, grupo, estado in reversed(self.pilha):
+            if estado is not None:
+                return grupo or GRUPO_PADRAO, estado
+        return None
+
+    def _ref(self, valor, marcada=False, estado=None):
         for parte in re.split(r",", valor or ""):
             alvo = parte.strip().split(" ")[0]
             if alvo and not alvo.startswith("data:"):
                 nome = Path(urlparse(alvo).path).name
                 if Path(nome).suffix.lower() in EXTENSOES:
                     self.imagens[self.regiao].append(nome)
-                    if marcada:
+                    if estado is not None:
+                        # a sequência declarada vale mais que o data-assinatura simples que sobrou na mesma foto
+                        self.estados[self.regiao].append((nome, estado[0], estado[1]))
+                    elif marcada:
                         self.marcadas[self.regiao].add(nome)
 
     def handle_starttag(self, tag, attrs):
@@ -260,16 +287,28 @@ class _Regioes(HTMLParser):
             self._abre(tag)
         if tag in ("figure", "picture"):
             self.pilha_marca.append("data-assinatura" in a)
+        if tag not in VAZIOS_PAGINA:
+            grupo = a.get("data-assinatura-grupo") or (self.pilha[-1][1] if self.pilha else None)
+            self.pilha.append((tag, grupo, a.get("data-assinatura-estado")))
+        elif tag in ("img", "source"):
+            self.pilha.append((tag, a.get("data-assinatura-grupo") or (self.pilha[-1][1] if self.pilha else None), a.get("data-assinatura-estado")))
         marcada = any(self.pilha_marca) or "data-assinatura" in a
+        estado = self._estado_em_vigor()
         if tag in ("img", "source"):
-            self._ref(a.get("src") or a.get("data-src"), marcada)
-            self._ref(a.get("srcset"), marcada)
+            self._ref(a.get("src") or a.get("data-src"), marcada, estado)
+            self._ref(a.get("srcset"), marcada, estado)
+            self.pilha.pop()
         for m in re.finditer(r"url\(['\"]?([^'\")]+)", a.get("style") or ""):
-            self._ref(m.group(1), marcada)
+            self._ref(m.group(1), marcada, estado)
 
     def handle_endtag(self, tag):
         if tag in ("figure", "picture") and self.pilha_marca:
             self.pilha_marca.pop()
+        if tag not in VAZIOS_PAGINA:
+            for i in range(len(self.pilha) - 1, -1, -1):
+                if self.pilha[i][0] == tag:
+                    del self.pilha[i:]
+                    break
         if tag == "head":
             self.cabeca = False
         if tag in ("script", "style") and self.ignorar:
@@ -368,6 +407,68 @@ def origem_normalizada(origem):
     return re.sub(r"[?#].*$", "", m.group(0)).rstrip("/").lower() if m else ""
 
 
+def _lista_pt(itens):
+    itens = [str(i) for i in itens]
+    return itens[0] if len(itens) == 1 else ", ".join(itens[:-1]) + " e " + itens[-1]
+
+
+def checar_sequencias(regioes, cena_de, com_marca, problemas):
+    """3.5.11 (P5): valida a sequência declarada com data-assinatura-estado. `cena_de(base)` devolve a cena da foto (o agrupamento por
+    origem e pHash). Devolve, por foto (base), as seções onde ela leva a marca de estado (contam como uma só na regra da foto repetida)."""
+    seqs = {}      # grupo -> estado -> base -> seções
+    ilegiveis = set()
+    for chave in regioes.ordem:
+        for nome, grupo, bruto in regioes.estados[chave]:
+            m = re.fullmatch(r"\s*(\d+)\s*", bruto or "")
+            if not m:
+                ilegiveis.add(bruto)
+                continue
+            seqs.setdefault(grupo, {}).setdefault(int(m.group(1)), {}).setdefault(base(nome), set()).add(chave)
+    for bruto in sorted(ilegiveis, key=str):
+        problemas.append(f'data-assinatura-estado="{bruto}": o estado é um número de 1 a {MAXIMO_ESTADOS} (1, 2, 3); o nome do estado mora no título da seção')
+    liberadas = {}
+    if not seqs:
+        return liberadas
+    if len(seqs) > 1:
+        problemas.append(f"data-assinatura-estado em {len(seqs)} grupos ({', '.join(sorted(seqs))}): um momento assinatura só por página, "
+                         "uma sequência só; junte os estados no mesmo grupo ou tire a marca do que sobra")
+    if com_marca:
+        quem = "; ".join(" + ".join(sorted(m)) for m in com_marca)
+        problemas.append(f"sequência de estados (data-assinatura-estado) e data-assinatura simples em outra foto ({quem}): um momento assinatura só; "
+                         "tire o data-assinatura simples ou dê a essa foto o número do estado dela")
+    for grupo, estados in sorted(seqs.items()):
+        nome = f" no grupo '{grupo}'" if len(seqs) > 1 else ""
+        n = max(estados)
+        if n > MAXIMO_ESTADOS:
+            problemas.append(f"sequência de {n} estados{nome}: o máximo é {MAXIMO_ESTADOS}; junte estados parecidos")
+        elif len(estados) == 1:
+            problemas.append(f"sequência com 1 estado só{nome}: para uma foto só use data-assinatura; para mudar de foto declare de 2 a "
+                             f'{MAXIMO_ESTADOS} estados (data-assinatura-estado="1", "2", ...)')
+        for k in range(1, n + 1):
+            if k not in estados:
+                problemas.append(f"sequência de estados{nome} sem buraco: falta o estado {k} (a numeração vai de 1 até {n})")
+        cenas_do_estado, estados_da_cena = {}, {}
+        for k, bases in estados.items():
+            for b, secoes_b in bases.items():
+                cena = cena_de(b)
+                cenas_do_estado.setdefault(k, {}).setdefault(cena, set()).add(b)
+                estados_da_cena.setdefault(cena, set()).add(k)
+                liberadas.setdefault(b, set()).update(secoes_b)
+        for k, cenas in sorted(cenas_do_estado.items()):
+            if len(cenas) > 1:
+                quem = "; ".join(" + ".join(sorted(fotos)) for _, fotos in sorted(cenas.items()))
+                problemas.append(f"estado {k}{nome} em {len(cenas)} fotos diferentes ({quem}): cada estado é uma foto; "
+                                 "a cópia dela por baixo do quadro seguinte leva o número do estado dela")
+        for ks in sorted((sorted(v) for v in estados_da_cena.values() if len(v) > 1)):
+            problemas.append(f"estados {_lista_pt(ks)}{nome} na mesma foto: a sequência troca de foto a cada estado; "
+                             "o mesmo produto em enquadramentos diferentes é a receita produto-em-estados, com data-assinatura simples")
+        secoes = {c for bases in estados.values() for ss in bases.values() for c in ss if c != "(fora de seção)"}
+        if 2 <= len(estados) and n <= MAXIMO_ESTADOS and len(secoes) < n:
+            problemas.append(f"a sequência de {n} estados{nome} atravessa só {len(secoes)} seção(ões): cada estado mora na sua seção, "
+                             f"{n} estados pedem {n} seções")
+    return liberadas
+
+
 def checar_fotos(dist, usados, regioes, problemas, avisos):
     """Regras 8 e 9: foto repetida entre seções e nitidez."""
     np, Image = carregar_medidas()
@@ -434,7 +535,10 @@ def checar_fotos(dist, usados, regioes, problemas, avisos):
     if len(com_marca) > 1:
         quem_marcou = "; ".join(" + ".join(sorted(b for b in m if marcadas_de.get(b))) for m in com_marca)
         problemas.append(f"data-assinatura em {len(com_marca)} fotos diferentes ({quem_marcou}): só uma foto pode ser a do momento assinatura; "
-                         "tire a marca das outras (a exceção libera a MESMA foto em várias seções, não fotos diferentes)")
+                         "tire a marca das outras (a exceção libera a MESMA foto em várias seções, não fotos diferentes). "
+                         "Se o produto muda de foto de verdade (cru, torrado, na xícara), declare a sequência: "
+                         'data-assinatura-estado="1", "2" e "3", um número por foto, no lugar do data-assinatura')
+    liberadas_de = checar_sequencias(regioes, lambda b: raiz(b) if b in pai else b, com_marca, problemas)
     for membros in grupos.values():
         secoes = set()
         for b in membros:
@@ -444,12 +548,17 @@ def checar_fotos(dist, usados, regioes, problemas, avisos):
         # 3.5.9 (N22): o momento assinatura em foto real repete a MESMA foto em 3 seções. As seções onde ela leva data-assinatura
         # contam como uma só; a mesma foto numa seção SEM a marca continua sendo repetição. Se a marca está em mais de uma
         # foto diferente, a exceção não vale (já reprovado acima).
+        # 3.5.11 (P5): as seções onde a foto leva data-assinatura-estado também contam como uma só (o quadro do estado e a cópia
+        # dela por baixo do quadro do estado seguinte); aparecer sem a marca numa terceira seção continua sendo repetição.
+        marcadas = set()
         if len(com_marca) == 1 and membros is com_marca[0]:
-            marcadas = set().union(*(marcadas_de.get(b, set()) for b in membros))
+            marcadas |= set().union(*(marcadas_de.get(b, set()) for b in membros))
+        marcadas |= set().union(*(liberadas_de.get(b, set()) for b in membros))
+        if marcadas:
             soltas = set()
             for b in membros:
                 soltas |= secoes_de.get(b, set()) - marcadas
-            if len(soltas) + (1 if marcadas else 0) < 2:
+            if len(soltas) + 1 < 2:
                 continue
         razoes = sorted({v for (x, y), v in motivo.items() if x in membros and y in membros})
         quem = ", ".join(f"{b} (em {', '.join(sorted(secoes_de.get(b, set())))})" for b in membros)
