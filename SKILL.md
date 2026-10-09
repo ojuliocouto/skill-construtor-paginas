@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.5.9
+version: 3.5.10
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -226,16 +226,16 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `capturar-referencias.mjs` | abre a URL no Chromium headless e grava primeira dobra e meio; julga o que capturou (`ok`, `bloqueada`, `quebrada`, `coberta`, `vazia`; tela de bloqueio de robô é `bloqueada`, meio igual à dobra é `vazia`, aviso de cookies só é "fechado" se saiu da tela); `--limpar-ruins` e `--remover <url>` tiram do manifesto; `--longa` marca página que deveria rolar | b |
 | `gate-referencias.py` | reprova sem 6 prints reais lidos, 2 de cada tipo | b, f |
 | `previa-direcoes.mjs` | as 3 primeiras dobras em PNG (1440 e 390) e o `direcoes.png` lado a lado; `--miniaturas` grava o cardápio de seções | b2 |
-| `gate-plano.py` | reprova o `PLANO.md` sem as 7 seções, as 3 prévias, a copy sustentada, o pixel declarado ou alguma aprovação | b2, e, f |
+| `gate-plano.py` | reprova o `PLANO.md` sem as 7 seções, as 3 prévias, a copy sustentada, o pixel declarado ou alguma aprovação; o tipo da animação de cada seção é uma receita do repertório, `assinatura` ou `criação nova: <motivo>` | b2, e, f |
 | `gate-rastreamento.py` | reprova a `dist/` sem o pixel e os 5 eventos que o plano pediu | f |
 | `search.py` + `core.py` + `data/` | banco de design, consulta opcional | c |
 | `assets-search.py` | fotos com licença aberta, sem chave (Openverse; se ela não responde, cai sozinha para a Wikimedia Commons e avisa; o Unsplash não abre por script, responde 307) | e |
 | `screenshot-prova.js` | prints desktop e celular em scrollY 0, identidade da página, clique | e, f, h |
-| `servidor-gzip.py` | serve o build local com compressão | f |
+| `servidor-gzip.py` | serve o build local com compressão; porta ocupada, escolhe outra e imprime `URL: http://127.0.0.1:<porta>/` (use essa); gate de navegador com a URL fora do ar para com "servidor fora do ar em <url>" (saída 3), sem veredito sobre a página | f |
 | `gate-sem-kicker.py` | kicker, 01/02/03 e número gigante, em HTML, Tailwind e `.css` | f |
 | `gate-classes-mortas.py` | classe do código que não existe no CSS gerado | f |
-| `gate-responsivo.mjs` | 12 telas: rolagem lateral da página, CTA na dobra, toque 44px, corpo 14px, botão em uma linha e a 2 telas; celular: fixo até 15%, 1 botão por tela, foto do herói 35%; carrossel com encaixe não é estouro | f |
-| `gate-oclusao.mjs` | texto coberto por camada ou cortado pela caixa | f |
+| `gate-responsivo.mjs` | 12 telas: rolagem lateral da página, CTA na dobra, toque 44px, corpo 14px, botão em uma linha e a 2 telas; celular: fixo até 15%, 1 botão por tela; primeira tela visível no celular (390x664 e 360x616 reprovam, 375x553 avisa; área com as barras do navegador, da tabela do Playwright): manchete, texto de apoio e botão principal inteiros, botão a 8 px ou mais do pé; foto do herói 35% da área visível, piso de 20% (o texto ganha); carrossel com encaixe não é estouro | f |
+| `gate-oclusao.mjs` | texto coberto por camada, cortado pela caixa ou com linha recortada por clip-path (medido linha a linha) | f |
 | `gate-simetria.mjs` | itens paralelos em caixas iguais, colunas que terminam juntas, títulos vizinhos a 4 px, sem buraco interno, passos em caixas; falha em elemento com `data-assimetrico` vira aviso | f |
 | `gate-texto.mjs` | viúva em título e subtítulo (h1 a h4, dt, summary) e em parágrafo na fonte do título ou de caixa, de 320 a 1440, item em minúscula, itálico colorido repetido | f |
 | `gate-composicao.mjs` | cara de template: 3 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, wireframe, linha do tempo além do último marco, ninguém na primeira tela, destaque abaixo de 3:1 | f |
@@ -243,12 +243,12 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `anim.mjs` + `prancha.py` | 3 quadros por seção em 1440 e 390 (`secoes.json`) e a prancha com a % de pixels que mudou | f |
 | `gate-animacao.py` | seção com menos de 2% de pixels mudando, mais de 2 seções com o mesmo tipo de animação, menos pranchas que linhas do plano | f |
 | `sobreposicao.mjs` | varredura de rolagem: elemento fixo (sticky) cobrindo um bloco, em px² por tela | f |
-| `gate-movimento.mjs` | visita real: 8 s parada no topo, depois rola; reprova animação que roda fora da tela, página que não anima ao chegar, item que chega parado a 300 px/s, rolagem suave e qualquer animação em curso (mais de 0,2 s) com movimento reduzido | f |
+| `gate-movimento.mjs` | visita real: 8 s parada no topo, depois rola; reprova animação que roda fora da tela, página que não anima ao chegar, item que chega parado a 300 px/s, rolagem suave e qualquer animação em curso (mais de 0,2 s) com movimento reduzido; texto invisível com a página parada 4 s na primeira tela, na tela durante a visita ou acima da tela depois de um salto até o fim (`--so-visibilidade`) | f |
 | `gate-verdade.py` | toda promessa (e a meta description) com linha do briefing que sustente; dono nomeado no briefing aparece no corpo | d, f |
 | `gate-imagens.py` | licença completa, crédito com o título real, aviso no og-image; foto repetida entre seções (pHash e origem), nitidez relativa (abaixo de 2,5 reprova, abaixo de 6 avisa), aviso e 60% de foto na primeira tela (`--url`), pessoa de banco como aviso (`--trafego-real` reprova) | e, f |
 | `gerar-icones.mjs` + `gerar-og-image.mjs` | favicon e ícone de tela inicial do `icones/icone.svg` do motivo do plano, com as duas linhas de `<link>` impressas com os nomes reais; a og:image de 1200x630 (`--fonte` do título, `--cor-fundo` e `--cor-texto` da paleta do plano, ou o script avisa que usou o padrão) | e |
 | `montar-dist.py` + `gate-publicacao.py` | `dist/` só com o que a página usa, e o gate que reprova a casa na publicação, comentário interno e ícone de outra identidade | f, h |
-| `gate-relatorio.py` | o relatório final só afirma medida que um gate gravou: cada número cita o arquivo e está nele, nada anterior à `dist/` | h |
+| `gate-relatorio.py` | o relatório final só afirma medida que um gate gravou: cada número cita o arquivo e está nele, nada anterior à `dist/`; a história do trabalho entra com o marcador no começo da linha (`rodada 1:`, `antes:`), que a tira só da regra da `dist/` | h |
 | `gate-video.mjs` | as 7 checagens de vídeo (só em página com vídeo) | f |
 | `uso-ferramentas.py` | Playwright e `frontend-design` foram usados de verdade | f |
 | `wave.py` | registro das 9 lentes (a de referências responde "bonito ou só correto?"), auditor master e ciclo de 2 rodadas | f, g |

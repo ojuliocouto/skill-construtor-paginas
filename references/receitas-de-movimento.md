@@ -198,7 +198,7 @@ Sem JS: roda só com CSS, na carga (não precisa de observador). Atrasos: 0, 0,1
 `.js .abertura-entra { opacity: 1; transform: none; animation: none; }` e
 `.js .abertura-foto .cena-quadro { clip-path: none; animation: none; }`.
 **O que cai abaixo da dobra no celular não usa a escada.** Em 320 e 390 px o subtítulo, o botão e os fatos
-descem para baixo da primeira tela (a foto precisa de 35% dela e o botão tem de ficar na dobra). Tudo que cair abaixo da
+descem para baixo da primeira tela (a manchete, o apoio e o botão ficam inteiros na área que a pessoa vê, e a foto precisa de 35% dela). Tudo que cair abaixo da
 dobra no celular leva `revela` (a receita `revelar-ao-entrar`), não `abertura-entra`: a escada de carga termina antes de a
 pessoa chegar ali, e o `gate-movimento.mjs` reprova ("chegam parados a 300 px/s"). Só o título e o que aparece na primeira
 tela do 320 x 568 ficam com `abertura-entra`; confira com `scripts/medir-dobra.mjs`.

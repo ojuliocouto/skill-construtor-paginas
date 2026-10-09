@@ -98,7 +98,8 @@ briefing que sustenta), e. Pixel e rastreamento (`references/rastreamento.md`), 
 publicação e g. Aprovação. No topo do PLANO, além do pixel: o **Momento assinatura** (um elemento
 ligado ao assunto, em 3 ou mais seções, que muda de estado) e o **Material da cliente pedido**
 (foto real da profissional, número do WhatsApp, depoimentos com autorização). Estética por seção
-em `references/ritmo-e-animacao.md`.
+em `references/ritmo-e-animacao.md`. A coluna Animação da tabela começa com o NOME da receita (ex.: `texto-em-linhas: a frase da dor sobe
+linha por linha`), com `assinatura` ou com `criação nova: <motivo de pelo menos 15 caracteres>`; descrição solta reprova no `gate-plano.py`.
 
 `node <dir-da-skill>/scripts/previa-direcoes.mjs --saida <dir>/plano <dir>/plano/direcoes/a.html <dir>/plano/direcoes/b.html <dir>/plano/direcoes/c.html`
 `node <dir-da-skill>/scripts/previa-direcoes.mjs --miniaturas <dir-da-skill>/references/secoes --saida <dir>/plano/miniaturas`
@@ -280,7 +281,9 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    **Desenho lê de primeira, sem o texto:** retângulos e retas alinhadas (planta baixa, mesa
    de linhas) leem como wireframe e reprovam; traço fino e destaque com pelo menos 3:1 contra
    o que está embaixo deles (o amarelo da v5 estava a 2,07:1).
-3. **Movimento em CSS:** entrada do hero, cada item revelado quando ELE entra na tela (gramática
+3. **Movimento em CSS:** copie a base mínima de `references/receitas-de-movimento.md` inteira: `revelar`, `primeiraTela`, `jaPassou` e
+   `observar`. Recorte de entrada (`clip-path`) vai no filho do alvo observado, nunca no próprio alvo. Produto físico com momento assinatura em 3
+   seções: receita `produto-em-estados`. Entrada do hero, cada item revelado quando ELE entra na tela (gramática
    única de curva e duração) mais momentos próprios ligados ao conteúdo, hover e microinteração no botão, `prefers-reduced-motion` respeitado. Conteúdo
    nunca depende de animação para aparecer. **Revele só o que entra na tela:** nada de
    `setTimeout` que marca tudo como visível (na v4, 3 s depois da carga as 6 seções já estavam
@@ -297,8 +300,12 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    fixa, nunca os dois:** o que é fixo soma até 15% da tela em 390 e 320; no máximo 1 botão de
    ação visível por tela (a barra some quando há botão da página à vista) e nenhum botão encostado
    ou coberto pela barra. Na v4 eram 152 px fixos (18% em 390, 28% em 320), 3 botões na mesma tela
-   e a barra cobrindo o botão de "Duas formas". **Foto do herói na primeira tela do celular** com
-   pelo menos 35% da altura (na v4: 134 px em 390 e nenhum em 320, com o rosto cortado na dobra). A barra escondida leva
+   e a barra cobrindo o botão de "Duas formas". **Topo do celular na área que a pessoa vê** (390x664: a tela de 844
+   menos as barras do Safari; 360x616 no Android): manchete inteira, texto de apoio inteiro e o botão principal a 8 px ou mais do pé, e a
+   foto com 35% dessa área. Quando não cabem os três e a foto, o texto ganha: a foto pode cair até 20%; abaixo disso, encurte a manchete
+   (`gate-responsivo.mjs --so-primeira-tela` mede só isso). Na v7 a foto quadrada pôs o botão 146 px abaixo da dobra no iPhone, e na Torra
+   Clara o apoio ficou depois do botão, fora da primeira tela; os dois passaram no gate antigo, que media contra a janela cheia (na v4:
+   134 px de foto em 390 e nenhum em 320, com o rosto cortado na dobra). A barra escondida leva
    `visibility: hidden` além do `translate`: só deslocada, ela aparece no print de página
    inteira logo abaixo da primeira tela, por cima da foto (medido na v4).
    **Peso:** fonte só nos pesos e estilos usados (itálico de 144 KiB para 3 palavras foi achado
@@ -356,6 +363,13 @@ Grave `evidencias/etapa-4.json` e registre: `node <dir-da-skill>/scripts/py.mjs 
 
 Sirva com compressão (medir sem gzip inverte o resultado) e mate o servidor no fim:
 `node <dir-da-skill>/scripts/py.mjs servidor-gzip.py <dir> 8765`
+A porta é uma preferência, e 8765 é só o exemplo: se estiver ocupada (outra sessão na máquina), o servidor escolhe outra, avisa
+(porta ocupada) e imprime a linha `URL: http://127.0.0.1:<porta>/`. Use ESSA URL no lugar de `http://localhost:8765/` em todos os
+comandos abaixo. O `rodar-gates.mjs` já faz isso sozinho (um servidor em porta livre por gate) e, se o servidor de um gate cair no meio,
+sobe outro e repete esse gate uma vez, dizendo isso. Gate de navegador que diz `servidor fora do ar em <url>` (saída 3) não opinou sobre a
+página: o servidor caiu. Suba de novo, com a URL que ele imprimir, e repita o gate; a saída 3 não é reprovação da página. O `montar-dist.py`
+esvazia a `dist/` sem apagar a pasta e avisa "dist refeita": um servidor que serve essa pasta segue no ar e entrega a versão nova (confira
+que ele continua de pé antes de rodar os gates).
 
 **Caminho padrão: um comando só, todos os gates em paralelo.**
 `node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir>`
@@ -379,8 +393,8 @@ Os comandos individuais ficam como referência (e para rodar um gate sozinho). R
 
 `node <dir-da-skill>/scripts/py.mjs gate-sem-kicker.py <dir>/index.html` (kicker, 01/02/03, número gigante)
 `node <dir-da-skill>/scripts/py.mjs gate-classes-mortas.py --projeto <dir>` (classe que não existe no CSS)
-`node <dir-da-skill>/scripts/gate-responsivo.mjs --url http://localhost:8765/` (12 telas)
-`node <dir-da-skill>/scripts/gate-oclusao.mjs --url http://localhost:8765/` (texto coberto ou cortado)
+`node <dir-da-skill>/scripts/gate-responsivo.mjs --url http://localhost:8765/` (12 telas e 3 primeiras telas visíveis; `--so-primeira-tela` mede só o topo do celular, para consertar rápido)
+`node <dir-da-skill>/scripts/gate-oclusao.mjs --url http://localhost:8765/` (texto coberto, cortado ou com uma linha recortada por clip-path)
 `node <dir-da-skill>/scripts/gate-simetria.mjs --url http://localhost:8765/` (itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos com 4 px de folga, conteúdo interno sem buraco, texto das caixas na mesma faixa de linhas e passos em caixas)
 
 **Limite de colunas desbalanceadas (`gate-simetria.mjs`): 80 px.** Para cada filho de um grid ou flex em linha, a base
@@ -392,7 +406,7 @@ estique a foto até a mesma altura; se a assimetria é pedida no plano, declare 
 `node <dir-da-skill>/scripts/gate-texto.mjs --url http://localhost:8765/` (viúva em título e subtítulo, de h1 a h4, dt e summary, e em parágrafo na fonte do título ou dentro de caixa, em 7 telas de 320 a 1440; item em minúscula; itálico colorido repetido)
 `node <dir-da-skill>/scripts/gate-composicao.mjs --url http://localhost:8765/ --projeto <dir>` (mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, desenho que lê como wireframe, linha do tempo que passa do último marco, nenhuma pessoa na primeira tela para público de pessoas, destaque abaixo de 3:1)
 Negócio de produto físico (móveis, comida, imóvel, moda, obra, carro): acrescente `--produto-fisico` ao comando acima. Se o momento assinatura estiver só em desenho, o gate AVISA (não reprova) que ele deve ser foto real do produto, receita `foto-que-se-monta`.
-`node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, pelo menos 2 seções animam ao chegar, nenhum item chega parado numa rolagem de 300 px/s em 1440, 390 e 320, e, com movimento reduzido, nenhuma animação em curso acima de 0,2 s nem rolagem suave)
+`node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, pelo menos 2 seções animam ao chegar, nenhum item chega parado numa rolagem de 300 px/s em 1440, 390 e 320, e, com movimento reduzido, nenhuma animação em curso acima de 0,2 s nem rolagem suave; texto invisível parado no topo por 4 s, na tela durante a visita ou acima da tela depois de um salto até o fim reprova: receita-base `observar`, com `primeiraTela` e `jaPassou`; `--so-visibilidade` roda só essas provas)
 `node <dir-da-skill>/scripts/py.mjs gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas, e o dono nomeado no briefing no corpo da página)
 `node <dir-da-skill>/scripts/py.mjs gate-imagens.py --projeto <dir> --url http://localhost:8765/` (licença com versão e link, crédito no HTML com o título real da fonte, aviso no og-image; foto repetida entre seções por pHash e origem, nitidez abaixo de 100, "imagem ilustrativa" e 60% de foto na primeira tela medidos no navegador; pessoa identificável de banco é aviso de tráfego real, e `--trafego-real` a reprova)
 `node <dir-da-skill>/scripts/gate-ritmo.mjs --url http://localhost:8765/` (duas seções vizinhas com o mesmo esqueleto e mais de 1 "título centralizado + cartões")
@@ -546,6 +560,8 @@ passe de gosto: tells antes e depois, o depois é 0.
    entre crases o arquivo de texto do gate que o mediu, e o arquivo é da `dist/` entregue. Na v4
    o auditor refutou 10 afirmações do relatório, entre elas um Lighthouse 100 medido antes da
    versão final. `node <dir-da-skill>/scripts/py.mjs gate-relatorio.py --relatorio <relatório.md> --base <dir> --dist <dir>/dist`
+   Para relatar a história do teste (a medida de uma rodada anterior), comece a linha com `rodada N:` ou `antes:` e cite o arquivo daquela
+   rodada; o gate não cobra a `dist/` final nessa linha, mas a linha não pode falar do estado atual.
 7. A mensagem de entrega leva o bloco do SKILL.md (auditores, identidade, passe de gosto, prova,
    pendências) e o link ou os prints.
 
@@ -563,4 +579,4 @@ Se o cliente pediu outra coisa depois de etapas já registradas, não refaça tu
 etapa registrada: se nada mudou, fica; se SÓ o briefing mudou, o gate da etapa roda de novo sobre o JSON dela e, passando, ela é
 re-registrada com o motivo gravado (`revalidada`); se QUALQUER outra evidência mudou (a tabela de sustentação, o plano, o próprio JSON),
 a etapa continua exigindo o gate dela (`registrar`) e nada é gravado. Revalidar NÃO é atalho: a copy que depende do briefing pede
-`gate-verdade.py` de novo (o comando avisa). O motivo tem 15 caracteres no mínimo.
+`gate-verdade.py` de novo (o comando avisa). O motivo tem 15 caracteres no mínimo. Se `revalidar` bloquear numa etapa, as anteriores ficam gravadas e a saída diz quais; refaça a etapa que bloqueou e registre de novo.
