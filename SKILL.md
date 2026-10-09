@@ -223,13 +223,13 @@ executa, nunca uma lista solta no fim de um arquivo.
 |---|---|---|
 | `checar-ferramentas.py` | verificador: crítico x opcional, manda cada ferramenta fazer algo | antes de tudo |
 | `gate-etapas.py` | sequência e integridade das evidências de cada passo | a a h |
-| `capturar-referencias.mjs` | abre a URL no Chromium headless e grava primeira dobra e meio; julga o que capturou (`ok`, `bloqueada`, `quebrada`, `coberta`, `vazia`); `--limpar-ruins` e `--remover <url>` tiram do manifesto | b |
+| `capturar-referencias.mjs` | abre a URL no Chromium headless e grava primeira dobra e meio; julga o que capturou (`ok`, `bloqueada`, `quebrada`, `coberta`, `vazia`; tela de bloqueio de robô é `bloqueada`, meio igual à dobra é `vazia`, aviso de cookies só é "fechado" se saiu da tela); `--limpar-ruins` e `--remover <url>` tiram do manifesto; `--longa` marca página que deveria rolar | b |
 | `gate-referencias.py` | reprova sem 6 prints reais lidos, 2 de cada tipo | b, f |
 | `previa-direcoes.mjs` | as 3 primeiras dobras em PNG (1440 e 390) e o `direcoes.png` lado a lado; `--miniaturas` grava o cardápio de seções | b2 |
 | `gate-plano.py` | reprova o `PLANO.md` sem as 7 seções, as 3 prévias, a copy sustentada, o pixel declarado ou alguma aprovação | b2, e, f |
 | `gate-rastreamento.py` | reprova a `dist/` sem o pixel e os 5 eventos que o plano pediu | f |
 | `search.py` + `core.py` + `data/` | banco de design, consulta opcional | c |
-| `assets-search.py` | fotos com licença aberta, sem chave (Openverse) | e |
+| `assets-search.py` | fotos com licença aberta, sem chave (Openverse; se ela não responde, cai sozinha para a Wikimedia Commons e avisa; o Unsplash não abre por script, responde 307) | e |
 | `screenshot-prova.js` | prints desktop e celular em scrollY 0, identidade da página, clique | e, f, h |
 | `servidor-gzip.py` | serve o build local com compressão | f |
 | `gate-sem-kicker.py` | kicker, 01/02/03 e número gigante, em HTML, Tailwind e `.css` | f |
@@ -246,7 +246,7 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `gate-movimento.mjs` | visita real: 8 s parada no topo, depois rola; reprova animação que roda fora da tela, página que não anima ao chegar, item que chega parado a 300 px/s, rolagem suave e qualquer animação em curso (mais de 0,2 s) com movimento reduzido | f |
 | `gate-verdade.py` | toda promessa (e a meta description) com linha do briefing que sustente; dono nomeado no briefing aparece no corpo | d, f |
 | `gate-imagens.py` | licença completa, crédito com o título real, aviso no og-image; foto repetida entre seções (pHash e origem), nitidez relativa (abaixo de 2,5 reprova, abaixo de 6 avisa), aviso e 60% de foto na primeira tela (`--url`), pessoa de banco como aviso (`--trafego-real` reprova) | e, f |
-| `gerar-icones.mjs` | favicon e ícone de tela inicial gerados do `icones/icone.svg` do motivo do plano, com registro | e |
+| `gerar-icones.mjs` + `gerar-og-image.mjs` | favicon e ícone de tela inicial do `icones/icone.svg` do motivo do plano, com as duas linhas de `<link>` impressas com os nomes reais; a og:image de 1200x630 (`--fonte` do título, `--cor-fundo` e `--cor-texto` da paleta do plano, ou o script avisa que usou o padrão) | e |
 | `montar-dist.py` + `gate-publicacao.py` | `dist/` só com o que a página usa, e o gate que reprova a casa na publicação, comentário interno e ícone de outra identidade | f, h |
 | `gate-relatorio.py` | o relatório final só afirma medida que um gate gravou: cada número cita o arquivo e está nele, nada anterior à `dist/` | h |
 | `gate-video.mjs` | as 7 checagens de vídeo (só em página com vídeo) | f |

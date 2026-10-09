@@ -65,6 +65,19 @@ uma e escrever o que ela faz bem e o princípio que se leva dela.
 `node <dir-da-skill>/scripts/capturar-referencias.mjs --projeto <dir> --tipo mesmo-negocio <url> <url> ...`
 `node <dir-da-skill>/scripts/capturar-referencias.mjs --projeto <dir> --tipo design <url> <url> ...`
 
+**A captura se julga** (cada URL sai com um estado em `captura`, e a saída diz qual): `ok`, `bloqueada` (HTTP 401, 403 ou 429, ou a tela
+de bloqueio de robô, como "We couldn't verify the security of your connection", "Just a moment", Cloudflare, Akamai ou Incapsula),
+`quebrada`, `coberta` (modal que cobre mais de 40% da janela) e `vazia` (a dobra é uma folha lisa, ou o print do meio é igual ao da
+dobra: a rolagem não andou, ou só o topo renderizou). Só `ok` conta como referência. Três decisões que são suas:
+
+- **`--remover <url>`** tira do manifesto uma referência que saiu `ok` e não serve (feia, sem foto, de outro assunto); aceita o endereço
+  ou um trecho que só case uma, e os PNG vão para `descartados/referencias/`: `node <dir-da-skill>/scripts/capturar-referencias.mjs --projeto <dir> --remover <url>`.
+  As que saíram ruins (`bloqueada`, `quebrada`, `coberta`, `vazia`) saem de uma vez com `--limpar-ruins`.
+- **"o aviso de cookies continua visível"** na saída: o script apertou o botão, conferiu no DOM e o aviso não saiu da tela (só diz
+  "aviso de cookies fechado" quando saiu de verdade). Abra o PNG da dobra: se o aviso cobre o que a referência ensina, `--remover`.
+- **Página que você sabe que é longa** (loja, institucional) e saiu com 900 px e o meio igual à dobra: o script já marca `vazia` quando a
+  página tem 30 links ou mais; para uma sem tantos links, acrescente `--longa` ao comando e ela vira `vazia` também.
+
 Abra os dois PNGs de cada uma (Read), preencha `faz_bem`, `principio` e `lido: true` no
 manifesto e escreva `referencias/sintese.md`. Gate:
 
@@ -223,8 +236,11 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    Abra o PNG. Ele corresponde ao plano visual? Fica de pé ao lado da referência mais forte?
    Se não, corrija o hero agora: é o único ponto em que corrigir é barato.
 2. **Imagens:** material real do cliente primeiro. Sem ele, banco com licença livre (Openverse
-   pelo `scripts/assets-search.py "<tema em inglês>" --type photo`, Unsplash, Pexels,
-   Wikimedia Commons), escolhida pelo que as referências ensinaram (assunto, luz,
+   pelo `scripts/assets-search.py "<tema em inglês>" --type photo`; se a Openverse não responder
+   (conexão recusada, HTTP, resposta fora do formato), a busca, inclusive a de `--type openverse`, cai
+   sozinha para a Wikimedia Commons e avisa qual rota respondeu; Pexels, com chave).
+   **O Unsplash não abre por script** (o servidor responde HTTP 307 para robô, na busca e no
+   download): só entra se alguém escolher a foto no navegador e passar o endereço. Escolhida pelo que as referências ensinaram (assunto, luz,
    enquadramento), nunca a primeira que aparece. **Escolha olhando a folha de contato, não
    abrindo resultado por resultado:** acrescente `--folha <dir>/prova/fotos.png` à busca
    (`node <dir-da-skill>/scripts/py.mjs assets-search.py "<tema em inglês>" --type photo -n 8 --folha <dir>/prova/fotos.png`)
@@ -308,9 +324,15 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    plano declara `Ícone do site: <motivo>`, o motivo é desenhado em `icones/icone.svg` (com o
    mesmo `data-motivo`, e a página desenha esse motivo em algum `data-desenho`: **copie a frase do motivo, letra por letra, para dentro do
    `data-desenho` do SVG que o desenha** (pode vir no meio de uma descrição maior; palavra trocada não vale)) e os PNG saem de
-   `node <dir-da-skill>/scripts/gerar-icones.mjs --projeto <dir>`. **A og:image sai de um comando** (1200x630, o título, a foto e a
+   `node <dir-da-skill>/scripts/gerar-icones.mjs --projeto <dir>`. Ele grava `favicon.png` (32x32) e `apple-touch-icon.png` (180x180) na RAIZ do projeto,
+   não em `icones/` (lá ficam só o SVG e o registro), e imprime as duas linhas de `<link>` prontas; cole no `<head>`, com estes nomes:
+   `<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">` e
+   `<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">`. **A og:image sai de um comando** (1200x630, o título, a foto e a
    faixa "Imagem ilustrativa" quando a foto é de banco, com a fonte da marca de `fonts/`; sem fonte, usa a do sistema e diz que é reserva):
-   `node <dir-da-skill>/scripts/gerar-og-image.mjs --projeto <dir> --titulo "<título>" --foto imagens/hero.jpg --ilustrativa`. A v5 publicou o favicon da v3
+   `node <dir-da-skill>/scripts/gerar-og-image.mjs --projeto <dir> --titulo "<título>" --foto imagens/hero.jpg --ilustrativa --fonte fonts/<fonte-do-título> --cor-fundo "<fundo da paleta>" --cor-texto "<texto da paleta>"`.
+   O `--fonte` é a fonte do TÍTULO (a do corpo costuma vir antes em ordem alfabética, e é a que o padrão pegaria) e `--cor-fundo` e `--cor-texto` saem da paleta
+   do `plano-visual.md`; sem elas o script usa um verde escuro e um off-white que não são da marca e escreve ATENÇÃO na saída: leia o aviso e rode de novo.
+   A v5 publicou o favicon da v3
    (md5 igual), com um motivo que a página já tinha abandonado. Se o motivo do ícone mudar aqui, o `plano-visual.md` muda e os registros dele caem (ver o aviso do passo c): refaça
    na ordem que a mensagem do gate mostra.
 5. **Fora do domínio final, a página nasce `noindex`:** `<meta name="robots" content="noindex,
@@ -394,7 +416,10 @@ dá para inferir sai como `PREENCHER: ...` e o `anim.mjs` se recusa a rodar até
 
 `node <dir-da-skill>/scripts/anim.mjs --url http://localhost:8765/ --saida <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` e `node <dir-da-skill>/scripts/py.mjs prancha.py --pasta <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` (3 quadros por seção em 1440 e 390 e a prancha com a porcentagem de pixels que mudou; abra as pranchas)
 `node <dir-da-skill>/scripts/py.mjs gate-animacao.py --pasta <dir>/prova/anim --plano <dir>/PLANO.md` (menos de 2% de pixels mudando entre início e fim, mais de 2 seções com o mesmo tipo, menos pranchas que linhas da tabela do plano)
-`node <dir-da-skill>/scripts/sobreposicao.mjs --url http://localhost:8765/ --fixo "<seletor do sticky>" --contra "<seletor do bloco largo>"` (um para cada elemento fixo: 0 px² em 1024 a 1920)
+`node <dir-da-skill>/scripts/sobreposicao.mjs --url http://localhost:8765/ --fixo "<seletor do sticky>" --contra "<seletor do bloco largo>"` (um para cada elemento sticky que divide grid com bloco de largura total: 0 px² em 1024 a 1920.
+**Página sem elemento sticky nem fixo: o gate não se aplica e não roda** (sem `--com sobreposicao` o `rodar-gates.mjs` também não o chama);
+confirme com `grep -nE "position: *(sticky|fixed)" <dir>/dist/index.html <dir>/dist/*.css` (vazio = sem elemento fixo) e escreva na wave
+"sobreposição: não se aplica, a página não tem elemento sticky nem fixo" em vez de inventar um seletor)
 `node <dir-da-skill>/scripts/py.mjs montar-dist.py --projeto <dir> --css-em-linha` e `node <dir-da-skill>/scripts/py.mjs gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar, sem comentário interno, e ícones gerados do `icones/icone.svg` do motivo do plano)
 `node <dir-da-skill>/scripts/py.mjs gate-rastreamento.py --dist <dir>/dist --plano <dir>/PLANO.md` (pixel e eventos que o plano pediu; passa direto com `Pixel pedido: nenhum`)
 `node <dir-da-skill>/scripts/py.mjs gate-plano.py --projeto <dir>` (o plano continua aprovado depois das correções)

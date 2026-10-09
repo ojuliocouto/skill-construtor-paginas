@@ -152,8 +152,8 @@ references/
   assets-sem-chave.md          freely licensed photos and how to credit them
   gate-etapas.md               evidence fields per step
   arquivo/                     v2 references, outside the flow (kept for lookup only)
-  projects/EXAMPLE.md          per-project template (real files are local, gitignored)
-  sessions/EXAMPLE.md          per-session template (real files are local, gitignored)
+  projects/EXAMPLE.md          per-project template (copy it to <project>/contexto-do-projeto.md; real notes never live in the skill folder)
+  sessions/EXAMPLE.md          per-session template (copy it to <project>/sessoes/YYYY-MM-DD.md; real notes never live in the skill folder)
 scripts/                       gates, capture, audit registry, tests, rodar-testes.mjs (whole suite), test-portabilidade.py (portability guard)
 .github/workflows/             portabilidade.yml (suite on Windows, macOS and Linux)
 .gitattributes                 LF line endings for scripts
