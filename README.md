@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.11)
+SKILL.md                       router (v3.5.12)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,15 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.5.12
+
+Fixes the last false positive the Torra Clara page showed after 3.5.10. Red test before the change; the bad cases still fail.
+
+- **`gate-ritmo.mjs` no longer calls a configurator or a two-column FAQ "cards".** The page failed with two neighbours "title on the left + cards": "Monte o seu plano" (a column of radio choices next to the order summary, widths 663 and 486 px, ratio 0.73, above the 0.7 line for "cards") and "Dúvidas" (two columns of `details`). New skeletons: a column with 4 or more controls is a **configurador**; columns of `details` or `li` are **lista**. Two neighbouring configurators, FAQs or lists still fail; so do neighbouring cards with a button, a field or a list inside each card.
+- **Short centred title with cards just below it is no longer "title beside the content".** "Beside" now needs a real vertical overlap with the title (24 px or 30% of its height). Before, the third card of a row that started less than 40 px under a short centred title counted as beside it.
+- **Proof.** `test-ritmo-3512.cjs`: 12 controls (8 failed before the change). The Torra Clara page passes `gate-ritmo.mjs` without any change to the page: the page was right, the gate was wrong.
+- **Not proven.** The original v6 of the Studio Equilibrio is not on disk; the bad shape (equal cards, centred title, two or more) is covered by the existing controls and local pages. The adversarial auditor did not run on this version.
 
 ## What is new in 3.5.11
 

@@ -19,10 +19,15 @@
  *   título: à esquerda e em cima, centralizado, ou ao lado do conteúdo;
  *   corpo:  cartões (2 ou mais blocos de texto lado a lado de peso parecido, com caixa ou sem),
  *           assimétrico (blocos lado a lado de pesos muito diferentes: largo x estreito),
- *           split com imagem, faixa de fotos, lista (3 ou mais itens empilhados) ou texto.
+ *           configurador (3.5.12: uma coluna com 4 ou mais controles, radios, campos ou botões de
+ *           escolha, ao lado de um resumo: não é "cartões iguais" mesmo com larguras parecidas),
+ *           split com imagem, faixa de fotos, lista (3 ou mais itens empilhados, ou colunas de
+ *           perguntas `details` ou de `li`: 3.5.12, duas colunas de FAQ não são cartões) ou texto.
  *
  * Como o título é classificado (3.5.10): pelo alinhamento real, não pelo centro da caixa do texto.
- *   lado:   há conteúdo (120 px ou mais de largura) à direita do título, na altura dele;
+ *   lado:   há conteúdo (120 px ou mais de largura) à direita do título, na altura dele (3.5.12:
+ *           sobreposição vertical de pelo menos 24 px ou 30% do título; conteúdo que só começa logo
+ *           abaixo do título, como o 3º cartão de uma fileira sob um título curto, não é "ao lado");
  *   centro: `text-align` calculado centralizado E a primeira linha com o centro a menos de 40 px
  *           do centro da seção; ou texto à esquerda numa caixa que se ajusta ao texto (até 60%
  *           da seção) e está no meio da seção (flex ou margin auto);
@@ -99,6 +104,21 @@ const secoes = await page.evaluate((PESO) => {
     const fixa = [f, ...f.querySelectorAll('*')].some((n) => ['sticky', 'fixed'].includes(getComputedStyle(n).position));
     return (foto ? 'foto' : 'desenho') + (fixa ? ' fixo' : '');
   };
+  // 3.5.12: coluna com 4 ou mais controles (radios, caixas, campos, botões de escolha) é um
+  // configurador, não um "cartão". Os controles de um campo visualmente escondido (radio de 1 px)
+  // contam: o que importa é existirem dentro da coluna.
+  const SELETOR_CONTROLE = 'input:not([type=hidden]), select, textarea, button, [role=radio], [role=checkbox], [role=tab], [role=switch], [role=option]';
+  const controles = (f) => [...f.querySelectorAll(SELETOR_CONTROLE)].filter((c) => !c.closest('[hidden]')).length + (f.matches(SELETOR_CONTROLE) ? 1 : 0);
+  // Coluna de lista: a própria coluna é uma lista (ul/ol com 3 ou mais li, dl com 3 ou mais filhos) ou um
+  // grupo de 2 ou mais `details` (perguntas). Um cartão com título, texto e uma lista dentro NÃO é
+  // coluna de lista: os filhos dele são de tipos diferentes.
+  const colunaDeLista = (f) => {
+    const itens = [...f.children].filter(visivel);
+    const tags = new Set(itens.map((i) => i.tagName));
+    if (['UL', 'OL'].includes(f.tagName)) return itens.length >= 3 && tags.size === 1 && tags.has('LI');
+    if (f.tagName === 'DL') return itens.length >= 3;
+    return itens.length >= 2 && tags.size === 1 && tags.has('DETAILS');
+  };
   const lista = [...document.querySelectorAll('section')]
     .filter((s) => visivel(s) && !s.parentElement.closest('section') && s.getBoundingClientRect().height >= 120);
   return lista.map((s, i) => {
@@ -124,7 +144,15 @@ const secoes = await page.evaluate((PESO) => {
     const alinhaCentro = /center/.test(alinhamento);
     let titulo = 'esq';
     let medida = '';
-    if (todos.some((el) => { const c = el.getBoundingClientRect(); return c.width >= 120 && c.height >= 60 && c.left >= hr.right - 4 && c.top < hr.bottom + 40 && c.bottom > hr.top; })) {
+    // 3.5.12: "ao lado" exige sobreposição vertical de verdade com o título. A regra antiga aceitava
+    // conteúdo que começava até 40 px ABAIXO da base do título, e o 3º cartão de uma fileira que
+    // vem logo abaixo de um título curto centralizado ficava à direita dele e contava como "ao lado".
+    const sobreposicaoMinima = Math.min(24, hr.height * 0.3);
+    if (todos.some((el) => {
+      const c = el.getBoundingClientRect();
+      const sobreposto = Math.min(c.bottom, hr.bottom) - Math.max(c.top, hr.top);
+      return c.width >= 120 && c.height >= 60 && c.left >= hr.right - 4 && sobreposto >= sobreposicaoMinima;
+    })) {
       titulo = 'lado';
       medida = `há conteúdo ao lado do título (a partir de ${px(hr.right)} px)`;
     } else if (alinhaCentro && Math.abs(centroL1 - centroSecao) < 40) {
@@ -167,6 +195,8 @@ const secoes = await page.evaluate((PESO) => {
       if (midias.length && textuais.length) corpo = 'split com ' + tipoMidia(midias[0]);
       else if (midias.length >= 2) corpo = 'faixa de fotos';
       else if (midias.length === 1) corpo = 'split com ' + tipoMidia(midias[0]); // título numa coluna, a mídia na outra
+      else if (melhor.juntos.some((f) => controles(f) >= 4)) corpo = 'configurador';
+      else if (melhor.juntos.every(colunaDeLista)) corpo = 'lista';
       else {
         const larg = melhor.juntos.map((f) => f.getBoundingClientRect().width);
         corpo = Math.min(...larg) / Math.max(...larg) >= PESO ? 'cartões' : 'assimétrico';

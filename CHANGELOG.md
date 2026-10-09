@@ -1,5 +1,40 @@
 # Changelog
 
+## 3.5.12 (09/10/2026): o gate-ritmo erra o corpo da seção na Torra Clara (último falso positivo da 3.5.10)
+
+Depois da medição de alinhamento da 3.5.10 (P18), o `gate-ritmo.mjs` passou a reprovar a Torra Clara nas seções "Monte o seu plano de
+café" e "Dúvidas antes de assinar", as duas lidas como "título à esquerda + cartões". Conferido nos prints do site no ar (1440): o gate
+estava errado, a página estava certa. O título foi medido certo (início à esquerda); o que errou foi o CORPO da seção.
+
+### O que estava errado no gate
+- "Monte o seu plano" é um configurador (4 fieldsets com 15 radios) ao lado do rótulo do pedido. As duas colunas medem 663 e 486 px, razão
+  0,73, acima da linha de 0,70 que o gate usa para "cartões de peso parecido". A página já declarava `data-assimetrico` nessa grade, e o
+  gate de ritmo não olha essa marca. Na 3.5.9 a seção passava por acidente (medido de novo com o gate antigo: "título centralizado + cartões", 1 de no máximo 1): o h2 largo de
+  uma linha tinha o centro da caixa no meio e era chamado de centralizado; a correção da 3.5.10 acertou o título e deixou o corpo errado à mostra.
+- "Dúvidas" são duas colunas de `details` (perguntas). Duas colunas de peso igual viravam "cartões".
+
+### Conserto (`gate-ritmo.mjs`)
+- Coluna com 4 ou mais controles (`input`, `select`, `textarea`, `button`, `role=radio|checkbox|tab|switch|option`) vira o corpo
+  **configurador**. Radios escondidos (1 px) contam: o que vale é existirem na coluna.
+- Colunas que são lista (`ul`/`ol` com 3 ou mais `li`, `dl` com 3 ou mais filhos, ou 2 ou mais `details` irmãos) viram o corpo **lista**.
+  Cartão com título, texto e uma lista dentro NÃO vira lista: os filhos dele são de tipos diferentes.
+- Nada foi afrouxado: dois configuradores vizinhos, duas FAQs vizinhas, duas listas em colunas vizinhas, e cartões vizinhos com botão,
+  campo ou lista dentro de cada cartão continuam reprovando.
+
+### Defeito vizinho (P18, registrado na 3.5.10)
+- Título curto centralizado com cartões a menos de 40 px abaixo era tratado como "título ao lado do conteúdo": o 3º cartão da fileira
+  fica à direita do título curto e começa logo abaixo dele. Agora "ao lado" exige sobreposição vertical de verdade (24 px ou 30% da
+  altura do título). O título de lado de verdade (coluna esquerda, conteúdo à direita na mesma altura) continua "lado"; o título curto
+  centralizado volta a contar como "título centralizado + cartões" e entra na regra do máximo de 1.
+
+### Provas
+- `test-ritmo-3512.cjs` (novo, navegador): 12 controles, 8 reprovavam antes do conserto e os 12 passam depois; os 15 controles de ritmo
+  da 3.5.10 e da v3.5 (`test-gates-v35.cjs`, `test-texto-ritmo-3510.cjs`) seguem verdes.
+- `gate-ritmo.mjs` na Torra Clara no ar (https://torra-clara-teste.pages.dev): PASSA, vizinhas iguais 0. Os 9 esqueletos agora são
+  distintos entre vizinhas: configurador (seção 7), lista (seção 8).
+- Não foi provado: o v6 original do Studio Equilíbrio não está no disco; o formato ruim dele (cartões iguais com título centralizado, 2 ou
+  mais) está nos controles `ritmo-vizinhas` e `ritmo-centro-cartoes`. O auditor adversarial não rodou nesta versão.
+
 ## 3.5.11 (09/10/2026): o momento assinatura de produto físico que muda de foto (P5, a metade que a 3.5.10 deixou)
 
 A 3.5.10 resolveu o P5 só para a MESMA foto em 3 enquadramentos (receita `produto-em-estados`). Quando o produto muda de foto de verdade

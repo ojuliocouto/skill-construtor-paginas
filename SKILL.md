@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.5.11
+version: 3.5.12
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -239,7 +239,7 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `gate-simetria.mjs` | itens paralelos em caixas iguais, colunas que terminam juntas, títulos vizinhos a 4 px, sem buraco interno, passos em caixas; falha em elemento com `data-assimetrico` vira aviso | f |
 | `gate-texto.mjs` | viúva em título e subtítulo (h1 a h4, dt, summary) e em parágrafo na fonte do título ou de caixa, de 320 a 1440, item em minúscula, itálico colorido repetido | f |
 | `gate-composicao.mjs` | cara de template: 3 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, wireframe, linha do tempo além do último marco, ninguém na primeira tela, destaque abaixo de 3:1 | f |
-| `gate-ritmo.mjs` | seções VIZINHAS com o mesmo esqueleto (posição do título x tipo de corpo) e mais de 1 "título centralizado + cartões" | f |
+| `gate-ritmo.mjs` | seções VIZINHAS com o mesmo esqueleto (posição do título x tipo de corpo: cartões, assimétrico, configurador, lista, split) e mais de 1 "título centralizado + cartões" | f |
 | `anim.mjs` + `prancha.py` | 3 quadros por seção em 1440 e 390 (`secoes.json`) e a prancha com a % de pixels que mudou | f |
 | `gate-animacao.py` | seção com menos de 2% de pixels mudando, mais de 2 seções com o mesmo tipo de animação, menos pranchas que linhas do plano | f |
 | `sobreposicao.mjs` | varredura de rolagem: elemento fixo (sticky) cobrindo um bloco, em px² por tela | f |
