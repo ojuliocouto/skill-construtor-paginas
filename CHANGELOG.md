@@ -1,5 +1,43 @@
 # Changelog
 
+## 3.5.13 (09/10/2026): conserto dos achados ALTOS e MÉDIOS de código da auditoria da 3.5.11 e da 3.5.12
+
+A auditoria adversarial (`AUDITORIA-3511-3512.md`) achou, por leitura de código, brechas nos dois gates novos. Cada caso mínimo da auditoria
+foi rodado ANTES do conserto: todos reproduziram (o gate antigo PASSAVA onde devia REPROVAR). Teste vermelho, conserto, teste verde.
+
+### `gate-ritmo.mjs`
+- **Achado 1 (alto), configurador por contagem cega.** Só conta controle visível e interativo (8x8 px ou mais, sem `display:none` nem
+  `visibility:hidden`; radio ou caixa escondido conta pelo label visível), em 2 ou mais grupos (`fieldset`, `role=radiogroup`, radios do
+  mesmo `name`, cada campo; botões do mesmo pai são um grupo). Só UMA coluna da fileira pode ser o configurador, e a outra (o resumo) não
+  tem controles. Antes: 4 `<input style="display:none">` ou 4 chips decorativos num cartão faziam "configurador" e a fileira de cartões
+  escapava do máximo de 1 "título centralizado + cartões".
+- **Achado 3 (médio), lista decidida pela tag.** Coluna com caixa própria (fundo diferente do da seção, borda, sombra ou padding dos dois
+  lados) é cartão, seja `ul`, `ol`, `dl` ou `div`; `ul`/`ol`/`dl` com título (`h1` a `h6`) nos itens também é cartão. Lista é só linha leve.
+- **Achado 6 (médio), "ao lado" com enfeite.** O conteúdo "ao lado" tem de ser uma coluna IRMÃ do título (mesma grade ou flex), em fluxo,
+  visível para quem lê e com texto ou mídia. Selo `aria-hidden`, enfeite em `position:absolute` ou `fixed` e caixa vazia não contam.
+
+### `gate-imagens.py`
+- **Achado 2 (alto), sequência sem amarra.** A sequência `data-assinatura-estado` só vale quando o `PLANO.md` do projeto declara
+  `Momento assinatura: ...; seções: ...; estados: x -> y -> z` e o número de estados bate com o da página (e o plano lista ao menos tantas
+  seções quanto estados). Fotos sem relação marcadas 1, 2 e 3 sem a declaração reprovam. A mensagem da regra 8 só sugere a sequência quando
+  o plano a declara; sem o plano, manda declarar primeiro no `PLANO.md`.
+- **Achados 4 e 5 (médios).** Cada estado mora na sua seção (a primeira em que ele é o estado mais novo presente), as seções são
+  distintas e vêm em ordem crescente na página. A foto do estado k só pode aparecer na seção dela e na do estado k+1 (a cópia por baixo);
+  em qualquer outra é repetição. Antes: o estado 1 em 5 seções mais o 2 numa sexta passava, e cru/torrado/xícara de trás para frente também.
+- **Achado 9 (baixo, de passagem).** `data-assinatura-estado="0"` reprova.
+
+### `test-ritmo-3512.cjs` (achado 7, médio)
+- Seções com nomes únicos e linha da seção casada na saída (`/Cenários do dia\s+título centralizado \+ cartões/`); fixture do quadro com
+  `<img>` de verdade (o `div role=img` não era mídia, e o "Fecho" saía "título à esquerda + cartões" sem o teste dizer). Dois mutantes do
+  gate (título centralizado e título ao lado rotulados errado) deixam os controles vermelhos.
+
+### Provas
+- `test-ritmo-3513.cjs` (novo, navegador): 11 controles, 9 reprovavam com o gate 3.5.12 e os 11 passam agora. `test-ritmo-3512.cjs`: 12 de 12.
+- `test-imagens.py`: 100 testes, 12 novos vermelhos antes do conserto, todos verdes depois; o teste que esperava `[]` para 3 fotos de ruído
+  passou a exigir o PLANO.
+- Torra Clara (`pagina-teste-358/dist`, `PLANO.md` já declara 3 estados e 3 seções): `gate-ritmo.mjs` e `gate-imagens.py` PASSAM sem mudar a página.
+- Não foi provado: a suíte inteira (o dono roda); os achados 8 e 13 a 15 da auditoria são da página Torra Clara, não do código, e ficam fora desta versão.
+
 ## 3.5.12 (09/10/2026): o gate-ritmo erra o corpo da seção na Torra Clara (último falso positivo da 3.5.10)
 
 Depois da medição de alinhamento da 3.5.10 (P18), o `gate-ritmo.mjs` passou a reprovar a Torra Clara nas seções "Monte o seu plano de

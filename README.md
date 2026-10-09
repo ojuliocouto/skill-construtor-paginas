@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.12)
+SKILL.md                       router (v3.5.13)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,17 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.5.13
+
+Fixes the HIGH and MEDIUM code findings of the adversarial audit of 3.5.11 and 3.5.12. Each case from the audit became a red test first; the Torra Clara page still passes both gates untouched.
+
+- **`gate-ritmo.mjs`: a "configurador" must be real.** Only controls the reader can see and use count (8x8 px or more, not `display:none` or `visibility:hidden`; a hidden radio counts through its visible label), in 2 or more groups (fieldset, radios with the same `name`, each field). Only ONE column of the row may be the configurator, and the other (the summary) has no controls. Four invisible checkboxes or four decorative chips in one card no longer turn equal cards into a "configurador".
+- **`gate-ritmo.mjs`: `ul`, `ol` and `dl` with their own box (different background, border, shadow or padding on both sides), or with a heading in each item, are cards, not a list.**
+- **`gate-ritmo.mjs`: "title beside the content" needs a sibling column** (same grid or flex row), in the flow, with text or media. An `aria-hidden` badge, an absolutely positioned decoration or an empty box no longer counts.
+- **`gate-imagens.py`: the state sequence is tied to `PLANO.md`.** It only holds when the plan declares `Momento assinatura: ...; seções: ...; estados: x -> y -> z` with the same number of states as the page. Each state lives in its own section (distinct, in increasing order on the page); the photo of state k may appear only in its section and in the one of state k+1. State `0` is rejected. The rule 8 message only suggests the sequence when the plan declares it.
+- **`test-ritmo-3512.cjs`: the two empty assertions now prove something** (unique section names, the line of the section is matched, the frame is a real `<img>`); breaking the gate on purpose turns them red.
+- **Proof.** `test-ritmo-3513.cjs` (11 controls, 9 failed before the fix), `test-imagens.py` (12 new tests, all failed before the fix), `test-ritmo-3512.cjs` 12 of 12. Not proven: the full suite (run by the owner) and the audit's findings 8 and 13 to 15 (about the Torra Clara page itself, not the code).
 
 ## What is new in 3.5.12
 

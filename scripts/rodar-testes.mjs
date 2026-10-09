@@ -51,6 +51,7 @@ const PRECISAM = {
   'test-painel.cjs': 'navegador (prova do painel de cor)',
   'test-texto-ritmo-3510.cjs': 'navegador (gate-texto: e-mail e site fora da regra da maiúscula; gate-ritmo: título centralizado medido pelo alinhamento real)',
   'test-ritmo-3512.cjs': 'navegador (gate-ritmo: configurador e colunas de perguntas não são cartões; título curto centralizado não é "ao lado")',
+  'test-ritmo-3513.cjs': 'navegador (gate-ritmo: configurador só com controle visível em grupos; lista com caixa é cartão; enfeite não é "ao lado")',
   'test-previa-direcoes.cjs': 'navegador (tira os prints das direções)',
   'test-print-cabecalho.cjs': 'navegador (print com cabeçalho fixo)',
   'test-receitas-navegador.cjs': 'navegador (prova as receitas de movimento)',
