@@ -86,8 +86,8 @@ Escolha: [x] A  [ ] B  [ ] C  [ ] misturar
 
 | Seção | Desktop | Celular | Animação |
 |---|---|---|---|
-| Primeira dobra | foto sangrando à direita, texto à esquerda | foto quadrada e cartão em arco | abertura da foto: a foto abre de cima para baixo |
-| Dor | título fixo e frases com recuo alternado | frases em coluna | frases em sequência: uma depois da outra |
+| Primeira dobra | foto sangrando à direita, texto à esquerda | foto quadrada e cartão em arco | abertura-do-topo: a foto abre de cima para baixo |
+| Dor | título fixo e frases com recuo alternado | frases em coluna | texto-em-linhas: uma frase depois da outra |
 | Como funciona | coluna fixa e passos ao lado | coluna em faixa estreita | assinatura: a coluna se alinha com a rolagem |
 | Fecho | texto à esquerda e coluna grande à direita | coluna pequena ao lado do título | assinatura: a coluna termina de se alinhar |
 
@@ -307,19 +307,72 @@ class GatePlano(unittest.TestCase):
 
     def test_tres_secoes_com_a_mesma_animacao_reprova(self):
         def mesma(t):
-            t = t.replace("frases em sequência: uma depois da outra", "revelação por linha: sobe")
-            t = t.replace("abertura da foto: a foto abre de cima para baixo", "revelação por linha: sobe")
-            return t.replace("assinatura: a coluna se alinha com a rolagem", "revelação por linha: sobe")
+            t = t.replace("texto-em-linhas: uma frase depois da outra", "revelar-ao-entrar: sobe")
+            t = t.replace("abertura-do-topo: a foto abre de cima para baixo", "revelar-ao-entrar: sobe")
+            return t.replace("assinatura: a coluna se alinha com a rolagem", "revelar-ao-entrar: sobe")
         code, out = self.rodar(mesma)
         self.assertEqual(code, 1, out)
-        self.assertIn("revelação por linha", out)
+        self.assertIn("revelar-ao-entrar", out)
 
     def test_duas_secoes_com_a_mesma_animacao_passa(self):
         def duas(t):
-            t = t.replace("frases em sequência: uma depois da outra", "revelação por linha: sobe")
-            return t.replace("abertura da foto: a foto abre de cima para baixo", "revelação por linha: sobe")
+            t = t.replace("texto-em-linhas: uma frase depois da outra", "revelar-ao-entrar: sobe")
+            return t.replace("abertura-do-topo: a foto abre de cima para baixo", "revelar-ao-entrar: sobe")
         code, out = self.rodar(duas)
         self.assertEqual(code, 0, out)
+
+    # v3.5.10 (achado P4 da página Torra Clara): o tipo da animação de cada seção vem do repertório
+    # (references/receitas-de-movimento.md) ou declara `criação nova: <motivo>`.
+    def test_tipo_de_animacao_fora_do_repertorio_reprova(self):
+        code, out = self.rodar(lambda t: t.replace("texto-em-linhas: uma frase depois da outra",
+                                                   "frases em sequência: uma depois da outra"))
+        self.assertEqual(code, 1, out)
+        self.assertIn("repertório", out)
+        self.assertIn("frases em sequência", out)
+        self.assertIn("Dor", out)
+
+    def test_caso_original_do_p4_continua_reprovando(self):
+        # O plano da Torra Clara aprovado na 3.5.9 usava descrições soltas ("abertura da foto").
+        code, out = self.rodar(lambda t: t.replace("abertura-do-topo: a foto abre de cima para baixo",
+                                                   "abertura da foto: a foto abre de cima para baixo"))
+        self.assertEqual(code, 1, out)
+        self.assertIn("abertura da foto", out)
+
+    def test_animacao_sem_dois_pontos_e_sem_receita_reprova(self):
+        code, out = self.rodar(lambda t: t.replace("texto-em-linhas: uma frase depois da outra", "uma frase depois da outra"))
+        self.assertEqual(code, 1, out)
+        self.assertIn("repertório", out)
+
+    def test_criacao_nova_com_motivo_passa(self):
+        code, out = self.rodar(lambda t: t.replace(
+            "texto-em-linhas: uma frase depois da outra",
+            "criação nova: o rótulo se imprime linha a linha (nenhuma receita mostra um rótulo que responde à escolha)"))
+        self.assertEqual(code, 0, out)
+
+    def test_criacao_nova_sem_motivo_reprova(self):
+        for cel in ("criação nova", "criação nova:", "criação nova: x", "criacao nova: sei lá"):
+            code, out = self.rodar(lambda t, c=cel: t.replace("texto-em-linhas: uma frase depois da outra", c))
+            self.assertEqual(code, 1, f"{cel!r}: {out}")
+            self.assertIn("criação nova", out)
+
+    def test_criacao_nova_disfarcada_de_receita_reprova(self):
+        # Não vale colar o nome de uma receita dentro de "criação nova" nem inventar um nome parecido.
+        for cel in ("criação nova texto-em-linhas: uma frase depois da outra", "texto-em-linhas-2: uma frase depois da outra",
+                    "texto-em-linha: uma frase depois da outra"):
+            code, out = self.rodar(lambda t, c=cel: t.replace("texto-em-linhas: uma frase depois da outra", c))
+            self.assertEqual(code, 1, f"{cel!r}: {out}")
+
+    def test_nome_de_receita_com_espacos_e_maiuscula_passa(self):
+        code, out = self.rodar(lambda t: t.replace("texto-em-linhas: uma frase depois da outra", "Texto em linhas: uma frase depois da outra"))
+        self.assertEqual(code, 0, out)
+
+    def test_todo_nome_de_receita_do_repertorio_e_aceito(self):
+        import re as _re
+        nomes = _re.findall(r"(?m)^##\s+Receita:\s*(\S+)\s*$", (AQUI.parent / "references" / "receitas-de-movimento.md").read_text(encoding="utf-8"))
+        self.assertGreaterEqual(len(nomes), 10)
+        for n in nomes:
+            code, out = self.rodar(lambda t, n=n: t.replace("texto-em-linhas: uma frase depois da outra", f"{n}: uma frase"))
+            self.assertEqual(code, 0, f"{n}: {out}")
 
     def test_sem_material_da_cliente_reprova(self):
         code, out = self.rodar(lambda t: t.replace("Material da cliente pedido:", "Outra coisa:"))
