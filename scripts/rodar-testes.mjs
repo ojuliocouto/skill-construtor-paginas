@@ -53,6 +53,8 @@ const PRECISAM = {
   'test-previa-direcoes.cjs': 'navegador (tira os prints das direções)',
   'test-print-cabecalho.cjs': 'navegador (print com cabeçalho fixo)',
   'test-receitas-navegador.cjs': 'navegador (prova as receitas de movimento)',
+  'test-primeira-tela.cjs': 'navegador (primeira tela visível no celular, com as barras do navegador)',
+  'test-visibilidade-movimento.cjs': 'navegador (texto invisível parado no topo, na visita e depois de um salto; linha recortada)',
   'test-animacao.py': 'Pillow e numpy (prancha de animação)',
   'test-imagens.py': 'Pillow e numpy (repetição e nitidez de foto)',
   'test-folha-assets.py': 'Pillow (monta a folha de contato numerada da busca de foto)',
