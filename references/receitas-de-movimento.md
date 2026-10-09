@@ -41,6 +41,21 @@ nomes neutros pelos do assunto é o caminho curto; o que não pode mudar é a gr
   mais de 0,2 s (as infinitas e as presas à rolagem também contam). Trocas de cor ou de foco de até 0,2 s passam; a entrada
   do título, o desenho de traço e a revelação por rolagem precisam de `animation: none` / `transition: none` dentro do bloco.
   Ao trocar um elemento da receita, confira que a regra de movimento reduzido dele veio junto.
+- **O clip-path de entrada vai no filho, nunca no alvo do observador** (3.5.10, achado P12 da Torra Clara). Com o alvo
+  inteiro recortado (`clip-path: inset(0 100% 0 0)` no próprio elemento observado), a área visível dele é 0 e, com
+  `threshold: 0.18`, o observador nunca dispara: medido no Chromium do Playwright 1.61.1, razão de interseção 0, nenhum
+  aviso, e as linhas do rótulo da oferta nunca apareceram em 1440. O observador olha o pai (`.linha`), e o recorte de
+  entrada fica nos filhos (`.linha > *`). O `gate-movimento.mjs` reprova texto que fica invisível na tela por duas paradas
+  seguidas da visita.
+- **A primeira tela entra na carga** (3.5.10, achado P13b). Com a página parada, o observador não avisa o que está abaixo
+  da linha do `rootMargin` de -6%, nem o que o `translateY` de entrada empurrou para baixo dela: na Torra Clara os fatos do
+  herói ficavam em 853 a 878 px, com a linha em 846, e nunca apareciam em 1440 com a página parada. Na carga, todo item
+  observado que já está na janela ganha `visivel` (função `primeiraTela` da base mínima). O `gate-movimento.mjs` deixa a
+  página parada 4 s e reprova texto invisível na primeira tela.
+- **Já passou = estado final** (3.5.10, achado P14). Depois de um salto (âncora, painel de cor, voltar do WhatsApp, que
+  restaura a rolagem), o que ficou acima da tela nunca cruzou a janela e o observador não avisa. Um ouvinte de rolagem
+  (função `jaPassou` da base mínima) põe no estado final, sem animação (classe `.instantaneo`), todo item observado que já
+  está acima da janela. O `gate-movimento.mjs` salta do topo ao fim e reprova texto invisível acima da tela.
 - **Propriedades:** `transform`, `opacity` e `clip-path` à vontade; altura, largura e sombra só
   quando a receita pede, em elemento pequeno.
 - **Movimento não é enfeite:** cada receita liga o movimento ao conteúdo da seção (barras que
@@ -82,20 +97,41 @@ var io = new IntersectionObserver(function (es) {
     if (!e.isIntersecting) return;
     // O aviso do observador pode chegar atrasado (máquina lenta): se a pessoa já passou, o estado final entra de uma vez,
     // sem transição nem animação (classe .instantaneo, no CSS abaixo). Senão a animação rodaria com a seção fora da janela.
-    if (fora(e.target)) e.target.classList.add('instantaneo');
-    e.target.classList.add('visivel');
-    io.unobserve(e.target);
+    revelar(e.target, fora(e.target));
   });
 }, { threshold: 0.18, rootMargin: '0px 0px -6% 0px' });
+// Um caminho só para o aviso do observador, a primeira tela e o "já passou". Receita com efeito no aviso
+// (vagas-que-se-preenchem, faixa-de-figuras, assinatura que se alinha sozinha) põe o efeito aqui, não no callback.
+function revelar(n, instantaneo) {
+  if (instantaneo) n.classList.add('instantaneo');
+  n.classList.add('visivel');
+  io.unobserve(n);
+}
+var observados = [];
+// A primeira tela entra na carga: o que já está na janela não espera o observador (página parada não dispara nada).
+function primeiraTela(lista) {
+  each(lista, function (n) { var r = n.getBoundingClientRect(); if (r.top < window.innerHeight && r.bottom > 0) revelar(n, false); });
+}
+// Já passou = estado final: depois de um salto, o que ficou acima da janela entra no estado final, sem animação.
+function jaPassou() {
+  observados = observados.filter(function (n) {
+    if (n.classList.contains('visivel')) return false;
+    if (n.getBoundingClientRect().bottom <= 0) { revelar(n, true); return false; }
+    return true;
+  });
+}
+window.addEventListener('scroll', function () { requestAnimationFrame(jaPassou); }, { passive: true });
+// Use observar(lista) no lugar de each(lista, io.observe): ganha as duas regras de uma vez.
+function observar(lista) { each(lista, function (n) { observados.push(n); io.observe(n); }); primeiraTela(lista); jaPassou(); }
 ```
 
-Cada receita abaixo lista o que ela observa (`io.observe(...)`). O `demo.html` junta tudo num
+Cada receita abaixo lista o que ela observa (`io.observe(...)`; na página, chame `observar(...)` com a mesma lista). O `demo.html` junta tudo num
 script só, com o `else` para navegador sem observador (`classList.add('visivel')` em tudo).
 
 Lista das receitas: abertura-do-topo, paralaxe-da-foto, assinatura-em-tres-estados,
 texto-em-linhas, titulo-fixo, revelar-ao-entrar, foto-que-desliza, vagas-que-se-preenchem,
 traco-que-se-desenha, faixa-de-figuras, barras-que-crescem, pergunta-que-abre, botao-com-seta,
-barra-fixa-do-celular, painel-de-cor, foto-que-se-monta.
+barra-fixa-do-celular, painel-de-cor, foto-que-se-monta, produto-em-estados.
 
 ## Escolha do momento assinatura
 
@@ -103,7 +139,9 @@ Regra do dono, 3.5.8 (depois de ver o momento assinatura de uma marcenaria saíd
 visual real conta mais que qualquer outra coisa."
 
 - **Negócio de produto físico (móveis, comida, imóvel, moda, obra, carro, joia, planta): o momento assinatura usa foto real do produto,
-  nunca desenho nem ilustração figurativa.** A receita é `foto-que-se-monta` (a foto se monta em peças até ficar inteira). O desenho
+  nunca desenho nem ilustração figurativa.** A receita é `foto-que-se-monta` (a foto se monta em peças até ficar inteira). Quando o
+  plano pede que o momento atravesse 3 seções mudando de estado, a receita é `produto-em-estados` (a mesma foto fixa ao lado das
+  seções, mudando de enquadramento com a rolagem), e a `foto-que-se-monta` pode ser a entrada dela, uma vez só. O desenho
   de tábuas, pratos, plantas baixas ou peças de roupa, mesmo bem feito, perde para a foto da peça de verdade: quem compra o que se
   toca quer ver o que vai receber.
 - **Desenho só quando o que se vende não tem imagem:** serviço abstrato (consultoria, contabilidade, seguro), método, software. Mesmo
@@ -824,6 +862,31 @@ function barraFixa() {
 // chame barraFixa() dentro do quadro() da rolagem
 ```
 
+**Oferta longa (3.5.10, achado P20 da Torra Clara).** A seção da oferta pode passar de 2 telas no celular (cartões de plano,
+montador, regras) com o botão só no fim. Esconder a barra "porque já estamos na oferta" deixou 2,8 telas sem botão em 390 e
+4,5 em 320, e o `gate-responsivo.mjs` cobra um botão a cada 2 telas. Regra: a barra nunca some por causa da seção; ela some
+só quando um botão da página está à vista. Na oferta longa, a seção leva `data-barra-rotulo` (e `data-barra-destino`, se o
+destino for outro): enquanto ela ocupa o meio da tela, a barra troca o rótulo e o destino pelos da oferta ("Assinar pelo
+WhatsApp" levando ao botão final da oferta) e volta ao padrão quando a pessoa sai dela.
+
+```html
+<section id="oferta" data-barra-rotulo="Assinar pelo WhatsApp" data-barra-destino="#assinar">...</section>
+```
+
+```js
+var linkBarra = barra.querySelector('a'), barraPadrao = { t: linkBarra.textContent, h: linkBarra.getAttribute('href') };
+var secoesRotulo = document.querySelectorAll('[data-barra-rotulo]');
+function rotuloDaBarra() {
+  var meio = window.innerHeight / 2, achou = null;
+  each(secoesRotulo, function (s) { var r = s.getBoundingClientRect(); if (r.top <= meio && r.bottom >= meio) achou = s; });
+  var t = achou ? achou.getAttribute('data-barra-rotulo') : barraPadrao.t;
+  var h = achou ? (achou.getAttribute('data-barra-destino') || linkBarra.getAttribute('href')) : barraPadrao.h;
+  if (linkBarra.textContent !== t) linkBarra.textContent = t;
+  if (linkBarra.getAttribute('href') !== h) linkBarra.setAttribute('href', h);
+}
+// chame rotuloDaBarra() junto com barraFixa(), no mesmo quadro da rolagem
+```
+
 **Reserva:** sem script a barra fica escondida (`visibility: hidden`) e a página usa os botões do
 corpo. Movimento reduzido: `.barra, .barra.mostra { transition: none; }` (aparece sem deslizar; sem o `.barra.mostra` a regra perde na especificidade e o gate de movimento reduzido reprova).
 **Custo no celular:** baixo; lê a posição de poucos botões por quadro.
@@ -834,8 +897,8 @@ corpo. Movimento reduzido: `.barra, .barra.mostra { transition: none; }` (aparec
 
 `data-receita`: `painel-de-cor`. Nome: **Painel de cor na navegação interna** (a 15ª receita; aprovada pelo dono em protótipo com "Gostei muito desse").
 
-**Quando usar:** página com 2 ou mais links internos de destaque, como o botão do topo que leva para a oferta ou o botão do fim que volta ao formulário. Ao clicar, um painel na cor da marca sobe e cobre a tela em 0,8 s, a página troca de posição por baixo e o painel sai por cima em 0,8 s (mais uma pausa de 0,15 s coberto: 0,8 + 0,15 + 0,8 = 1,75 s). Cada clique custa cerca de 1,8 s.
-**Quando NÃO usar:** em link de menu que o visitante clica várias vezes seguidas (cerca de 1,8 s por clique cansa: use só no botão principal, com `data-painel` nele e em mais nenhum); em página com um link interno só; em link para outra página ou para fora; quando o destino está na própria tela (o painel cobre um movimento que ninguém precisava).
+**Quando usar:** página em que o botão principal aparece 2 ou 3 vezes levando ao mesmo destino interno, como o botão do topo e o do fecho que levam para a oferta. Ao clicar, um painel na cor da marca sobe e cobre a tela em 0,8 s, a página troca de posição por baixo e o painel sai por cima em 0,8 s (mais uma pausa de 0,15 s coberto: 0,8 + 0,15 + 0,8 = 1,75 s). Cada clique custa cerca de 1,8 s.
+**Quando NÃO usar:** em link de menu que o visitante clica várias vezes seguidas (cerca de 1,8 s por clique cansa: use só no botão principal: no máximo 3 botões com `data-painel` por página, o do topo, o do meio e o do fecho, todos levando ao mesmo destino da ação, como a oferta ou o formulário; link de menu, índice, rodapé, "voltar ao topo" e botão que leva a outro destino não levam `data-painel`); em página com um link interno só; em link para outra página ou para fora; quando o destino está na própria tela (o painel cobre um movimento que ninguém precisava).
 **Origem no protótipo v8:** `pagina-studio-v8-proto/_efeitos.js:76-106` e `_input.css:556-557` (o painel sobe em 0,77 s e sai em 0,79 s). Endurecido aqui: opt-in por `data-painel`, só clique simples em link da mesma página, `pushState` antes da rolagem (o botão voltar devolve a posição), foco no destino, pausa coberta que dá um quadro "cobre" mensurável, teto de tempo e cor pelo token `--marca`.
 
 ```html
@@ -913,7 +976,7 @@ corpo. Movimento reduzido: `.barra, .barra.mostra { transition: none; }` (aparec
 `data-receita`: `foto-que-se-monta`. Nome: **Foto que se monta** (a 16ª receita; pedida pelo dono para o momento assinatura de produto físico).
 
 **Quando usar:** momento assinatura de negócio de produto físico (móveis, comida, imóvel, moda, obra, carro): uma FOTO REAL do produto fatiada em 5 faixas verticais; cada faixa entra de um lado, assenta no lugar e a foto fica inteira. No fim, um rótulo ou cota por cima (opcional): "Carvalho maciço, 4 tábuas", "Entrega montada".
-**Quando NÃO usar:** foto de pessoa (fatiar rosto lê como defeito); mais de uma vez por página (é o momento assinatura, um só); serviço abstrato ou software (veja a escolha do momento assinatura: tela real do produto, não esta receita); foto menor que o quadro (a fatia mostra o pixel).
+**Quando NÃO usar:** foto de pessoa (fatiar rosto lê como defeito); mais de uma vez por página (é o momento assinatura, um só; quando a assinatura precisa atravessar 3 seções mudando de estado, use `produto-em-estados`, que pode abrir com esta montagem uma vez); serviço abstrato ou software (veja a escolha do momento assinatura: tela real do produto, não esta receita); foto menor que o quadro (a fatia mostra o pixel).
 **Origem no teste real da 3.5.8:** `_input.css:101` e `_app.js:1` da página de teste de marcenaria (o momento assinatura que saiu em desenho de mesa e o dono trocou por foto real).
 
 ```html
@@ -959,3 +1022,78 @@ Como funciona: as 5 faixas são camadas do MESMO arquivo, cada uma recortada por
 **Foto:** sempre foto real do produto (ou, se o cliente ainda não mandou, a melhor foto de ambiente do acervo com a pendência declarada no plano); nunca desenho. O demo usa uma textura gerada só como exemplo, sem fonte de sistema nem arquivo fora do repositório.
 **Reserva:** sem script a classe `.js` nunca liga: as faixas ficam escondidas (`display: none`) e a foto aparece inteira, com o rótulo. Movimento reduzido: as faixas somem, a foto inteira e o rótulo aparecem de uma vez, sem transição. Texto igual nos dois modos.
 **Custo no celular:** baixo a médio: 5 camadas animadas só por `opacity` e `transform` (o `clip-path` é fixo, não anima) sobre a mesma imagem decodificada uma vez. Use foto de até 150 KB em WebP.
+
+---
+
+## Receita: produto-em-estados
+
+`data-receita`: `produto-em-estados`. Nome: **Produto em estados** (a 17ª receita; 3.5.10, achado P5 do teste da Torra Clara).
+
+**Quando usar:** momento assinatura de produto físico que precisa atravessar 3 seções e mudar de estado (a regra do momento assinatura). A MESMA foto real do produto fica fixa (`sticky`) ao lado das 3 seções no desktop e muda de enquadramento quando cada seção cruza o meio da tela: estado 1, o produto inteiro; estado 2, o detalhe ampliado (o grão, o encaixe, a costura); estado 3, o produto inteiro de novo com uma marca redonda no detalhe. No celular a foto não fica fixa: ela reaparece no topo de cada seção, no mesmo quadro, e ao entrar passa do enquadramento da seção anterior para o dela, então a mudança de estado continua à vista.
+**Quando NÃO usar:** quando o produto muda de verdade de uma foto para outra (grão cru, torrado, na xícara): hoje o `gate-imagens.py` aceita `data-assinatura` em uma foto só e reprova a mesma foto repetida sem a marca, então três fotos diferentes como assinatura reprovam (proposta registrada para a 3.5.11); foto de pessoa (ampliar rosto lê como defeito); foto sem um detalhe que valha ampliar (o estado 2 fica vazio); página com menos de 3 seções para atravessar (use `foto-que-se-monta`).
+**Por que resolve a contradição da 3.5.8:** a `foto-que-se-monta` diz "uma vez por página" e o momento assinatura pede 3 seções com mudança de estado. Aqui a montagem pode ser a ENTRADA do estado 1, uma vez só; os estados 2 e 3 são a mesma foto mudando de enquadramento. Na Torra Clara saíram 3 fotos soltas (cru, torrado, xícara) e o auditor disse que nada atravessava a página.
+**Origem no teste real da 3.5.8:** `_input.css:140-149` (a `foto-que-se-monta` da semana) e `_resto.html:17, 56, 220` da Torra Clara (as 3 figuras soltas com `data-assinatura`, uma por estado).
+**Layout e gates:** a coluna fixa ao lado das seções é o par "coluna à esquerda + lista à direita" que o `gate-simetria.mjs` reprova sem `data-assimetrico` no contêiner (como na `assinatura-em-tres-estados`). Toda cópia da foto leva `data-assinatura` (a coluna e as 3 miniaturas do celular): o `gate-imagens.py` aceita a mesma foto repetida com a marca. No celular nada é fixo, então os 15% de espaço fixo do `gate-responsivo.mjs` não mudam. O nome de cada estado mora no título de cada seção, não na foto: a foto só tem imagem, então texto escondido não existe em nenhum modo.
+
+```html
+<div class="estados" data-estados data-assimetrico="foto fixa do produto ao lado das 3 seções, pedida no plano" style="--zoom: 2.2; --zx: -14%; --zy: 10%; --mx: 64%; --my: 40%;">
+  <div class="estados-coluna">
+    <figure class="estados-foto" data-assinatura>
+      <img class="estados-img" src="mesa.webp" alt="Mesa de jantar em carvalho maciço, vista de cima" width="1200" height="1500">
+      <span class="estados-marca" aria-hidden="true"></span>
+    </figure>
+  </div>
+  <div class="estados-secoes">
+    <section class="estados-secao" data-estado="0">
+      <div class="estados-mini" data-assinatura><img class="estados-img" src="mesa.webp" alt="Mesa de jantar em carvalho maciço, vista de cima" width="1200" height="1500"></div>
+      <h2>A mesa inteira</h2><p>Texto do estado 1.</p>
+    </section>
+    <section class="estados-secao" data-estado="1"><!-- mesma miniatura -->...<h2>O encaixe de perto</h2></section>
+    <section class="estados-secao" data-estado="2"><!-- mesma miniatura, com a marca -->...<h2>Montada na sua casa</h2></section>
+  </div>
+</div>
+```
+
+```css
+.estados { display: grid; gap: 32px; }
+.estados-coluna { display: none; }
+.estados-foto, .estados-mini { position: relative; margin: 0; overflow: hidden; border-radius: 22px; background: #e4dccb; }
+.estados-foto { aspect-ratio: 4 / 5; }
+.estados-mini { aspect-ratio: 16 / 10; margin-bottom: 20px; }
+.estados-img { display: block; width: 100%; height: 100%; object-fit: cover; transform-origin: center; }
+.estados-marca { display: none; position: absolute; left: var(--mx); top: var(--my); width: 22%; aspect-ratio: 1; margin: -11% 0 0 -11%; border-radius: 50%; border: 3px solid #fffdf8; box-shadow: 0 0 0 2px rgba(31,38,34,.55); }
+/* os 3 enquadramentos: inteiro, detalhe ampliado, inteiro com a marca no detalhe (sem script, cada miniatura já mostra o seu) */
+[data-estado="1"] .estados-img, .estados-foto[data-ativo="1"] .estados-img { transform: scale(var(--zoom)) translate(var(--zx), var(--zy)); }
+[data-estado="2"] .estados-marca { display: block; } /* sem script: só a miniatura do estado 3 mostra a marca */
+.js .estados-img { transition: transform 1.2s cubic-bezier(.2,.8,.2,1); }
+.js .estados-marca { display: block; opacity: 0; transform: scale(.6); transition: opacity .5s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+.js .estados-secao[data-estado="2"].visivel .estados-marca, .js .estados-foto[data-ativo="2"] .estados-marca { opacity: 1; transform: none; }
+/* celular: a miniatura entra no enquadramento da seção anterior e passa para o dela quando a seção chega */
+.js .estados-secao[data-estado="1"]:not(.visivel) .estados-img { transform: none; }
+.js .estados-secao[data-estado="2"]:not(.visivel) .estados-img { transform: scale(var(--zoom)) translate(var(--zx), var(--zy)); }
+@media (min-width: 900px) {
+  .estados { grid-template-columns: 5fr 7fr; gap: 64px; align-items: start; }
+  .estados-coluna { display: block; position: sticky; top: calc(var(--vh, 1vh) * 12); }
+  .estados-mini { display: none; }
+  .estados-secao { min-height: calc(var(--vh, 1vh) * 70); }
+}
+@media (prefers-reduced-motion: reduce) { .js .estados-img, .js .estados-marca { transition: none; } }
+```
+
+```js
+(function () {
+  var raiz = document.querySelector('[data-estados]'); if (!raiz) return;
+  var foto = raiz.querySelector('.estados-foto'), secoes = raiz.querySelectorAll('.estados-secao');
+  if (foto) foto.setAttribute('data-ativo', '0');
+  // A foto fixa troca de estado quando a seção cruza a faixa do meio da tela (10% da altura).
+  var meio = new IntersectionObserver(function (es) {
+    es.forEach(function (e) { if (e.isIntersecting && foto) foto.setAttribute('data-ativo', e.target.getAttribute('data-estado')); });
+  }, { rootMargin: '-45% 0px -45% 0px' });
+  each(secoes, function (s) { meio.observe(s); });
+  observar(secoes); // a miniatura do celular troca de enquadramento quando a seção entra (com primeiraTela e jaPassou)
+})();
+```
+
+**Fora da janela:** a troca da foto fixa só acontece quando uma seção cruza o meio da tela, então a foto está à vista; as miniaturas usam o `io` da base, com `.instantaneo` e o "já passou = estado final".
+**Reserva:** sem script a classe `.js` não liga: a coluna fixa mostra o produto inteiro (estado 1) e cada miniatura já mostra o enquadramento dela, com a marca no estado 3. Movimento reduzido: os enquadramentos trocam sem transição (sem zoom animado), o texto é o mesmo.
+**Custo no celular:** baixo: uma imagem por seção, animada só por `transform` (a mesma foto, decodificada uma vez). Use foto de até 150 KB em WebP, com o detalhe nítido o bastante para a ampliação de 2,2x (foto de 1200 px de largura ou mais).

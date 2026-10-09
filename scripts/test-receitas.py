@@ -410,5 +410,61 @@ class RegrasDoTesteReal358(unittest.TestCase):
         self.assertRegex(texto, r"(?s)(?=.*nunca `animation-delay`)(?=.*quadro-chave parad[oa] no come[cç]o)")
 
 
+
+class AchadosDaTorraClara3510(unittest.TestCase):
+    """3.5.10 (frente C): P5, P12, P13b, P14, P19 e P20 do teste da Torra Clara (3.5.8). O que a receita não dizia e virou
+    defeito real; a prova no navegador é do test-visibilidade-movimento.cjs e do test-receitas-navegador.cjs."""
+
+    def setUp(self):
+        self.md = ler(MD)
+        self.base = self.md[self.md.index("## Gramática de base"):self.md.index("## Escolha do momento assinatura")]
+        self.demo = ler(DEMO)
+
+    def test_p12_clip_path_de_entrada_vai_no_filho_nunca_no_alvo_do_observador(self):
+        b = re.sub(r"\s+", " ", self.base)
+        self.assertIn("clip-path de entrada vai no filho, nunca no alvo do observador", b)
+        self.assertIn("threshold", b)
+        self.assertIn("gate-movimento.mjs", b)
+
+    def test_p13b_a_primeira_tela_entra_na_carga(self):
+        b = re.sub(r"\s+", " ", self.base).lower()
+        self.assertIn("a primeira tela entra na carga", b)
+        self.assertIn("primeiraTela", self.base, "a base mínima traz o código")
+        self.assertIn("primeiraTela", self.demo, "o demo usa o código da base")
+
+    def test_p14_ja_passou_e_estado_final_na_base_e_no_demo(self):
+        b = re.sub(r"\s+", " ", self.base).lower()
+        self.assertIn("já passou = estado final", b)
+        for texto in (self.base, self.demo):
+            self.assertIn("jaPassou", texto)
+            self.assertRegex(texto, r"getBoundingClientRect\(\)\.bottom\s*<=\s*0")
+            self.assertRegex(texto, r"addEventListener\('scroll'")
+
+    def test_p19_painel_de_cor_diz_quantos_botoes_levam_data_painel(self):
+        corpo = re.sub(r"\s+", " ", receitas()["painel-de-cor"])
+        self.assertIn("no máximo 3 botões com `data-painel`", corpo)
+        self.assertNotIn("e em mais nenhum", corpo, "a frase ambígua saiu")
+        self.assertLessEqual(self.demo.count("data-painel>") + self.demo.count("data-painel "), 3)
+
+    def test_p20_barra_fixa_cobre_a_oferta_longa(self):
+        corpo = re.sub(r"\s+", " ", receitas()["barra-fixa-do-celular"])
+        self.assertIn("oferta longa", corpo)
+        self.assertIn("data-barra-rotulo", corpo)
+        self.assertIn("data-barra-rotulo", self.demo)
+        self.assertIn("2 telas", corpo)
+
+    def test_p5_produto_em_estados_atravessa_as_secoes_com_a_mesma_foto(self):
+        r = receitas()
+        self.assertIn("produto-em-estados", r)
+        corpo = re.sub(r"\s+", " ", r["produto-em-estados"])
+        for item in ("mesma foto", "3 seções", "data-assinatura", "sticky", "gate-imagens", "foto-que-se-monta"):
+            self.assertIn(item, corpo, item)
+        monta = re.sub(r"\s+", " ", r["foto-que-se-monta"])
+        self.assertIn("produto-em-estados", monta, "a foto-que-se-monta aponta a saída quando a assinatura atravessa seções")
+        escolha = re.sub(r"\s+", " ", self.md[self.md.index("## Escolha do momento assinatura"):self.md.index("## Receita: abertura-do-topo")])
+        self.assertIn("produto-em-estados", escolha)
+        self.assertIn('data-receita="produto-em-estados"', self.demo)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
