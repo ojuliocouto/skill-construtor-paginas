@@ -10,13 +10,20 @@
  *   aviso:    há um elemento com o texto "imagem ilustrativa" (ou "imagens ilustrativas") inteiro dentro da primeira tela
  *   avisoNaPagina: o texto existe, visível, em algum lugar da página (separa "fora da tela" de "não achei")
  *             (topo >= 0 e base <= altura da janela).
- * Imprime um JSON {desk:{foto,desenho,aviso,vw,vh}, mob:{...}} e nada mais.
+ *   manchete, apoio, botao: [topo, base] em px do h1, do texto de apoio e do botão principal do herói (G22, 3.5.10; mesma
+ *             definição do gate-responsivo, em topo-da-pagina.mjs); null quando não há
+ *   legenda:  a primeira legenda "imagem ilustrativa" da primeira tela: { fonte (px), altura (px), sobreFoto (posição absoluta
+ *             ou fixa, por cima da foto), entreFotoEManchete (no fluxo, entre a base da foto e o topo do h1) }; null sem legenda
+ *             na primeira tela. A v7 antiga tinha uma legenda de 14 px e 45 px de altura no fluxo, entre a foto e a manchete,
+ *             e nada media isso.
+ * Imprime um JSON {desk:{foto,desenho,aviso,vw,vh,manchete,apoio,botao,legenda}, mob:{...}} e nada mais.
  *
  * Uso: node scripts/medir-dobra.mjs --url <url>
  */
 import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
+import { DETECTAR_TOPO } from './topo-da-pagina.mjs';
 
 const require = createRequire(import.meta.url);
 function carregarPlaywright() {
@@ -41,6 +48,7 @@ for (const [tag, w, h, movel] of [['desk', 1440, 900, false], ['mob', 390, 844, 
   await page.waitForTimeout(2600);
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.waitForTimeout(300);
+  await page.evaluate(DETECTAR_TOPO);
   saida[tag] = await page.evaluate(() => {
     const vw = window.innerWidth, vh = window.innerHeight;
     const visivel = (el) => {
@@ -74,7 +82,34 @@ for (const [tag, w, h, movel] of [['desk', 1440, 900, false], ['mob', 390, 844, 
       const c = rg.getBoundingClientRect();
       return c.height > 0 && c.top >= 0 && c.bottom <= vh;
     });
-    return { foto: Math.round(foto), desenho: Math.round(desenho), aviso, avisoNaPagina: achados.length > 0, vw, vh };
+    // Topo (G22): onde terminam manchete, apoio e botão, e onde está a legenda da foto.
+    const t = window.__topo();
+    const faixa = (q) => (q ? [Math.round(q.top), Math.round(q.bottom)] : null);
+    const manchete = faixa(t.h1 && t.linhas(t.h1));
+    const apoio = faixa(t.apoio && t.linhas(t.apoio));
+    const botao = faixa(t.botao && t.botao.getBoundingClientRect());
+    let legenda = null;
+    const naPrimeira = achados.find((el) => { const c = el.getBoundingClientRect(); return c.top < vh && c.bottom > 0; });
+    if (naPrimeira) {
+      let sobreFoto = false;
+      for (let n = naPrimeira; n && n !== document.body; n = n.parentElement) {
+        const pos = getComputedStyle(n).position;
+        if (pos === 'absolute' || pos === 'fixed') { sobreFoto = true; break; }
+        if (n.tagName === 'FIGURE' || n === t.heroi) break;
+      }
+      const c = naPrimeira.getBoundingClientRect();
+      // Foto que começa acima da legenda (a base da foto não serve: paralaxe passa da moldura e o painel de texto pode cobrir a
+      // parte de baixo da foto, como na v7 antiga, em que a legenda em 440 px ficava sobre a caixa da foto, que ia até 468).
+      const fotoAcima = [...document.querySelectorAll('img, video')].some((f) => { const q = f.getBoundingClientRect(); return q.height >= 40 && q.top < c.top && q.bottom > 0; });
+      const topoH1 = manchete ? manchete[0] : null;
+      legenda = {
+        fonte: Math.round(parseFloat(getComputedStyle(naPrimeira).fontSize)),
+        altura: Math.round(c.height + parseFloat(getComputedStyle(naPrimeira).marginTop) + parseFloat(getComputedStyle(naPrimeira).marginBottom)),
+        sobreFoto,
+        entreFotoEManchete: !sobreFoto && fotoAcima && topoH1 !== null && c.bottom <= topoH1 + 1,
+      };
+    }
+    return { foto: Math.round(foto), desenho: Math.round(desenho), aviso, avisoNaPagina: achados.length > 0, vw, vh, manchete, apoio, botao, legenda };
   });
   await ctx.close();
 }
