@@ -441,7 +441,7 @@ def _lista_pt(itens):
     return itens[0] if len(itens) == 1 else ", ".join(itens[:-1]) + " e " + itens[-1]
 
 
-def checar_sequencias(regioes, cena_de, com_marca, problemas, plano_assinatura=None):
+def checar_sequencias(regioes, cena_de, com_marca, problemas, plano_assinatura=None, marcadas_de=None):
     """3.5.11 (P5): valida a sequência declarada com data-assinatura-estado. `cena_de(base)` devolve a cena da foto (o agrupamento por
     origem e pHash). Devolve, por foto (base), as seções onde ela leva a marca de estado (contam como uma só na regra da foto repetida).
     3.5.13 (auditoria, achados 2, 4, 5 e 9): a sequência só vale se o PLANO.md declara o momento assinatura com os estados e as seções
@@ -468,8 +468,26 @@ def checar_sequencias(regioes, cena_de, com_marca, problemas, plano_assinatura=N
     if len(seqs) > 1:
         problemas.append(f"data-assinatura-estado em {len(seqs)} grupos ({', '.join(sorted(seqs))}): um momento assinatura só por página, "
                          "uma sequência só; junte os estados no mesmo grupo ou tire a marca do que sobra")
-    if com_marca:
-        quem = "; ".join(" + ".join(sorted(m)) for m in com_marca)
+    # 3.5.14 (achado 10): data-assinatura simples na MESMA foto de um estado (outra seção, sem o número) não é "outra foto".
+    cenas_de_estado = {}   # cena -> menor estado numerado nessa foto
+    for estados in seqs.values():
+        for k, bases in estados.items():
+            for b in bases:
+                c = cena_de(b)
+                cenas_de_estado[c] = min(k, cenas_de_estado.get(c, k))
+    marcadas_de = marcadas_de or {}
+    outras = []
+    for m in com_marca:
+        cena = next((cena_de(b) for b in m if cena_de(b) in cenas_de_estado), None)
+        if cena is None:
+            outras.append(m)
+            continue
+        nomes_da_foto = sorted(b for b in m if marcadas_de.get(b)) or sorted(m)
+        onde = sorted({c for b in m for c in marcadas_de.get(b, ())})
+        problemas.append(f"a foto do estado {cenas_de_estado[cena]} ({' + '.join(nomes_da_foto)}) aparece com data-assinatura simples, sem o número do estado, "
+                         f"na seção {_lista_pt(onde)}: dê a ela o número do estado dela ou tire o data-assinatura simples; um momento assinatura só")
+    if outras:
+        quem = "; ".join(" + ".join(sorted(m)) for m in outras)
         problemas.append(f"sequência de estados (data-assinatura-estado) e data-assinatura simples em outra foto ({quem}): um momento assinatura só; "
                          "tire o data-assinatura simples ou dê a essa foto o número do estado dela")
     for grupo, estados in sorted(seqs.items()):
@@ -618,7 +636,7 @@ def checar_fotos(dist, usados, regioes, problemas, avisos, plano_assinatura=None
                             if plano_assinatura is not None else
                             "Se o produto muda de foto de verdade (cru, torrado, na xícara), declare PRIMEIRO no PLANO.md a linha "
                             "'Momento assinatura: <elemento>; seções: <a, b, c>; estados: <x -> y -> z>'; só então a página pode numerar os estados"))
-    liberadas_de = checar_sequencias(regioes, lambda b: raiz(b) if b in pai else b, com_marca, problemas, plano_assinatura)
+    liberadas_de = checar_sequencias(regioes, lambda b: raiz(b) if b in pai else b, com_marca, problemas, plano_assinatura, marcadas_de)
     for membros in grupos.values():
         secoes = set()
         for b in membros:

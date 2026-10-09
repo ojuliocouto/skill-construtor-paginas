@@ -538,12 +538,42 @@ class SequenciaDeEstados(GateImagensV35):
     def test_o_ultimo_estado_em_outro_grupo_deixa_buraco_e_reprova(self):
         s = [self.fig("a", "foto1-800.jpg", 1, "cafe"), self.fig("b", "foto2-800.jpg", 2, "cafe"), self.fig("c", "foto3-800.jpg", 3, "outro")]
         p = self.avaliar(s)
-        self.assertTrue(any("falta o estado 3" in x or "estado 3" in x and "grupo" in x for x in p) or any("2 grupos" in x for x in p), p)
+        # 3.5.14 (achado 12): o buraco que o nome promete, com a mensagem exata; "2 grupos" sozinho não prova o buraco
+        self.assertIn("sequência de estados no grupo 'outro' sem buraco: falta o estado 1 (a numeração vai de 1 até 3)", p)
+        self.assertIn("sequência de estados no grupo 'outro' sem buraco: falta o estado 2 (a numeração vai de 1 até 3)", p)
+        self.assertTrue(any(x.startswith("data-assinatura-estado em 2 grupos (cafe, outro)") for x in p), p)
 
     def test_sequencia_mais_data_assinatura_simples_em_outra_foto_reprova(self):
         s = self.tres() + ['<section id="extra"><h2>extra</h2><figure data-assinatura><img src="img/foto4-800.jpg" alt="f" width="640" height="480"></figure></section>']
         p = self.avaliar(s, 4)
-        self.assertTrue(any("sequência de estados (data-assinatura-estado) e data-assinatura simples em outra foto" in x for x in p), p)
+        # 3.5.14 (achado 12): a mensagem da sequência, inteira e nomeando a foto 4; a da regra 8 também cita "sequência" e "data-assinatura"
+        self.assertTrue(any(x.startswith("sequência de estados (data-assinatura-estado) e data-assinatura simples em outra foto (foto4): um momento assinatura só;") for x in p), p)
+        self.assertFalse(any(x.startswith("data-assinatura em ") and "fotos diferentes" in x for x in p), p)
+
+    # ---- 3.5.14 (achado 10): a mensagem certa para cada caso ----
+    def test_a_mesma_foto_do_estado_com_data_assinatura_simples_diz_que_e_a_mesma_foto(self):
+        s = self.tres() + ['<section id="extra"><h2>extra</h2><figure data-assinatura><img src="img/foto1-800.jpg" alt="f" width="640" height="480"></figure></section>']
+        p = [x for x in self.avaliar(s) if "data-assinatura simples" in x]
+        self.assertEqual(len(p), 1, p)
+        self.assertNotIn("em outra foto", p[0])
+        self.assertIn("a foto do estado 1 (foto1)", p[0])
+        self.assertIn("sem o número do estado", p[0])
+        self.assertIn("extra", p[0])
+
+    def test_data_assinatura_simples_em_foto_diferente_continua_dizendo_outra_foto_e_so_ela(self):
+        s = self.tres() + ['<section id="extra"><h2>extra</h2><figure data-assinatura><img src="img/foto4-800.jpg" alt="f" width="640" height="480"></figure></section>']
+        p = [x for x in self.avaliar(s, 4) if "data-assinatura simples" in x]
+        self.assertEqual(len(p), 1, p)
+        self.assertIn("e data-assinatura simples em outra foto (foto4)", p[0])
+        self.assertNotIn("sem o número do estado", p[0])
+
+    def test_as_duas_situacoes_juntas_dao_as_duas_mensagens(self):
+        s = self.tres() + ['<section id="e1"><h2>e1</h2><figure data-assinatura><img src="img/foto1-800.jpg" alt="f" width="640" height="480"></figure></section>',
+                           '<section id="e2"><h2>e2</h2><figure data-assinatura><img src="img/foto4-800.jpg" alt="f" width="640" height="480"></figure></section>']
+        p = [x for x in self.avaliar(s, 4) if "data-assinatura simples" in x]
+        self.assertEqual(len(p), 2, p)
+        self.assertEqual(sum("em outra foto (foto4)" in x for x in p), 1, p)
+        self.assertEqual(sum("a foto do estado 1 (foto1)" in x for x in p), 1, p)
 
     def test_o_mesmo_estado_em_duas_fotos_diferentes_reprova(self):
         s = [self.fig("a", "foto1-800.jpg", 1), self.fig("b", "foto2-800.jpg", 2), self.fig("c", "foto3-800.jpg", 2)]
