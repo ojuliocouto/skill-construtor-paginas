@@ -17,7 +17,7 @@
 export const CENTRO_CARTOES = 'título centralizado + cartões';
 export const MAXIMO_CENTRO_CARTOES = 1;
 
-/** @param {{nome:string, sig:string, excecao?:string}[]} secoes na ordem da página */
+/** @param {{nome:string, sig:string, excecao?:string, medida?:string}[]} secoes na ordem da página (medida: como o título foi medido) */
 export function avaliarRitmo(secoes) {
   const falhas = [];
   const excecoes = [];
@@ -33,7 +33,9 @@ export function avaliarRitmo(secoes) {
   }
   const centro = secoes.filter((s) => s.sig === CENTRO_CARTOES && !s.excecao);
   if (centro.length > MAXIMO_CENTRO_CARTOES) {
-    falhas.push(`${centro.length} seções no formato "${CENTRO_CARTOES}" (${centro.map((s) => `"${s.nome}"`).join(', ')}); no máximo ${MAXIMO_CENTRO_CARTOES}: é o molde de template`);
+    const medidas = centro.filter((s) => s.medida).map((s) => `"${s.nome}": ${s.medida}`);
+    falhas.push(`${centro.length} seções no formato "${CENTRO_CARTOES}" (${centro.map((s) => `"${s.nome}"`).join(', ')}); no máximo ${MAXIMO_CENTRO_CARTOES}: é o molde de template`
+      + (medidas.length ? `. Como mediu o título: ${medidas.join(' | ')}` : ''));
   }
   secoes.filter((s) => s.excecao && s.sig === CENTRO_CARTOES).forEach((s) => excecoes.push(`"${s.nome}": ${s.excecao}`));
   return { falhas, excecoes, centroCartoes: centro.length };

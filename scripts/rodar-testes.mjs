@@ -48,6 +48,7 @@ const PRECISAM = {
   'test-gravar-video-integracao.cjs': 'navegador (grava vídeo da página)',
   'test-linhas.cjs': 'navegador (mede linhas de texto na página)',
   'test-painel.cjs': 'navegador (prova do painel de cor)',
+  'test-texto-ritmo-3510.cjs': 'navegador (gate-texto: e-mail e site fora da regra da maiúscula; gate-ritmo: título centralizado medido pelo alinhamento real)',
   'test-previa-direcoes.cjs': 'navegador (tira os prints das direções)',
   'test-print-cabecalho.cjs': 'navegador (print com cabeçalho fixo)',
   'test-receitas-navegador.cjs': 'navegador (prova as receitas de movimento)',
