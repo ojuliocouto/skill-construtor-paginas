@@ -222,6 +222,39 @@ GRUPO_PADRAO = "assinatura"
 MAXIMO_ESTADOS = 4
 VAZIOS_PAGINA = {"img", "source", "br", "meta", "link", "input", "hr", "wbr", "area", "base", "col", "embed", "track", "param"}
 
+# 3.5.14 (achado 11): fechamentos implícitos do HTML. O parser da biblioteca não fecha <p> antes de <div> nem <li> antes de <li>;
+# sem isso o data-assinatura-estado e o grupo valiam além do alcance real no DOM.
+FECHA_P = {"address", "article", "aside", "blockquote", "center", "details", "dialog", "dir", "div", "dl", "fieldset", "figcaption", "figure",
+           "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hgroup", "hr", "li", "dd", "dt", "main", "menu", "nav", "ol", "p",
+           "pre", "search", "section", "summary", "table", "ul", "listing", "xmp", "plaintext"}
+ESPECIAIS = {"address", "applet", "area", "article", "aside", "base", "blockquote", "body", "br", "button", "caption", "center", "col", "colgroup",
+             "dd", "details", "dir", "div", "dl", "dt", "embed", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4",
+             "h5", "h6", "head", "header", "hgroup", "hr", "html", "iframe", "img", "input", "li", "main", "marquee", "menu", "nav", "noscript",
+             "object", "ol", "p", "pre", "search", "section", "select", "source", "summary", "table", "tbody", "td", "template", "textarea",
+             "tfoot", "th", "thead", "tr", "ul"}
+LIMITE_ESCOPO = {"applet", "caption", "html", "table", "td", "th", "marquee", "object", "template", "button"}
+# tag que fecha -> (tags que ela fecha, tags onde a busca para)
+REGRAS_FECHA = {
+    "li": ({"li"}, None),
+    "dd": ({"dd", "dt"}, None),
+    "dt": ({"dd", "dt"}, None),
+    "option": ({"option"}, {"select", "datalist"}),
+    "optgroup": ({"option", "optgroup"}, {"select", "datalist"}),
+    "tr": ({"tr"}, {"table", "tbody", "thead", "tfoot", "template"}),
+    "td": ({"td", "th"}, {"tr", "table", "template"}),
+    "th": ({"td", "th"}, {"tr", "table", "template"}),
+    "tbody": ({"tbody", "thead", "tfoot"}, {"table", "template"}),
+    "thead": ({"tbody", "thead", "tfoot"}, {"table", "template"}),
+    "tfoot": ({"tbody", "thead", "tfoot"}, {"table", "template"}),
+}
+# fim de tag com alcance próprio: tag -> tags onde a busca para (o resto fecha subindo a pilha como antes)
+ALCANCE_FIM = {
+    "p": LIMITE_ESCOPO, "li": LIMITE_ESCOPO | {"ul", "ol"}, "dd": LIMITE_ESCOPO | {"dl"}, "dt": LIMITE_ESCOPO | {"dl"},
+    "option": {"select", "datalist"}, "optgroup": {"select", "datalist"},
+    "tr": {"table", "template"}, "td": {"tr", "table", "template"}, "th": {"tr", "table", "template"},
+    "tbody": {"table", "template"}, "thead": {"table", "template"}, "tfoot": {"table", "template"},
+}
+
 
 class _Regioes(HTMLParser):
     """Divide o corpo em regiões (cada <section> de topo; header, footer e nav fora delas) e anota,
@@ -250,6 +283,39 @@ class _Regioes(HTMLParser):
             self.marcadas[chave] = set()
             self.estados[chave] = []
             self.texto[chave] = []
+
+    def _fecha(self, alvos, limites=None, especiais=False):
+        """Procura da ponta da pilha para baixo o elemento aberto que está em `alvos` e fecha ele e tudo que está dentro. Para ao
+        achar uma tag de `limites` (ou, com `especiais`, qualquer elemento especial que não seja address, div ou p). Devolve se fechou."""
+        for i in range(len(self.pilha) - 1, -1, -1):
+            tag = self.pilha[i][0]
+            if tag in alvos:
+                del self.pilha[i:]
+                return True
+            if limites and tag in limites:
+                return False
+            if especiais and tag in ESPECIAIS and tag not in ("address", "div", "p"):
+                return False
+        return False
+
+    def _fecha_implicito(self, tag):
+        """3.5.14 (achado 11): fecha o que o HTML fecha sozinho quando `tag` abre."""
+        if tag in FECHA_P:
+            self._fecha({"p"}, LIMITE_ESCOPO)
+        if tag in ("h1", "h2", "h3", "h4", "h5", "h6") and self.pilha and self.pilha[-1][0] in ("h1", "h2", "h3", "h4", "h5", "h6"):
+            self.pilha.pop()
+        if tag == "optgroup":
+            self._fecha({"option"}, {"select", "datalist", "optgroup"})
+        if tag in ("li", "dd", "dt"):
+            alvos, _ = REGRAS_FECHA[tag]
+            self._fecha(alvos, especiais=True)
+        elif tag in REGRAS_FECHA:
+            alvos, limites = REGRAS_FECHA[tag]
+            if tag in ("tbody", "thead", "tfoot"):
+                self._fecha({"tr", "td", "th"}, {"table", "template", "tbody", "thead", "tfoot"})
+            elif tag == "tr":
+                self._fecha({"td", "th"}, {"tr", "table", "template"})
+            self._fecha(alvos, limites)
 
     def _estado_em_vigor(self):
         """(grupo, estado) do elemento aberto mais perto de quem pergunta que declarou data-assinatura-estado."""
@@ -290,6 +356,7 @@ class _Regioes(HTMLParser):
             self._abre(tag)
         if tag in ("figure", "picture"):
             self.pilha_marca.append("data-assinatura" in a)
+        self._fecha_implicito(tag)
         if tag not in VAZIOS_PAGINA:
             grupo = a.get("data-assinatura-grupo") or (self.pilha[-1][1] if self.pilha else None)
             self.pilha.append((tag, grupo, a.get("data-assinatura-estado")))
@@ -308,10 +375,13 @@ class _Regioes(HTMLParser):
         if tag in ("figure", "picture") and self.pilha_marca:
             self.pilha_marca.pop()
         if tag not in VAZIOS_PAGINA:
+            limites = ALCANCE_FIM.get(tag)
             for i in range(len(self.pilha) - 1, -1, -1):
                 if self.pilha[i][0] == tag:
                     del self.pilha[i:]
                     break
+                if limites and self.pilha[i][0] in limites:
+                    break   # fim de tag sem abertura no alcance dela: o HTML ignora
         if tag == "head":
             self.cabeca = False
         if tag in ("script", "style") and self.ignorar:
