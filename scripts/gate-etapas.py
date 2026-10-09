@@ -231,9 +231,14 @@ def revalidar(projeto, registro, etapas, perfil, motivo):
 
     Para cada etapa registrada, em ordem: se nada mudou, fica como está; se SÓ o arquivo do briefing mudou, o gate da etapa
     (`validar`) roda de novo sobre o JSON registrado e, passando, a etapa é re-registrada com o motivo gravado; se QUALQUER
-    outra evidência mudou (inclusive o JSON da etapa), a etapa continua exigindo o gate dela (`registrar`) e nada é gravado.
-    Devolve (registro novo, linhas do relatório); levanta ValueError quando bloqueia."""
+    outra evidência mudou (inclusive o JSON da etapa), a etapa continua exigindo o gate dela (`registrar`).
+
+    3.5.10 (P15): quando uma etapa bloqueia, as que JÁ passaram antes dela ficam gravadas (cada uma rodou o gate dela de novo
+    e passou, igual a um `registrar`) e a que bloqueou, com tudo o que vem depois, fica exatamente como estava: continua
+    bloqueada pelo hash, então não abre brecha. Devolve (registro novo, linhas do relatório, bloqueio), com `bloqueio`
+    None quando tudo passou, ou {"etapa", "motivo", "gravadas"} quando parou."""
     novo, linhas = {e: dict(v) for e, v in registro.items()}, []
+    gravadas = []
     for e in [x for x in etapas if x in registro]:
         hashes = registro[e].get("hashes") or {}
         mudou = [n for n, h in hashes.items() if digest(projeto / n) != h]
@@ -244,17 +249,23 @@ def revalidar(projeto, registro, etapas, perfil, motivo):
         jsons = [n for n in hashes if n.endswith(".json")]
         if fora or not jsons:
             alvo = (jsons[-1] if jsons else f"evidencias/etapa-{e}.json")
-            raise ValueError(f"Etapa {e}: a evidência mudou além do briefing ({', '.join(fora or mudou)}); esta etapa continua exigindo o gate dela. "
-                             f"Refaça e registre: {comando('gate-etapas.py')} --projeto {projeto.as_posix()} registrar {e} --arquivo {alvo}")
+            return novo, linhas, {"etapa": e, "gravadas": gravadas,
+                                  "motivo": f"a evidência mudou além do briefing ({', '.join(fora or mudou)}); esta etapa continua exigindo o gate dela. "
+                                            f"Refaça e registre: {comando('gate-etapas.py')} --projeto {projeto.as_posix()} registrar {e} --arquivo {alvo}"}
         arquivo = (projeto / jsons[-1]).resolve()
-        refeitos = validar(projeto, arquivo, e, etapas[e], perfil)       # o gate da etapa roda de novo
+        try:
+            refeitos = validar(projeto, arquivo, e, etapas[e], perfil)   # o gate da etapa roda de novo
+        except (OSError, ValueError, KeyError, TypeError) as erro:
+            return novo, linhas, {"etapa": e, "gravadas": gravadas,
+                                  "motivo": f"o gate da etapa rodou de novo e reprovou com o briefing novo: {erro}"}
         refeitos[jsons[-1]] = digest(arquivo)
         novo[e] = {**novo[e], "hashes": refeitos, "revalidada": {"motivo": motivo, "arquivos": mudou,
                                                                  "quando": datetime.datetime.now().isoformat(timespec="seconds")}}
+        gravadas.append(e)
         linhas.append(f"  etapa {e}: revalidada (só o briefing mudou: {', '.join(mudou)}; o gate da etapa rodou de novo e passou)")
         if "sustentacao" in (json.loads(arquivo.read_text(encoding="utf-8-sig")) if arquivo.is_file() else {}):
             linhas.append(f"    atenção: a copy depende do briefing: rode {comando('gate-verdade.py')} --projeto {projeto.as_posix()} para conferir a tabela contra o briefing novo")
-    return novo, linhas
+    return novo, linhas, None
 
 
 def main():
@@ -277,15 +288,27 @@ def main():
             registro = json.loads(alvo.read_text(encoding="utf-8-sig")) if alvo.exists() else {}
             if not isinstance(registro, dict) or not registro:
                 raise ValueError("Não há etapa registrada para revalidar.")
-            novo, linhas = revalidar(projeto, registro, etapas, args.perfil, args.motivo.strip())
+            novo, linhas, bloqueio = revalidar(projeto, registro, etapas, args.perfil, args.motivo.strip())
         except (OSError, ValueError, KeyError, TypeError) as e:
             print(f"BLOQUEIA: {e}")
             return 1
         print("REVALIDAR (mudança de briefing)\n" + "\n".join(linhas))
+        if novo != registro:
+            alvo.write_text(json.dumps(novo, ensure_ascii=False, indent=2), encoding="utf-8")
+        if bloqueio:
+            e = bloqueio["etapa"]
+            print(f"BLOQUEIA na etapa {e}: {bloqueio['motivo']}")
+            if bloqueio["gravadas"]:
+                gr = ", ".join(bloqueio["gravadas"])
+                print(f"  gravadas: etapa(s) {gr} (revalidadas, motivo gravado: {args.motivo.strip()}).")
+            else:
+                print("  nada foi gravado: nenhuma etapa chegou a ser revalidada.")
+            print(f"  A etapa {e} e as seguintes (se houver) NÃO foram gravadas: seguem como estavam e continuam bloqueadas "
+                  f"até você refazer a etapa {e} e registrar de novo.")
+            return 1
         if novo == registro:
             print("  nada mudou: não há o que revalidar.")
             return 0
-        alvo.write_text(json.dumps(novo, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"PASSA: etapas revalidadas em ordem; motivo gravado: {args.motivo.strip()}")
         return 0
     if args.etapa is None:
