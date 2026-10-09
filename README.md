@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.13)
+SKILL.md                       router (v3.5.14)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,15 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.5.14
+
+Fixes the LOW code findings (10, 11 and 12) of the adversarial audit of 3.5.11 and 3.5.12; finding 9 (state `0`) was already fixed in 3.5.13 and is only confirmed. Red test first, then the fix.
+
+- **`gate-imagens.py`: the right message for the same photo.** A state photo that shows up in another section with a plain `data-assinatura` (no number) used to be reported as "plain `data-assinatura` on another photo". It now says it is the SAME photo ("the photo of state 1 (foto1) appears with plain data-assinatura, without the state number, in section X"); a really different photo keeps the old message.
+- **`gate-imagens.py`: the region parser closes what HTML closes by itself.** `p` closed by `div` (or any block, or another `p`), `li` without `</li>`, `dt`/`dd`, `option`/`optgroup`, `tr`/`td`/`th`, `tbody`/`thead`/`tfoot`. Before, an unclosed `li` or `p` stretched `data-assinatura-estado` and the group over its next sibling. An end tag with no opening in its scope (a stray `</li>` inside a nested list) is ignored, as browsers do; nested lists and tables keep the outer element open.
+- **`test-imagens.py`: two loose assertions now match the exact message.** The "hole" test needs both `falta o estado 1` and `falta o estado 2` of group `outro`; the "plain data-assinatura" test needs the whole sentence naming `foto4`. Breaking each message on purpose turns its test red.
+- **Proof.** `test-imagens.py`: 118 tests (18 new), `test-docs*.py` all green. Not proven: the full suite (run by the owner); the Torra Clara page was not rebuilt.
 
 ## What is new in 3.5.13
 

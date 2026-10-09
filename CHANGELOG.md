@@ -1,5 +1,30 @@
 # Changelog
 
+## 3.5.14 (09/10/2026): conserto dos achados BAIXOS de código da auditoria da 3.5.11 e da 3.5.12 (10, 11 e 12)
+
+Teste vermelho antes, conserto, teste verde, como na 3.5.13. O achado 9 (estado 0 fura o máximo de 4) já estava consertado na 3.5.13:
+conferido, `data-assinatura-estado="0"` reprova e `test_estado_zero_reprova` passa.
+
+### `gate-imagens.py`
+- **Achado 10, mensagem errada.** A foto de um estado que reaparece em outra seção com `data-assinatura` simples (sem número) era chamada
+  de "outra foto". Agora a mensagem diz que é a MESMA foto ("a foto do estado 1 (foto1) aparece com data-assinatura simples, sem o número
+  do estado, na seção extra") e o que fazer; foto diferente com `data-assinatura` simples segue com "em outra foto (fotoN)". Os dois casos
+  juntos dão as duas mensagens.
+- **Achado 11, pilha do parser.** O parser das regiões agora trata os fechamentos implícitos do HTML: `p` (fechado por `div`, `ul`, `table`,
+  títulos, `figure`, outro `p` e os demais blocos), `li`, `dt` e `dd`, `option` e `optgroup`, `tr`, `td` e `th`, `tbody`, `thead` e `tfoot`.
+  O estado e o grupo declarados num `li` sem `</li>` não passam mais para o irmão. Fim de tag sem abertura no alcance (um `</li>` solto
+  dentro de uma lista aninhada) é ignorado; lista e tabela aninhadas não fecham o elemento de fora. Fechamento explícito se comporta como antes.
+
+### `test-imagens.py` (Achado 12)
+- O teste do buraco casa as duas mensagens exatas (`falta o estado 1` e `falta o estado 2` do grupo `outro`) e "2 grupos"; o teste do
+  `data-assinatura` simples casa a frase inteira com `(foto4)` e exclui a mensagem da regra 8, que também tem as duas palavras. Um mutante
+  em cada mensagem deixa o teste novo vermelho (o antigo continuava verde).
+
+### Provas
+- `test-imagens.py`: 118 testes (3 do achado 10, 14 do achado 11 e 1 de ponta a ponta no gate, mais as asserções do 12); os de 10 e 11 estavam
+  vermelhos antes do conserto. `test-docs*.py` verdes. `test-docs-3514.py` (novo).
+- Não foi provado: a suíte inteira (o dono roda); a página Torra Clara não foi refeita (achados 8 e 13 a 15 seguem fora desta versão).
+
 ## 3.5.13 (09/10/2026): conserto dos achados ALTOS e MÉDIOS de código da auditoria da 3.5.11 e da 3.5.12
 
 A auditoria adversarial (`AUDITORIA-3511-3512.md`) achou, por leitura de código, brechas nos dois gates novos. Cada caso mínimo da auditoria

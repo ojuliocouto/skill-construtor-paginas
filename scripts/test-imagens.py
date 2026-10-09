@@ -538,12 +538,49 @@ class SequenciaDeEstados(GateImagensV35):
     def test_o_ultimo_estado_em_outro_grupo_deixa_buraco_e_reprova(self):
         s = [self.fig("a", "foto1-800.jpg", 1, "cafe"), self.fig("b", "foto2-800.jpg", 2, "cafe"), self.fig("c", "foto3-800.jpg", 3, "outro")]
         p = self.avaliar(s)
-        self.assertTrue(any("falta o estado 3" in x or "estado 3" in x and "grupo" in x for x in p) or any("2 grupos" in x for x in p), p)
+        # 3.5.14 (achado 12): o buraco que o nome promete, com a mensagem exata; "2 grupos" sozinho não prova o buraco
+        self.assertIn("sequência de estados no grupo 'outro' sem buraco: falta o estado 1 (a numeração vai de 1 até 3)", p)
+        self.assertIn("sequência de estados no grupo 'outro' sem buraco: falta o estado 2 (a numeração vai de 1 até 3)", p)
+        self.assertTrue(any(x.startswith("data-assinatura-estado em 2 grupos (cafe, outro)") for x in p), p)
 
     def test_sequencia_mais_data_assinatura_simples_em_outra_foto_reprova(self):
         s = self.tres() + ['<section id="extra"><h2>extra</h2><figure data-assinatura><img src="img/foto4-800.jpg" alt="f" width="640" height="480"></figure></section>']
         p = self.avaliar(s, 4)
-        self.assertTrue(any("sequência de estados (data-assinatura-estado) e data-assinatura simples em outra foto" in x for x in p), p)
+        # 3.5.14 (achado 12): a mensagem da sequência, inteira e nomeando a foto 4; a da regra 8 também cita "sequência" e "data-assinatura"
+        self.assertTrue(any(x.startswith("sequência de estados (data-assinatura-estado) e data-assinatura simples em outra foto (foto4): um momento assinatura só;") for x in p), p)
+        self.assertFalse(any(x.startswith("data-assinatura em ") and "fotos diferentes" in x for x in p), p)
+
+    # ---- 3.5.14 (achado 10): a mensagem certa para cada caso ----
+    def test_a_mesma_foto_do_estado_com_data_assinatura_simples_diz_que_e_a_mesma_foto(self):
+        s = self.tres() + ['<section id="extra"><h2>extra</h2><figure data-assinatura><img src="img/foto1-800.jpg" alt="f" width="640" height="480"></figure></section>']
+        p = [x for x in self.avaliar(s) if "data-assinatura simples" in x]
+        self.assertEqual(len(p), 1, p)
+        self.assertNotIn("em outra foto", p[0])
+        self.assertIn("a foto do estado 1 (foto1)", p[0])
+        self.assertIn("sem o número do estado", p[0])
+        self.assertIn("extra", p[0])
+
+    def test_data_assinatura_simples_em_foto_diferente_continua_dizendo_outra_foto_e_so_ela(self):
+        s = self.tres() + ['<section id="extra"><h2>extra</h2><figure data-assinatura><img src="img/foto4-800.jpg" alt="f" width="640" height="480"></figure></section>']
+        p = [x for x in self.avaliar(s, 4) if "data-assinatura simples" in x]
+        self.assertEqual(len(p), 1, p)
+        self.assertIn("e data-assinatura simples em outra foto (foto4)", p[0])
+        self.assertNotIn("sem o número do estado", p[0])
+
+    def test_as_duas_situacoes_juntas_dao_as_duas_mensagens(self):
+        s = self.tres() + ['<section id="e1"><h2>e1</h2><figure data-assinatura><img src="img/foto1-800.jpg" alt="f" width="640" height="480"></figure></section>',
+                           '<section id="e2"><h2>e2</h2><figure data-assinatura><img src="img/foto4-800.jpg" alt="f" width="640" height="480"></figure></section>']
+        p = [x for x in self.avaliar(s, 4) if "data-assinatura simples" in x]
+        self.assertEqual(len(p), 2, p)
+        self.assertEqual(sum("em outra foto (foto4)" in x for x in p), 1, p)
+        self.assertEqual(sum("a foto do estado 1 (foto1)" in x for x in p), 1, p)
+
+    def test_li_sem_fechamento_nao_faz_a_foto_do_irmao_virar_estado_1(self):
+        # 3.5.14 (achado 11): o 2º <li> não leva o estado do 1º; antes, foto4 virava "estado 1" e reprovava como 2 fotos no mesmo estado
+        s = ['<section id="sitios"><h2>s</h2><ul><li data-assinatura-estado="1"><img src="img/foto1-800.jpg" alt="f" width="640" height="480">'
+             '<li><img src="img/foto4-800.jpg" alt="f" width="640" height="480"></ul></section>',
+             self.fig("semana", "foto2-800.jpg", 2), self.fig("fecho", "foto3-800.jpg", 3)]
+        self.assertEqual(self.avaliar(s, 4, plano=self.plano_de(3)), [])
 
     def test_o_mesmo_estado_em_duas_fotos_diferentes_reprova(self):
         s = [self.fig("a", "foto1-800.jpg", 1), self.fig("b", "foto2-800.jpg", 2), self.fig("c", "foto3-800.jpg", 2)]
@@ -568,6 +605,80 @@ class SequenciaDeEstados(GateImagensV35):
     def test_foto_diferente_sem_marca_ao_lado_da_sequencia_passa(self):
         s = self.tres() + [self.fig("extra", "foto4-800.jpg")]
         self.assertEqual(self.avaliar(s, 4), [])
+
+
+class FechamentoImplicitoDoHtml(unittest.TestCase):
+    """3.5.14 (achado 11): o parser das regiões fecha sozinho o que o HTML fecha sozinho (p, li, dt, dd, option, optgroup, tr, td, th,
+    tbody, thead, tfoot), para o data-assinatura-estado e o grupo não valerem além do alcance real no DOM."""
+
+    def estados(self, corpo):
+        r = gate.regioes_da_pagina(f'<html><body><section id="s"><h2>t</h2>{corpo}</section></body></html>')
+        return {nome: (grupo, est) for nome, grupo, est in r.estados["s"]}
+
+    def img(self, n):
+        return f'<img src="img/foto{n}-800.jpg" alt="f">'
+
+    def test_p_fechado_por_div_nao_estende_o_estado(self):
+        e = self.estados(f'<p data-assinatura-estado="1">{self.img(1)}<div>{self.img(2)}</div>')
+        self.assertEqual(e, {"foto1-800.jpg": ("assinatura", "1")})
+
+    def test_p_fechado_por_outro_p_nao_estende_o_estado(self):
+        e = self.estados(f'<p data-assinatura-estado="1">{self.img(1)}<p>{self.img(2)}')
+        self.assertEqual(e, {"foto1-800.jpg": ("assinatura", "1")})
+
+    def test_li_sem_fechamento_nao_estende_o_estado_nem_o_grupo_ao_irmao(self):
+        e = self.estados(f'<ul><li data-assinatura-grupo="cafe" data-assinatura-estado="1">{self.img(1)}<li>{self.img(2)}<li data-assinatura-estado="2">{self.img(3)}</ul>')
+        self.assertEqual(e, {"foto1-800.jpg": ("cafe", "1"), "foto3-800.jpg": ("assinatura", "2")})
+
+    def test_dt_e_dd_sem_fechamento(self):
+        e = self.estados(f'<dl><dt data-assinatura-estado="1">{self.img(1)}<dd>{self.img(2)}<dt>{self.img(3)}</dl>')
+        self.assertEqual(e, {"foto1-800.jpg": ("assinatura", "1")})
+        e = self.estados(f'<dl><dd data-assinatura-estado="1">{self.img(1)}<dt>{self.img(2)}</dl>')
+        self.assertEqual(e, {"foto1-800.jpg": ("assinatura", "1")})
+
+    def test_option_e_optgroup_sem_fechamento(self):
+        e = self.estados(f'<select><optgroup><option data-assinatura-estado="1">{self.img(1)}<option>{self.img(2)}<optgroup>{self.img(3)}</select>')
+        self.assertEqual(e, {"foto1-800.jpg": ("assinatura", "1")})
+
+    def test_tr_td_th_sem_fechamento(self):
+        e = self.estados(f'<table><tr data-assinatura-estado="1"><td>{self.img(1)}<td>{self.img(2)}<tr><td>{self.img(3)}</table>')
+        self.assertEqual(e, {"foto1-800.jpg": ("assinatura", "1"), "foto2-800.jpg": ("assinatura", "1")})
+        e = self.estados(f'<table><tr><td data-assinatura-estado="1">{self.img(1)}<th>{self.img(2)}<tr><td>{self.img(3)}</table>')
+        self.assertEqual(e, {"foto1-800.jpg": ("assinatura", "1")})
+
+    def test_tbody_thead_tfoot_sem_fechamento(self):
+        e = self.estados(f'<table><thead data-assinatura-estado="1"><tr><td>{self.img(1)}<tbody><tr><td>{self.img(2)}<tfoot><tr><td>{self.img(3)}</table>')
+        self.assertEqual(e, {"foto1-800.jpg": ("assinatura", "1")})
+
+    def test_o_p_aberto_dentro_de_li_nao_fecha_o_li_do_estado(self):
+        e = self.estados(f'<ul><li data-assinatura-estado="1"><p>{self.img(1)}<p>{self.img(2)}</ul><ul><li>{self.img(3)}</ul>')
+        self.assertEqual(e, {"foto1-800.jpg": ("assinatura", "1"), "foto2-800.jpg": ("assinatura", "1")})
+
+    # o que NÃO pode mudar: aninhamento legítimo e fechamento explícito
+    def test_lista_aninhada_nao_fecha_o_li_de_fora(self):
+        e = self.estados(f'<ul><li data-assinatura-estado="1"><ul><li>{self.img(1)}<li>{self.img(2)}</ul>{self.img(3)}</ul>{self.img(4)}')
+        self.assertEqual(e, {n: ("assinatura", "1") for n in ("foto1-800.jpg", "foto2-800.jpg", "foto3-800.jpg")})
+
+    def test_tabela_aninhada_na_celula_nao_fecha_a_celula_de_fora(self):
+        e = self.estados(f'<table><tr><td data-assinatura-estado="1"><table><tr><td>{self.img(1)}</table>{self.img(2)}<td>{self.img(3)}</table>')
+        self.assertEqual(e, {"foto1-800.jpg": ("assinatura", "1"), "foto2-800.jpg": ("assinatura", "1")})
+
+    def test_div_com_varios_p_mantem_o_estado_no_div(self):
+        e = self.estados(f'<div data-assinatura-estado="1"><p>{self.img(1)}<p>{self.img(2)}</div>{self.img(3)}')
+        self.assertEqual(e, {"foto1-800.jpg": ("assinatura", "1"), "foto2-800.jpg": ("assinatura", "1")})
+
+    def test_fechamento_explicito_continua_igual(self):
+        e = self.estados(f'<ul><li data-assinatura-estado="1">{self.img(1)}</li><li>{self.img(2)}</li></ul><p data-assinatura-estado="2">{self.img(3)}</p>{self.img(4)}')
+        self.assertEqual(e, {"foto1-800.jpg": ("assinatura", "1"), "foto3-800.jpg": ("assinatura", "2")})
+
+    def test_end_tag_solta_de_li_nao_fecha_um_li_de_fora_da_lista(self):
+        # o </li> de dentro da lista aninhada não acha li no alcance dela (o ul é limite) e é ignorado: a foto segue no li de fora
+        e = self.estados(f'<ul><li data-assinatura-estado="1"><ul></li>{self.img(1)}</ul></li></ul>{self.img(2)}')
+        self.assertEqual(e, {"foto1-800.jpg": ("assinatura", "1")})
+
+    def test_estado_no_fim_da_secao_nao_vaza_para_a_seguinte(self):
+        r = gate.regioes_da_pagina(f'<html><body><section id="a"><ul><li data-assinatura-estado="1">{self.img(1)}</ul></section><section id="b"><p>{self.img(2)}</section></body></html>')
+        self.assertEqual(r.estados["b"], [])
 
 
 class DobraAviso(unittest.TestCase):

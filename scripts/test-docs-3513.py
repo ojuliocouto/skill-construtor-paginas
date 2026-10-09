@@ -1,6 +1,5 @@
 """3.5.13: os consertos da auditoria da 3.5.11 e da 3.5.12 (configurador visível em grupos, lista com caixa é cartão, "ao lado" só com
-coluna irmã, sequência de estados amarrada ao PLANO.md) precisam estar nos textos que o aluno e o agente leem, e a versão tem que ser
-a 3.5.13. Os gates têm testes próprios (test-ritmo-3513.cjs, test-imagens.py)."""
+coluna irmã, sequência de estados amarrada ao PLANO.md) precisam estar nos textos que o aluno e o agente leem, e a 3.5.13 é história (a atual é a 3.5.14, test-docs-3514.py). Os gates têm testes próprios (test-ritmo-3513.cjs, test-imagens.py)."""
 import pathlib
 import re
 import unittest
@@ -23,10 +22,10 @@ def plano(t):
 
 class Versao3513(unittest.TestCase):
     def test_versao_nos_tres_lugares(self):
-        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.13$")
-        self.assertIn("router (v3.5.13)", ler(README))
-        self.assertNotIn("router (v3.5.12)", ler(README))
-        self.assertTrue(ler(CHANGELOG).startswith("# Changelog\n\n## 3.5.13"))
+        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.14$")
+        self.assertIn("router (v3.5.14)", ler(README))
+        self.assertNotIn("router (v3.5.13)", ler(README))
+        self.assertIn("\n## 3.5.13 (09/10/2026)", ler(CHANGELOG))
         self.assertIn("## What is new in 3.5.13", ler(README))
 
     def test_skill_md_nao_passa_de_330_linhas(self):

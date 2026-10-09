@@ -61,6 +61,8 @@ em sequência. A regra 8 e `data-assinatura` simples aceitam UMA foto só; a seq
      3.5.13 (auditoria): a sequência só vale com o PLANO.md declarando `Momento assinatura: ...; seções: ...; estados: x -> y -> z` e o
      mesmo número de estados da página; cada estado mora na sua seção (a primeira em que é o estado mais novo), distintas e em ordem
      crescente; a foto do estado k só aparece na seção dela e na do estado k+1; estado 0 não existe.
+     3.5.14 (auditoria, achados 10 e 11): a mesma foto do estado com `data-assinatura` simples tem mensagem própria (não é "outra foto"); o parser
+     das seções fecha o que o HTML fecha sozinho (p, li, dt, dd, option, tr, td, th, tbody, thead, tfoot).
 Mede com Pillow e numpy (`pip install pillow numpy`).
 
 Uso: node scripts/py.mjs gate-imagens.py --projeto <dir> [--dist <dir>/dist] [--url <url>] [--trafego-real]
@@ -222,6 +224,39 @@ GRUPO_PADRAO = "assinatura"
 MAXIMO_ESTADOS = 4
 VAZIOS_PAGINA = {"img", "source", "br", "meta", "link", "input", "hr", "wbr", "area", "base", "col", "embed", "track", "param"}
 
+# 3.5.14 (achado 11): fechamentos implícitos do HTML. O parser da biblioteca não fecha <p> antes de <div> nem <li> antes de <li>;
+# sem isso o data-assinatura-estado e o grupo valiam além do alcance real no DOM.
+FECHA_P = {"address", "article", "aside", "blockquote", "center", "details", "dialog", "dir", "div", "dl", "fieldset", "figcaption", "figure",
+           "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hgroup", "hr", "li", "dd", "dt", "main", "menu", "nav", "ol", "p",
+           "pre", "search", "section", "summary", "table", "ul", "listing", "xmp", "plaintext"}
+ESPECIAIS = {"address", "applet", "area", "article", "aside", "base", "blockquote", "body", "br", "button", "caption", "center", "col", "colgroup",
+             "dd", "details", "dir", "div", "dl", "dt", "embed", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4",
+             "h5", "h6", "head", "header", "hgroup", "hr", "html", "iframe", "img", "input", "li", "main", "marquee", "menu", "nav", "noscript",
+             "object", "ol", "p", "pre", "search", "section", "select", "source", "summary", "table", "tbody", "td", "template", "textarea",
+             "tfoot", "th", "thead", "tr", "ul"}
+LIMITE_ESCOPO = {"applet", "caption", "html", "table", "td", "th", "marquee", "object", "template", "button"}
+# tag que fecha -> (tags que ela fecha, tags onde a busca para)
+REGRAS_FECHA = {
+    "li": ({"li"}, None),
+    "dd": ({"dd", "dt"}, None),
+    "dt": ({"dd", "dt"}, None),
+    "option": ({"option"}, {"select", "datalist"}),
+    "optgroup": ({"option", "optgroup"}, {"select", "datalist"}),
+    "tr": ({"tr"}, {"table", "tbody", "thead", "tfoot", "template"}),
+    "td": ({"td", "th"}, {"tr", "table", "template"}),
+    "th": ({"td", "th"}, {"tr", "table", "template"}),
+    "tbody": ({"tbody", "thead", "tfoot"}, {"table", "template"}),
+    "thead": ({"tbody", "thead", "tfoot"}, {"table", "template"}),
+    "tfoot": ({"tbody", "thead", "tfoot"}, {"table", "template"}),
+}
+# fim de tag com alcance próprio: tag -> tags onde a busca para (o resto fecha subindo a pilha como antes)
+ALCANCE_FIM = {
+    "p": LIMITE_ESCOPO, "li": LIMITE_ESCOPO | {"ul", "ol"}, "dd": LIMITE_ESCOPO | {"dl"}, "dt": LIMITE_ESCOPO | {"dl"},
+    "option": {"select", "datalist"}, "optgroup": {"select", "datalist"},
+    "tr": {"table", "template"}, "td": {"tr", "table", "template"}, "th": {"tr", "table", "template"},
+    "tbody": {"table", "template"}, "thead": {"table", "template"}, "tfoot": {"table", "template"},
+}
+
 
 class _Regioes(HTMLParser):
     """Divide o corpo em regiões (cada <section> de topo; header, footer e nav fora delas) e anota,
@@ -250,6 +285,39 @@ class _Regioes(HTMLParser):
             self.marcadas[chave] = set()
             self.estados[chave] = []
             self.texto[chave] = []
+
+    def _fecha(self, alvos, limites=None, especiais=False):
+        """Procura da ponta da pilha para baixo o elemento aberto que está em `alvos` e fecha ele e tudo que está dentro. Para ao
+        achar uma tag de `limites` (ou, com `especiais`, qualquer elemento especial que não seja address, div ou p). Devolve se fechou."""
+        for i in range(len(self.pilha) - 1, -1, -1):
+            tag = self.pilha[i][0]
+            if tag in alvos:
+                del self.pilha[i:]
+                return True
+            if limites and tag in limites:
+                return False
+            if especiais and tag in ESPECIAIS and tag not in ("address", "div", "p"):
+                return False
+        return False
+
+    def _fecha_implicito(self, tag):
+        """3.5.14 (achado 11): fecha o que o HTML fecha sozinho quando `tag` abre."""
+        if tag in FECHA_P:
+            self._fecha({"p"}, LIMITE_ESCOPO)
+        if tag in ("h1", "h2", "h3", "h4", "h5", "h6") and self.pilha and self.pilha[-1][0] in ("h1", "h2", "h3", "h4", "h5", "h6"):
+            self.pilha.pop()
+        if tag == "optgroup":
+            self._fecha({"option"}, {"select", "datalist", "optgroup"})
+        if tag in ("li", "dd", "dt"):
+            alvos, _ = REGRAS_FECHA[tag]
+            self._fecha(alvos, especiais=True)
+        elif tag in REGRAS_FECHA:
+            alvos, limites = REGRAS_FECHA[tag]
+            if tag in ("tbody", "thead", "tfoot"):
+                self._fecha({"tr", "td", "th"}, {"table", "template", "tbody", "thead", "tfoot"})
+            elif tag == "tr":
+                self._fecha({"td", "th"}, {"tr", "table", "template"})
+            self._fecha(alvos, limites)
 
     def _estado_em_vigor(self):
         """(grupo, estado) do elemento aberto mais perto de quem pergunta que declarou data-assinatura-estado."""
@@ -290,6 +358,7 @@ class _Regioes(HTMLParser):
             self._abre(tag)
         if tag in ("figure", "picture"):
             self.pilha_marca.append("data-assinatura" in a)
+        self._fecha_implicito(tag)
         if tag not in VAZIOS_PAGINA:
             grupo = a.get("data-assinatura-grupo") or (self.pilha[-1][1] if self.pilha else None)
             self.pilha.append((tag, grupo, a.get("data-assinatura-estado")))
@@ -308,10 +377,13 @@ class _Regioes(HTMLParser):
         if tag in ("figure", "picture") and self.pilha_marca:
             self.pilha_marca.pop()
         if tag not in VAZIOS_PAGINA:
+            limites = ALCANCE_FIM.get(tag)
             for i in range(len(self.pilha) - 1, -1, -1):
                 if self.pilha[i][0] == tag:
                     del self.pilha[i:]
                     break
+                if limites and self.pilha[i][0] in limites:
+                    break   # fim de tag sem abertura no alcance dela: o HTML ignora
         if tag == "head":
             self.cabeca = False
         if tag in ("script", "style") and self.ignorar:
@@ -441,7 +513,7 @@ def _lista_pt(itens):
     return itens[0] if len(itens) == 1 else ", ".join(itens[:-1]) + " e " + itens[-1]
 
 
-def checar_sequencias(regioes, cena_de, com_marca, problemas, plano_assinatura=None):
+def checar_sequencias(regioes, cena_de, com_marca, problemas, plano_assinatura=None, marcadas_de=None):
     """3.5.11 (P5): valida a sequência declarada com data-assinatura-estado. `cena_de(base)` devolve a cena da foto (o agrupamento por
     origem e pHash). Devolve, por foto (base), as seções onde ela leva a marca de estado (contam como uma só na regra da foto repetida).
     3.5.13 (auditoria, achados 2, 4, 5 e 9): a sequência só vale se o PLANO.md declara o momento assinatura com os estados e as seções
@@ -468,8 +540,26 @@ def checar_sequencias(regioes, cena_de, com_marca, problemas, plano_assinatura=N
     if len(seqs) > 1:
         problemas.append(f"data-assinatura-estado em {len(seqs)} grupos ({', '.join(sorted(seqs))}): um momento assinatura só por página, "
                          "uma sequência só; junte os estados no mesmo grupo ou tire a marca do que sobra")
-    if com_marca:
-        quem = "; ".join(" + ".join(sorted(m)) for m in com_marca)
+    # 3.5.14 (achado 10): data-assinatura simples na MESMA foto de um estado (outra seção, sem o número) não é "outra foto".
+    cenas_de_estado = {}   # cena -> menor estado numerado nessa foto
+    for estados in seqs.values():
+        for k, bases in estados.items():
+            for b in bases:
+                c = cena_de(b)
+                cenas_de_estado[c] = min(k, cenas_de_estado.get(c, k))
+    marcadas_de = marcadas_de or {}
+    outras = []
+    for m in com_marca:
+        cena = next((cena_de(b) for b in m if cena_de(b) in cenas_de_estado), None)
+        if cena is None:
+            outras.append(m)
+            continue
+        nomes_da_foto = sorted(b for b in m if marcadas_de.get(b)) or sorted(m)
+        onde = sorted({c for b in m for c in marcadas_de.get(b, ())})
+        problemas.append(f"a foto do estado {cenas_de_estado[cena]} ({' + '.join(nomes_da_foto)}) aparece com data-assinatura simples, sem o número do estado, "
+                         f"na seção {_lista_pt(onde)}: dê a ela o número do estado dela ou tire o data-assinatura simples; um momento assinatura só")
+    if outras:
+        quem = "; ".join(" + ".join(sorted(m)) for m in outras)
         problemas.append(f"sequência de estados (data-assinatura-estado) e data-assinatura simples em outra foto ({quem}): um momento assinatura só; "
                          "tire o data-assinatura simples ou dê a essa foto o número do estado dela")
     for grupo, estados in sorted(seqs.items()):
@@ -618,7 +708,7 @@ def checar_fotos(dist, usados, regioes, problemas, avisos, plano_assinatura=None
                             if plano_assinatura is not None else
                             "Se o produto muda de foto de verdade (cru, torrado, na xícara), declare PRIMEIRO no PLANO.md a linha "
                             "'Momento assinatura: <elemento>; seções: <a, b, c>; estados: <x -> y -> z>'; só então a página pode numerar os estados"))
-    liberadas_de = checar_sequencias(regioes, lambda b: raiz(b) if b in pai else b, com_marca, problemas, plano_assinatura)
+    liberadas_de = checar_sequencias(regioes, lambda b: raiz(b) if b in pai else b, com_marca, problemas, plano_assinatura, marcadas_de)
     for membros in grupos.values():
         secoes = set()
         for b in membros:
