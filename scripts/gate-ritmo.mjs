@@ -104,20 +104,67 @@ const secoes = await page.evaluate((PESO) => {
     const fixa = [f, ...f.querySelectorAll('*')].some((n) => ['sticky', 'fixed'].includes(getComputedStyle(n).position));
     return (foto ? 'foto' : 'desenho') + (fixa ? ' fixo' : '');
   };
-  // 3.5.12: coluna com 4 ou mais controles (radios, caixas, campos, botões de escolha) é um
-  // configurador, não um "cartão". Os controles de um campo visualmente escondido (radio de 1 px)
-  // contam: o que importa é existirem dentro da coluna.
+  // 3.5.13 (auditoria, achado 1): "configurador" é a coluna com controles que a visitante VÊ e usa, em grupos. Conta o controle
+  // visível e interativo (8x8 px ou mais, sem display:none nem visibility:hidden); radio ou caixa escondido (1 px, opacidade 0)
+  // conta pelo label visível. Conta GRUPOS (fieldset, radiogroup, radios do mesmo name, cada campo; botões e abas do mesmo
+  // pai são um grupo), e o configurador precisa de 4 controles em 2 grupos ou mais. Só UMA coluna da fileira pode ter
+  // controles: a outra é o resumo.
   const SELETOR_CONTROLE = 'input:not([type=hidden]), select, textarea, button, [role=radio], [role=checkbox], [role=tab], [role=switch], [role=option]';
-  const controles = (f) => [...f.querySelectorAll(SELETOR_CONTROLE)].filter((c) => !c.closest('[hidden]')).length + (f.matches(SELETOR_CONTROLE) ? 1 : 0);
-  // Coluna de lista: a própria coluna é uma lista (ul/ol com 3 ou mais li, dl com 3 ou mais filhos) ou um
-  // grupo de 2 ou mais `details` (perguntas). Um cartão com título, texto e uma lista dentro NÃO é
-  // coluna de lista: os filhos dele são de tipos diferentes.
+  const grande = (el) => {
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+    const c = el.getBoundingClientRect();
+    return c.width >= 8 && c.height >= 8;
+  };
+  const ehEscolha = (c) => ['radio', 'checkbox'].includes(c.type) || ['radio', 'checkbox', 'switch'].includes(c.getAttribute('role'));
+  const rotuloVisivel = (c) => ehEscolha(c) && ([...(c.labels || [])].some(grande) || (c.closest('label') && grande(c.closest('label'))));
+  const controlesVisiveis = (f) => {
+    const todos = [...f.querySelectorAll(SELETOR_CONTROLE)];
+    if (f.matches(SELETOR_CONTROLE)) todos.push(f);
+    return todos.filter((c) => !c.closest('[hidden]') && (grande(c) || rotuloVisivel(c)));
+  };
+  const chaveDeGrupo = (c, ids) => {
+    const id = (n) => { if (!ids.has(n)) ids.set(n, ids.size); return ids.get(n); };
+    const grupo = c.closest('fieldset, [role=radiogroup], [role=tablist], [role=listbox], [role=group]');
+    if (grupo) return 'g' + id(grupo);
+    if (c.type === 'radio' && c.name) return 'r' + (c.form ? id(c.form) : '') + ':' + c.name;
+    if (ehEscolha(c) || ['INPUT', 'SELECT', 'TEXTAREA'].includes(c.tagName)) return 'c' + id(c);
+    return 'p' + id(c.parentElement || c);   // botões, abas e opções: o mesmo pai é um grupo só
+  };
+  const ehConfigurador = (ctls) => {
+    const ids = new Map();
+    return ctls.length >= 4 && new Set(ctls.map((c) => chaveDeGrupo(c, ids))).size >= 2;
+  };
+  // 3.5.13 (achado 3): coluna com caixa própria (fundo diferente do da seção, borda, sombra ou padding interno dos dois lados)
+  // é cartão, seja qual for a tag (ul, ol, dl, div).
+  const rgba = (v) => { const m = /rgba?\(([^)]+)\)/.exec(v || ''); if (!m) return [0, 0, 0, 0]; const n = m[1].split(',').map((x) => parseFloat(x)); return [n[0], n[1], n[2], n.length > 3 ? n[3] : 1]; };
+  const fundoDe = (el) => { for (let n = el; n; n = n.parentElement) { const c = rgba(getComputedStyle(n).backgroundColor); if (c[3] > 0.05) return c.slice(0, 3).join(','); } return '255,255,255'; };
+  const temCaixa = (f) => {
+    const cs = getComputedStyle(f);
+    const bg = rgba(cs.backgroundColor);
+    if (bg[3] > 0.05 && bg.slice(0, 3).join(',') !== fundoDe(f.parentElement)) return true;
+    if (['Top', 'Right', 'Bottom', 'Left'].some((l) => parseFloat(cs['border' + l + 'Width']) > 0 && cs['border' + l + 'Style'] !== 'none' && rgba(cs['border' + l + 'Color'])[3] > 0.05)) return true;
+    if (cs.boxShadow && cs.boxShadow !== 'none') return true;
+    const pad = (l) => parseFloat(cs['padding' + l]) || 0;
+    return (pad('Top') >= 8 && pad('Bottom') >= 8) || (pad('Left') >= 8 && pad('Right') >= 8);
+  };
+  // Coluna de lista: a própria coluna é uma lista de linhas leves (ul/ol com 3 ou mais li, dl com 3 ou mais filhos, sem caixa
+  // própria e sem título próprio nos itens) ou um grupo de 2 ou mais `details` (perguntas). Cartão com título, texto e uma lista
+  // dentro NÃO é coluna de lista: os filhos dele são de tipos diferentes.
   const colunaDeLista = (f) => {
+    if (temCaixa(f)) return false;
     const itens = [...f.children].filter(visivel);
     const tags = new Set(itens.map((i) => i.tagName));
-    if (['UL', 'OL'].includes(f.tagName)) return itens.length >= 3 && tags.size === 1 && tags.has('LI');
-    if (f.tagName === 'DL') return itens.length >= 3;
+    const temTitulo = itens.some((i) => i.querySelector('h1, h2, h3, h4, h5, h6'));
+    if (['UL', 'OL'].includes(f.tagName)) return itens.length >= 3 && tags.size === 1 && tags.has('LI') && !temTitulo;
+    if (f.tagName === 'DL') return itens.length >= 3 && !temTitulo;
     return itens.length >= 2 && tags.size === 1 && tags.has('DETAILS');
+  };
+  // Só uma coluna é o configurador; as outras (o resumo do pedido) não têm controles.
+  const configuradorUnico = (colunas) => {
+    const ctls = colunas.map(controlesVisiveis);
+    const cfg = ctls.map((c, i) => (ehConfigurador(c) ? i : -1)).filter((i) => i >= 0);
+    return cfg.length === 1 && ctls.every((c, i) => i === cfg[0] || c.length === 0);
   };
   const lista = [...document.querySelectorAll('section')]
     .filter((s) => visivel(s) && !s.parentElement.closest('section') && s.getBoundingClientRect().height >= 120);
@@ -148,7 +195,17 @@ const secoes = await page.evaluate((PESO) => {
     // conteúdo que começava até 40 px ABAIXO da base do título, e o 3º cartão de uma fileira que
     // vem logo abaixo de um título curto centralizado ficava à direita dele e contava como "ao lado".
     const sobreposicaoMinima = Math.min(24, hr.height * 0.3);
-    if (todos.some((el) => {
+    // 3.5.13 (achado 6): o conteúdo "ao lado" tem de estar numa COLUNA IRMÃ do título (mesma grade ou flex), em fluxo, visível para quem
+    // lê e com texto ou mídia. Selo aria-hidden, enfeite em position absolute ou fixed e caixa vazia não fazem "título ao lado".
+    const colunasIrmas = [];
+    for (let a = h; a && a !== s; a = a.parentElement) {
+      const p = a.parentElement;
+      if (p && /grid|flex/.test(getComputedStyle(p).display)) colunasIrmas.push(...[...p.children].filter((k) => k !== a && visivel(k)));
+    }
+    const colunaValida = (k) => !['absolute', 'fixed'].includes(getComputedStyle(k).position) && !k.closest('[aria-hidden="true"]')
+      && ((k.innerText || '').trim().length > 0 || MIDIA.includes(k.tagName) || !!k.querySelector('img, picture, video, canvas, svg'));
+    const aoLado = colunasIrmas.filter(colunaValida).flatMap((k) => [k, ...k.querySelectorAll('*')]).filter(visivel);
+    if (aoLado.some((el) => {
       const c = el.getBoundingClientRect();
       const sobreposto = Math.min(c.bottom, hr.bottom) - Math.max(c.top, hr.top);
       return c.width >= 120 && c.height >= 60 && c.left >= hr.right - 4 && sobreposto >= sobreposicaoMinima;
@@ -195,7 +252,7 @@ const secoes = await page.evaluate((PESO) => {
       if (midias.length && textuais.length) corpo = 'split com ' + tipoMidia(midias[0]);
       else if (midias.length >= 2) corpo = 'faixa de fotos';
       else if (midias.length === 1) corpo = 'split com ' + tipoMidia(midias[0]); // título numa coluna, a mídia na outra
-      else if (melhor.juntos.some((f) => controles(f) >= 4)) corpo = 'configurador';
+      else if (configuradorUnico(melhor.juntos)) corpo = 'configurador';
       else if (melhor.juntos.every(colunaDeLista)) corpo = 'lista';
       else {
         const larg = melhor.juntos.map((f) => f.getBoundingClientRect().width);

@@ -39,7 +39,10 @@ const caixa = (t, extra = '') => `<article style="background:#eee;padding:16px">
 const cartoes = (titulo, extra = '') => `<section><h2>${titulo}</h2><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">${caixa('Um', extra)}${caixa('Dois', extra)}${caixa('Três', extra)}</div></section>`;
 const lista = (titulo) => `<section><h2>${titulo}</h2><ul><li>Primeira frase da lista.</li><li>Segunda frase da lista.</li><li>Terceira frase da lista.</li><li>Quarta frase da lista.</li></ul></section>`;
 const ladoLista = (titulo) => `<section><div style="display:grid;grid-template-columns:1fr 2fr;gap:32px"><h2>${titulo}</h2><ul><li>Frase um da lista.</li><li>Frase dois da lista.</li><li>Frase três da lista.</li></ul></div></section>`;
-const splitImg = (titulo) => `<section><h2>${titulo}</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center"><div style="background:#ccc;height:260px" role="img" aria-label="Foto de controle"></div><p>Texto ao lado do quadro, para a seção ler como split.</p></div></section>`;
+// 3.5.13 (achado 7): o quadro é uma <img> de verdade; um <div role=img> não é mídia para o gate, e o "Fecho" de todos os controles
+// saía "título à esquerda + cartões" em vez de split, sem o teste dizer.
+const FOTO = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27260%27%3E%3Crect width=%27400%27 height=%27260%27 fill=%27%23ccc%27/%3E%3C/svg%3E';
+const splitImg = (titulo) => `<section><h2>${titulo}</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center"><img alt="Foto de controle" src="${FOTO}" style="width:100%;height:260px;background:#ccc"><p>Texto ao lado da foto, para a seção ler como split.</p></div></section>`;
 
 // Configurador: coluna de escolhas (fieldsets com radios) ao lado de um resumo (o rótulo), com
 // larguras PARECIDAS (a coluna da esquerda tem 1,25x a da direita: 80%), como na Torra Clara.
@@ -76,8 +79,8 @@ const P = {
     + cartoes('Planos', '<ul><li>Item um</li><li>Item dois</li><li>Item três</li></ul>')
     + cartoes('Mais planos', '<ul><li>Item um</li><li>Item dois</li><li>Item três</li></ul>') + splitImg('Fecho')),
   // 2. defeito vizinho
-  centroCurtoEUmCartoes: pagina('centro-curto', hero + ladoLista('Situações') + centroCurto('Situações') + lista('Passos') + splitImg('Fecho')),
-  doisCentrosCurtos: pagina('dois-centros-curtos', hero + ladoLista('Situações') + centroCurto('Situações') + lista('Passos') + centroCurto('Grupo ou particular') + splitImg('Fecho')),
+  centroCurtoEUmCartoes: pagina('centro-curto', hero + ladoLista('Situações') + centroCurto('Cenários do dia') + lista('Passos') + splitImg('Fecho')),
+  doisCentrosCurtos: pagina('dois-centros-curtos', hero + ladoLista('Situações') + centroCurto('Cenários do dia') + lista('Passos') + centroCurto('Grupo ou particular') + splitImg('Fecho')),
   ladoDeVerdade: pagina('lado-de-verdade', hero + ladoDeVerdade('Quem somos') + lista('Passos') + splitImg('Fecho')),
   conteudoAbaixoNaoELado: pagina('conteudo-abaixo-nao-e-lado', hero + abaixoDoLado('Quem somos') + lista('Passos') + splitImg('Fecho')),
 };
@@ -105,8 +108,8 @@ function rodar(nome, url, esperado, padroes = [], proibidos = []) {
 
 const casos = [
   // 1. o que a Torra Clara tem: configurador ao lado do resumo, depois perguntas em 2 colunas
-  ['ritmo-configurador-ao-lado-do-resumo-nao-e-cartoes', P.configuradorEFaq, 0, [/PASSA/, /configurador/], [/"título à esquerda \+ cartões"/, /vizinhas iguais: [1-9]/]],
-  ['ritmo-faq-em-duas-colunas-e-lista-nao-cartoes', P.configuradorEFaq, 0, [/título à esquerda \+ lista/]],
+  ['ritmo-configurador-ao-lado-do-resumo-nao-e-cartoes', P.configuradorEFaq, 0, [/PASSA/, /Monte o seu plano\s+título à esquerda \+ configurador/], [/Monte o seu plano\s+título à esquerda \+ cartões/, /vizinhas iguais: [1-9]/]],
+  ['ritmo-faq-em-duas-colunas-e-lista-nao-cartoes', P.configuradorEFaq, 0, [/PASSA/, /Dúvidas antes de assinar\s+título à esquerda \+ lista/], [/Dúvidas antes de assinar\s+título à esquerda \+ cartões/]],
   // o que continua reprovando
   ['ritmo-dois-configuradores-vizinhos-reprovam', P.doisConfiguradores, 1, [/seções vizinhas com o mesmo esqueleto \("título à esquerda \+ configurador"\)/]],
   ['ritmo-duas-faqs-em-colunas-vizinhas-reprovam', P.duasFaqs, 1, [/seções vizinhas com o mesmo esqueleto \("título à esquerda \+ lista"\)/]],
@@ -115,10 +118,10 @@ const casos = [
   ['ritmo-cartoes-com-botao-e-campo-continuam-cartoes', P.cartoesComControlesVizinhos, 1, [/seções vizinhas com o mesmo esqueleto \("título à esquerda \+ cartões"\)/]],
   ['ritmo-cartoes-com-lista-dentro-continuam-cartoes', P.cartoesComListaDentro, 1, [/seções vizinhas com o mesmo esqueleto \("título à esquerda \+ cartões"\)/]],
   // 2. defeito vizinho
-  ['ritmo-lado-titulo-curto-centralizado-nao-e-lado', P.centroCurtoEUmCartoes, 0, [/PASSA/, /título centralizado \+ cartões/], [/título ao lado do conteúdo \+ cartões/]],
-  ['ritmo-lado-dois-titulos-curtos-centralizados-reprovam', P.doisCentrosCurtos, 1, [/2 seções no formato "título centralizado \+ cartões"/]],
-  ['ritmo-lado-titulo-de-lado-de-verdade-continua-lado', P.ladoDeVerdade, 0, [/PASSA/, /título ao lado do conteúdo \+ cartões/, /há conteúdo ao lado do título/]],
-  ['ritmo-lado-conteudo-abaixo-do-titulo-nao-e-lado', P.conteudoAbaixoNaoELado, 0, [/PASSA/], [/QUEM SOMOS.*título ao lado/i]],
+  ['ritmo-lado-titulo-curto-centralizado-nao-e-lado', P.centroCurtoEUmCartoes, 0, [/PASSA/, /Cenários do dia\s+título centralizado \+ cartões/], [/Cenários do dia\s+título ao lado do conteúdo/]],
+  ['ritmo-lado-dois-titulos-curtos-centralizados-reprovam', P.doisCentrosCurtos, 1, [/2 seções no formato "título centralizado \+ cartões" \("Cenários do dia", "Grupo ou particular"\)/]],
+  ['ritmo-lado-titulo-de-lado-de-verdade-continua-lado', P.ladoDeVerdade, 0, [/PASSA/, /Quem somos\s+título ao lado do conteúdo \+ cartões/, /há conteúdo ao lado do título/]],
+  ['ritmo-lado-conteudo-abaixo-do-titulo-nao-e-lado', P.conteudoAbaixoNaoELado, 0, [/PASSA/, /Quem somos\s+título à esquerda/], [/Quem somos\s+título ao lado/]],
 ];
 
 (async () => {
