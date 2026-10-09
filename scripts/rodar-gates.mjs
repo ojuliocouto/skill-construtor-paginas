@@ -117,6 +117,8 @@ export function aspas(s) {
 // (o py.mjs e o Python dele, o navegador do gate), senão sobra processo pesado rodando escondido.
 const VIVOS = new Set();
 const NO_WINDOWS = process.platform === 'win32';
+/** Marca que os gates de navegador imprimem quando a URL não responde (`servidor-no-ar.mjs`), ou o erro cru de uma queda no meio. */
+const SERVIDOR_CAIU = /servidor fora do ar em|net::ERR_CONNECTION_REFUSED/;
 
 function matarArvore(filho) {
   if (!filho || filho.pid === undefined) return;
@@ -158,13 +160,18 @@ export async function subirServidor(pasta, scriptsDir = AQUI) {
     });
     VIVOS.add(filho);
     let morreu = false;
+    let saida = '';
     filho.on('exit', () => { morreu = true; });
-    filho.stdout.on('data', () => {}); filho.stderr.on('data', () => {});
+    filho.stdout.on('data', (b) => { saida += b; }); filho.stderr.on('data', () => {});
     const limite = Date.now() + 15000;
-    while (!morreu && Date.now() < limite && !(await responde(porta))) await new Promise((r) => setTimeout(r, 60));
-    if (!morreu && (await responde(porta))) {
+    // O servidor imprime `URL: http://127.0.0.1:<porta>/`; se a porta pedida foi tomada por outro processo no meio do caminho,
+    // ele escolhe outra e é essa URL que vale (P11 da 3.5.10).
+    const urlImpressa = () => (/URL: (http:\/\/127\.0\.0\.1:(\d+)\/)/.exec(saida) || null);
+    while (!morreu && Date.now() < limite && !urlImpressa()) await new Promise((r) => setTimeout(r, 60));
+    const achada = urlImpressa();
+    if (!morreu && achada && (await responde(Number(achada[2])))) {
       return {
-        porta, url: `http://127.0.0.1:${porta}/`,
+        porta: Number(achada[2]), url: achada[1],
         parar: () => { VIVOS.delete(filho); matarArvore(filho); },
       };
     }
@@ -364,7 +371,20 @@ async function principal() {
       return;
     }
     const arquivo = path.join(gatesDir, `${g.nome}-r${rodada}.txt`);
-    const r = await executar(g, ctx, arquivo, o.tempoMax);
+    let r = await executar(g, ctx, arquivo, o.tempoMax);
+    // Servidor que caiu no meio do gate (P11, 3.5.10): o gate não opinou sobre a página. Sobe outro servidor para este gate
+    // e repete UMA vez. Reprovação sem a marca de "servidor fora do ar" nunca é repetida; com `--url` o servidor é do usuário
+    // e a mensagem do gate (como subir de novo) fica no relatório.
+    if (servidor && r.codigo !== 0 && SERVIDOR_CAIU.test(readFileSync(arquivo, 'utf8'))) {
+      servidor.parar();
+      renameSync(arquivo, path.join(gatesDir, `${g.nome}-r${rodada}-servidor-caiu.txt`));
+      process.stdout.write(`  o servidor de ${g.nome} caiu no meio do gate: subi outro e repito o gate uma vez\n`);
+      try { servidor = await subirServidor(dist, scriptsDir); ctx.url = servidor.url; }
+      catch (e) { servidor = null; resultados.set(g.nome, { codigo: 126, segundos: r.segundos, nota: e.message }); writeFileSync(arquivo, `${e.message}\n`); return; }
+      const segundosAntes = r.segundos;
+      r = await executar(g, ctx, arquivo, o.tempoMax);
+      r.segundos += segundosAntes;
+    }
     if (servidor) servidor.parar();
     resultados.set(g.nome, r);
     process.stdout.write(`  ${r.codigo === 0 ? 'passa  ' : 'REPROVA'} ${g.nome} (${fmt(r.segundos)} s)\n`);

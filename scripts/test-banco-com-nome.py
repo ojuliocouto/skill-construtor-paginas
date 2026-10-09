@@ -89,5 +89,56 @@ class BancoComNome(unittest.TestCase):
         self.assertEqual(p, [])
 
 
+    # 3.5.10 (achado P10 da página Torra Clara): "Belo Horizonte" no alt foi lido como nome de pessoa.
+    def test_cidade_no_alt_nao_e_pessoa(self):
+        for alt in ("Café torrado em Belo Horizonte", "Belo Horizonte", "Lavoura no Sul de Minas",
+                    "Praça no Rio de Janeiro", "Vista de São Paulo", "Entrega para Vila Nova do Sul",
+                    "Colheita em Santo Antônio do Amparo", "Poço Fundo, Minas Gerais"):
+            p, a = self.avaliar(self.projeto(pagina("A mesa chegou montada.", alt=alt)))
+            self.assertEqual((p, a), ([], []), alt)
+
+    def test_cidade_na_legenda_e_no_depoimento_nao_e_pessoa(self):
+        p, a = self.avaliar(self.projeto(pagina("O café chegou fresco. Belo Horizonte", legenda="Sul de Minas")))
+        self.assertEqual((p, a), ([], []))
+
+    def test_cidade_com_acento_e_caixa_diferente_tambem_vale(self):
+        p, a = self.avaliar(self.projeto(pagina("A mesa chegou.", alt="Foto em SAO PAULO e em sao paulo")))
+        self.assertEqual((p, a), ([], []))
+
+    def test_pessoa_com_cidade_ao_lado_continua_avisando_so_da_pessoa(self):
+        p, _ = self.avaliar(self.projeto(pagina("A mesa chegou montada. Marina Coutinho, Belo Horizonte")))
+        self.assertEqual(len(p), 1, p)
+        self.assertIn("Marina Coutinho", p[0])
+        self.assertNotIn("Belo Horizonte", p[0])
+
+    def test_pessoa_de_uma_cidade_continua_reprovando(self):
+        p, _ = self.avaliar(self.projeto(pagina("A mesa chegou.", alt="Marina Coutinho de Belo Horizonte")))
+        self.assertEqual(len(p), 1, p)
+        self.assertIn('"Marina Coutinho"', p[0])
+
+    def test_pessoa_real_no_depoimento_do_caso_original_continua_avisando_no_teste_ficticio(self):
+        raiz = self.projeto(pagina("Torra no Sul de Minas. Helena Duarte, Belo Horizonte"),
+                            briefing="Negócio fictício de teste: sim\n")
+        p, a = self.avaliar(raiz)
+        self.assertEqual(p, [])
+        self.assertEqual(len(a), 1, a)
+        self.assertIn("Helena Duarte", a[0])
+        self.assertNotIn("Belo Horizonte", a[0])
+        self.assertNotIn("Sul de Minas", a[0])
+
+    def test_nome_de_pessoa_depois_de_em_nao_e_brecha_para_nome_sem_lugar_conhecido(self):
+        # "em" + nome só tira o nome quando a palavra de antes é locativa; "foto de" + nome continua pessoa.
+        p, _ = self.avaliar(self.projeto(pagina("A mesa chegou.", alt="Foto de Marina Coutinho")))
+        self.assertEqual(len(p), 1, p)
+
+    def test_lugar_fora_da_lista_depois_de_em_ou_para_nao_e_pessoa(self):
+        for alt in ("Foto tirada em Pedra Azul", "Entrega para Pedra Azul", "Fazenda na Pedra Azul"):
+            p, a = self.avaliar(self.projeto(pagina("A mesa chegou montada.", alt=alt)))
+            self.assertEqual((p, a), ([], []), alt)
+        # sem a palavra de lugar colada, o mesmo nome volta a ser lido como pessoa
+        p, _ = self.avaliar(self.projeto(pagina("A mesa chegou montada.", alt="Pedra Azul sorrindo")))
+        self.assertEqual(len(p), 1, p)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

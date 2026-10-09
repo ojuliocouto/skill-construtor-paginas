@@ -69,5 +69,69 @@ class GateRelatorio(unittest.TestCase):
         self.assertEqual(self.checar(f"- Na v4, títulos a 147 px (`{outra}`)\n"), [])
 
 
+    # 3.5.10 (achado P21 da página Torra Clara): a medida da rodada 1 é história, não o estado entregue.
+    # Marcador explícito no começo da linha (ou da célula) isenta só da regra "anterior à dist/"; o número
+    # continua precisando estar no arquivo citado, e quem afirma o estado atual continua cobrado.
+    def velho(self, nome="rodada1-simetria.txt", conteudo="títulos com 147 px de diferença\n"):
+        arq = self.raiz / "gates" / nome
+        arq.write_text(conteudo, encoding="utf-8")
+        antigo = time.time() - 3600
+        os.utime(arq, (antigo, antigo))
+        return f"gates/{nome}"
+
+    def test_medida_historica_com_marcador_de_rodada_passa(self):
+        arq = self.velho()
+        self.assertEqual(self.checar(f"- rodada 1: títulos a 147 px de diferença (`{arq}`)\n"), [])
+
+    def test_marcadores_antes_e_historico_e_negrito_e_tabela_passam(self):
+        arq = self.velho()
+        for linha in (f"- Antes: títulos a 147 px (`{arq}`)",
+                      f"- **Rodada 1:** títulos a 147 px (`{arq}`)",
+                      f"- histórico: títulos a 147 px (`{arq}`)",
+                      f"| rodada anterior: títulos a 147 px | `{arq}` |",
+                      f"| Duas formas | rodada 1: 147 px | `{arq}` |"):
+            self.assertEqual(self.checar(linha + "\n"), [], linha)
+
+    def test_o_mesmo_arquivo_velho_sem_marcador_continua_reprovando(self):
+        arq = self.velho()
+        p = self.checar(f"- Títulos a 147 px de diferença (`{arq}`)\n")
+        self.assertTrue(any("anterior à dist" in x for x in p), p)
+
+    def test_marcador_no_meio_da_frase_nao_isenta(self):
+        arq = self.velho()
+        p = self.checar(f"- Títulos a 147 px de diferença (rodada 1: `{arq}`)\n")
+        self.assertTrue(any("anterior à dist" in x for x in p), p)
+
+    def test_marcador_com_afirmacao_do_estado_atual_na_mesma_linha_nao_isenta(self):
+        arq = self.velho(conteudo="títulos com 147 px de diferença\ne 0 px depois\n")
+        for linha in (f"- rodada 1: 147 px; agora 0 px (`{arq}`)",
+                      f"- antes: 147 px, na versão atual 0 px (`{arq}`)",
+                      f"- rodada 1: 147 px, final 0 px (`{arq}`)"):
+            p = self.checar(linha + "\n")
+            self.assertTrue(any("anterior à dist" in x for x in p), linha + " " + str(p))
+
+    def test_historico_continua_exigindo_o_arquivo_e_o_numero(self):
+        arq = self.velho()
+        sem_arquivo = self.checar("- rodada 1: títulos a 147 px de diferença\n")
+        self.assertTrue(sem_arquivo and "sem citar" in sem_arquivo[0], sem_arquivo)
+        numero_errado = self.checar(f"- rodada 1: títulos a 12 px de diferença (`{arq}`)\n")
+        self.assertTrue(numero_errado and "não aparece" in numero_errado[0], numero_errado)
+
+    def test_marcador_numa_linha_nao_isenta_a_linha_vizinha(self):
+        arq = self.velho()
+        p = self.checar(f"- rodada 1: títulos a 147 px (`{arq}`)\n- Títulos a 147 px (`{arq}`)\n")
+        self.assertEqual(len(p), 1, p)
+        self.assertIn("linha 2", p[0])
+
+    def test_o_relatorio_lista_as_linhas_tratadas_como_historico(self):
+        arq = self.velho()
+        rel = self.raiz / "relatorio.md"
+        rel.write_text(f"- rodada 1: títulos a 147 px (`{arq}`)\n", encoding="utf-8")
+        historicas = []
+        gate.checar(rel, base=self.raiz, dist=self.raiz / "dist", historicas=historicas)
+        self.assertEqual(len(historicas), 1)
+        self.assertIn("rodada 1", historicas[0])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

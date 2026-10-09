@@ -45,6 +45,7 @@ import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import fs from 'node:fs';
 import path from 'node:path';
+import { exigirServidor } from './servidor-no-ar.mjs';
 
 const require = createRequire(import.meta.url);
 function carregarPlaywright() {
@@ -139,6 +140,7 @@ const AJUDA = () => {
   return H;
 };
 
+await exigirServidor(URL_ALVO);   // servidor caído: uma mensagem clara (saída 3), não ERR_CONNECTION_REFUSED (P11)
 const navegador = await chromium.launch();
 const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 } });
 const page = await ctx.newPage();

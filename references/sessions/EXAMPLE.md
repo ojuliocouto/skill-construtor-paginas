@@ -18,4 +18,4 @@
 - `caminho/arquivo`: o que mudou
 
 ## Referência do projeto
-- Link para `references/projects/{slug}.md`
+- Link para `<projeto>/contexto-do-projeto.md` (na pasta do projeto, nunca na da skill)

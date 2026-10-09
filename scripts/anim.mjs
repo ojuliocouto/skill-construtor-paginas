@@ -28,6 +28,7 @@ import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import fs from 'node:fs';
 import path from 'node:path';
+import { exigirServidor } from './servidor-no-ar.mjs';
 
 const require = createRequire(import.meta.url);
 function carregarPlaywright() {
@@ -56,6 +57,7 @@ fs.mkdirSync(quadros, { recursive: true });
 
 const PADRAO = { entrada: [90, 550, 2300], heroi: [80, 650, 2200], rolagem: [700, 700, 700] };
 const TELAS = [['desk', 1440, 900, false], ['mob', 390, 844, true]];
+await exigirServidor(URL_ALVO);   // servidor caído: uma mensagem clara (saída 3), não ERR_CONNECTION_REFUSED (P11)
 const navegador = await chromium.launch();
 let falhou = false;
 

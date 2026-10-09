@@ -65,6 +65,19 @@ const rodar = (args) => spawnSync(process.execPath, [path.join(__dirname, 'gerar
   const base2 = await pixel(path.join(proj, 'og-cliente.jpg'), 900, 610);
   checa('sem aviso a base NÃO é a faixa escura', base2[0] > 100, JSON.stringify(base2));
 
+  // 2b. (3.5.10, P7) o padrão não escolhe em silêncio: várias fontes sem --fonte, e cores sem --cor-fundo/--cor-texto, vêm com ATENÇÃO
+  fs.copyFileSync(path.join(__dirname, 'fixtures', 'larga.ttf'), path.join(proj, 'fonts', 'a-corpo.ttf'));
+  const r2b = rodar(['--projeto', proj, '--titulo', 'Torra clara', '--foto', 'foto.png', '--saida', 'og-p7a.jpg', '--html-saida', 'og-p7a.html']);
+  checa('P7: duas fontes em fonts/ e nenhuma --fonte: avisa qual usou e manda passar --fonte', r2b.status === 0 && /ATEN[ÇC][ÃA]O fonte[^\n]*a-corpo\.ttf[^\n]*--fonte/i.test(r2b.stdout), r2b.stdout.split('\n').find((l) => /fonte/i.test(l)) || '');
+  checa('P7: sem --cor-fundo e --cor-texto avisa que as cores padrão não são da marca e manda passar as da paleta do plano', /ATEN[ÇC][ÃA]O cores[^\n]*--cor-fundo[^\n]*--cor-texto/i.test(r2b.stdout), r2b.stdout.split('\n').find((l) => /cores/i.test(l)) || '');
+  const r2c = rodar(['--projeto', proj, '--titulo', 'Torra clara', '--foto', 'foto.png', '--fonte', 'fonts/marca.ttf', '--cor-fundo', '#f3e9d8', '--cor-texto', '#2a1a10', '--saida', 'og-p7b.jpg', '--html-saida', 'og-p7b.html']);
+  checa('P7: com --fonte e as duas cores não há ATENÇÃO nenhuma', r2c.status === 0 && !/ATEN[ÇC][ÃA]O/i.test(r2c.stdout), r2c.stdout.split('\n').find((l) => /ATEN/i.test(l)) || '');
+  const html2c = fs.readFileSync(path.join(proj, 'og-p7b.html'), 'utf8');
+  checa('P7: a fonte e as cores passadas chegam ao HTML (marca.ttf, fundo e texto)', /#f3e9d8/i.test(html2c) && /#2a1a10/i.test(html2c) && /MarcaOG/.test(html2c) && /fonte da marca.*marca\.ttf/i.test(r2c.stdout), r2c.stdout.split('\n').find((l) => /fonte/i.test(l)) || '');
+  const r2d = rodar(['--projeto', proj, '--titulo', 'Torra clara', '--fonte', 'fonts/marca.ttf', '--cor-fundo', '#f3e9d8', '--saida', 'og-p7c.jpg']);
+  checa('P7: só uma das duas cores passada: avisa da que faltou (--cor-texto) e não da outra', /ATEN[ÇC][ÃA]O cores[^\n]*--cor-texto/i.test(r2d.stdout) && !/ATEN[ÇC][ÃA]O cores[^\n]*--cor-fundo/i.test(r2d.stdout), r2d.stdout.split('\n').find((l) => /cores/i.test(l)) || '');
+  fs.rmSync(path.join(proj, 'fonts', 'a-corpo.ttf'));
+
   // 3. sem fonte em fonts/: usa a do sistema e diz que é reserva
   fs.rmSync(path.join(proj, 'fonts', 'marca.ttf'));
   const r3 = rodar(['--projeto', proj, '--titulo', 'Móveis sob medida', '--foto', 'foto.png', '--ilustrativa', '--saida', 'og-reserva.jpg']);

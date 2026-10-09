@@ -38,6 +38,8 @@
 import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
+import { exigirServidor } from './servidor-no-ar.mjs';
+import { DETECTAR_TOPO } from './topo-da-pagina.mjs';
 
 const require = createRequire(import.meta.url);
 function carregarPlaywright() {
@@ -51,9 +53,46 @@ const { chromium } = carregarPlaywright();
 const args = process.argv.slice(2);
 const URL_ALVO = args[args.indexOf('--url') + 1];
 if (!URL_ALVO || URL_ALVO.startsWith('--')) {
-  console.error('uso: node gate-responsivo.mjs --url <url>');
+  console.error('uso: node gate-responsivo.mjs --url <url> [--so-primeira-tela]');
   process.exit(2);
 }
+// --so-primeira-tela: roda só a medida da primeira tela visível no celular (G22), sem as 12 telas. Para teste e para conserto rápido do topo.
+const SO_PRIMEIRA_TELA = args.includes('--so-primeira-tela');
+
+/* PRIMEIRA TELA VISÍVEL NO CELULAR (G22, 3.5.10). A tela do celular não é a área que a pessoa vê: o navegador ocupa um pedaço com
+   as barras. Duas páginas passaram neste gate com o topo errado porque ele media o botão contra a janela cheia (390x844):
+   a v7 do Studio Equilíbrio tinha o botão em 810 de 844 e, na área que o Safari mostra, ficava 146 px abaixo da dobra; a Torra
+   Clara deixava o texto de apoio fora.
+
+   As alturas vêm da tabela de aparelhos do Playwright 1.61.1 (`require('playwright').devices`), que guarda para cada aparelho a
+   tela e a área da página com as barras do navegador à vista:
+     - iPhone 12, 13 e 14: tela 390x844, área da página 390x664 (Safari com a barra de endereço e a de ferramentas à vista, como a
+       página abre). 180 px vão para as barras e a área de status.
+     - Pixel 5: tela 393x851, área 393x727 (Chrome com barra de endereço e a barra de navegação de 3 botões): 124 px de barras.
+       Aplicados à tela de 360x740 (Galaxy S8 e semelhantes), dão 360x616.
+     - iPhone SE e 8 (tela 375x667): a tabela do Playwright só tem a tela, sem a área. A estimativa de 553 (status 20 + Safari 94)
+       não tem fonte medida, então essa tela AVISA e não reprova: gate que reprova por número chutado mente.
+   O que precisa caber INTEIRO entre o que é fixo em cima e o que é fixo embaixo, em scrollY 0, depois das animações de entrada:
+   a manchete (h1, todas as linhas), o texto de apoio (o primeiro parágrafo do herói depois do h1) e o botão principal, com
+   FOLGA_PE px de folga até o pé (a barra do navegador é uma barra fixa: a mesma folga de 8 px que este gate cobra de barra fixa).
+
+   CONFLITO COM A FOTO MÍNIMA DE 35%, resolvido assim: a foto se mede contra a ÁREA VISÍVEL (não contra a tela cheia) e o texto
+   ganha. A foto precisa de 35% da área visível; se ela não chega a 35% porque manchete, apoio e botão ocupam o resto (crescer a
+   foto até 35% empurraria o botão para menos de 8 px do pé), vale o piso de PISO_FOTO (20%). Abaixo do piso, a manchete é que está
+   grande demais para o celular. Por isso, nas telas que têm área visível medida (390 e 360), a regra antiga de 35% da tela cheia
+   sai e fica só a da área visível; em 430x932 e 320x568, sem par medido, segue a regra antiga. */
+const PRIMEIRA_TELA = [
+  // [nome, largura, altura visível, altura da tela, barra?]
+  ['iphone 12 a 14 com as barras do Safari', 390, 664, 844, true],
+  ['android 360 com as barras do Chrome', 360, 616, 740, true],
+  ['iphone SE com as barras do Safari (estimativa)', 375, 553, 667, false],
+];
+const FOLGA_PE = 8;
+const PISO_FOTO = 0.20;
+const TELAS_COM_PAR_VISIVEL = new Set(PRIMEIRA_TELA.filter((t) => t[4]).map((t) => `${t[1]}x${t[3]}`));
+
+// O que é o topo (herói, manchete, apoio, botão principal): definido uma vez em topo-da-pagina.mjs, usado aqui e no medir-dobra.mjs.
+
 
 /* Telas escolhidas por USO real, nao por breakpoint bonito. A 1366x768 esta aqui porque e a
    mais comum em notebook no Brasil e foi exatamente onde o defeito apareceu. */
@@ -159,19 +198,23 @@ async function caixaAssentada(el, teto = 2000, tolerancia = 1) {
   return anterior;
 }
 
+await exigirServidor(URL_ALVO);   // servidor caído: uma mensagem clara (saída 3), não ERR_CONNECTION_REFUSED (P11)
 const navegador = await chromium.launch();
 
 console.log('\nGATE DE RESPONSIVIDADE  ' + URL_ALVO);
 console.log('='.repeat(88));
+if (!SO_PRIMEIRA_TELA) {
 console.log('tela'.padEnd(18) + 'dim'.padEnd(12) + 'overflow'.padEnd(10) + 'CTA'.padEnd(8) + 'toque'.padEnd(8) + 'texto'.padEnd(8) + 'imagem');
 console.log('-'.repeat(88));
+}
 
-for (const [nome, w, h, mob] of TELAS) {
+for (const [nome, w, h, mob] of (SO_PRIMEIRA_TELA ? [] : TELAS)) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
   const page = await ctx.newPage();
   try { await page.goto(URL_ALVO, { waitUntil: 'networkidle', timeout: 45000 }); }
   catch { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
   await page.waitForTimeout(1200);
+  await page.evaluate(DETECTAR_TOPO);
 
   const r = await page.evaluate((ehMobile) => {
     const doc = document.documentElement;
@@ -247,10 +290,11 @@ for (const [nome, w, h, mob] of TELAS) {
       }
     }
 
-    // CTA principal acima da dobra: regra de pagina de venda.
-    const heroi = document.querySelector('section');
-    const cta = heroi && heroi.querySelector('a[href^="#"], a[href^="tel:"], a[href^="http"], button');
+    // CTA principal acima da dobra: regra de pagina de venda. O botão principal é o de `__topo` (G22): o primeiro com caixa
+    // depois do h1, nunca o link da marca que volta para o próprio topo.
+    const cta = window.__topo().botao;
     saida.ctaBottom = cta ? Math.round(cta.getBoundingClientRect().bottom) : null;
+    saida.ctaTexto = cta ? (cta.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 30) : null;
     saida.viewportH = window.innerHeight;
 
     // A lista de botoes candidatos sai daqui; a MEDICAO do fundo acontece fora do
@@ -537,7 +581,7 @@ for (const [nome, w, h, mob] of TELAS) {
   if (r.overflow > 0) falhas.push(`${onde}: overflow horizontal de ${r.overflow}px`);
   if (r.ctaSemContraste?.length)
     falhas.push(`${onde}: CTA camuflado no fundo (< 3:1): ${r.ctaSemContraste.slice(0, 3).join(', ')}`);
-  if (!ctaOk) falhas.push(`${onde}: CTA do heroi abaixo da dobra (termina em ${r.ctaBottom}px de ${r.viewportH}px)`);
+  if (!ctaOk) falhas.push(`${onde}: CTA do heroi ${r.ctaTexto ? '"' + r.ctaTexto + '" ' : ''}abaixo da dobra (termina em ${r.ctaBottom}px de ${r.viewportH}px)`);
   if (r.botaoQuebrado?.length) falhas.push(`${onde}: botao em mais de uma linha: ${r.botaoQuebrado.slice(0, 3).join(', ')}`);
   if (r.trechoSemBotao) falhas.push(`${onde}: ${r.trechoSemBotao.telas.toFixed(1)} telas sem nenhum botao visivel a partir de y ${r.trechoSemBotao.de} (maximo 2): barra fixa no celular ou botao repetido`);
   if (mob && r.fixoDemais && r.fixoDemais.px > LIMITE_FIXO * h)
@@ -546,7 +590,8 @@ for (const [nome, w, h, mob] of TELAS) {
     falhas.push(`${onde}: ${r.botoesNaTela.n} botões de ação na mesma tela em scrollY ${r.botoesNaTela.y} (${r.botoesNaTela.nomes.slice(0, 3).join(' | ')}): no máximo 1 por tela; a barra fixa some quando há botão da página à vista`);
   if (mob && r.cobertos.length)
     falhas.push(`${onde}: botão coberto ou encostado na barra fixa (menos de 8 px): ${[...new Set(r.cobertos)].slice(0, 3).join(', ')}`);
-  if (mob && r.fotoHeroi && r.fotoHeroi.frac < MINIMO_FOTO)
+  // G22: em 390x844 e 360x740 a foto se mede contra a área visível (bloco PRIMEIRA_TELA), não contra a tela cheia.
+  if (mob && r.fotoHeroi && r.fotoHeroi.frac < MINIMO_FOTO && !TELAS_COM_PAR_VISIVEL.has(`${w}x${h}`))
     falhas.push(`${onde}: foto do herói ocupa ${r.fotoHeroi.px}px na primeira tela (${(100 * r.fotoHeroi.frac).toFixed(1)}% da altura, mínimo ${MINIMO_FOTO * 100}%): no celular a foto entra antes do texto longo`);
   if (r.toqueRuim.length) falhas.push(`${onde}: ${r.toqueRuim.length} alvo(s) de toque < 44px: ${r.toqueRuim.slice(0, 3).join(', ')}`);
   if (r.textoPequeno.length) falhas.push(`${onde}: texto de corpo < 14px: ${r.textoPequeno.slice(0, 3).join(', ')}`);
@@ -557,13 +602,87 @@ for (const [nome, w, h, mob] of TELAS) {
 
   await ctx.close();
 }
+
+// PRIMEIRA TELA VISÍVEL NO CELULAR (G22). Contexto novo com a altura da área visível: a página se monta nela como no aparelho
+// (unidades vh e svh, mídia por altura), e a medida é em scrollY 0 depois das animações de entrada.
+console.log('-'.repeat(88));
+console.log(`primeira tela visível no celular (área da página com as barras do navegador; folga mínima no pé ${FOLGA_PE} px; foto 35% da área, piso ${PISO_FOTO * 100}% quando o texto ocupa o resto)`);
+for (const [nome, w, hv, ht, barra] of PRIMEIRA_TELA) {
+  const ctx = await navegador.newContext({ viewport: { width: w, height: hv }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+  const page = await ctx.newPage();
+  try { await page.goto(URL_ALVO, { waitUntil: 'networkidle', timeout: 45000 }); }
+  catch { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
+  await page.evaluate(() => document.fonts && document.fonts.ready);
+  await page.waitForTimeout(1200);
+  // Espera as animações de entrada com fim (no máximo 4 s): a medida é do topo assentado, não do meio do "sobe".
+  await page.evaluate(() => Promise.race([
+    Promise.all(document.getAnimations().filter((a) => a.effect && Number.isFinite(a.effect.getComputedTiming().endTime)).map((a) => a.finished.catch(() => null))),
+    new Promise((ok) => setTimeout(ok, 4000)),
+  ]));
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await page.waitForTimeout(300);
+  await page.evaluate(DETECTAR_TOPO);
+  const m = await page.evaluate(() => {
+    const t = window.__topo();
+    const vh = window.innerHeight;
+    // Faixa livre: entre o que é fixo em cima (cabeçalho grudado) e o que é fixo embaixo (barra da página).
+    let topo = 0, base = vh;
+    for (const el of document.querySelectorAll('body *')) {
+      const cs = getComputedStyle(el);
+      if (cs.position !== 'fixed' && cs.position !== 'sticky') continue;
+      if (el.checkVisibility && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+      const c = el.getBoundingClientRect();
+      if (c.height < 20 || c.width < window.innerWidth * 0.5) continue;
+      if (c.top <= 1 && c.bottom > 0 && c.bottom < vh * 0.5) topo = Math.max(topo, c.bottom);
+      if (c.bottom >= vh - 1 && c.top < vh && c.top > vh * 0.5) base = Math.min(base, c.top);
+    }
+    const faixa = (el) => { const q = el && t.linhas(el); return q ? [Math.round(q.top), Math.round(q.bottom)] : null; };
+    const caixa = (el) => { if (!el) return null; const c = el.getBoundingClientRect(); return [Math.round(c.top), Math.round(c.bottom)]; };
+    const fotos = [...t.heroi.querySelectorAll('img, video')].filter((f) => (f.naturalWidth || f.videoWidth || 0) >= 300 || f.getBoundingClientRect().width >= window.innerWidth * 0.5);
+    const foto = fotos.length ? Math.max(...fotos.map((f) => { const c = f.getBoundingClientRect(); return Math.max(0, Math.min(c.bottom, base) - Math.max(c.top, topo)); })) : null;
+    return {
+      vh, topo: Math.round(topo), base: Math.round(base),
+      h1: faixa(t.h1), apoio: faixa(t.apoio), botao: caixa(t.botao),
+      botaoTexto: t.botao ? (t.botao.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 30) : null,
+      foto: foto === null ? null : Math.round(foto),
+    };
+  });
+  await ctx.close();
+  const onde = `primeira tela visível ${w}x${hv} (${nome}; tela ${w}x${ht})`;
+  const problemas = [];
+  const fora = (f) => !f || f[0] < m.topo || f[1] > m.base;
+  if (!m.h1) problemas.push('a página não tem h1 visível: a manchete do topo é o h1');
+  else if (fora(m.h1)) problemas.push(`manchete (h1) de ${m.h1[0]} a ${m.h1[1]} px, fora da área visível de ${m.topo} a ${m.base} px: ela inteira precisa aparecer sem rolar`);
+  if (m.apoio && fora(m.apoio)) problemas.push(`texto de apoio (o primeiro parágrafo depois do h1) de ${m.apoio[0]} a ${m.apoio[1]} px, fora da área visível de ${m.base} px: ele vem antes do botão ou cabe junto`);
+  const folga = m.botao ? m.base - m.botao[1] : null;
+  if (!m.botao) problemas.push('sem botão principal no herói (link ou botão com caixa depois do h1)');
+  else if (m.botao[1] > m.base) problemas.push(`botão principal "${m.botaoTexto}" termina em ${m.botao[1]} px, fora da área visível de ${m.base} px (${m.botao[1] - m.base} px abaixo da dobra)`);
+  else if (folga < FOLGA_PE) problemas.push(`botão principal "${m.botaoTexto}" com folga de ${folga} px no pé (mínimo ${FOLGA_PE}): encostado na barra do navegador`);
+  // Foto: 35% da área visível; o texto ganha quando a foto não chega lá porque manchete, apoio e botão ocupam o resto.
+  const area = m.base - m.topo;
+  let fotoTxt = 'sem foto no herói';
+  if (m.foto !== null) {
+    const sobra = folga === null ? 0 : Math.max(0, folga - FOLGA_PE);
+    const textoOcupa = m.foto + sobra < MINIMO_FOTO * area;
+    const minimo = textoOcupa ? PISO_FOTO : MINIMO_FOTO;
+    fotoTxt = `foto ${m.foto} px (${(100 * m.foto / area).toFixed(1)}%, ${textoOcupa ? `piso ${PISO_FOTO * 100}%: o texto ocupa o resto` : `mínimo ${MINIMO_FOTO * 100}%`})`;
+    if (m.foto < minimo * area) {
+      problemas.push(textoOcupa
+        ? `foto do herói ocupa ${m.foto} px da área visível (${(100 * m.foto / area).toFixed(1)}%, abaixo do piso de ${PISO_FOTO * 100}%): a manchete e o apoio estão grandes demais para o celular; encurte ou diminua o texto, não a foto`
+        : `foto do herói ocupa ${m.foto} px da área visível (${(100 * m.foto / area).toFixed(1)}%, mínimo 35%) e sobram ${sobra} px embaixo do botão: a foto pode crescer sem empurrar o texto`);
+    }
+  }
+  const fx = (f) => (f ? `${f[0]} a ${f[1]}` : 'nenhum');
+  console.log(`  ${onde}: manchete ${fx(m.h1)}, apoio ${fx(m.apoio)}, botão ${fx(m.botao)}${m.botaoTexto ? ` "${m.botaoTexto}"` : ''}, folga ${folga === null ? '-' : folga} px, ${fotoTxt}${m.topo ? `, fixo em cima até ${m.topo}` : ''}${m.base < m.vh ? `, fixo embaixo desde ${m.base}` : ''}  ${problemas.length ? (barra ? 'FALHA' : 'AVISO') : 'ok'}`);
+  for (const p of problemas) (barra ? falhas : avisos).push(`${onde}: ${p}`);
+}
 await navegador.close();
 
 console.log('='.repeat(88));
 avisos.forEach((a) => console.log('  aviso: ' + a));
 if (falhas.length) {
   falhas.forEach((f) => console.log('  FALHA: ' + f));
-  console.log(`\n  REPROVA: ${falhas.length} problema(s) de responsividade em ${TELAS.length} telas.`);
+  console.log(`\n  REPROVA: ${falhas.length} problema(s) de responsividade em ${SO_PRIMEIRA_TELA ? 0 : TELAS.length} telas e ${PRIMEIRA_TELA.length} primeiras telas visíveis.`);
   console.log('  Duas lembrancas que custaram caro aqui:');
   console.log('   - ALTURA conta tanto quanto largura: janela baixa com titulo grande empurra o');
   console.log('     CTA pra fora da dobra, e teste de largura sozinho nunca pega isso.');
@@ -571,4 +690,4 @@ if (falhas.length) {
   console.log('     Consertar so o primeiro ja produziu botao verde escuro em secao verde escura.\n');
   process.exit(1);
 }
-console.log(`  PASSA: ${TELAS.length} telas, nenhum problema de responsividade.\n`);
+console.log(`  PASSA: ${SO_PRIMEIRA_TELA ? 0 : TELAS.length} telas e ${PRIMEIRA_TELA.length} primeiras telas visíveis, nenhum problema de responsividade.\n`);

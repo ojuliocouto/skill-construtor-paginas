@@ -12,7 +12,9 @@
  *   --ilustrativa  a foto é de banco (não é do cliente): põe a faixa "Imagem ilustrativa" na base (o gate-imagens.py exige
  *                  esse aviso na prévia do link, que é a primeira coisa que a visitante vê no WhatsApp)
  *   --foto         relativa ao projeto; vai à direita, recortada para preencher (object-fit: cover)
- *   --fonte        padrão: o primeiro arquivo de fontes em <projeto>/fonts/ (a fonte do título)
+ *   --fonte        a fonte do TÍTULO (a do corpo costuma vir antes em ordem alfabética). Sem ela, usa o primeiro arquivo de
+ *                  <projeto>/fonts/ e, se houver mais de um, AVISA qual escolheu (3.5.10)
+ *   --cor-fundo, --cor-texto   as cores da paleta do plano visual. Sem elas, usa verde escuro e off-white que NÃO são da marca e AVISA (3.5.10)
  * Saída: <projeto>/<saida> (JPEG 1200x630). O endereço da og:image na página é absoluto no domínio final (ver o passo f).
  */
 import { createRequire } from 'node:module';
@@ -33,8 +35,11 @@ const valor = (n, p = null) => { const i = args.indexOf(n); return i >= 0 && arg
 const projeto = path.resolve(valor('--projeto', '.'));
 const titulo = (valor('--titulo', '') || '').trim();
 const ilustrativa = args.includes('--ilustrativa');
-const corFundo = valor('--cor-fundo', '#1f2622');
-const corTexto = valor('--cor-texto', '#f4f1ea');
+// 3.5.10 (P7): as cores padrão NÃO são da marca de ninguém. Sem --cor-fundo ou --cor-texto o script usa estas e AVISA no fim.
+const COR_FUNDO_PADRAO = '#1f2622', COR_TEXTO_PADRAO = '#f4f1ea';
+const corFundoArg = valor('--cor-fundo'), corTextoArg = valor('--cor-texto');
+const corFundo = corFundoArg || COR_FUNDO_PADRAO;
+const corTexto = corTextoArg || COR_TEXTO_PADRAO;
 const saida = path.resolve(projeto, valor('--saida', 'og-image.jpg'));
 const htmlSaida = valor('--html-saida');
 if (!titulo) { console.error('uso: node gerar-og-image.mjs --projeto <dir> --titulo "<título>" [--foto <arquivo>] [--ilustrativa] [--fonte <arquivo>]'); process.exit(2); }
@@ -55,6 +60,7 @@ if (fotoArg) {
 }
 
 let fonteArq = null;
+let fonteEscolhidaSemArg = null; // (3.5.10) quando o script escolheu entre várias, o aviso diz entre quantas
 const fonteArg = valor('--fonte');
 if (fonteArg) {
   fonteArq = path.resolve(projeto, fonteArg);
@@ -62,6 +68,7 @@ if (fonteArg) {
 } else if (fs.existsSync(path.join(projeto, 'fonts'))) {
   const achadas = fs.readdirSync(path.join(projeto, 'fonts')).filter((n) => FORMATO[path.extname(n).toLowerCase()]).sort();
   if (achadas.length) fonteArq = path.join(projeto, 'fonts', achadas[0]);
+  if (achadas.length > 1) fonteEscolhidaSemArg = achadas.length;
 }
 const fontFace = fonteArq
   ? `@font-face{font-family:'MarcaOG';src:url(${dataUrl(fonteArq, 'application/octet-stream')}) format('${FORMATO[path.extname(fonteArq).toLowerCase()] || 'truetype'}');font-weight:100 900;}`
@@ -94,4 +101,11 @@ console.log(`og:image gravada em ${path.relative(process.cwd(), saida).split(pat
 console.log(fonteArq
   ? `fonte da marca: ${path.relative(projeto, fonteArq).split(path.sep).join('/')}`
   : 'ATENÇÃO fonte: não achei fonte em fonts/ e usei a fonte do sistema como RESERVA; baixe a da marca (scripts/baixar-fontes.mjs) e rode de novo');
+if (fonteEscolhidaSemArg) {
+  console.log(`ATENÇÃO fonte: havia ${fonteEscolhidaSemArg} arquivos em fonts/ e nenhum --fonte; usei ${path.relative(projeto, fonteArq).split(path.sep).join('/')} (o primeiro em ordem alfabética), que pode ser a fonte do CORPO. Passe --fonte fonts/<arquivo da fonte do título>.`);
+}
+const faltaram = [!corFundoArg && '--cor-fundo', !corTextoArg && '--cor-texto'].filter(Boolean);
+if (faltaram.length) {
+  console.log(`ATENÇÃO cores: sem ${faltaram.join(' e ')} usei ${[!corFundoArg && `fundo ${COR_FUNDO_PADRAO}`, !corTextoArg && `texto ${COR_TEXTO_PADRAO}`].filter(Boolean).join(' e ')}, que NÃO são da marca. Passe ${faltaram.join(' e ')} com as cores da paleta do plano-visual.md.`);
+}
 console.log(ilustrativa ? 'aviso "Imagem ilustrativa" na base (foto de banco)' : 'sem aviso: use --ilustrativa se a foto não for do cliente');

@@ -50,6 +50,13 @@ const servidor = http.createServer((req, res) => {
     return setTimeout(() => { res.writeHead(200, { 'Content-Type': 'image/png' }); res.end(png); }, 3500);
   }
   if (rota.startsWith('/nao-existe')) { res.writeHead(404); return res.end(); }
+  // 3.5.10 (P2): aviso de cookies que o clique não fecha (cobre ~18%, abaixo do limite de 40%), e outro que só responde ao mouse de verdade
+  const AVISO = (extra) => `<div id="aviso" style="position:fixed;left:20%;top:35%;width:60%;height:30%;z-index:99;background:#222;color:#fff;padding:30px"><p>Usamos cookies para melhorar a sua experiência.</p><button id="b" ${extra}>Aceitar todos</button></div>`;
+  if (rota === '/cookie-teimoso') return html(200, pagina('Aviso teimoso', `<main><h1>Ateliê</h1><p>${LONGO.repeat(10)}</p></main>${AVISO('')}`, ESTILO));
+  if (rota === '/cookie-mouse') return html(200, pagina('Aviso de mouse', `<main><h1>Ateliê</h1><p>${LONGO.repeat(10)}</p></main>${AVISO(`onmousedown="document.getElementById('aviso').remove()"`)}`, ESTILO));
+  // 3.5.10 (P3): rolagem que volta ao topo (a página é alta, o print do meio sai igual à dobra) e página de uma tela só cheia de links
+  if (rota === '/rolagem-volta') return html(200, pagina('Rolagem que volta ao topo', `<main><h1>Ateliê</h1><p>${LONGO.repeat(10)}</p><div style="height:4000px"></div></main><script>addEventListener('scroll', () => scrollTo(0, 0));</script>`, ESTILO));
+  if (rota === '/uma-tela-com-links') return html(200, pagina('Só o topo', `<main style="height:900px;overflow:hidden"><h1>Ateliê</h1><p>${LONGO.repeat(6)}</p>${Array.from({ length: 40 }, (_, i) => `<a href="/p${i}">Peça ${i}</a> `).join('')}</main>`, ESTILO + '<style>html,body{overflow:hidden;height:900px}</style>'));
   if (rota === '/curta') return html(200, pagina('Página curta', `<main><h1>Ateliê</h1><p>${LONGO}</p></main>`, ESTILO));
   const n = Number((req.url.match(/\d+/) || ['0'])[0]);
   const blocos = Array.from({ length: 8 }, (_, i) =>
@@ -142,6 +149,25 @@ servidor.listen(0, '127.0.0.1', async () => {
   checa('N3: trecho que casa várias referências recusa e não mexe no manifesto', ambig.status === 1 && man().referencias.length === 3, `${ambig.status} ${man().referencias.length}`);
   const nada = await rodar('node', [path.join(AQUI, 'capturar-referencias.mjs'), '--projeto', projeto3, '--remover', 'https://nao-esta.example/']);
   checa('N3: endereço que não está no manifesto sai diferente de zero', nada.status === 1, String(nada.status));
+  // ---- 3.5.10: P2 (aviso que continua na tela não é "fechado") e P3 (meio igual à dobra) ----
+  const projeto4 = fs.mkdtempSync(path.join(os.tmpdir(), 'capturar-ref4-'));
+  const cap4 = (extra, ...urls) => rodar('node', [path.join(AQUI, 'capturar-referencias.mjs'), '--projeto', projeto4, '--tipo', 'design', '--minimo', '1', ...extra, ...urls.map((u) => base + u)]);
+  const man4 = () => JSON.parse(fs.readFileSync(path.join(projeto4, 'referencias', 'referencias.json'), 'utf8'));
+  const est4 = (rota) => (man4().referencias.find((x) => x.url === base + rota) || {}).captura || {};
+  const r4 = await cap4([], '/cookie-teimoso', '/cookie-mouse', '/rolagem-volta', '/uma-tela-com-links', '/curta');
+  checa('P2: aviso que o clique não fecha NÃO é dado como fechado (aviso_fechado false)', est4('/cookie-teimoso').aviso_fechado === false, JSON.stringify(est4('/cookie-teimoso')));
+  const linhasR4 = r4.stdout.split('\n');
+  const iTeimoso = linhasR4.findIndex((l) => l.includes('/cookie-teimoso'));
+  const blocoTeimoso = linhasR4.slice(iTeimoso, iTeimoso + 8 + linhasR4.slice(iTeimoso, iTeimoso + 8).findIndex((l) => l.includes('(pagina com')) - 7).join(' | ');
+  checa('P2: a saída diz que o aviso continua na tela, e não "aviso de cookies fechado"', /continua (visível|na tela)/.test(blocoTeimoso) && !/aviso de cookies fechado/.test(blocoTeimoso), blocoTeimoso);
+  checa('P2: o aviso que continua vira aviso na captura (abra o PNG)', /cookies/.test(est4('/cookie-teimoso').aviso || ''), String(est4('/cookie-teimoso').aviso));
+  checa('P2: aviso que só responde a clique de mouse de verdade fecha pela segunda tentativa e é dado como fechado', est4('/cookie-mouse').aviso_fechado === true && est4('/cookie-mouse').estado === 'ok' && est4('/cookie-mouse').cobertura < 0.05, JSON.stringify(est4('/cookie-mouse')));
+  checa('P3: página alta cuja rolagem volta ao topo (meio igual à dobra) é vazia, com o motivo', est4('/rolagem-volta').estado === 'vazia' && /igual/.test(est4('/rolagem-volta').motivo || ''), JSON.stringify(est4('/rolagem-volta')));
+  checa('P3: página de uma tela só com 40 links e meio igual à dobra é vazia', est4('/uma-tela-com-links').estado === 'vazia', JSON.stringify(est4('/uma-tela-com-links')));
+  checa('P3: página curta de verdade (uma tela, sem links) segue ok sem --longa', est4('/curta').estado === 'ok', JSON.stringify(est4('/curta')));
+  await cap4(['--longa'], '/curta');
+  checa('P3: a mesma página curta com --longa vira vazia (o aluno sabe que ela devia ser longa)', est4('/curta').estado === 'vazia', JSON.stringify(est4('/curta')));
+  fs.rmSync(projeto4, { recursive: true, force: true });
   fs.rmSync(projeto3, { recursive: true, force: true });
   fs.rmSync(projeto2, { recursive: true, force: true });
   servidor.close();

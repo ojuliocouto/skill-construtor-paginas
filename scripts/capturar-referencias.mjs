@@ -10,6 +10,8 @@
  *
  * Antes do print tenta fechar o aviso de cookies por botão comum (prefere "recusar", depois
  * "fechar", por último "aceitar" só dos botões de cookie); nunca preenche formulário nem faz login.
+ * (3.5.10) "Fechado" só depois de conferir no DOM que o aviso saiu da tela: o clique sintético vem primeiro, o clique
+ * de mouse de verdade em seguida, e o aviso que continua visível sai dito como tal (aviso_fechado false e um AVISO).
  *
  * A captura se julga (3.5.6): cada URL sai com um estado em `captura` no manifesto,
  *   ok         página renderizada de verdade
@@ -18,11 +20,14 @@
  *   coberta    modal cobrindo mais de 40% da janela mesmo depois de tentar fechar
  *   vazia      (3.5.8) a primeira dobra é uma folha lisa (herói em vídeo que não rendeu), ou o meio é de
  *              uma cor só com fotos que não carregaram. Dobra com mais de 80% de uma cor só segue ok, com aviso.
+ *              (3.5.10) o print do meio é igual ao da dobra: a rolagem não andou, ou só o topo renderizou
+ *              (página de uma tela só com 30 links ou mais, ou dada como longa com --longa).
  * com o motivo. O gate-referencias.py reprova as que não são ok.
  *
  * Uso:
  *   node scripts/capturar-referencias.mjs --projeto <dir> --tipo mesmo-negocio <url> [<url> ...]
  *   node scripts/capturar-referencias.mjs --projeto <dir> --tipo design <url> [<url> ...]
+ *       (3.5.10: --longa avisa que as páginas desta rodada são longas; se uma sair com uma tela só e o meio igual à dobra, é vazia)
  *   node scripts/capturar-referencias.mjs --projeto <dir> --limpar-ruins
  *       (tira do manifesto as que não são ok e move os PNG delas para <projeto>/descartados/referencias/)
  *   node scripts/capturar-referencias.mjs --projeto <dir> --remover <url> [<url> ...]
@@ -53,6 +58,7 @@ const projeto = valor('--projeto');
 const tipo = valor('--tipo');
 const TIPOS = ['mesmo-negocio', 'design'];
 const limparRuins = args.includes('--limpar-ruins');
+const esperadaLonga = args.includes('--longa');
 const MINIMO = Number(valor('--minimo') || 6);
 const iRemover = args.indexOf('--remover');
 const remover = [];
@@ -61,7 +67,7 @@ const modoRemover = iRemover >= 0;
 const urls = modoRemover ? [] : args.filter((a, i) => !a.startsWith('--') && !['--projeto', '--tipo', '--minimo'].includes(args[i - 1]));
 
 if (!projeto || (modoRemover && remover.length === 0) || (!limparRuins && !modoRemover && (!TIPOS.includes(tipo) || urls.length === 0))) {
-  console.error('uso: node capturar-referencias.mjs --projeto <dir> --tipo <mesmo-negocio|design> <url> [<url> ...]\n     node capturar-referencias.mjs --projeto <dir> --limpar-ruins\n     node capturar-referencias.mjs --projeto <dir> --remover <url> [<url> ...]');
+  console.error('uso: node capturar-referencias.mjs --projeto <dir> --tipo <mesmo-negocio|design> [--longa] <url> [<url> ...]\n     node capturar-referencias.mjs --projeto <dir> --limpar-ruins\n     node capturar-referencias.mjs --projeto <dir> --remover <url> [<url> ...]');
   process.exit(2);
 }
 for (const u of urls) {
@@ -137,9 +143,26 @@ const BOTOES_COOKIE = [
   /^(fechar|close|dispensar|dismiss|not now|agora n[aã]o|continuar sem aceitar)\b/i,
   /^(aceitar( todos)?( os cookies)?|aceito|concordo|entendi|ok|got it|allow all|accept( all)?( cookies)?|i agree|agree)\b/i,
 ];
+// 3.5.10 (P2): o aviso só está "fechado" se saiu da tela. O botão e o contêiner do aviso ficam marcados no DOM
+// (data-capt-botao, data-capt-aviso) para conferir depois do clique, sem depender do que o botão diz que fez.
+const avisoAindaVisivel = (page) => page.evaluate(() => {
+  const el = document.querySelector('[data-capt-aviso]');
+  if (!el || !el.isConnected) return false;
+  const cs = getComputedStyle(el);
+  if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) < 0.05 || el.getClientRects().length === 0) return false;
+  const r = el.getBoundingClientRect();
+  const w = Math.max(0, Math.min(r.right, window.innerWidth) - Math.max(r.left, 0));
+  const h = Math.max(0, Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0));
+  return w > 10 && h > 10;
+}).catch(() => false);
+const limparMarcas = (page) => page.evaluate(() => document.querySelectorAll('[data-capt-botao],[data-capt-aviso]').forEach((e) => { e.removeAttribute('data-capt-botao'); e.removeAttribute('data-capt-aviso'); })).catch(() => {});
+
+// Devolve { clicou, fechou }: clicou = achou um botão de cookie e apertou; fechou = o aviso saiu da tela.
 async function fecharAviso(page) {
+  let clicou = false;
   for (const rx of BOTOES_COOKIE) {
-    const clicou = await page.evaluate((fonte) => {
+    await limparMarcas(page);
+    const achou = await page.evaluate((fonte) => {
       const rx = new RegExp(fonte.source, fonte.flags);
       const vistos = [...document.querySelectorAll('button, [role="button"], a[role="button"], input[type="button"], input[type="submit"]')];
       for (const b of vistos) {
@@ -148,21 +171,31 @@ async function fecharAviso(page) {
         if (r.width < 10 || r.height < 10 || tx.length === 0 || tx.length > 40 || getComputedStyle(b).visibility === 'hidden') continue;
         if (!rx.test(tx)) continue;
         // só botão dentro de aviso fixo ou diálogo (não "OK" de formulário no meio da página)
-        let el = b, aviso = false;
+        let el = b, aviso = null;
         while (el && el !== document.body) {
           const cs = getComputedStyle(el);
-          if (cs.position === 'fixed' || cs.position === 'sticky' || el.getAttribute('role') === 'dialog' || el.getAttribute('aria-modal') === 'true') { aviso = true; break; }
+          if (cs.position === 'fixed' || cs.position === 'sticky' || el.getAttribute('role') === 'dialog' || el.getAttribute('aria-modal') === 'true') { aviso = el; break; }
           el = el.parentElement;
         }
         if (!aviso) continue;
-        b.click();
+        b.setAttribute('data-capt-botao', '1');
+        aviso.setAttribute('data-capt-aviso', '1');
         return true;
       }
       return false;
     }, { source: rx.source, flags: rx.flags }).catch(() => false);
-    if (clicou) { await page.waitForTimeout(700); return true; }
+    if (!achou) continue;
+    clicou = true;
+    // 1ª tentativa: clique sintético. 2ª: o mouse de verdade (há avisos que só ouvem mousedown ou pointerdown).
+    await page.evaluate(() => { const b = document.querySelector('[data-capt-botao]'); if (b) b.click(); }).catch(() => {});
+    await page.waitForTimeout(700);
+    if (!(await avisoAindaVisivel(page))) { await limparMarcas(page); return { clicou, fechou: true }; }
+    await page.locator('[data-capt-botao]').first().click({ timeout: 3000 }).catch(() => {});
+    await page.waitForTimeout(900);
+    if (!(await avisoAindaVisivel(page))) { await limparMarcas(page); return { clicou, fechou: true }; }
   }
-  return false;
+  await limparMarcas(page);
+  return { clicou, fechou: false };
 }
 
 // Maior fração da janela coberta por UM elemento fixo, em camada alta ou em diálogo, com conteúdo.
@@ -197,6 +230,7 @@ const medirPagina = () => {
     texto: (document.body ? document.body.innerText : '').slice(0, 6000),
     temEstilo: (temRegras || inline) && !crua,
     altura: document.documentElement.scrollHeight,
+    ancoras: document.querySelectorAll('a[href]').length,
   };
 };
 
@@ -239,6 +273,26 @@ async function medirDominancia(ctxMedida, png) {
   } catch { return undefined; } finally { await aux.close(); }
 }
 
+// 3.5.10 (P3): o print do meio é o mesmo da dobra? Miniatura de 96 px de largura, diferença média por canal
+// de até 1,5 em 255 (tolera cursor piscando, vídeo parado, ruído de compressão). Bytes iguais é igual de saída.
+async function medirIguais(ctxMedida, a, b) {
+  if (a.equals(b)) return true;
+  const aux = await ctxMedida.newPage();
+  try {
+    return await aux.evaluate(async ([x, y]) => {
+      const carregar = (b64) => new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = 'data:image/png;base64,' + b64; });
+      const [ia, ib] = [await carregar(x), await carregar(y)];
+      if (ia.naturalWidth !== ib.naturalWidth || ia.naturalHeight !== ib.naturalHeight) return false;
+      const w = 96, h = Math.max(1, Math.round(96 * ia.naturalHeight / ia.naturalWidth));
+      const dados = (im) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.drawImage(im, 0, 0, w, h); return g.getImageData(0, 0, w, h).data; };
+      const da = dados(ia), db = dados(ib);
+      let soma = 0, n = 0;
+      for (let i = 0; i < da.length; i += 4) { soma += Math.abs(da[i] - db[i]) + Math.abs(da[i + 1] - db[i + 1]) + Math.abs(da[i + 2] - db[i + 2]); n += 3; }
+      return soma / n <= 1.5;
+    }, [a.toString('base64'), b.toString('base64')]);
+  } catch { return false; } finally { await aux.close(); }
+}
+
 const slug = (u) => {
   try {
     const x = new URL(u);
@@ -264,7 +318,8 @@ try {
       const http = resposta ? resposta.status() : 0;
       await page.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => {});
       await page.waitForTimeout(1500);
-      const fechou = await fecharAviso(page);
+      const aviso = await fecharAviso(page);
+      const fechou = aviso.fechou;
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
       await page.waitForTimeout(400);
       const dobra = path.join(pasta, `${base}-dobra.png`);
@@ -287,7 +342,11 @@ try {
       const imagensSemCarregar = await page.evaluate(medirImagensSemCarregar);
       const bufMeio = await page.screenshot({ path: meio });
       const dominanciaMeio = await medirDominancia(ctxMedida, bufMeio);
-      const veredito = classificar({ http, titulo: await page.title(), texto: medidas.texto, temEstilo: medidas.temEstilo, altura, janela: 900, cobertura, dominanciaDobra, dominanciaMeio, imagensSemCarregar });
+      const meioIgualDobra = await medirIguais(ctxMedida, bufDobra, bufMeio);
+      const veredito = classificar({ http, titulo: await page.title(), texto: medidas.texto, temEstilo: medidas.temEstilo, altura, janela: 900, cobertura, dominanciaDobra, dominanciaMeio, imagensSemCarregar, meioIgualDobra, esperadaLonga, ancoras: medidas.ancoras });
+      // 3.5.10 (P2): botão apertado não é aviso fechado. Se o aviso continua na tela, a captura diz isso e manda abrir o PNG.
+      const avisoCookies = aviso.clicou && !fechou ? `o aviso de cookies continua visível depois do clique (cobre ${Math.round(cobertura * 100)}% da janela): abra o PNG da dobra antes de gastar leitura` : '';
+      const avisos = [veredito.aviso, avisoCookies].filter(Boolean).join('; ');
 
       const titulo = (await page.title()).trim().slice(0, 140);
       const entrada = existente || { url };
@@ -299,7 +358,7 @@ try {
         captura: { estado: veredito.estado, motivo: veredito.motivo, http, cobertura: Math.round(cobertura * 100) / 100, aviso_fechado: fechou,
           dominancia_dobra: dominanciaDobra === undefined ? null : Math.round(dominanciaDobra * 100) / 100,
           dominancia_meio: dominanciaMeio === undefined ? null : Math.round(dominanciaMeio * 100) / 100, imagens_sem_carregar: imagensSemCarregar,
-          ...(veredito.aviso ? { aviso: veredito.aviso } : {}) },
+          meio_igual_dobra: meioIgualDobra, ...(avisos ? { aviso: avisos } : {}) },
         capturado_em: new Date().toISOString().slice(0, 19),
       });
       if (!existente) {
@@ -312,7 +371,7 @@ try {
       }
       resultado.push(veredito.estado);
       const rotulo = veredito.estado.padEnd(9);
-      console.log(`${rotulo} ${url}${veredito.motivo ? `\n     motivo: ${veredito.motivo}` : ''}${veredito.aviso ? `\n     AVISO: ${veredito.aviso}` : ''}\n     ${entrada.prints.dobra}\n     ${entrada.prints.meio}  (pagina com ${altura}px${fechou ? ', aviso de cookies fechado' : ''})`);
+      console.log(`${rotulo} ${url}${veredito.motivo ? `\n     motivo: ${veredito.motivo}` : ''}${avisos ? `\n     AVISO: ${avisos}` : ''}\n     ${entrada.prints.dobra}\n     ${entrada.prints.meio}  (pagina com ${altura}px${fechou ? ', aviso de cookies fechado' : aviso.clicou ? ', o aviso de cookies continua visível' : ''})`);
     } catch (e) {
       falhas.push(url);
       console.error(`FALHA ${url}: ${String(e.message || e).split('\n')[0]}`);

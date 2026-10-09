@@ -1,5 +1,99 @@
 # Changelog
 
+## 3.5.10 (09/10/2026): primeira tela visível no celular, texto invisível, servidor local e os achados P1 a P21 do teste da Torra Clara
+
+O teste de ponta a ponta da página Torra Clara (3 h 15 min, `RELATORIO.md` seção 5) deixou 21 achados (P1 a P21) mais a primeira tela do
+celular (G22). Três frentes em paralelo (A: captura, imagens e documentação; B: gates; C: movimento, visibilidade e primeira tela) e o P11
+(servidor local), cada conserto com teste que reprovava antes. Nenhum gate foi afrouxado: onde um gate passa a aceitar mais, há teste de
+que o caso ruim original continua reprovando.
+
+### Primeira tela visível no celular (G22)
+- `gate-responsivo.mjs` mede o topo na área que a pessoa vê, com as barras do navegador (390x664 e 360x616 reprovam; 375x553 avisa, por
+  ser estimativa sem fonte): manchete, texto de apoio e botão principal inteiros, botão a 8 px ou mais do pé. A foto mínima de 35% passa a
+  ser da área visível e o texto ganha da foto (piso de 20%). O botão do herói deixa de ser o link da marca que volta ao topo
+  (`topo-da-pagina.mjs`). Reprova a v7 antiga (botão 146 px abaixo da dobra) e a Torra Clara (apoio fora); aprova a v7 atual (botão a
+  15 px do pé). `--so-primeira-tela` mede só isso. `medir-dobra.mjs` devolve manchete, apoio, botão e a posição da legenda da foto.
+
+### Texto invisível (P12, P13, P14)
+- `gate-movimento.mjs` reprova texto invisível com a página parada 4 s na primeira tela (P13b), invisível na tela por 2 paradas da visita
+  (recorte de entrada no alvo do observador, P12) e invisível acima da tela depois de um salto até o fim (P14). `--so-visibilidade`.
+- `gate-oclusao.mjs` mede por linha de texto e reprova linha recortada por clip-path (span em linha que quebra, P13a).
+- Receitas: a gramática de base ganha "o clip-path de entrada vai no filho", "a primeira tela entra na carga" e "já passou = estado
+  final" (`revelar`, `primeiraTela`, `jaPassou`, `observar`, no md e no `demo.html`). Página feita antes da 3.5.10 sem o "já passou"
+  reprova na prova do salto até receber a função: é o defeito do P14 em página real, não ruído.
+
+### Servidor local (P11)
+- `servidor-gzip.py`: a porta é preferência. Ocupada (inclusive por servidor que ouve só em 127.0.0.1), escolhe uma livre, avisa e
+  imprime `URL: http://127.0.0.1:<porta>/`; a saída sai na hora mesmo com pipe. Sem `SO_REUSEADDR`, que deixava dois servidores na mesma
+  porta.
+- Os gates de navegador (`gate-responsivo`, `gate-oclusao`, `gate-simetria`, `gate-texto`, `gate-composicao`, `gate-movimento`,
+  `gate-ritmo`, `gate-video`, `sobreposicao`, `anim` e `medir-dobra`) conferem a URL antes de abrir o navegador (`servidor-no-ar.mjs`) e
+  param com "servidor fora do ar em <url>" e o comando para subir de novo, saída 3, no lugar de `net::ERR_CONNECTION_REFUSED` e pilha de
+  chamadas. A saída 3 não é veredito sobre a página.
+- `rodar-gates.mjs`: usa a URL que o servidor imprime e, se o servidor de um gate cai no meio, sobe outro e repete esse gate uma vez,
+  dizendo isso; reprovação sem a marca de servidor fora nunca é repetida.
+- `montar-dist.py`: esvazia a `dist/` sem apagar a pasta (servidor ou terminal dentro dela não perde o chão) e avisa "dist refeita".
+- Testes: `test-servidor-gzip.py` (7), `test-servidor-fora.cjs` (11 gates), 3 casos novos em `test-rodar-gates.cjs`.
+
+### Captura de referências (P1, P2, P3)
+- A tela de bloqueio de robô vira `bloqueada` mesmo quando o cabeçalho e o menu do site passam de 800 caracteres ("We couldn't verify
+  the security of your connection", Cloudflare, Akamai, Incapsula, "Press & Hold", "unusual traffic"). Foi o caso da Um Coffee, `ok` na 3.5.8.
+- O aviso de cookies só é dado como fechado depois de conferir no DOM que saiu da tela: clique sintético, depois clique de mouse de
+  verdade. Aviso que continua visível sai com `aviso_fechado: false`, um AVISO na captura e na saída.
+- O print do meio igual ao da dobra vira `vazia` (página mais alta que a janela: a rolagem não andou; página de uma tela só com 30 links
+  ou mais: só o topo renderizou). Nova opção `--longa`.
+
+### Imagens e identidade (P6, P7, P17)
+- `assets-search.py --type openverse` (e `cc`) cai sozinho para a Wikimedia Commons quando a Openverse falha ou não acha, e avisa;
+  `--type sem-chave` e o `criar.md` dizem que o Unsplash não abre por script (HTTP 307).
+- `gerar-og-image.mjs` avisa (ATENÇÃO fonte, ATENÇÃO cores) em vez de escolher em silêncio a primeira fonte de `fonts/` e o fundo padrão.
+- `gerar-icones.mjs` imprime as duas linhas de `<link>` prontas com os nomes reais (`/favicon.png`, `/apple-touch-icon.png`).
+
+### Gates (P4, P8, P9, P10, P15, P18, P21)
+- `gate-plano.py`: o tipo da animação de cada seção confere com o repertório (`## Receita:` de `receitas-de-movimento.md`), `assinatura` ou
+  `criação nova: <motivo>` (15 caracteres ou mais).
+- `gate-verdade.py`: a regex do dono não atravessa a quebra de linha.
+- `gate-texto.mjs`: item que começa com e-mail ou endereço de site fica fora da regra da maiúscula; frase minúscula de verdade segue reprovando.
+- `gate-imagens.py` + `lugares_br.py` (novo): cidade, bairro e região não são nome de pessoa em alt, legenda e depoimento; pessoa real segue avisando.
+- `gate-etapas.py revalidar`: grava as etapas que passaram até a que bloqueou e diz o que gravou (ou que nada foi gravado); a que
+  bloqueou e as seguintes seguem bloqueadas.
+- `gate-ritmo.mjs`: "título centralizado" medido por `text-align` calculado e pela posição da primeira linha; a saída mostra como mediu.
+- `gate-relatorio.py`: linha que começa com `rodada N:`, `antes:`, `histórico:` ou `versão anterior:` fica fora da regra "anterior à
+  `dist/`" (continua citando o arquivo e o número); a que fala do estado atual segue cobrada.
+
+### Receitas (P5, P19, P20)
+- Receita nova `produto-em-estados` (a 17a): a MESMA foto do produto atravessa 3 seções e muda de estado (fixa ao lado no desktop, no topo
+  de cada seção no celular); a `foto-que-se-monta` pode ser a entrada do estado 1, uma vez só.
+- `painel-de-cor`: no máximo 3 botões com `data-painel`, todos para o mesmo destino. `barra-fixa-do-celular`: oferta longa com
+  `data-barra-rotulo` e `data-barra-destino`.
+
+### Documentação (P16 e extras)
+- Modelo de sessão e README não mandam mais o registro para a pasta da skill (resto do N25). O README deixa de dizer que a captura
+  nunca clica em aviso de cookies (falso desde a 3.5.6).
+- `criar.md`: o passo b cita `--remover`, `--limpar-ruins`, `--longa` e os estados da captura; o `sobreposicao.mjs` não se aplica a página
+  sem elemento sticky ou fixo; o roteiro da etapa f explica a porta, a URL impressa e a saída 3; o topo do celular na área visível; a
+  coluna Animação do PLANO; o marcador de história no relatório; `revalidar` que bloqueia.
+- `SKILL.md` segue em 330 linhas (teto do `test-docs.py`): o que não coube na tabela foi para o `criar.md`.
+- Testes novos: `test-servidor-gzip.py`, `test-servidor-fora.cjs`, `test-primeira-tela.cjs`, `test-visibilidade-movimento.cjs`,
+  `test-texto-ritmo-3510.cjs`, `test-gerar-icones.cjs`, `test-docs-criar-3510.py`, `test-docs-3510-juncao.py`; casos novos nos testes
+  dos gates, da captura, da busca de foto e das receitas. O teto do `test-assinatura-demo.cjs` subiu de 300 para 480 s (o gate de
+  movimento no demo leva 313 s com as provas novas, 4% a mais).
+
+### Não foi provado
+- **A área visível de 664 px vem da tabela de aparelhos do Playwright 1.61.1, não de um iPhone físico.** Se um iPhone 14 de verdade mostra
+  menos de 657 px de área, o botão da v7 atual também sai da primeira tela lá; no iPhone SE a v7 atual já fica 80 px abaixo (o gate avisa).
+  Os 124 px de barras do Android (360x616) vêm do Pixel 5 da tabela; o 375x553 é estimativa e por isso só avisa.
+- **A captura da Omsom real não foi reproduzida**: a causa do 900 px nela não está no relatório. Os testes usam páginas locais que
+  reproduzem os dois sintomas (rolagem que volta ao topo; tela cheia de links).
+- **A v7 atual reprova na prova do salto** (164 elementos em 1440 e 170 em 390 acima da tela, invisíveis) até receber o "já passou". A
+  Torra Clara passa nas quatro provas de visibilidade.
+- A variante de `produto-em-estados` com 3 fotos diferentes (cru, torrado, na xícara) não existe: o `gate-imagens.py` aceita
+  `data-assinatura` em UMA foto só (N22). Fica como pedido para a próxima versão, junto com a régua da legenda "imagem ilustrativa" sobre
+  os campos novos do `medir-dobra.mjs`.
+- O servidor que cai por causa de OUTRO processo matar o dele (o exit 144 do teste) não foi reproduzido; a correção é detectar, dizer e
+  repetir, não impedir a queda. Defeito vizinho do P18 sem conserto: a regra "título ao lado do conteúdo" do `gate-ritmo.mjs` trata como
+  "ao lado" um título curto centralizado com cartões a menos de 40 px abaixo.
+
 ## 3.5.9 (08/10/2026): gates num comando só, gate de movimento com movimento reduzido e achados N22 a N27
 
 O reteste de ponta a ponta fechou em 3 h 15 min e em NÃO ENTREGAR: duas vezes o auditor achou animação rodando com movimento

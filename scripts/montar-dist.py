@@ -140,9 +140,16 @@ def main(argv=None):
     if a.css_em_linha:
         html = css_em_linha(raiz, html, usados)
         # o CSS em linha pode ter trazido url() que antes só o .css citava: já estão em `usados`
-    if saida.exists():
-        shutil.rmtree(saida)
-    saida.mkdir(parents=True)
+    refeita = saida.exists()
+    if refeita:
+        # Esvazia a pasta SEM apagá-la: servidor ou terminal que está "dentro" da dist perde o chão se a pasta some
+        # (P11 da 3.5.10: o servidor local caiu quando a dist servida foi refeita).
+        for item in list(saida.iterdir()):
+            if item.is_dir() and not item.is_symlink():
+                shutil.rmtree(item)
+            else:
+                item.unlink()
+    saida.mkdir(parents=True, exist_ok=True)
     for rel in sorted(usados):
         if rel == "index.html":
             continue
@@ -152,6 +159,9 @@ def main(argv=None):
     (saida / "index.html").write_text(html, encoding="utf-8")
     total = sum(p.stat().st_size for p in saida.rglob("*") if p.is_file())
     print(f"dist montada: {len(usados)} arquivo(s), {total / 1024:.1f} KiB em {saida}")
+    if refeita:
+        print(f"dist refeita: o conteúdo de {saida} foi trocado e a pasta foi mantida. Um servidor que serve esta pasta segue no ar "
+              "e entrega a versão nova; se ele caiu, suba de novo com servidor-gzip.py (ele imprime a URL).")
     for rel in sorted(usados):
         print(f"  {rel}")
     return 0

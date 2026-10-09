@@ -125,7 +125,9 @@ const servidor = http.createServer((req, res) => {
   const OK = 'document.documentElement.setAttribute("data-js-ok","");';
   const secoesMov = (extra, comMovimento = true) => '<style>.js .revela{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}.js .revela.visivel{opacity:1;transform:none}@media (prefers-reduced-motion: reduce){.js .revela{transition:none}}.alta{min-height:1000px}</style>'+REDE+''
     + texto + [1, 2, 3].map((i) => `<section class="alta"><h2 class="${comMovimento ? 'revela' : ''}">Seção ${i}</h2><p class="${comMovimento ? 'revela' : ''}">Texto da seção ${i} que entra ao rolar a página.</p></section>`).join('')
-    + '<script>'+OK+'var els=document.querySelectorAll(".revela");var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("visivel");io.unobserve(e.target)}})});els.forEach(function(e){io.observe(e)});' + extra + '</script>';
+    // 3.5.10 (P14): a página de controle segue a receita-base, com o "já passou = estado final" (o gate salta do topo ao fim).
+    + '<script>'+OK+'var els=document.querySelectorAll(".revela");var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("visivel");io.unobserve(e.target)}})});els.forEach(function(e){io.observe(e)});'
+    + 'function jaPassou(){els.forEach(function(e){if(!e.classList.contains("visivel")&&e.getBoundingClientRect().bottom<=0){e.style.transition="none";e.classList.add("visivel");io.unobserve(e)}})}addEventListener("scroll",function(){requestAnimationFrame(jaPassou)},{passive:true});' + extra + '</script>';
   if (rota === '/movimento-ok') corpo = secoesMov('');
   // A28: sem a rede de segurança (só `js` no head, sem temporizador) o conteúdo fica invisível quando o script principal falha.
   if (rota === '/script-sem-rede') corpo = secoesMov('').replace(REDE, '<script>document.documentElement.classList.add("js")</script>');

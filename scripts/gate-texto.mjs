@@ -18,7 +18,8 @@
  *     caixa de grade (li ou article com irmãos do mesmo tipo); texto corrido de seção não.
  *  2. item de texto visível (bloco com texto próprio: p, li, dd, dt, td, legenda, botão, rótulo)
  *     que começa com letra minúscula. Exceção declarada: `data-minuscula-ok` (marca que se
- *     escreve assim, por exemplo).
+ *     escreve assim, por exemplo). Fora da regra (3.5.10): item cuja primeira palavra é um e-mail
+ *     ou um endereço de site (oi@torraclara.com.br, www.site.com.br, https://wa.me/...).
  *  3. mais de uma palavra ou trecho em itálico com cor diferente do texto em volta, na página.
  * Avisa (não reprova): 10 ou mais filetes de 1 px (uma borda só), sinal do "jornal de filetes".
  *
@@ -27,6 +28,7 @@
 import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
+import { exigirServidor } from './servidor-no-ar.mjs';
 
 const require = createRequire(import.meta.url);
 function carregarPlaywright() {
@@ -55,6 +57,7 @@ const TELAS = [
   ['menor suportado', 320, 568, true],
 ];
 
+await exigirServidor(URL_ALVO);   // servidor caído: uma mensagem clara (saída 3), não ERR_CONNECTION_REFUSED (P11)
 const navegador = await chromium.launch();
 const falhas = [];
 const avisos = new Set();
@@ -133,6 +136,17 @@ for (const [nome, w, h, mob] of TELAS) {
     }
 
     // 2. item de texto que começa com minúscula
+    // 3.5.10 (P9): e-mail e endereço de site se escrevem em minúscula (oi@torraclara.com.br,
+    // www.site.com.br/privacidade, https://wa.me/55...) e ficam fora da regra. Vale só quando a
+    // PRIMEIRA palavra do item é o próprio endereço: "ok.agora segue" e "fale em oi@x.com" seguem
+    // reprovando, porque o domínio precisa terminar num sufixo conhecido (.com, .br, .io...).
+    const TLD = '(?:com|net|org|edu|gov|io|app|dev|me|co|biz|info|shop|store|site|online|tech|ai|tv|cc|xyz|br|pt|us|uk|es|ar)';
+    const EMAIL = new RegExp('^[\\w.+-]+@[\\w-]+(?:\\.[\\w-]+)*\\.' + TLD + '$', 'i');
+    const SITE = new RegExp('^(?:https?://\\S+|(?:www\\.)?[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.' + TLD + '(?:/\\S*)?)$', 'i');
+    const enderecoNoComeco = (txt) => {
+      const primeira = txt.split(/\s+/)[0].replace(/[.,;:!?)\]]+$/, '');
+      return EMAIL.test(primeira) || SITE.test(primeira);
+    };
     const BLOCO = ['block', 'flex', 'grid', 'list-item', 'inline-block', 'inline-flex', 'table-cell', 'flow-root'];
     const CONTEINER_DE_FRASE = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'A', 'BUTTON', 'LABEL', 'SUMMARY', 'DT', 'DD', 'LI', 'FIGCAPTION', 'TD', 'TH', 'SPAN', 'STRONG', 'EM'];
     for (const el of document.querySelectorAll('body *')) {
@@ -147,6 +161,7 @@ for (const [nome, w, h, mob] of TELAS) {
       if (pai && CONTEINER_DE_FRASE.includes(pai.tagName) && !(pai.innerText || '').trim().startsWith(txt.slice(0, 12))) continue;
       const m = txt.match(/\p{L}|\p{N}/u);
       if (!m || /\p{N}/u.test(m[0])) continue;
+      if (enderecoNoComeco(txt)) continue;
       if (cs.textTransform === 'uppercase' || cs.textTransform === 'capitalize') continue;
       if (m[0] !== m[0].toUpperCase() && m[0] === m[0].toLowerCase()) out.minusculas.push(`<${el.tagName.toLowerCase()}> "${curto(txt)}"`);
     }

@@ -38,11 +38,25 @@
  *     classe do <html> (a rede de segurança da receita-base, que devolve a página ao estado sem script).
  *     Fora da conta: `display: none`, `[hidden]`, o que é fixo (barra do celular) e o texto só para leitor de tela (1 px).
  *
- * Uso: node scripts/gate-movimento.mjs --url <url> [--espera 8000] [--so-prova-script | --sem-prova-script]
+ *  6. (3.5.10, P12, P13b, P14) TEXTO QUE FICA INVISÍVEL COM O SCRIPT RODANDO, em 1440 e 390. Três provas:
+ *     - parada no topo: a página carrega e fica PARADA_MS parada; nenhum texto da primeira tela pode estar invisível (a Torra
+ *       Clara tinha os fatos do herói com translateY(26px) abaixo da linha do rootMargin -6%, e com a página parada eles nunca
+ *       apareciam em 1440);
+ *     - fim da visita: depois da visita inteira, nenhum texto da página pode continuar invisível (o rótulo da oferta tinha o
+ *       clip-path de entrada no próprio alvo do IntersectionObserver: com threshold 0,18 a razão do alvo todo recortado é 0, o
+ *       observador nunca dispara e as linhas nunca aparecem);
+ *     - salto: a página pula do topo direto para o fim (âncora, painel, voltar do WhatsApp); o que ficou acima da tela tem de
+ *       estar no estado final ("já passou = estado final").
+ *     Invisível = opacidade efetiva abaixo de 0,05 (somando os pais), visibility: hidden ou recortado por inteiro por clip ou
+ *     clip-path no próprio elemento ou num pai (a mensagem diz em quem).
+ *
+ * Uso: node scripts/gate-movimento.mjs --url <url> [--espera 8000] [--so-prova-script | --sem-prova-script | --so-visibilidade]
+ *   --so-visibilidade: só a visita e as três provas do item 6 (sem a prova do script, sem o item a item e sem o movimento reduzido)
  */
 import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
+import { exigirServidor } from './servidor-no-ar.mjs';
 
 const require = createRequire(import.meta.url);
 const { dividirScript, MARCAS_DO_PRINCIPAL } = require('./rede-de-seguranca.cjs');
@@ -66,7 +80,10 @@ const SO_CELULAR = args.includes('--so-celular');
 // `--engasgo N`: a thread principal da página trava N ms a cada ~120 ms (máquina que engasga: o aviso do observador e o evento da
 // transição chegam atrasados). A CPU reduzida sozinha não reproduziu o defeito do CI do macOS; o engasgo reproduz o atraso.
 const ENGASGO = Number(valor('--engasgo', '0'));
-const SEM_PROVA_SCRIPT = args.includes('--sem-prova-script') || SO_CELULAR;
+const SO_VISIBILIDADE = args.includes('--so-visibilidade');
+const SEM_PROVA_SCRIPT = args.includes('--sem-prova-script') || SO_CELULAR || SO_VISIBILIDADE;
+// 3.5.10 (P13b): quanto tempo a página fica parada no topo antes de medir a primeira tela.
+const PARADA_MS = 4000;
 const SO_PROVA_SCRIPT = args.includes('--so-prova-script');
 if (!URL_ALVO) {
   console.error('uso: node gate-movimento.mjs --url <url> [--espera 8000]');
@@ -159,6 +176,7 @@ const TELAS_ITEM = [
   ['menor suportado', 320, 568, true],
 ];
 
+await exigirServidor(URL_ALVO);   // servidor caído: uma mensagem clara (saída 3), não ERR_CONNECTION_REFUSED (P11)
 const navegador = await chromium.launch();
 const falhas = [];
 
@@ -185,42 +203,93 @@ function reescrever(html, modo) {
   });
 }
 
+/** 3.5.10: elementos com texto ou imagem que a pessoa não consegue ver AGORA, sem rolar. `onde`: 'todos', 'primeira' (pelo menos
+ *  24 px ou metade da altura dentro da janela), 'acima' (acima da janela), 'fim' (a página toda, menos o que está fora da largura
+ *  da janela, como cartão de carrossel não rolado), 'contar' (conta, por elemento, as paradas da visita em
+ *  que ele estava na janela e invisível; devolve nada) ou 'na-tela' (os que ficaram invisíveis na janela em 2 paradas ou mais).
+ *  Roda dentro da página (page.evaluate). */
+function ocultosAgora(onde) {
+  const caminho = (el) => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
+  // clip-path que recorta a caixa inteira: inset() com topo + base >= altura ou esquerda + direita >= largura, ou circle(0).
+  const recorteTotal = (el, cs) => {
+    if (/rect\(\s*0(px)?[ ,]+0(px)?[ ,]+0(px)?[ ,]+0(px)?\s*\)/.test(cs.clip || '')) return 'clip: rect(0 0 0 0)';
+    const cp = cs.clipPath || 'none';
+    if (cp === 'none') return null;
+    if (/circle\(\s*0(px|%)?[\s)]/.test(cp)) return 'clip-path: ' + cp;
+    const m = cp.match(/inset\(([^)]*)\)/);
+    if (!m || /calc|var/.test(m[1])) return null;
+    const v = m[1].split(/\s+round\s+/)[0].trim().split(/\s+/);
+    const [t, r = t, b = t, l = r] = v;
+    const c = el.getBoundingClientRect();
+    const px = (x, base) => (x.endsWith('%') ? (parseFloat(x) / 100) * base : parseFloat(x));
+    const T = px(t, c.height), R = px(r, c.width), B = px(b, c.height), L = px(l, c.width);
+    if ([T, R, B, L].some(Number.isNaN)) return null;
+    return T + B >= c.height - 0.5 || L + R >= c.width - 0.5 ? 'clip-path: ' + cp : null;
+  };
+  const vh = window.innerHeight;
+  const achados = [];
+  window.__ocultosNaTela = window.__ocultosNaTela || new Map();
+  // Entrada em curso não é defeito: na contagem da visita, elemento com animação ou transição rodando (inclusive na fase de
+  // atraso, como a foto da foto-que-se-monta, que espera 1,5 s as faixas montarem por cima) nele ou num pai não conta a parada.
+  const animando = new Set();
+  if (onde === 'contar' && document.getAnimations) for (const a of document.getAnimations()) if ((a.playState === 'running' || a.pending) && a.effect && a.effect.target) animando.add(a.effect.target);
+  const emCurso = (el) => { for (let n = el; n && n !== document.documentElement; n = n.parentElement) if (animando.has(n)) return true; return false; };
+  if (onde === 'na-tela') {
+    for (const [el, n] of window.__ocultosNaTela) if (n.vezes >= 2) achados.push(`${n.rotulo} (${n.porque}; invisível na tela em ${n.vezes} paradas da visita)`);
+    return achados;
+  }
+  for (const el of document.querySelectorAll('body *')) {
+    if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'SVG', 'PATH'].includes(el.tagName.toUpperCase()) || el.closest('svg, [hidden], noscript, template, [aria-hidden="true"], [inert], dialog:not([open])')) continue;
+    const temTexto = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 1);
+    const ehMidia = ['IMG', 'VIDEO', 'PICTURE'].includes(el.tagName);
+    if (!temTexto && !ehMidia) continue;
+    // posição antes do estilo: nas provas com lugar (primeira tela, parada da visita, acima) só quem está nele paga o estilo dos pais
+    const r = el.getBoundingClientRect();
+    if (r.width <= 1 && r.height <= 1) continue;               // texto só para leitor de tela (ou display: none)
+    if (onde === 'primeira' || onde === 'contar') {
+      const dentro = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+      // também na horizontal: cartão de carrossel à direita da janela (overflow-x) não está na tela (falso positivo medido na Torra Clara)
+      const dentroX = Math.min(r.right, window.innerWidth) - Math.max(r.left, 0);
+      if (dentro < Math.min(24, r.height / 2) || dentroX < Math.min(24, r.width / 2)) continue;
+    }
+    if (onde === 'acima' && r.bottom > 0) continue;
+    // fim da visita: a visita só rola na vertical; cartão de carrossel fora da largura da janela não foi visto, não se julga
+    if (onde === 'fim' && (Math.min(r.right, window.innerWidth) - Math.max(r.left, 0)) < Math.min(24, r.width / 2)) continue;
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none') continue;
+    let fixo = false, op = 1, oculto = false, recorte = null;
+    for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+      const c = getComputedStyle(n);
+      if (c.display === 'none') { oculto = true; break; }
+      if (c.position === 'fixed') fixo = true;
+      op *= parseFloat(c.opacity);
+      if (!recorte) { const rc = recorteTotal(n, c); if (rc) recorte = n === el ? rc : `${rc} em ${caminho(n)}`; }
+      if (n.tagName === 'DETAILS' && !n.open && el.tagName !== 'SUMMARY' && !el.closest('summary')) { oculto = true; break; }
+    }
+    if (oculto || fixo) continue;
+    let porque = null;
+    if (op < 0.05) porque = 'opacidade 0';
+    else if (cs.visibility === 'hidden') porque = 'visibility: hidden';
+    else if (recorte) porque = 'recortado por ' + recorte;
+    const rotulo = `${caminho(el)} "${(el.innerText || el.getAttribute('alt') || '').replace(/\s+/g, ' ').trim().slice(0, 24)}"`;
+    if (porque && onde === 'contar' && !emCurso(el)) {
+      const n = window.__ocultosNaTela.get(el) || { vezes: 0, rotulo, porque };
+      n.vezes++; n.porque = porque;
+      window.__ocultosNaTela.set(el, n);
+    } else if (porque) achados.push(`${rotulo} (${porque})`);
+  }
+  return achados;
+}
+
 /** Elementos com texto ou imagem que a pessoa não consegue ver (opacidade 0, hidden, clip), com o caminho curto de cada um. */
 async function invisiveis(page) {
-  return page.evaluate(async () => {
+  await page.evaluate(async () => {
     const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
     for (let y = 0; y <= document.documentElement.scrollHeight; y += Math.round(window.innerHeight * 0.8)) { window.scrollTo(0, y); await dorme(60); }
     window.scrollTo(0, document.documentElement.scrollHeight);
     await dorme(300);
-    const caminho = (el) => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
-    const achados = [];
-    for (const el of document.querySelectorAll('body *')) {
-      if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'SVG', 'PATH'].includes(el.tagName.toUpperCase()) || el.closest('svg, [hidden], noscript, template, [aria-hidden="true"]')) continue;
-      const temTexto = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 1);
-      const ehMidia = ['IMG', 'VIDEO', 'PICTURE'].includes(el.tagName);
-      if (!temTexto && !ehMidia) continue;
-      const cs = getComputedStyle(el);
-      if (cs.display === 'none') continue;
-      let fixo = false, op = 1, oculto = false;
-      for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
-        const c = getComputedStyle(n);
-        if (c.display === 'none') { oculto = true; break; }
-        if (c.position === 'fixed') fixo = true;
-        op *= parseFloat(c.opacity);
-        if (n.tagName === 'DETAILS' && !n.open && el.tagName !== 'SUMMARY' && !el.closest('summary')) { oculto = true; break; }
-      }
-      if (oculto || fixo) continue;
-      const r = el.getBoundingClientRect();
-      if (r.width <= 1 && r.height <= 1) continue;               // texto só para leitor de tela
-      const clip = /rect\(\s*0(px)?[ ,]+0(px)?[ ,]+0(px)?[ ,]+0(px)?\s*\)/.test(cs.clip || '') || /inset\((50|100)%\)/.test(cs.clipPath || '');
-      let porque = null;
-      if (op < 0.05) porque = 'opacidade 0';
-      else if (cs.visibility === 'hidden') porque = 'visibility: hidden';
-      else if (clip) porque = 'recortado por clip';
-      if (porque) achados.push(`${caminho(el)} (${porque}) "${(el.innerText || el.getAttribute('alt') || '').trim().slice(0, 24)}"`);
-    }
-    return achados;
   });
+  return page.evaluate(ocultosAgora, 'todos');
 }
 
 async function provaScript(nome, w, h, mob, modo) {
@@ -279,9 +348,14 @@ for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
   for (let y = passo; y <= altura; y += passo) {
     await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), y);
     await page.waitForTimeout(450);
+    // 6 (P12): texto na janela e invisível nesta parada; em 2 paradas seguidas ou mais (quase 1 s na tela) é defeito.
+    await page.evaluate(ocultosAgora, 'contar');
   }
   await page.waitForTimeout(1500);
   const eventos = await page.evaluate(() => window.__mov);
+  // 6. Durante e no fim da visita (P12): nada com texto pode ficar invisível na tela, nem continuar invisível no fim.
+  const naTela = await page.evaluate(ocultosAgora, 'na-tela');
+  const restam = [...new Set([...naTela, ...(await page.evaluate(ocultosAgora, 'fim'))])];
 
   const onde = `${nome} (${w}x${h})`;
   const fora = new Map();
@@ -305,11 +379,39 @@ for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
   }
   console.log(`${onde.padEnd(30)} ${lista.length ? 'FALHA (' + lista.length + ')' : 'ok'}  ${animam.length}/${abaixo.length} seções animam ao chegar, ${fora.size} com animação fora da tela`);
   for (const l of lista) falhas.push(`${onde}: ${l}`);
+  console.log(`${onde.padEnd(30)} ${restam.length ? 'FALHA' : 'ok'}  fim da visita: ${restam.length} elemento(s) com texto ou imagem invisível(is) na tela ou no fim`);
+  if (restam.length) falhas.push(`${onde}: no fim da visita, ${restam.length} elemento(s) com texto ou imagem continuam invisíveis (na tela por quase 1 s, ou depois de a página inteira passar): ${restam.slice(0, 4).join('; ')}${restam.length > 4 ? '; ...' : ''}. Se o recorte de entrada (clip-path) está no próprio alvo do IntersectionObserver, a área visível do alvo é 0 e, com threshold acima de 0, o observador nunca dispara: o clip-path de entrada vai no filho, o observador olha o pai (references/receitas-de-movimento.md)`);
   await ctx.close();
 }
+// 6. Parada no topo (P13b) e salto até o fim (P14), em contextos novos.
+for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
+  const onde = `${nome} (${w}x${h})`;
+  for (const prova of ['parada', 'salto']) {
+    const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
+    const page = await ctx.newPage();
+    try { await page.goto(URL_ALVO, { waitUntil: 'load', timeout: 45000 }); }
+    catch { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
+    if (prova === 'parada') {
+      await page.waitForTimeout(PARADA_MS);
+      const lista = await page.evaluate(ocultosAgora, 'primeira');
+      console.log(`${onde.padEnd(30)} ${lista.length ? 'FALHA' : 'ok'}  parada no topo por ${PARADA_MS / 1000} s: ${lista.length} elemento(s) da primeira tela invisível(is)`);
+      if (lista.length) falhas.push(`${onde}: parada no topo por ${PARADA_MS / 1000} s, ${lista.length} elemento(s) com texto da primeira tela continuam invisíveis: ${lista.slice(0, 4).join('; ')}${lista.length > 4 ? '; ...' : ''}. Com a página parada o observador não dispara para o que está abaixo da linha do rootMargin (ou empurrado para baixo dela por translate): o que já está na primeira tela entra na carga (references/receitas-de-movimento.md, "a primeira tela entra na carga")`);
+    } else {
+      await page.waitForTimeout(1000);
+      // Salto direto ao fim, sem passar pelo meio: como uma âncora, um painel ou a volta do WhatsApp que restaura a rolagem.
+      await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+      await page.waitForTimeout(1500);
+      const lista = await page.evaluate(ocultosAgora, 'acima');
+      console.log(`${onde.padEnd(30)} ${lista.length ? 'FALHA' : 'ok'}  salto até o fim: ${lista.length} elemento(s) acima da tela invisível(is)`);
+      if (lista.length) falhas.push(`${onde}: depois de um salto até o fim (âncora, painel, voltar do WhatsApp), ${lista.length} elemento(s) que ficaram acima da tela continuam invisíveis: ${lista.slice(0, 4).join('; ')}${lista.length > 4 ? '; ...' : ''}. A base das receitas põe no estado final, sem animação, o que já passou ("já passou = estado final" em references/receitas-de-movimento.md)`);
+    }
+    await ctx.close();
+  }
+}
+
 // 3. Item por item, numa rolagem contínua a 300 px/s.
 console.log(`por item: rolagem contínua a ${VELOCIDADE} px/s`);
-for (const [nome, w, h, mob] of ((SO_CELULAR || SO_PROVA_SCRIPT) ? [] : TELAS_ITEM)) {
+for (const [nome, w, h, mob] of ((SO_CELULAR || SO_PROVA_SCRIPT || SO_VISIBILIDADE) ? [] : TELAS_ITEM)) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
   await ctx.addInitScript(escutaItens);
   const page = await ctx.newPage();
@@ -385,6 +487,7 @@ function escutaReduzido(limiar) {
   requestAnimationFrame(volta);
 }
 for (const [nome, w, h, mob] of [['iphone padrao', 390, 844, true], ['desktop comum', 1440, 900, false]]) {
+  if (SO_VISIBILIDADE) continue;
   if ((SO_CELULAR || SO_PROVA_SCRIPT) && !mob) continue;
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob, reducedMotion: 'reduce' });
   await ctx.addInitScript(`(${escutaReduzido.toString()})(${LIMIAR_REDUZIDO_MS})`);
@@ -423,4 +526,4 @@ if (falhas.length) {
   console.log('  Conteúdo continua visível sem JavaScript e com movimento reduzido.\n');
   process.exit(1);
 }
-console.log(`  PASSA: ${TELAS.length} telas, nenhuma animação fora da tela e seções animando ao chegar; nenhum item chega parado a ${VELOCIDADE} px/s; nenhuma animação em curso com movimento reduzido.\n`);
+console.log(`  PASSA: ${TELAS.length} telas, nenhuma animação fora da tela e seções animando ao chegar; nenhum texto invisível parado no topo, no fim da visita nem depois de um salto; nenhum item chega parado a ${VELOCIDADE} px/s; nenhuma animação em curso com movimento reduzido.\n`);

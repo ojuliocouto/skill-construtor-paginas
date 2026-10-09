@@ -21,6 +21,14 @@
  *           assimétrico (blocos lado a lado de pesos muito diferentes: largo x estreito),
  *           split com imagem, faixa de fotos, lista (3 ou mais itens empilhados) ou texto.
  *
+ * Como o título é classificado (3.5.10): pelo alinhamento real, não pelo centro da caixa do texto.
+ *   lado:   há conteúdo (120 px ou mais de largura) à direita do título, na altura dele;
+ *   centro: `text-align` calculado centralizado E a primeira linha com o centro a menos de 40 px
+ *           do centro da seção; ou texto à esquerda numa caixa que se ajusta ao texto (até 60%
+ *           da seção) e está no meio da seção (flex ou margin auto);
+ *   esq:    o resto (um h2 largo alinhado à esquerda é esq, mesmo com 2 linhas cheias).
+ *   A saída mostra, para cada seção, `como mediu o título: ...` com text-align e posição da 1ª linha.
+ *
  * Exceção declarada: `data-ritmo-ok="motivo"` na seção (o motivo aparece na saída).
  *
  * Uso: node scripts/gate-ritmo.mjs --url <url>
@@ -28,6 +36,7 @@
 import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
+import { exigirServidor } from './servidor-no-ar.mjs';
 import { avaliarRitmo, CENTRO_CARTOES, MAXIMO_CENTRO_CARTOES } from './ritmo-regras.mjs';
 
 const require = createRequire(import.meta.url);
@@ -48,6 +57,7 @@ if (!URL_ALVO || URL_ALVO.startsWith('--')) {
 // Dois blocos lado a lado pesam "parecido" quando o menor tem pelo menos 70% da largura do maior.
 const PESO_PARECIDO = 0.7;
 
+await exigirServidor(URL_ALVO);   // servidor caído: uma mensagem clara (saída 3), não ERR_CONNECTION_REFUSED (P11)
 const navegador = await chromium.launch();
 const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 } });
 const page = await ctx.newPage();
@@ -98,13 +108,38 @@ const secoes = await page.evaluate((PESO) => {
     const hr = h.getBoundingClientRect(), sr = s.getBoundingClientRect();
     const todos = [...s.querySelectorAll('*')].filter((el) => visivel(el) && !el.contains(h) && !h.contains(el));
 
-    // Posição do título.
+    // Posição do título. 3.5.10 (P18): "centralizado" se mede pelo alinhamento REAL, não pelo centro
+    // da caixa que cobre todas as linhas (um h2 largo, alinhado à esquerda, em 2 linhas cheias,
+    // tem essa caixa no meio da seção e foi chamado de centralizado). Mede-se o text-align
+    // calculado e a posição da PRIMEIRA linha; a medida vai para a saída.
+    const px = (n) => Math.round(n);
+    const centroSecao = (sr.left + sr.right) / 2;
+    const rg = document.createRange(); rg.selectNodeContents(h);
+    const linhasTitulo = [...rg.getClientRects()].filter((r) => r.width > 1 && r.height > 1);
+    const topoTitulo = Math.min(...linhasTitulo.map((r) => r.top));
+    const l1 = linhasTitulo.filter((r) => Math.abs(r.top - topoTitulo) < r.height * 0.5);
+    const l1E = Math.min(...l1.map((r) => r.left)), l1D = Math.max(...l1.map((r) => r.right));
+    const centroL1 = (l1E + l1D) / 2;
+    const alinhamento = getComputedStyle(h).textAlign;
+    const alinhaCentro = /center/.test(alinhamento);
     let titulo = 'esq';
-    if (todos.some((el) => { const c = el.getBoundingClientRect(); return c.width >= 120 && c.height >= 60 && c.left >= hr.right - 4 && c.top < hr.bottom + 40 && c.bottom > hr.top; })) titulo = 'lado';
-    else {
-      const rg = document.createRange(); rg.selectNodeContents(h);
-      const tr = rg.getBoundingClientRect();
-      if (getComputedStyle(h).textAlign === 'center' || Math.abs((tr.left + tr.right) / 2 - (sr.left + sr.right) / 2) < 40) titulo = 'centro';
+    let medida = '';
+    if (todos.some((el) => { const c = el.getBoundingClientRect(); return c.width >= 120 && c.height >= 60 && c.left >= hr.right - 4 && c.top < hr.bottom + 40 && c.bottom > hr.top; })) {
+      titulo = 'lado';
+      medida = `há conteúdo ao lado do título (a partir de ${px(hr.right)} px)`;
+    } else if (alinhaCentro && Math.abs(centroL1 - centroSecao) < 40) {
+      titulo = 'centro';
+      medida = `text-align ${alinhamento}; 1ª linha de ${px(l1E)} a ${px(l1D)} px, centro ${px(centroL1)} px (seção: centro ${px(centroSecao)} px)`;
+    } else if (!alinhaCentro && hr.width <= sr.width * 0.6 && Math.abs((hr.left + hr.right) / 2 - centroSecao) < 40
+      && Math.max(...linhasTitulo.map((r) => r.right)) - Math.min(...linhasTitulo.map((r) => r.left)) >= hr.width - 16) {
+      // Texto alinhado à esquerda, mas numa caixa que se ajusta ao texto e está no meio da seção
+      // (flex ou margin auto com a caixa estreita): na tela o título aparece centralizado.
+      titulo = 'centro';
+      medida = `text-align ${alinhamento}, mas a caixa do título (${px(hr.width)} px de ${px(sr.width)}) está centralizada na seção (centro ${px((hr.left + hr.right) / 2)} px)`;
+    } else {
+      medida = alinhaCentro
+        ? `text-align ${alinhamento}, mas a 1ª linha (de ${px(l1E)} a ${px(l1D)} px, centro ${px(centroL1)} px) não está no centro da seção (${px(centroSecao)} px)`
+        : `text-align ${alinhamento}; 1ª linha de ${px(l1E)} a ${px(l1D)} px, começa a ${px(l1E - sr.left)} px da borda da seção`;
     }
 
     // Corpo: a maior linha de blocos lado a lado. Se a linha também carrega o título numa das
@@ -142,7 +177,7 @@ const secoes = await page.evaluate((PESO) => {
       corpo = 'lista';
     }
     const nomes = { esq: 'título à esquerda', centro: 'título centralizado', lado: 'título ao lado do conteúdo' };
-    return { nome: rotulo(h), sig: `${nomes[titulo]} + ${corpo}`, excecao };
+    return { nome: rotulo(h), sig: `${nomes[titulo]} + ${corpo}`, excecao, medida };
   });
 }, PESO_PARECIDO);
 await navegador.close();
@@ -151,7 +186,10 @@ const r = avaliarRitmo(secoes);
 console.log('\nGATE DE RITMO  ' + URL_ALVO);
 console.log('='.repeat(88));
 console.log('Esqueleto de cada seção, na ordem da página (desktop 1440):');
-secoes.forEach((s, i) => console.log(`  ${String(i + 1).padStart(2)}. ${s.nome.padEnd(42)} ${s.sig.startsWith('sem-titulo') ? '(sem título)' : s.sig}${s.excecao ? `  [exceção: ${s.excecao}]` : ''}`));
+secoes.forEach((s, i) => {
+  console.log(`  ${String(i + 1).padStart(2)}. ${s.nome.padEnd(42)} ${s.sig.startsWith('sem-titulo') ? '(sem título)' : s.sig}${s.excecao ? `  [exceção: ${s.excecao}]` : ''}`);
+  if (s.medida) console.log(`      como mediu o título: ${s.medida}`);
+});
 console.log(`medido: ${secoes.length} seções; "${CENTRO_CARTOES}" em ${r.centroCartoes} (máximo ${MAXIMO_CENTRO_CARTOES}); vizinhas iguais: ${r.falhas.filter((f) => /vizinhas/.test(f)).length}`);
 console.log('='.repeat(88));
 r.excecoes.forEach((e) => console.log('  exceção declarada (data-ritmo-ok): ' + e));

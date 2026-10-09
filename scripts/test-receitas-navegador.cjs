@@ -45,7 +45,9 @@ function concluir(status, saidaTexto, saida) {
   let m = {};
   try { m = JSON.parse(fs.readFileSync(path.join(saida, 'medidas.json'), 'utf8')); } catch { /* falha abaixo */ }
   const blocos = m.blocos || [];
-  checar(blocos.length === 32, '16 receitas medidas em 2 telas (' + blocos.length + ')');
+  checar(blocos.length === 34, '17 receitas medidas em 2 telas (' + blocos.length + ')');
+  // P20 (3.5.10): na oferta longa a barra fica à vista com o rótulo da oferta, sem deixar telas sem botão
+  checar(m.barra_oferta && m.barra_oferta.visivel === true && m.barra_oferta.rotulo === m.barra_oferta.esperado, 'barra fixa na oferta longa: à vista e com o rótulo da oferta (' + JSON.stringify(m.barra_oferta) + ')');
   checar(blocos.length > 0 && blocos.every((b) => b.ok && b.mudou >= m.minimo_mudou), 'todo bloco muda de pixel');
   checar(m.sem_script && m.sem_script.escondidos && m.sem_script.escondidos.length === 0, 'sem script nada fica escondido');
   checar(m.movimento_reduzido && m.movimento_reduzido.texto_igual === true, 'movimento reduzido mostra o mesmo texto');

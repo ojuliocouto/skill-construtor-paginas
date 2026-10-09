@@ -122,6 +122,28 @@ const GATILHOS = {
       const depois = await p.locator(alvo).first().screenshot();
       return { p, antes, depois };
     }
+    if (nome === 'produto-em-estados') {
+      // 3.5.10 (P5): no desktop, a foto fixa no estado 1 (seção 1 no meio da tela) e no estado 2 (seção 2 no meio: o detalhe
+      // ampliado); no celular, a miniatura da seção 2 logo que ela entra (ainda no enquadramento anterior) e 1,8 s depois.
+      const sel = '[data-receita="produto-em-estados"]';
+      const meioDa = (i) => p.evaluate(([s, k]) => { const r = document.querySelectorAll(s + ' .estados-secao')[k].getBoundingClientRect(); return r.top + window.scrollY + r.height / 2; }, [sel, i]);
+      if (tela.width >= 900) {
+        await rolarPara(p, (await meioDa(0)) - tela.height / 2);
+        await espera(1800);
+        const antes = await p.locator(sel + ' .estados-foto').screenshot();
+        await rolarPara(p, (await meioDa(1)) - tela.height / 2);
+        await espera(1800);
+        const depois = await p.locator(sel + ' .estados-foto').screenshot();
+        return { p, antes, depois };
+      }
+      const topo2 = await p.evaluate((s) => document.querySelectorAll(s + ' .estados-secao')[1].getBoundingClientRect().top + window.scrollY, sel);
+      await rolarPara(p, topo2 - tela.height * 0.45);
+      const clip = await p.evaluate((s) => { const r = document.querySelectorAll(s + ' .estados-mini')[1].getBoundingClientRect(); return { x: r.left, y: r.top, width: r.width, height: r.height }; }, sel);
+      const antes = await p.screenshot({ clip, scale: 'css' });
+      await espera(1800);
+      const depois = await p.screenshot({ clip, scale: 'css' });
+      return { p, antes, depois };
+    }
     if (nome === 'barra-fixa-do-celular') {
       await rolarPara(p, 0);
       await espera(300);
@@ -283,6 +305,28 @@ if (!SO || SO === 'titulo-fixo') {
   const ok = igual && reduzido.escondidosAoCarregar === 0;
   if (!ok) falhou = true;
   console.log((ok ? 'OK    ' : 'FALHOU') + ' movimento reduzido: texto igual=' + igual + ' (' + reduzido.t.length + ' caracteres), escondidos ao carregar=' + reduzido.escondidosAoCarregar);
+}
+
+// 3b. Barra fixa na oferta longa (3.5.10, P20): no celular, com a seção de data-barra-rotulo no meio da tela, a barra está à
+// vista e com o rótulo da oferta (antes, esconder a barra na oferta deixou 2,8 telas sem botão em 390).
+{
+  const ctx = await navegador.newContext({ viewport: TELAS[1][1], ...TELAS[1][2] });
+  const p = await ctx.newPage();
+  await p.goto(URL_ALVO, { waitUntil: 'load' });
+  await espera(400);
+  const alvo = await p.evaluate(() => { const e = document.querySelector('[data-barra-rotulo]'); if (!e) return null; const r = e.getBoundingClientRect(); return { y: r.top + window.scrollY + r.height / 2, esperado: e.getAttribute('data-barra-rotulo') }; });
+  let medida = { visivel: false, rotulo: null, esperado: alvo && alvo.esperado };
+  if (alvo) {
+    await rolarPara(p, alvo.y - TELAS[1][1].height / 2);
+    await espera(900);
+    medida = { ...medida, ...(await p.evaluate(() => { const b = document.querySelector('[data-barra]'); const a = b && b.querySelector('a'); const cs = b && getComputedStyle(b); return { visivel: !!(b && b.classList.contains('mostra') && cs.visibility === 'visible'), rotulo: a ? a.textContent.trim() : null }; })) };
+    await p.screenshot({ path: path.join(SAIDA, 'barra-oferta-longa-mob.png') });
+  }
+  resultado.barra_oferta = medida;
+  const ok = medida.visivel && medida.rotulo === medida.esperado;
+  if (!ok) falhou = true;
+  console.log((ok ? 'OK    ' : 'FALHOU') + ' barra na oferta longa: ' + JSON.stringify(medida));
+  await ctx.close();
 }
 
 // 4. Prints da página inteira depois de rolar tudo, e rolagem lateral no celular

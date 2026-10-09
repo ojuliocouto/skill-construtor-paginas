@@ -314,12 +314,48 @@ class Etapas(unittest.TestCase):
         self.montar_0_e_3()
         (self.pasta / 'briefing.txt').write_text('briefing novo do cliente com outro preço', encoding='utf-8')
         (self.pasta / 'sustentacao.md').write_text('| Frase | Linha |\n|---|---|\n| b | "y" |\n', encoding='utf-8')
-        antes = (self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8')
         code, out = self.revalidar()
         self.assertEqual(code, 1, out)
         self.assertIn('sustentacao.md', out)
         self.assertRegex(out, r'registrar 3')
-        self.assertEqual((self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8'), antes, 'nada foi gravado quando bloqueia')
+
+    # 3.5.10 (achado P15): o revalidar parava na etapa 3 e não gravava nem a 0, que tinha passado, sem dizer.
+    # Escolha: grava as etapas que passaram ATÉ a que bloqueou, nunca as de depois, e diz o que gravou.
+    def lido(self):
+        return json.loads((self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8'))
+
+    def test_revalidar_bloqueado_na_etapa_3_grava_a_0_e_diz_o_que_gravou(self):
+        self.montar_0_e_3()
+        (self.pasta / 'briefing.txt').write_text('briefing novo do cliente com outro preço', encoding='utf-8')
+        (self.pasta / 'sustentacao.md').write_text('| Frase | Linha |\n|---|---|\n| b | "y" |\n', encoding='utf-8')
+        antes = self.lido()
+        code, out = self.revalidar()
+        self.assertEqual(code, 1, out)
+        reg = self.lido()
+        self.assertIn('revalidada', reg['0'], 'a etapa 0 passou e foi gravada')
+        self.assertEqual(reg['3'], antes['3'], 'a etapa que bloqueou fica como estava')
+        self.assertEqual(self.rodar('checar', '0'), 0)
+        self.assertRegex(out, r'gravadas: etapa\(s\) 0')
+        self.assertRegex(out, r'(?i)etapa 3.*bloque|bloque.*etapa 3')
+        self.assertRegex(out, r'(?i)etapa 3 e as seguintes.*n[aã]o foram gravadas')
+
+    def test_revalidar_parcial_nao_libera_a_etapa_que_bloqueou_nem_as_seguintes(self):
+        self.montar_0_e_3()
+        (self.pasta / 'briefing.txt').write_text('briefing novo do cliente com outro preço', encoding='utf-8')
+        (self.pasta / 'sustentacao.md').write_text('| Frase | Linha |\n|---|---|\n| b | "y" |\n', encoding='utf-8')
+        self.revalidar()
+        self.assertEqual(self.rodar('checar', '3'), 1, 'a 3 continua bloqueada')
+        self.assertEqual(self.rodar('checar', '4'), 1, 'e quem vem depois dela também')
+
+    def test_revalidar_bloqueado_na_primeira_etapa_diz_que_nada_foi_gravado(self):
+        self.montar_0_e_3()
+        (self.pasta / 'briefing.txt').write_text('briefing novo do cliente com outro preço', encoding='utf-8')
+        (self.pasta / 'etapa.json').write_text((self.pasta / 'etapa.json').read_text(encoding='utf-8') + ' ', encoding='utf-8')
+        antes = (self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8')
+        code, out = self.revalidar()
+        self.assertEqual(code, 1, out)
+        self.assertEqual((self.pasta / '.etapas-verificadas.json').read_text(encoding='utf-8'), antes)
+        self.assertRegex(out, r'(?i)nada foi gravado')
 
     def test_revalidar_json_da_etapa_mudado_tambem_bloqueia(self):
         self.montar_0_e_3()

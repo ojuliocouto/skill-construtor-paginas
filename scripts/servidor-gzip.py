@@ -12,6 +12,7 @@ import gzip
 import http.server
 import io
 import os
+import socket
 import socketserver
 import sys
 
@@ -25,7 +26,8 @@ def parse_args():
         epilog=f"Exemplo: {comando('servidor-gzip.py')} ./public 8900",
     )
     p.add_argument("raiz", nargs="?", default=".", help="diretório a servir (default: .)")
-    p.add_argument("porta", nargs="?", default="8900", help="porta TCP (default: 8900)")
+    p.add_argument("porta", nargs="?", default="8900",
+                   help="porta TCP preferida (default: 8900); se estiver ocupada o servidor escolhe outra e imprime a URL")
     args = p.parse_args()
     try:
         porta = int(args.porta)
@@ -72,9 +74,51 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+def abrir(handler, porta):
+    """Abre o servidor na porta pedida; se ela estiver ocupada, deixa o sistema escolher uma livre.
+
+    Porta fixa foi o P11 do teste de ponta a ponta (3.5.10): com outras sessoes na mesma maquina a 8765
+    estava ocupada ou o servidor dela caia, e os gates estouravam com ERR_CONNECTION_REFUSED. Devolve
+    (servidor, porta_em_uso, porta_pedida_ocupada_ou_None).
+    """
+    try:
+        if porta != 0 and alguem_responde(porta):
+            raise OSError(f"porta {porta} ocupada")
+        return socketserver.TCPServer(("", porta), handler), porta, None
+    except OSError:
+        if porta == 0:
+            raise
+        httpd = socketserver.TCPServer(("", 0), handler)
+        return httpd, httpd.server_address[1], porta
+
+
+def alguem_responde(porta):
+    """Ha um servidor ouvindo em 127.0.0.1:porta? Abrir a porta so no bind nao basta: no macOS e no Linux um servidor
+    em 0.0.0.0 consegue abrir a MESMA porta de outro que ouve em 127.0.0.1, e o trafego do navegador vai para o outro."""
+    try:
+        with socket.create_connection(("127.0.0.1", porta), timeout=0.5):
+            return True
+    except OSError:
+        return False
+
+
+def dizer(texto):
+    print(texto, flush=True)   # com pipe o Python guardaria a linha no buffer e quem le a URL esperaria para sempre
+
+
 if __name__ == "__main__":
-    socketserver.TCPServer.allow_reuse_address = True
+    # Sem SO_REUSEADDR de proposito: com ele dois processos conseguem abrir a mesma porta (no Windows sempre; no macOS e no
+    # Linux quando um ouve em 127.0.0.1 e o outro em 0.0.0.0) e o segundo roubaria o trafego do primeiro. Porta que ainda
+    # nao foi liberada pelo sistema (TIME_WAIT) cai no mesmo caminho da ocupada: outra porta, e a URL impressa.
+    socketserver.TCPServer.allow_reuse_address = False
     handler = functools.partial(Handler, directory=RAIZ)
-    with socketserver.TCPServer(("", PORTA), handler) as httpd:
-        print(f"servindo {RAIZ} com gzip na porta {PORTA}")
-        httpd.serve_forever()
+    httpd, porta_em_uso, ocupada = abrir(handler, PORTA)
+    with httpd:
+        if ocupada is not None:
+            dizer(f"a porta {ocupada} esta ocupada por outro processo: servindo na porta {porta_em_uso}")
+        dizer(f"servindo {RAIZ} com gzip na porta {porta_em_uso}")
+        dizer(f"URL: http://127.0.0.1:{porta_em_uso}/")
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            pass

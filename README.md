@@ -128,14 +128,14 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.9)
+SKILL.md                       router (v3.5.10)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
   pesquisa-de-referencias.md   how to find, capture, read and record references
   plano.md                     the PLAN step, the PLANO.md template and what its gate checks
   ritmo-e-animacao.md          signature moment, section skeletons and the animation proof
-  receitas-de-movimento.md     15 motion recipes extracted from the approved page (HTML, CSS, JS, no-JS and reduced-motion fallbacks)
+  receitas-de-movimento.md     17 motion recipes extracted from the approved page (HTML, CSS, JS, no-JS and reduced-motion fallbacks)
   receitas/demo.html           one self-contained page that shows every recipe working (opens from disk or over HTTP)
   imagem.md                    real photo before illustration, repetition, sharpness, notice
   densidade-servico-local.md   the 7 copy items of a local-service page
@@ -152,14 +152,26 @@ references/
   assets-sem-chave.md          freely licensed photos and how to credit them
   gate-etapas.md               evidence fields per step
   arquivo/                     v2 references, outside the flow (kept for lookup only)
-  projects/EXAMPLE.md          per-project template (real files are local, gitignored)
-  sessions/EXAMPLE.md          per-session template (real files are local, gitignored)
+  projects/EXAMPLE.md          per-project template (copy it to <project>/contexto-do-projeto.md; real notes never live in the skill folder)
+  sessions/EXAMPLE.md          per-session template (copy it to <project>/sessoes/YYYY-MM-DD.md; real notes never live in the skill folder)
 scripts/                       gates, capture, audit registry, tests, rodar-testes.mjs (whole suite), test-portabilidade.py (portability guard)
 .github/workflows/             portabilidade.yml (suite on Windows, macOS and Linux)
 .gitattributes                 LF line endings for scripts
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.5.10
+
+Fixes from the end-to-end test of the Torra Clara page (findings P1 to P21 and G22). Red test before every fix; no gate was loosened.
+
+- **Visible first screen on the phone (G22).** `gate-responsivo.mjs` measures the top of the page in the area a person actually sees, with the browser bars on (390x664 and 360x616 fail, 375x553 warns): headline, supporting text and main button whole, button 8 px or more from the bottom edge; the hero photo needs 35% of the visible area, with a 20% floor (the text wins). The hero button is no longer the brand link that points back to the top. It fails the old v7 and the Torra Clara page and passes the current v7. `--so-primeira-tela` measures only this.
+- **Invisible text (P12, P13, P14).** `gate-movimento.mjs` fails text that is invisible while the page is parked 4 s on the first screen, on screen during the visit (an entrance clip-path on the observed target) or above the screen after a jump to the end; `gate-oclusao.mjs` measures line by line and catches a line clipped by clip-path. The motion base gains `primeiraTela` and `jaPassou`. Pages built before 3.5.10 without "already passed" fail the jump proof until they get the function: that is the defect, not noise.
+- **Local server (P11).** `servidor-gzip.py` treats the port as a preference: if it is taken it picks a free one, says so and prints `URL: http://127.0.0.1:<port>/`. Every browser gate checks the URL first and stops with "servidor fora do ar em <url>" (exit 3, with the command to bring it back) instead of `ERR_CONNECTION_REFUSED` and a stack trace. `rodar-gates.mjs` restarts the server of a gate that lost it and repeats that gate once. `montar-dist.py` empties `dist/` without deleting the folder, so a server inside it survives, and says "dist refeita".
+- **Capture and images (P1 to P3, P6, P7, P17).** Bot-block pages are `bloqueada` at any text length; the cookie notice counts as closed only after the DOM confirms it left the screen; a middle print equal to the first screen is `vazia` (`--longa`). `--type openverse` falls back to Wikimedia Commons; `gerar-og-image.mjs` warns instead of silently using the first font and the default colours; `gerar-icones.mjs` prints the ready `<link>` lines.
+- **Gates (P4, P8 to P10, P15, P18, P21).** The animation type in the plan must be a recipe of the repertoire, `assinatura` or `criação nova: <motivo>`; the owner regex no longer crosses a line break; an e-mail or site at the start of an item is out of the capital-letter rule; a city is not a person's name in alt text; `revalidar` records the steps that passed up to the one that blocked; "centred title" is measured by real alignment; a line starting with `rodada N:` or `antes:` is history in the final report.
+- **Recipes (P5, P19, P20).** New recipe `produto-em-estados` (17 recipes now): the same product photo crosses 3 sections changing state; `painel-de-cor` says how many buttons carry `data-painel`; `barra-fixa-do-celular` covers a long offer.
+- **Not proven.** The 664 px visible area comes from the Playwright device table, not from a physical iPhone: if a real iPhone 14 shows less than 657 px, the button of the current v7 also falls out of the first screen there. The real Omsom capture problem (a 900 px page with an equal middle print) was not reproduced; the tests use local pages with the same two symptoms. The current v7 fails the jump proof until it gets "already passed".
 
 ## What is new in 3.5.9
 
@@ -267,6 +279,13 @@ node scripts/test-capturar-referencias.cjs
 node scripts/test-gates-visuais-responsivo.cjs   # e -composicao.cjs, -movimento.cjs
 node scripts/test-gates-v35.cjs
 node scripts/test-print-cabecalho.cjs
+node scripts/py.mjs test-servidor-gzip.py           # free port, URL printed, dist rebuilt without dropping the server (3.5.10)
+node scripts/test-servidor-fora.cjs                 # every browser gate says "servidor fora do ar" (exit 3) instead of a stack trace
+node scripts/test-primeira-tela.cjs                 # visible first screen on the phone
+node scripts/test-visibilidade-movimento.cjs        # invisible text: parked, during the visit, after a jump; clipped line
+node scripts/test-texto-ritmo-3510.cjs              # e-mail and site at the start of an item; title alignment measured
+node scripts/py.mjs test-docs-criar-3510.py
+node scripts/py.mjs test-docs-3510-juncao.py
 node --test scripts/extrai-identidade.test.mjs
 ```
 
@@ -278,7 +297,7 @@ The visual tests use Chromium, ffmpeg and local synthetic pages. They prove that
 
 - No secret, token, account ID or client data lives in this repository. Optional tools read their keys from the environment (for example `TWENTYFIRST_API_KEY`, `PEXELS_API_KEY`); the checker never prints them.
 - Client material, project memory and session notes (`references/projects/*`, `references/sessions/*`, `evidencias/`, owner-specific preferences) are gitignored.
-- The reference capture never logs in, never clicks cookie or consent banners and never accepts terms.
+- The reference capture never logs in, never fills a form and never accepts terms. It does click the cookie notice of the page it visits so the print is not covered (it prefers decline, then close, and accepts only as a last resort), and it reports the notice as closed only after checking that it left the screen (since 3.5.6; the check is stricter since 3.5.10).
 - Pages built outside their final domain ship with `noindex`, so a test copy of a real client's page does not compete with the client in search.
 
 ## License

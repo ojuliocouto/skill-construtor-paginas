@@ -472,6 +472,50 @@ teste('--lista mostra o conjunto sem rodar nada', async () => {
   for (const n of ['movimento', 'responsivo', 'sem-kicker', 'imagens']) assert.match(r.saida, new RegExp(n));
 });
 
+// ---------------------------------------------------------------- 6. servidor que cai no meio (P11, 3.5.10)
+const gateQueCaiUmaVez = (marca) => ({
+  mjs: `import fs from 'node:fs';\nconst m = ${JSON.stringify(marca)};\n` +
+    `if (!fs.existsSync(m)) { fs.writeFileSync(m, '1'); console.error('servidor fora do ar em http://127.0.0.1:1/: nada ouve nessa porta'); process.exit(3); }\n` +
+    `console.log('ok oclusao na segunda tentativa');\n`,
+});
+
+teste('servidor que caiu no meio do gate: o comando sobe outro e repete o gate uma vez, dizendo isso', async () => {
+  const { CATALOGO } = await catalogo();
+  const falsos = pastaTemp('falsos');
+  const marca = path.join(pastaTemp('marca'), 'tentou.txt');
+  montarFalsos(falsos, { oclusao: gateQueCaiUmaVez(marca) })(CATALOGO);
+  const proj = projetoFalso();
+  const r = rodar(['--projeto', proj, '--scripts-dir', falsos, '--sem-montar', '--so', 'oclusao']);
+  assert.equal(r.codigo, 0, r.saida);
+  assert.match(r.saida, /servidor.*caiu.*repito/i, r.saida);
+  assert.ok(fs.existsSync(path.join(proj, 'gates', 'oclusao-r1-servidor-caiu.txt')), 'a saída da 1ª tentativa deve ficar guardada');
+});
+
+teste('servidor que cai de novo na repetição: o gate reprova e a mensagem de servidor fora fica no relatório', async () => {
+  const { CATALOGO } = await catalogo();
+  const falsos = pastaTemp('falsos');
+  montarFalsos(falsos, {
+    oclusao: { mjs: `console.error('servidor fora do ar em http://127.0.0.1:1/: nada ouve nessa porta');\nprocess.exit(3);\n` },
+  })(CATALOGO);
+  const proj = projetoFalso();
+  const r = rodar(['--projeto', proj, '--scripts-dir', falsos, '--sem-montar', '--so', 'oclusao']);
+  assert.equal(r.codigo, 1, r.saida);
+  assert.match(r.saida, /servidor fora do ar em http:\/\/127\.0\.0\.1:1\//, r.saida);
+});
+
+teste('gate que reprova SEM a marca de servidor fora não é repetido (reprovação de verdade não se maquia)', async () => {
+  const { CATALOGO } = await catalogo();
+  const falsos = pastaTemp('falsos');
+  const contador = path.join(pastaTemp('marca'), 'vezes.txt');
+  montarFalsos(falsos, {
+    oclusao: { mjs: `import fs from 'node:fs';\nfs.appendFileSync(${JSON.stringify(contador)}, 'x');\nconsole.log('REPROVA texto coberto');\nprocess.exit(1);\n` },
+  })(CATALOGO);
+  const proj = projetoFalso();
+  const r = rodar(['--projeto', proj, '--scripts-dir', falsos, '--sem-montar', '--so', 'oclusao']);
+  assert.equal(r.codigo, 1, r.saida);
+  assert.equal(fs.readFileSync(contador, 'utf8'), 'x', 'o gate que reprovou de verdade rodou mais de uma vez');
+});
+
 (async () => {
   let falhas = 0;
   for (const [nome, fn] of testes) {

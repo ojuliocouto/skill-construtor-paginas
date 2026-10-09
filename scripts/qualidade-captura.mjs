@@ -10,7 +10,8 @@
  *   bloqueada  HTTP 401/403/429, ou texto de bloqueio/desafio dominando a página
  *   quebrada   HTTP 400 ou mais, página sem folha de estilo aplicada, ou página vazia
  *   coberta    modal ou aviso cobrindo mais de 40% da janela mesmo depois de tentar fechar
- *   vazia      (3.5.8) a primeira dobra é uma folha lisa, ou o meio é de uma cor só com fotos que não carregaram
+ *   vazia      (3.5.8) a primeira dobra é uma folha lisa, ou o meio é de uma cor só com fotos que não carregaram;
+ *              (3.5.10) o print do meio é igual ao da dobra numa página que deveria rolar
  *   ok         nenhuma das anteriores
  */
 export const ESTADOS = ['ok', 'bloqueada', 'quebrada', 'coberta', 'vazia'];
@@ -19,6 +20,8 @@ export const LIMITE_COBERTURA = 0.4;
 // (herói em vídeo que não rodou); de 80% para cima só avisa, porque página minimalista de verdade passa.
 export const LIMITE_FOLHA_LISA = 0.97;
 export const LIMITE_AVISO_DOMINANCIA = 0.8;
+// 3.5.10 (P3): página de uma tela só com tantos links assim não é página curta de verdade: só o topo renderizou.
+export const ANCORAS_DE_PAGINA_LONGA = 30;
 
 // Frases de página de bloqueio. Só valem quando dominam a página (texto curto) ou estão no título.
 const BLOQUEIO = [
@@ -27,21 +30,45 @@ const BLOQUEIO = [
   /verifique que voc[eê] [eé] humano/i, /captcha/i, /attention required/i, /are you a robot/i,
   /you have been blocked/i, /request blocked/i, /pardon our interruption/i, /enable javascript and cookies/i,
   /access to this page has been denied/i, /bot detection/i,
+  /too many requests/i, /verify (that )?you are (a )?human/i, /confirm you are (a )?human/i, /security check/i,
+];
+// 3.5.10 (P1): frases tão específicas de tela de bloqueio de robô que valem em qualquer tamanho de texto.
+// A tela da Um Coffee tinha o cabeçalho e o menu do site em volta da frase e passou como ok na 3.5.8.
+// Frases que podem aparecer num texto comum (too many requests, verify you are human) ficam na lista curta.
+const BLOQUEIO_FORTE = [
+  /couldn['\u2019]?t verify the security of your connection/i, /verify the security of your connection/i,
+  /n[aã]o foi poss[ií]vel verificar a seguran[cç]a da sua conex[aã]o/i,
+  /performance (&|&amp;|and) security by cloudflare/i, /\bray id\s*:\s*[0-9a-f]{8,}/i,
+  /sorry,? you have been blocked/i, /why have i been blocked/i, /you are being rate limited/i,
+  /incapsula incident id/i, /request unsuccessful\. incapsula/i, /reference\s*#\s*\d+\.[0-9a-f]+\.\d+\.[0-9a-f]+/i,
+  /press (&|&amp;|and) hold to confirm you are a human/i, /unusual traffic from your computer network/i,
+  /detected unusual (traffic|activity)/i, /detectamos (tr[aá]fego|atividade) (incomum|incomuns|at[ií]pic[oa])/i,
+  /confirm(e)? que voc[eê] n[aã]o [eé] um rob[oô]/i, /access to this (content|site|website) has been (restricted|denied|blocked)/i,
 ];
 const TITULO_BLOQUEIO = [/just a moment/i, /attention required/i, /access denied/i, /forbidden/i, /^403/, /acesso negado/i, /security check/i, /are you a robot/i];
 const TEXTO_CURTO = 800; // abaixo disso, a frase de bloqueio domina a página
 const TEXTO_VAZIO = 400; // página do tamanho da janela com menos texto que isso não tem conteúdo
 
-export function classificar({ http, titulo = '', texto = '', temEstilo = true, altura = 0, janela = 900, cobertura = 0, dominanciaDobra, dominanciaMeio, imagensSemCarregar = 0 }) {
+export function classificar({ http, titulo = '', texto = '', temEstilo = true, altura = 0, janela = 900, cobertura = 0, dominanciaDobra, dominanciaMeio, imagensSemCarregar = 0, meioIgualDobra = false, esperadaLonga = false, ancoras = 0 }) {
   const t = String(texto || '').replace(/\s+/g, ' ').trim();
   const pct = (x) => `${Math.round(x * 100)}%`;
   if ([401, 403, 429].includes(http)) return { estado: 'bloqueada', motivo: `HTTP ${http}: o site recusou o acesso automático` };
   if (TITULO_BLOQUEIO.some((r) => r.test(String(titulo || '')))) return { estado: 'bloqueada', motivo: `título de bloqueio ("${String(titulo).slice(0, 60)}")` };
+  const forte = BLOQUEIO_FORTE.map((r) => r.exec(t)).find(Boolean);
+  if (forte) return { estado: 'bloqueada', motivo: `texto de bloqueio ou desafio de navegador na página ("${t.slice(Math.max(0, forte.index - 10), forte.index + 70).trim()}")` };
   if (t.length < TEXTO_CURTO && BLOQUEIO.some((r) => r.test(t))) return { estado: 'bloqueada', motivo: `texto de bloqueio ou desafio de navegador domina a página ("${t.slice(0, 70)}")` };
   if (http >= 400) return { estado: 'quebrada', motivo: `HTTP ${http}: a página não existe ou deu erro` };
   if (!temEstilo) return { estado: 'quebrada', motivo: 'a página não rendeu estilo (nenhuma folha de estilo aplicada)' };
   if (altura <= janela + 5 && t.length < TEXTO_VAZIO) return { estado: 'quebrada', motivo: `página vazia: altura ${altura}px (a da janela) e só ${t.length} caracteres de texto` };
   if (cobertura > LIMITE_COBERTURA) return { estado: 'coberta', motivo: `um modal ou aviso cobre ${pct(cobertura)} da janela (limite ${pct(LIMITE_COBERTURA)})` };
+  // 3.5.10 (P3): o meio igual à dobra. Com a página mais alta que a janela, a rolagem não andou (modal que trava a
+  // rolagem, só o topo renderizou). Com uma tela só, só vale se a página deveria ser longa: --longa ou links demais.
+  if (meioIgualDobra) {
+    if (altura > janela + 5) return { estado: 'vazia', motivo: `o print do meio é igual ao da dobra numa página de ${altura}px: a rolagem não andou ou só o topo renderizou` };
+    if (esperadaLonga || ancoras >= ANCORAS_DE_PAGINA_LONGA) {
+      return { estado: 'vazia', motivo: `a página saiu com ${altura}px (uma tela) e o print do meio é igual ao da dobra, mas ${esperadaLonga ? 'ela foi dada como longa (--longa)' : `ela tem ${ancoras} links`}: só o topo renderizou` };
+    }
+  }
   if (typeof dominanciaDobra === 'number' && dominanciaDobra >= LIMITE_FOLHA_LISA) {
     return { estado: 'vazia', motivo: `a primeira dobra é ${pct(dominanciaDobra)} de uma cor só (o herói não rendeu: vídeo ou imagem que não carregou)` };
   }

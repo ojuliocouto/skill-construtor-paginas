@@ -114,7 +114,7 @@ Escolha: [ ] A  [ ] B  [ ] C  [ ] misturar: <o quê de cada>
 
 | Seção | Desktop | Celular | Animação |
 |---|---|---|---|
-| Primeira dobra | <como se compõe em 1440> | <como se compõe em 390> | <tipo>: <o que anima> |
+| Primeira dobra | <como se compõe em 1440> | <como se compõe em 390> | <nome da receita, `assinatura` ou `criação nova`>: <o que anima (na criação nova, o motivo)> |
 
 ## d. Copy
 

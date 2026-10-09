@@ -307,8 +307,10 @@ def avisos_plano_x_sustentacao(r, tabela):
     return avisos
 
 
-DONO = re.compile(r"(?im)^\s*[-*]?\s*(?:dono|dona|respons[aá]vel|profissional|fundador|fundadora|propriet[aá]ri[ao])"
-                  r"[^:\n]{0,40}:\s*([A-ZÀ-Ý][\wÀ-ÿ']+(?:\s+(?:d[aeo]s?\s+)?[A-ZÀ-Ý][\wÀ-ÿ']+)+)")
+# v3.5.10 (P8): só espaço e tab entre as palavras do nome. `\s` atravessava a quebra de linha e
+# juntava o nome do fim de uma linha com o começo da seguinte ("Helena Duarte\nHelena Duarte").
+DONO = re.compile(r"(?im)^[ \t]*[-*]?[ \t]*(?:dono|dona|respons[aá]vel|profissional|fundador|fundadora|propriet[aá]ri[ao])"
+                  r"[^:\n]{0,40}:[ \t]*([A-ZÀ-Ý][\wÀ-ÿ']+(?:[ \t]+(?:d[aeo]s?[ \t]+)?[A-ZÀ-Ý][\wÀ-ÿ']+)+)")
 
 
 def texto_do_corpo(pagina):
