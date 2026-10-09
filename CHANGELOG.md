@@ -1,5 +1,53 @@
 # Changelog
 
+## 3.5.11 (09/10/2026): o momento assinatura de produto físico que muda de foto (P5, a metade que a 3.5.10 deixou)
+
+A 3.5.10 resolveu o P5 só para a MESMA foto em 3 enquadramentos (receita `produto-em-estados`). Quando o produto muda de foto de verdade
+(grão cru, torrado, na xícara na Torra Clara), o `gate-imagens.py` seguia reprovando `data-assinatura` em fotos diferentes (regra da
+3.5.10, frente B) e a receita dizia "não use". Esta versão fecha a contradição sem afrouxar o gate: o caso ruim original continua reprovando.
+
+### Variante de 3 fotos da `produto-em-estados`
+- Sequência declarada: `data-assinatura-estado="1"`, `"2"`, `"3"` (de 2 a 4 estados), `data-assinatura-grupo="nome"` opcional. Cada estado
+  é uma foto do MESMO produto, na sua seção; as seções não precisam ser vizinhas.
+- O que faz a sequência ler como continuação e não como 3 fotos soltas: o mesmo quadro (proporção, lado e largura) nas seções, o assunto
+  no mesmo ponto (`--ancora`), a foto do estado anterior por baixo do quadro e a nova passando por cima (cortina de `clip-path` com o
+  final escrito, `inset(0 0 0 0)`, para o navegador interpolar), e uma trilha de 3 passos com o passo da seção marcado.
+- Demo em `references/receitas/demo.html` (continuam 17 receitas: a variante mora dentro da `produto-em-estados`). O
+  `provar-receitas.mjs` mede, em 1440 e 390: os 3 quadros com a mesma largura, altura e posição; a cortina muda os pixels dos estados 2 e
+  3 (animações paradas no instante da chegada e terminadas, sem depender da carga da máquina); movimento reduzido já chega no estado final.
+  Sem script, só a foto do estado aparece, inteira.
+
+### `gate-imagens.py` (regra 13)
+- Aceita `data-assinatura` em várias fotos SÓ quando formam a sequência declarada: estados numerados de 1 até N (2 a 4), sem buraco, cada
+  estado em uma foto (a cópia dela por baixo do quadro seguinte leva o número do estado dela), fotos diferentes entre os estados, no mesmo
+  grupo e em pelo menos N seções. As seções onde a foto leva o número contam como uma só; a foto do estado numa seção sem a marca segue
+  sendo repetição.
+- Continua reprovando, com mensagem que aponta a saída: 2 ou 3 fotos diferentes com `data-assinatura` simples; buraco ou começo fora do 1;
+  1 estado só; mais de 4; estado que não é número; 2 grupos; o mesmo estado em fotos diferentes; estados diferentes na mesma foto; todos os
+  estados numa seção só; sequência mais `data-assinatura` simples em outra foto. 21 testes novos em `test-imagens.py` (`SequenciaDeEstados`).
+
+### Torra Clara (a página que achou o P5)
+- O grão cru, o torrado e o café na xícara viram a sequência: sítios, semana do seu café e fecho, o mesmo quadro 4:5 à esquerda nas 3
+  seções, trilha "1 Cru, 2 Torrado, 3 Na xícara". O `gate-imagens.py` da Torra passa (reprovava desde a 3.5.8); os outros gates que
+  passavam continuam passando.
+- A primeira rodada de gates na Torra achou um defeito da própria receita: o número do passo da trilha estava em `<span>` no HTML, e o
+  `gate-verdade.py` lê todo número visível como promessa ("1", "2", "3" sem linha de sustentação). O número passou a vir de um contador
+  de CSS (`counter(passo)` no `::before`); a receita e o demo foram corrigidos junto (teste `test_o_numero_do_passo_vem_de_contador_de_css`).
+- O `gate-plano.py` reprovou o PLANO com `produto-em-estados` escrito nas 3 seções ("no máximo 2 seções com a mesma animação"). O tipo
+  certo da coluna Animação nas 3 seções é `assinatura:` (o momento assinatura fica fora da contagem), com a receita nomeada depois dos
+  dois pontos. A receita agora diz isso (`**No PLANO:**`), com teste.
+- O `gate-movimento.mjs` reprovou `li` "chegam parados" (a trilha animava o número do passo quando o quadro entrava, e a trilha, embaixo do
+  quadro, entrava na tela depois). A trilha deixou de animar; a receita diz "A trilha não anima", com teste.
+- O `gate-ritmo.mjs` da 3.5.11 reprova a Torra Clara ("MONTE O SEU PLANO DE CAFÉ." e "DÚVIDAS ANTES DE ASSINAR", as duas "título à esquerda
+  + cartões"), mas reprovava IGUAL na página publicada antes desta mudança (medido com os mesmos gates): vem do P18 da 3.5.10, que passou a
+  medir o alinhamento real do título, e o relatório da 3.5.10 rodou os gates de uma pasta anterior à junção. Não é desta mudança e não foi consertado aqui.
+
+### Não foi provado
+- A sequência foi provada em UMA página real (a Torra Clara) e no demo com desenhos; página de outro ramo (obra, prato, imóvel) pode pedir
+  outro ponto de âncora. O auditor adversarial não rodou nesta versão.
+- O quadro é o mesmo nas seções, mas o gate não mede a posição das 3 figuras na página: quem mede é o `provar-receitas.mjs` no demo e o
+  relatório da página. Um `gate-simetria` que cobrasse isso numa página qualquer não existe.
+
 ## 3.5.10 (09/10/2026): primeira tela visível no celular, texto invisível, servidor local e os achados P1 a P21 do teste da Torra Clara
 
 O teste de ponta a ponta da página Torra Clara (3 h 15 min, `RELATORIO.md` seção 5) deixou 21 achados (P1 a P21) mais a primeira tela do

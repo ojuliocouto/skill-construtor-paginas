@@ -1,6 +1,6 @@
 ---
 name: construtor-paginas
-version: 3.5.10
+version: 3.5.11
 description: "Use quando o usuário quiser criar uma página web (landing page, sales page, captura, institucional, portfólio, dashboard), clonar uma página existente a partir de URL ou PDF, refazer/redesenhar uma página (v2, redesign, upgrade visual), otimizar/auditar o visual de uma página já publicada, ou editar algo pontual numa página que já existe (trocar texto, headline, cor, preço, adicionar/remover seção, corrigir mobile). Sinais: criar página, landing page, hero section, clonar site, copiar página, refazer página, pdf para html, melhorar página, deixar bonito, editar página, trocar texto, mudar cor, ajustar botão, adicionar seção, arrumar mobile. Stacks: HTML+Tailwind (padrão), React, Next.js, Vue, Svelte."
 ---
 
@@ -245,7 +245,7 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `sobreposicao.mjs` | varredura de rolagem: elemento fixo (sticky) cobrindo um bloco, em px² por tela | f |
 | `gate-movimento.mjs` | visita real: 8 s parada no topo, depois rola; reprova animação que roda fora da tela, página que não anima ao chegar, item que chega parado a 300 px/s, rolagem suave e qualquer animação em curso (mais de 0,2 s) com movimento reduzido; texto invisível com a página parada 4 s na primeira tela, na tela durante a visita ou acima da tela depois de um salto até o fim (`--so-visibilidade`) | f |
 | `gate-verdade.py` | toda promessa (e a meta description) com linha do briefing que sustente; dono nomeado no briefing aparece no corpo | d, f |
-| `gate-imagens.py` | licença completa, crédito com o título real, aviso no og-image; foto repetida entre seções (pHash e origem), nitidez relativa (abaixo de 2,5 reprova, abaixo de 6 avisa), aviso e 60% de foto na primeira tela (`--url`), pessoa de banco como aviso (`--trafego-real` reprova) | e, f |
+| `gate-imagens.py` | licença completa, crédito com o título real, aviso no og-image; foto repetida entre seções (pHash e origem), nitidez relativa (abaixo de 2,5 reprova, abaixo de 6 avisa), aviso e 60% de foto na primeira tela (`--url`), pessoa de banco como aviso (`--trafego-real` reprova), sequência de fotos do momento assinatura com `data-assinatura-estado` | e, f |
 | `gerar-icones.mjs` + `gerar-og-image.mjs` | favicon e ícone de tela inicial do `icones/icone.svg` do motivo do plano, com as duas linhas de `<link>` impressas com os nomes reais; a og:image de 1200x630 (`--fonte` do título, `--cor-fundo` e `--cor-texto` da paleta do plano, ou o script avisa que usou o padrão) | e |
 | `montar-dist.py` + `gate-publicacao.py` | `dist/` só com o que a página usa, e o gate que reprova a casa na publicação, comentário interno e ícone de outra identidade | f, h |
 | `gate-relatorio.py` | o relatório final só afirma medida que um gate gravou: cada número cita o arquivo e está nele, nada anterior à `dist/`; a história do trabalho entra com o marcador no começo da linha (`rodada 1:`, `antes:`), que a tira só da regra da `dist/` | h |

@@ -1111,8 +1111,9 @@ Como funciona: as 5 faixas são camadas do MESMO arquivo, cada uma recortada por
 1. **O mesmo quadro nas 3 seções:** mesma proporção (4:5 no exemplo), mesmo lado da seção e mesma largura. Quem rola vê o quadro voltar no mesmo lugar com outro estado dentro.
 2. **A mesma âncora:** o assunto que muda (o grão, a obra, o prato) cai no mesmo ponto do quadro nas 3 fotos. Cada `<img>` leva `--ancora` (vira `object-position`) para levar o assunto a esse ponto; foto cujo assunto não chega lá pelo recorte vai recortada de novo, nunca esticada.
 3. **A transição lê como continuação:** a foto do estado anterior já está dentro do quadro, por baixo (`.efotos-antes`, uma cópia com `alt=""` e `aria-hidden`), e a foto nova passa por cima dela da esquerda para a direita, assentando de 1,06x para 1x (1,1 s, a curva da base). O estado 1 não tem cópia por baixo: o quadro nasce da cor de fundo (e a `foto-que-se-monta` pode ser a entrada dele, uma vez só). A cópia vem do mesmo arquivo da seção anterior, então o navegador não baixa de novo.
-4. **A trilha de 3 passos** sob o quadro ("1 Cru, 2 Torrado, 3 Na xícara"): texto de verdade, igual nas 3 seções, com o passo da seção marcado (`aria-current="step"`) e os anteriores preenchidos. É o fio que liga as seções; o nome do estado mora nela e no título da seção, nunca dentro da foto.
+4. **A trilha de 3 passos** sob o quadro ("1 Cru, 2 Torrado, 3 Na xícara"): uma lista `<ol>` igual nas 3 seções, com o passo da seção marcado (`aria-current="step"`) e os anteriores preenchidos. **A trilha não anima:** ela fica embaixo do quadro, e uma transição disparada pelo quadro termina antes de a trilha entrar na tela; o `gate-movimento.mjs` reprovou `li` "chegam parados" na primeira rodada da Torra Clara. É o fio que liga as seções; o nome do estado mora nela e no título da seção, nunca dentro da foto. **O número do passo vem de um contador de CSS (`counter(passo)` no `::before`), não do HTML:** o `gate-verdade.py` lê todo número visível no HTML como promessa e pede linha de sustentação, então um "1", "2", "3" solto em `<span>` reprovou a Torra Clara na primeira rodada.
 **Declaração para o gate (`gate-imagens.py`, regra 13):** cada foto leva `data-assinatura-estado="1"`, `"2"`, `"3"` (na `<figure>`, na `<img>` ou num `<div>` que a envolve) e o `data-assinatura-grupo="nome"` é opcional (o mesmo nas 3). A cópia por baixo leva o número do estado DELA (`data-assinatura-estado="1"` na `<img>` da seção 2), senão herda o da figura. O gate aceita fotos diferentes com a marca SÓ nesta forma: de 2 a 4 estados, sem buraco, cada estado em uma foto, fotos diferentes entre os estados, no mesmo grupo e em pelo menos tantas seções quanto estados. Não use `data-assinatura` simples junto: um momento assinatura só por página. Duas ou mais fotos diferentes com `data-assinatura` simples, sem a declaração, continuam reprovando. A foto do estado numa seção sem a marca é repetição.
+**No PLANO:** a coluna Animação das 3 seções começa com `assinatura:` e nomeia a receita depois dos dois pontos (`assinatura: receita produto-em-estados, variante de 3 fotos, ...`). `assinatura` é o tipo do momento assinatura e fica fora da regra de no máximo 2 seções com a mesma animação do `gate-plano.py`; com `produto-em-estados:` na frente das 3 seções o gate reprova (medido na Torra Clara).
 **Layout e gates:** o par "quadro à esquerda + texto à direita" é o que o `gate-simetria.mjs` reprova sem `data-assimetrico` no contêiner de cada seção (como no `produto-em-estados`). No celular o quadro empilha em cima do texto, sem nada fixo.
 
 ```html
@@ -1124,9 +1125,9 @@ Como funciona: as 5 faixas são camadas do MESMO arquivo, cada uma recortada por
     </div>
     <figcaption>
       <ol class="efotos-trilha" aria-label="Os 3 estados do grão">
-        <li class="feito"><span class="efotos-n">1</span>Cru</li>
-        <li aria-current="step"><span class="efotos-n">2</span>Torrado</li>
-        <li><span class="efotos-n">3</span>Na xícara</li>
+        <li class="feito">Cru</li>
+        <li aria-current="step">Torrado</li>
+        <li>Na xícara</li>
       </ol>
     </figcaption>
   </figure>
@@ -1140,23 +1141,21 @@ Como funciona: as 5 faixas são camadas do MESMO arquivo, cada uma recortada por
 .efotos { margin: 0; }
 .efotos-quadro { position: relative; overflow: hidden; aspect-ratio: 4 / 5; border-radius: 22px; background: #e4dccb; }
 .efotos-quadro img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: var(--ancora, 50% 50%); }
-.efotos-trilha { display: flex; flex-wrap: wrap; gap: 8px 18px; list-style: none; margin: 14px 0 0; padding: 0; font-size: 1rem; line-height: 1.2; }
-.efotos-trilha li { display: flex; align-items: center; gap: 8px; color: #5c615b; }
-.efotos-n { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #8a8f86; font-size: .875rem; font-weight: 600; line-height: 1; }
+.efotos-trilha { display: flex; flex-wrap: wrap; gap: 8px 18px; list-style: none; margin: 14px 0 0; padding: 0; font-size: 1rem; line-height: 1.2; counter-reset: passo; }
+.efotos-trilha li { display: flex; align-items: center; gap: 8px; color: #5c615b; counter-increment: passo; }
+.efotos-trilha li::before { content: counter(passo); display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #8a8f86; font-size: .875rem; font-weight: 600; line-height: 1; }
 .efotos-trilha .feito, .efotos-trilha [aria-current] { color: #1f2622; }
-.efotos-trilha .feito .efotos-n, .efotos-trilha [aria-current] .efotos-n { background: #4f7a63; border-color: #4f7a63; color: #fff; }
+.efotos-trilha .feito::before, .efotos-trilha [aria-current]::before { background: #4f7a63; border-color: #4f7a63; color: #fff; }
 /* o clip-path final é escrito (inset(0)): de "none" para inset() o navegador não interpola e a cortina vira um estalo */
 .js .efotos-atual { clip-path: inset(0 0 0 0); transition: clip-path 1.1s cubic-bezier(.2,.8,.2,1), transform 1.4s cubic-bezier(.2,.8,.2,1); }
-.js .efotos-n { transition: background-color .45s ease .5s, color .45s ease .5s; }
 /* o recorte de entrada está na IMAGEM, nunca na figure que o observador olha (P12) */
 .js .efotos:not(.visivel) .efotos-atual { clip-path: inset(0 100% 0 0); transform: scale(1.06); }
-.js .efotos:not(.visivel) .efotos-trilha [aria-current] .efotos-n { background: transparent; border-color: #8a8f86; color: #1f2622; }
 @media (min-width: 900px) {
   .efotos-secao { grid-template-columns: 5fr 7fr; gap: 64px; align-items: center; min-height: calc(var(--vh, 1vh) * 70); }
 }
 @media (prefers-reduced-motion: reduce) {
   .js .efotos:not(.visivel) .efotos-atual { clip-path: none; transform: none; }
-  .js .efotos-atual, .js .efotos-n { transition: none; }
+  .js .efotos-atual { transition: none; }
 }
 ```
 

@@ -511,9 +511,30 @@ class VarianteDeTresFotos3511(unittest.TestCase):
     def test_todo_seletor_da_variante_do_md_existe_no_demo(self):
         css_md = re.search(r"(?s)```css\n(\.efotos-secao.*?)```", self.md).group(1)
         classes = set(re.findall(r"\.(efotos[a-z-]*)", css_md))
-        self.assertTrue({"efotos", "efotos-quadro", "efotos-atual", "efotos-trilha", "efotos-n"} <= classes, classes)
+        self.assertTrue({"efotos", "efotos-quadro", "efotos-atual", "efotos-trilha"} <= classes, classes)
         for c in sorted(classes):
             self.assertIn(c, self.demo, c)
+
+    def test_a_trilha_nao_anima_o_gate_movimento_reprova_item_que_chega_parado(self):
+        # 3.5.11, primeira rodada da Torra Clara: a transição do ::before da trilha era disparada pelo quadro e terminava antes de o li entrar na tela
+        for texto in (self.variante, self.demo):
+            self.assertNotRegex(texto, r"efotos-trilha li::before \{ transition")
+            self.assertNotRegex(texto, r"efotos-trilha \[aria-current\]::before \{ background: transparent")
+        self.assertIn("A trilha não anima", self.variante)
+
+    def test_no_plano_as_3_secoes_levam_assinatura_na_frente_para_o_gate_plano(self):
+        # 3.5.11: "produto-em-estados:" nas 3 seções reprova ("no máximo 2 seções com a mesma animação"); "assinatura:" fica fora da contagem
+        self.assertIn("**No PLANO:**", self.variante)
+        self.assertIn("assinatura: receita produto-em-estados", self.variante)
+        self.assertIn("gate-plano.py", self.variante)
+
+    def test_o_numero_do_passo_vem_de_contador_de_css_e_nao_de_texto_no_html(self):
+        # 3.5.11, primeira rodada da Torra Clara: "1", "2", "3" em <span> viraram promessa sem sustentação no gate-verdade.py
+        for texto in (self.variante, self.demo):
+            self.assertIn("counter(passo)", texto)
+            self.assertNotIn("efotos-n", texto)
+            self.assertNotRegex(texto, r'<span[^>]*>\s*\d\s*</span>\s*(?:Cru|Torrado|Na xícara)')
+        self.assertIn("gate-verdade.py", self.variante)
 
     def test_o_demo_traz_os_3_estados_com_a_cobertura_da_base(self):
         figuras = re.findall(r'<figure class="efotos" data-assinatura-grupo="graos" data-assinatura-estado="(\d)"', self.demo)
