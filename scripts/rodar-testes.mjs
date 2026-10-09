@@ -38,6 +38,7 @@ const TETO_POR_TESTE_MS = 20 * 60 * 1000;
 const PRECISAM = {
   'test-capturar-referencias.cjs': 'navegador (captura páginas reais com o Playwright)',
   'test-medir-dobra.cjs': 'navegador (mede o aviso "imagem ilustrativa" na primeira tela)',
+  'test-gerar-icones.cjs': 'navegador (gera os PNG dos ícones e confere as linhas de link impressas)',
   'test-og-image.cjs': 'navegador (gera e mede a og:image 1200x630)',
   'test-assinatura-demo.cjs': 'navegador (a receita da assinatura provada no demo, em escuro, claro e celular)',
   'test-espera-entrada.cjs': 'navegador (print do topo espera a animação de entrada)',

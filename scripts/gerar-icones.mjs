@@ -13,6 +13,9 @@
  * (180x180) e <projeto>/icones/icones.json com o sha256 do SVG e dos PNG.
  *
  * Uso: node scripts/gerar-icones.mjs --projeto <dir>
+ *
+ * (3.5.10, P17) Imprime as duas linhas de <link> prontas para o <head>, com os nomes REAIS dos arquivos que gravou na raiz
+ * do projeto (/favicon.png e /apple-touch-icon.png). Os PNG NÃO ficam em icones/: só o SVG e o registro ficam lá.
  */
 import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
@@ -42,7 +45,8 @@ const { chromium } = carregarPlaywright();
 const navegador = await chromium.launch();
 const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
 const arquivos = {};
-for (const [nome, lado] of [['favicon.png', 32], ['apple-touch-icon.png', 180]]) {
+const GERADOS = [['favicon.png', 32], ['apple-touch-icon.png', 180]];
+for (const [nome, lado] of GERADOS) {
   const page = await navegador.newPage({ viewport: { width: lado, height: lado }, deviceScaleFactor: 1 });
   const corpo = svg.replace(/<svg\b/, `<svg width="${lado}" height="${lado}"`);
   await page.setContent(`<!doctype html><html><body style="margin:0;background:transparent">${corpo}</body></html>`);
@@ -55,3 +59,8 @@ await navegador.close();
 const registro = { motivo, svg_sha256: sha(Buffer.from(svg)), arquivos, quando: new Date().toISOString() };
 fs.writeFileSync(path.join(projeto, 'icones', 'icones.json'), JSON.stringify(registro, null, 2));
 console.log(`ícones gerados de icones/icone.svg ("${motivo}"): ${Object.keys(arquivos).join(', ')}; registro em icones/icones.json`);
+// Os href saem dos mesmos nomes que o laço acima gravou: se o nome mudar aqui, a linha impressa muda junto.
+const [faviconNome, faviconLado] = GERADOS[0], [appleNome, appleLado] = GERADOS[1];
+console.log('Cole no <head> (o caminho começa pela raiz do site, onde o gerar-icones gravou os PNG):');
+console.log(`  <link rel="icon" type="image/png" sizes="${faviconLado}x${faviconLado}" href="/${faviconNome}">`);
+console.log(`  <link rel="apple-touch-icon" sizes="${appleLado}x${appleLado}" href="/${appleNome}">`);
