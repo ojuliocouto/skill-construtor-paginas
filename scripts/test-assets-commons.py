@@ -282,5 +282,67 @@ class CommonsAcervoELarguras(unittest.TestCase):
         self.assertEqual(mod.url_commons_na_largura("https://upload.wikimedia.org/x/Mesa.webp", 500, 4000), "")
 
 
+# ---- 3.5.10, achado P6: --type openverse que falha cai sozinho para a Commons e avisa ----
+class OpenverseExplicitoCaiNaCommons(unittest.TestCase):
+    def setUp(self):
+        self._orig = (mod._abrir_url, mod.time.sleep, mod._imagem_esta_viva)
+
+    def tearDown(self):
+        mod._abrir_url, mod.time.sleep, mod._imagem_esta_viva = self._orig
+
+    def instalar(self, rede):
+        mod._abrir_url = rede.abrir
+        mod.time.sleep = rede.dormir
+        return rede
+
+    def rodar_main(self, rede, *argv):
+        self.instalar(rede)
+        saida, err = io.StringIO(), io.StringIO()
+        import sys
+        velho = sys.argv
+        sys.argv = ["assets-search.py", "woodworking workshop", *argv]
+        try:
+            with contextlib.redirect_stdout(saida), contextlib.redirect_stderr(err):
+                mod.main()
+        finally:
+            sys.argv = velho
+        return saida.getvalue(), err.getvalue()
+
+    def test_p6_type_openverse_com_conexao_recusada_cai_na_commons_e_avisa(self):
+        rede = Rede(ConnectionRefusedError(61, "Connection refused"), [GRAVADA])
+        saida, err = self.rodar_main(rede, "--type", "openverse", "-n", "3")
+        self.assertTrue(any("commons.wikimedia.org" in u for u in rede.chamadas), "não tentou a Commons")
+        self.assertIn("Rota que respondeu: Wikimedia Commons", saida)
+        self.assertIn("Openverse não respondeu", saida)
+        self.assertIn("tentando a Wikimedia Commons", err)
+        self.assertNotIn("Nenhuma foto encontrada", saida)
+
+    def test_p6_type_cc_tem_o_mesmo_comportamento(self):
+        rede = Rede(urllib.error.URLError(ConnectionRefusedError(61, "Connection refused")), [GRAVADA])
+        saida, _ = self.rodar_main(rede, "--type", "cc", "-n", "3")
+        self.assertIn("Rota que respondeu: Wikimedia Commons", saida)
+
+    def test_p6_mutante_openverse_respondendo_nao_chama_a_commons_nem_avisa_de_queda(self):
+        ov = {"results": [{"id": "1", "title": "Foto", "url": "https://live.staticflickr.com/a.jpg", "creator": "Ana",
+                           "license": "cc0", "license_version": "1.0", "width": 4000, "height": 3000}]}
+        rede = Rede(ov, [])
+        mod._imagem_esta_viva = lambda url, timeout=8: True
+        saida, err = self.rodar_main(rede, "--type", "openverse", "-n", "3")
+        self.assertFalse(any("commons.wikimedia.org" in u for u in rede.chamadas))
+        self.assertIn("Rota que respondeu: Openverse", saida)
+        self.assertNotIn("tentando a Wikimedia Commons", err)
+
+    def test_p6_as_duas_rotas_fora_dizem_que_nenhuma_respondeu(self):
+        rede = Rede(ConnectionRefusedError(61, "Connection refused"), [urllib.error.URLError("fora")])
+        saida, err = self.rodar_main(rede, "--type", "openverse", "-n", "3")
+        self.assertIn("Nenhuma foto encontrada", saida)
+        self.assertIn("tentando a Wikimedia Commons", err)
+
+    def test_p6_a_ajuda_do_sem_chave_diz_que_o_unsplash_nao_abre_por_script(self):
+        texto = mod.show_sem_chave_resources()
+        self.assertIn("Unsplash", texto)
+        self.assertIn("307", texto)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

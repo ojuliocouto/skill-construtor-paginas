@@ -834,6 +834,11 @@ def show_sem_chave_resources() -> str:
     linhas.append(f"     {comando('assets-search.py')} --type backgrounds")
     linhas.append("")
 
+    linhas.append("  FORA DESTA LISTA: o Unsplash NÃO abre por script (responde HTTP 307 para robô, tanto a busca quanto o download).")
+    linhas.append("  Para foto de banco sem chave, as rotas que respondem são a Openverse e a Wikimedia Commons (item 1).")
+    linhas.append("  Se a Openverse cair, '--type openverse' passa sozinho para a Commons e avisa.")
+    linhas.append("")
+
     linhas.append(barra)
     linhas.append("  REGRA: página só com texto, gradiente e SVG generico REPROVA na")
     linhas.append("  auditoria visual da skill. Coloque foto real ou mockup de produto.")
@@ -1326,10 +1331,15 @@ Exemplos:
         if args.folha:
             gerar_folha(items, "pexels-video", args.folha)
     elif args.type in ("openverse", "cc"):
-        items = search_openverse(query, limit=args.limit, orientation=args.orientation)
-        print(format_openverse(items, query))
+        # 3.5.10 (P6): a rota explícita também cai sozinha para a Commons quando a Openverse não responde
+        # (conexão recusada, HTTP, resposta fora do formato) ou não acha; o aviso vai para o stderr e a saída diz qual rota respondeu.
+        resultado = buscar_foto_sem_chave(query, limit=args.limit, orientation=args.orientation)
+        if resultado["fonte"] == "commons":
+            print(format_openverse(resultado["itens"], query, fonte="Wikimedia Commons", motivo=resultado.get("motivo", "")))
+        else:
+            print(format_openverse(resultado["itens"], query))
         if args.folha:
-            gerar_folha(items, "openverse", args.folha)
+            gerar_folha(resultado["itens"], "commons" if resultado["fonte"] == "commons" else "openverse", args.folha)
     elif args.type == "commons":
         items = search_commons(query, limit=args.limit, orientation=args.orientation, autor=args.autor,
                                categoria=args.categoria, filtrar_acervo=not args.sem_filtro)
