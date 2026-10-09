@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.10)
+SKILL.md                       router (v3.5.11)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,15 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.5.11
+
+Closes the contradiction left by 3.5.10 (finding P5). Red test before every change; no gate was loosened.
+
+- **Signature moment that changes photo.** New variant of the `produto-em-estados` recipe for a physical product that changes from one real photo to another (raw bean, roasted bean, cup): 2 to 4 states, each one photo in its own section, declared with `data-assinatura-estado="1"`, `"2"`, `"3"` (optional `data-assinatura-grupo`). The same frame in every section, the subject on the same anchor point, the previous photo under the frame and the new one wiping over it, and a 3-step trail. Still 17 recipes: the variant lives inside `produto-em-estados`.
+- **`gate-imagens.py` rule 13.** `data-assinatura` on several different photos passes ONLY as that declared sequence (numbered 1 to N, no gap, one photo per state, different photos between states, one group, at least N sections). Two or three different photos with a plain `data-assinatura` still fail, and the message names the fix.
+- **Proof.** `provar-receitas.mjs` measures the 3 frames (same width, height and left offset), the wipe (pixels change on states 2 and 3) and that reduced motion already shows the final state; the Torra Clara page uses it and its image gate now passes.
+- **Not proven.** One real page and one demo with drawings; the adversarial auditor did not run on this version.
 
 ## What is new in 3.5.10
 

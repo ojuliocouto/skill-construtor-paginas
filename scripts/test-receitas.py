@@ -466,5 +466,99 @@ class AchadosDaTorraClara3510(unittest.TestCase):
         self.assertIn('data-receita="produto-em-estados"', self.demo)
 
 
+class VarianteDeTresFotos3511(unittest.TestCase):
+    """3.5.11 (P5 que a 3.5.10 deixou pela metade): produto que muda de FOTO (grão cru, torrado, na xícara) é uma sequência declarada
+    com data-assinatura-estado; o gate-imagens.py a aceita (test-imagens.py) e esta receita ensina a fazer a sequência ler como
+    continuação. A prova no navegador é do test-receitas-navegador.cjs."""
+
+    def setUp(self):
+        self.md = ler(MD)
+        self.rec = re.sub(r"\s+", " ", receitas()["produto-em-estados"])
+        self.variante = self.rec[self.rec.index("Variante de 3 fotos (3.5.11"):]
+        self.demo = ler(DEMO)
+
+    def test_continua_17_receitas_a_variante_mora_dentro_de_produto_em_estados(self):
+        self.assertEqual(len(receitas()), 17)
+        self.assertEqual(self.md.count("## Receita: produto-em-estados"), 1)
+
+    def test_a_receita_nao_manda_mais_esperar_a_3511(self):
+        self.assertNotIn("proposta registrada para a 3.5.11", self.rec)
+        self.assertIn("variante de 3 fotos", self.rec.split("Variante de 3 fotos (3.5.11")[0])
+
+    def test_a_variante_declara_o_que_o_gate_aceita(self):
+        for item in ("data-assinatura-estado", "data-assinatura-grupo", "gate-imagens.py", "regra 13", "de 2 a 4 estados", "sem buraco",
+                     "um momento assinatura só por página", "continuam reprovando"):
+            self.assertIn(item, self.variante, item)
+
+    def test_a_variante_explica_porque_sao_uma_sequencia_e_nao_tres_fotos_soltas(self):
+        for item in ("mesmo quadro", "mesma âncora", "--ancora", "object-position", "por baixo", "aria-hidden", "trilha",
+                     "aria-current", "não precisam ser vizinhas", "do estado anterior"):
+            self.assertIn(item, self.variante, item)
+
+    def test_a_cortina_escreve_o_clip_path_final_e_o_recorte_vai_na_imagem(self):
+        self.assertIn("clip-path: inset(0 0 0 0)", self.variante)
+        self.assertRegex(self.variante, r"(?s)\.js \.efotos:not\(\.visivel\) \.efotos-atual \{ clip-path: inset\(0 100% 0 0\)")
+        self.assertIn("nunca na figure que o observador olha", self.variante)
+
+    def test_a_variante_tem_reserva_movimento_reduzido_e_prova(self):
+        for item in ("Fora da janela", "Reserva", "sem script", "Movimento reduzido", "provar-receitas.mjs", "mesma largura, altura e posição"):
+            self.assertIn(item, self.variante, item)
+
+    def test_a_escolha_do_momento_assinatura_aponta_a_variante(self):
+        escolha = re.sub(r"\s+", " ", self.md[self.md.index("## Escolha do momento assinatura"):self.md.index("## Receita: abertura-do-topo")])
+        self.assertIn("data-assinatura-estado", escolha)
+
+    def test_todo_seletor_da_variante_do_md_existe_no_demo(self):
+        css_md = re.search(r"(?s)```css\n(\.efotos-secao.*?)```", self.md).group(1)
+        classes = set(re.findall(r"\.(efotos[a-z-]*)", css_md))
+        self.assertTrue({"efotos", "efotos-quadro", "efotos-atual", "efotos-trilha"} <= classes, classes)
+        for c in sorted(classes):
+            self.assertIn(c, self.demo, c)
+
+    def test_a_trilha_nao_anima_o_gate_movimento_reprova_item_que_chega_parado(self):
+        # 3.5.11, primeira rodada da Torra Clara: a transição do ::before da trilha era disparada pelo quadro e terminava antes de o li entrar na tela
+        for texto in (self.variante, self.demo):
+            self.assertNotRegex(texto, r"efotos-trilha li::before \{ transition")
+            self.assertNotRegex(texto, r"efotos-trilha \[aria-current\]::before \{ background: transparent")
+        self.assertIn("A trilha não anima", self.variante)
+
+    def test_no_plano_as_3_secoes_levam_assinatura_na_frente_para_o_gate_plano(self):
+        # 3.5.11: "produto-em-estados:" nas 3 seções reprova ("no máximo 2 seções com a mesma animação"); "assinatura:" fica fora da contagem
+        self.assertIn("**No PLANO:**", self.variante)
+        self.assertIn("assinatura: receita produto-em-estados", self.variante)
+        self.assertIn("gate-plano.py", self.variante)
+
+    def test_o_numero_do_passo_vem_de_contador_de_css_e_nao_de_texto_no_html(self):
+        # 3.5.11, primeira rodada da Torra Clara: "1", "2", "3" em <span> viraram promessa sem sustentação no gate-verdade.py
+        for texto in (self.variante, self.demo):
+            self.assertIn("counter(passo)", texto)
+            self.assertNotIn("efotos-n", texto)
+            self.assertNotRegex(texto, r'<span[^>]*>\s*\d\s*</span>\s*(?:Cru|Torrado|Na xícara)')
+        self.assertIn("gate-verdade.py", self.variante)
+
+    def test_o_demo_traz_os_3_estados_com_a_cobertura_da_base(self):
+        figuras = re.findall(r'<figure class="efotos" data-assinatura-grupo="graos" data-assinatura-estado="(\d)"', self.demo)
+        self.assertEqual(figuras, ["1", "2", "3"])
+        fantasmas = re.findall(r'<img class="efotos-antes"[^>]*alt=""[^>]*aria-hidden="true"[^>]*data-assinatura-estado="(\d)"', self.demo)
+        self.assertEqual(fantasmas, ["1", "2"], "a cópia por baixo leva o número do estado anterior")
+        self.assertEqual(self.demo.count(".estados-secao, .efotos'"), 2, "observar e o else do navegador sem observador")
+        self.assertRegex(self.demo, r"\.js \.efotos-atual \{ clip-path: inset\(0 0 0 0\);")
+        self.assertRegex(self.demo, r"\.js \.efotos:not\(\.visivel\) \.efotos-atual \{ clip-path: inset\(0 100% 0 0\)")
+        movimento = self.demo[self.demo.rindex("@media (prefers-reduced-motion: reduce) {\n  .js .revela"):]
+        self.assertIn(".efotos", self.demo[self.demo.index("/* produto-em-estados, variante de 3 fotos */"):self.demo.index("@media (prefers-reduced-motion: reduce) {\n  .js .revela")])
+        self.assertIn("data-assimetrico", self.demo[self.demo.index('class="efotos-seq"') - 10:self.demo.index('class="efotos-seq"') + 200])
+
+    def test_a_prova_do_navegador_mede_a_mesma_posicao_a_cortina_e_o_movimento_reduzido(self):
+        prova = ler(SCRIPTS / "provar-receitas.mjs")
+        for item in ("estados_fotos", "mesma_posicao", "getAnimations", "reducedMotion: 'reduce'"):
+            self.assertIn(item, prova, item)
+        nav = ler(SCRIPTS / "test-receitas-navegador.cjs")
+        self.assertIn("estados_fotos", nav)
+
+    def test_zero_travessao(self):
+        self.assertNotIn("\u2014", self.md)
+        self.assertNotIn("\u2014", self.demo)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

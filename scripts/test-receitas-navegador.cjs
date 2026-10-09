@@ -49,6 +49,13 @@ function concluir(status, saidaTexto, saida) {
   // P20 (3.5.10): na oferta longa a barra fica à vista com o rótulo da oferta, sem deixar telas sem botão
   checar(m.barra_oferta && m.barra_oferta.visivel === true && m.barra_oferta.rotulo === m.barra_oferta.esperado, 'barra fixa na oferta longa: à vista e com o rótulo da oferta (' + JSON.stringify(m.barra_oferta) + ')');
   checar(blocos.length > 0 && blocos.every((b) => b.ok && b.mudou >= m.minimo_mudou), 'todo bloco muda de pixel');
+  // 3.5.11 (P5): variante de 3 fotos da produto-em-estados: mesmo quadro nas 3 seções, a cortina muda o quadro e o movimento reduzido já chega no final
+  for (const tela of ['desk', 'mob']) {
+    const e = (m.estados_fotos || {})[tela] || {};
+    checar(e.mesma_posicao === true, 'variante de 3 fotos em ' + tela + ': os 3 quadros têm a mesma largura, altura e posição (' + JSON.stringify((e.quadros || [])[0]) + ')');
+    checar((e.estados || []).length === 2 && e.estados.every((x) => x.mudou >= m.minimo_mudou), 'variante de 3 fotos em ' + tela + ': a cortina muda o quadro dos estados 2 e 3 (' + (e.estados || []).map((x) => x.mudou + '%').join(' e ') + ')');
+    checar((e.reduzido || []).length === 3 && e.reduzido.every((x) => x.final && x.mudou < m.minimo_mudou), 'variante de 3 fotos em ' + tela + ': movimento reduzido chega no estado final');
+  }
   checar(m.sem_script && m.sem_script.escondidos && m.sem_script.escondidos.length === 0, 'sem script nada fica escondido');
   checar(m.movimento_reduzido && m.movimento_reduzido.texto_igual === true, 'movimento reduzido mostra o mesmo texto');
   checar(m.lateral && !m.lateral.mob && !m.lateral.desk, 'nenhuma rolagem lateral');

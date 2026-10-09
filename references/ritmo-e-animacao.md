@@ -32,6 +32,15 @@ levar a marca (marca em duas fotos diferentes reprova); a mesma foto numa seçã
 foto sem marca repetida em duas seções reprova como sempre. Fotos diferentes da mesma mesa (de frente, na sala, de perto) não
 precisam da marca: cada uma é uma foto.
 
+**Fotos DIFERENTES como momento assinatura: a sequência de estados (3.5.11).** Quando o produto muda de foto de verdade (grão cru,
+torrado, na xícara), `data-assinatura` simples reprova (só uma foto pode levá-lo). A saída é declarar a sequência no lugar dele:
+`data-assinatura-estado="1"`, `"2"`, `"3"` na `<figure>`, na `<img>` ou num `<div>` que a envolve, com `data-assinatura-grupo="nome"`
+opcional. O gate (`gate-imagens.py`, regra 13) aceita quando são de 2 a 4 estados, sem buraco, cada estado numa foto, fotos diferentes
+entre os estados, no mesmo grupo e em pelo menos tantas seções quanto estados. Não pode haver `data-assinatura` simples em outra foto
+junto (um momento assinatura só), e duas fotos diferentes com `data-assinatura` simples seguem reprovando. Como fazer as 3 fotos lerem
+como uma sequência e não como 3 fotos soltas: a variante de 3 fotos da receita `produto-em-estados`
+(`references/receitas-de-movimento.md`).
+
 ## Esqueleto de cada seção (`gate-ritmo.mjs`)
 
 Esqueleto = posição do título x tipo de corpo (cartões, assimétrico, split com foto ou com

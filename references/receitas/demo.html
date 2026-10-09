@@ -240,6 +240,28 @@ img, svg { display: block; max-width: 100%; }
   .estados-secao { min-height: calc(var(--vh, 1vh) * 70); }
 }
 
+/* produto-em-estados, variante de 3 fotos */
+.efotos-titulo { margin-top: 64px; font-size: 1.6rem; }
+.efotos-seq { display: grid; gap: 24px; margin-top: 12px; }
+.efotos-secao { display: grid; gap: 20px; padding-block: 24px; }
+.efotos { margin: 0; }
+.efotos-quadro { position: relative; overflow: hidden; aspect-ratio: 4 / 5; border-radius: 22px; background: var(--areia); }
+.efotos-quadro img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: var(--ancora, 50% 50%); }
+.efotos-trilha { display: flex; flex-wrap: wrap; gap: 8px 18px; list-style: none; margin: 14px 0 0; padding: 0; font-size: 1rem; line-height: 1.2; counter-reset: passo; }
+.efotos-trilha li { display: flex; align-items: center; gap: 8px; color: #5c615b; counter-increment: passo; }
+.efotos-trilha li::before { content: counter(passo); display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #8a8f86; font-size: .875rem; font-weight: 600; line-height: 1; }
+.efotos-trilha .feito, .efotos-trilha [aria-current] { color: var(--escuro); }
+.efotos-trilha .feito::before, .efotos-trilha [aria-current]::before { background: var(--verde); border-color: var(--verde); color: #fff; }
+.js .efotos-atual { clip-path: inset(0 0 0 0); transition: clip-path 1.1s cubic-bezier(.2,.8,.2,1), transform 1.4s cubic-bezier(.2,.8,.2,1); }
+.js .efotos:not(.visivel) .efotos-atual { clip-path: inset(0 100% 0 0); transform: scale(1.06); }
+@media (min-width: 900px) {
+  .efotos-secao { grid-template-columns: 5fr 7fr; gap: 64px; align-items: center; min-height: calc(var(--vh, 1vh) * 70); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .efotos:not(.visivel) .efotos-atual { clip-path: none; transform: none; }
+  .js .efotos-atual { transition: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .js .revela, .js .abertura-entra { opacity: 1; transform: none; transition: none; animation: none; }
   .js .revela-foto .quadro, .js .abertura-foto .cena-quadro { clip-path: none; animation: none; transition: none; }
@@ -556,6 +578,37 @@ img, svg { display: block; max-width: 100%; }
             <p class="nota">Estado 3: a foto inteira de novo, com a marca no detalhe.</p>
           </section>
         </div>
+      </div>
+      <h3 class="efotos-titulo">Variante de 3 fotos</h3>
+      <p class="nota">Quando o produto muda de verdade de uma foto para outra (grão cru, torrado, na xícara), cada seção traz o seu estado no MESMO quadro: mesma proporção, mesmo lado, o assunto no mesmo ponto. Ao chegar, a foto nova passa por cima da anterior, que fica por baixo do quadro, e uma trilha de 3 passos mostra onde a pessoa está.</p>
+      <div class="efotos-seq" data-assimetrico="quadro do produto ao lado do texto nas 3 seções, pedido no plano">
+          <section class="efotos-secao">
+            <figure class="efotos" data-assinatura-grupo="graos" data-assinatura-estado="1">
+              <div class="efotos-quadro">
+                <img class="efotos-atual" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20400%20500'%3E%3Crect%20width='400'%20height='500'%20fill='%23d8dcc0'/%3E%3Crect%20y='380'%20width='400'%20height='120'%20fill='%23c3c8a2'/%3E%3Cg%20fill='%23a9b98a'%20stroke='%237c8c63'%20stroke-width='3'%3E%3Cellipse%20cx='160'%20cy='270'%20rx='40'%20ry='25'%20transform='rotate%28-25%20160%20270%29'/%3E%3Cellipse%20cx='240'%20cy='258'%20rx='40'%20ry='25'%20transform='rotate%2820%20240%20258%29'/%3E%3Cellipse%20cx='200'%20cy='322'%20rx='40'%20ry='25'%20transform='rotate%28-8%20200%20322%29'/%3E%3Cellipse%20cx='262'%20cy='330'%20rx='40'%20ry='25'%20transform='rotate%2835%20262%20330%29'/%3E%3Cellipse%20cx='146'%20cy='336'%20rx='40'%20ry='25'%20transform='rotate%2812%20146%20336%29'/%3E%3C/g%3E%3C/svg%3E" alt="Grãos de café crus, verde-acinzentados, sobre uma saca" width="400" height="500" style="--ancora: 50% 62%">
+              </div>
+              <figcaption><ol class="efotos-trilha" aria-label="Os 3 estados do grão"><li aria-current="step">Cru</li><li>Torrado</li><li>Na xícara</li></ol></figcaption>
+            </figure>
+            <div><h3>O grão cru</h3><p class="nota">Estado 1: chega verde, antes da torra.</p></div>
+          </section>
+          <section class="efotos-secao">
+            <figure class="efotos" data-assinatura-grupo="graos" data-assinatura-estado="2">
+              <div class="efotos-quadro">
+                <img class="efotos-antes" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20400%20500'%3E%3Crect%20width='400'%20height='500'%20fill='%23d8dcc0'/%3E%3Crect%20y='380'%20width='400'%20height='120'%20fill='%23c3c8a2'/%3E%3Cg%20fill='%23a9b98a'%20stroke='%237c8c63'%20stroke-width='3'%3E%3Cellipse%20cx='160'%20cy='270'%20rx='40'%20ry='25'%20transform='rotate%28-25%20160%20270%29'/%3E%3Cellipse%20cx='240'%20cy='258'%20rx='40'%20ry='25'%20transform='rotate%2820%20240%20258%29'/%3E%3Cellipse%20cx='200'%20cy='322'%20rx='40'%20ry='25'%20transform='rotate%28-8%20200%20322%29'/%3E%3Cellipse%20cx='262'%20cy='330'%20rx='40'%20ry='25'%20transform='rotate%2835%20262%20330%29'/%3E%3Cellipse%20cx='146'%20cy='336'%20rx='40'%20ry='25'%20transform='rotate%2812%20146%20336%29'/%3E%3C/g%3E%3C/svg%3E" alt="" aria-hidden="true" data-assinatura-estado="1" width="400" height="500" style="--ancora: 50% 62%"><img class="efotos-atual" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20400%20500'%3E%3Crect%20width='400'%20height='500'%20fill='%23e9dcc4'/%3E%3Crect%20y='380'%20width='400'%20height='120'%20fill='%23cbb48f'/%3E%3Cg%20fill='%235a3a22'%3E%3Cellipse%20cx='160'%20cy='270'%20rx='40'%20ry='25'%20transform='rotate%28-25%20160%20270%29'/%3E%3Cellipse%20cx='240'%20cy='258'%20rx='40'%20ry='25'%20transform='rotate%2820%20240%20258%29'/%3E%3Cellipse%20cx='200'%20cy='322'%20rx='40'%20ry='25'%20transform='rotate%28-8%20200%20322%29'/%3E%3Cellipse%20cx='262'%20cy='330'%20rx='40'%20ry='25'%20transform='rotate%2835%20262%20330%29'/%3E%3Cellipse%20cx='146'%20cy='336'%20rx='40'%20ry='25'%20transform='rotate%2812%20146%20336%29'/%3E%3C/g%3E%3Cg%20stroke='%23e9dcc4'%20stroke-width='4'%20fill='none'%20stroke-linecap='round'%3E%3Cpath%20d='M132%20282c18-8%2038-20%2056-34'/%3E%3Cpath%20d='M214%20266c18-6%2036-16%2052-30'/%3E%3Cpath%20d='M176%20330c18-8%2036-14%2054-24'/%3E%3C/g%3E%3C/svg%3E" alt="Grãos de café torrados, marrom escuros, sobre uma saca" width="400" height="500" style="--ancora: 50% 62%">
+              </div>
+              <figcaption><ol class="efotos-trilha" aria-label="Os 3 estados do grão"><li class="feito">Cru</li><li aria-current="step">Torrado</li><li>Na xícara</li></ol></figcaption>
+            </figure>
+            <div><h3>O grão torrado</h3><p class="nota">Estado 2: a foto anterior fica por baixo e a nova passa por cima.</p></div>
+          </section>
+          <section class="efotos-secao">
+            <figure class="efotos" data-assinatura-grupo="graos" data-assinatura-estado="3">
+              <div class="efotos-quadro">
+                <img class="efotos-antes" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20400%20500'%3E%3Crect%20width='400'%20height='500'%20fill='%23e9dcc4'/%3E%3Crect%20y='380'%20width='400'%20height='120'%20fill='%23cbb48f'/%3E%3Cg%20fill='%235a3a22'%3E%3Cellipse%20cx='160'%20cy='270'%20rx='40'%20ry='25'%20transform='rotate%28-25%20160%20270%29'/%3E%3Cellipse%20cx='240'%20cy='258'%20rx='40'%20ry='25'%20transform='rotate%2820%20240%20258%29'/%3E%3Cellipse%20cx='200'%20cy='322'%20rx='40'%20ry='25'%20transform='rotate%28-8%20200%20322%29'/%3E%3Cellipse%20cx='262'%20cy='330'%20rx='40'%20ry='25'%20transform='rotate%2835%20262%20330%29'/%3E%3Cellipse%20cx='146'%20cy='336'%20rx='40'%20ry='25'%20transform='rotate%2812%20146%20336%29'/%3E%3C/g%3E%3Cg%20stroke='%23e9dcc4'%20stroke-width='4'%20fill='none'%20stroke-linecap='round'%3E%3Cpath%20d='M132%20282c18-8%2038-20%2056-34'/%3E%3Cpath%20d='M214%20266c18-6%2036-16%2052-30'/%3E%3Cpath%20d='M176%20330c18-8%2036-14%2054-24'/%3E%3C/g%3E%3C/svg%3E" alt="" aria-hidden="true" data-assinatura-estado="2" width="400" height="500" style="--ancora: 50% 62%"><img class="efotos-atual" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20400%20500'%3E%3Crect%20width='400'%20height='500'%20fill='%23efe3cc'/%3E%3Crect%20y='380'%20width='400'%20height='120'%20fill='%23d9c29c'/%3E%3Ccircle%20cx='200'%20cy='300'%20r='118'%20fill='%23fffdf8'%20stroke='%23cbb48f'%20stroke-width='4'/%3E%3Ccircle%20cx='200'%20cy='300'%20r='88'%20fill='%233a2314'/%3E%3Ccircle%20cx='200'%20cy='300'%20r='88'%20fill='none'%20stroke='%236b3f22'%20stroke-width='8'/%3E%3Cpath%20d='M158%20276c20-14%2056-18%2084-6'%20stroke='%23a2693a'%20stroke-width='5'%20fill='none'%20stroke-linecap='round'/%3E%3Crect%20x='312'%20y='284'%20width='62'%20height='32'%20rx='16'%20fill='%23fffdf8'%20stroke='%23cbb48f'%20stroke-width='4'/%3E%3C/svg%3E" alt="Xícara de café coado vista de cima" width="400" height="500" style="--ancora: 50% 62%">
+              </div>
+              <figcaption><ol class="efotos-trilha" aria-label="Os 3 estados do grão"><li class="feito">Cru</li><li class="feito">Torrado</li><li aria-current="step">Na xícara</li></ol></figcaption>
+            </figure>
+            <div><h3>Na xícara</h3><p class="nota">Estado 3: o mesmo quadro, o mesmo ponto, agora na xícara.</p></div>
+          </section>
       </div>
     </div>
   </section>
@@ -875,7 +928,7 @@ img, svg { display: block; max-width: 100%; }
     };
     window.addEventListener('scroll', function () { window.requestAnimationFrame(jaPassou); }, { passive: true });
     var observar = function (lista) { each(lista, function (n) { observados.push(n); io.observe(n); }); primeiraTela(lista); jaPassou(); };
-    observar(document.querySelectorAll('.revela, .revela-foto, .quadro-horas, .marcas, .contorno, [data-linhas], [data-vagas], [data-faixa], [data-alinha-sozinha], .coluna.entra-pecas, .monta, .estados-secao'));
+    observar(document.querySelectorAll('.revela, .revela-foto, .quadro-horas, .marcas, .contorno, [data-linhas], [data-vagas], [data-faixa], [data-alinha-sozinha], .coluna.entra-pecas, .monta, .estados-secao, .efotos'));
     // produto-em-estados: a foto fixa troca de enquadramento quando a seção cruza a faixa do meio da tela
     each(document.querySelectorAll('[data-estados]'), function (raizEstados) {
       var fotoEstados = raizEstados.querySelector('.estados-foto');
@@ -886,7 +939,7 @@ img, svg { display: block; max-width: 100%; }
       each(raizEstados.querySelectorAll('.estados-secao'), function (sec) { meio.observe(sec); });
     });
   } else {
-    each(document.querySelectorAll('.revela, .revela-foto, .revela-lado, .quadro-horas, .marcas, .contorno, [data-linhas], .coluna.entra-pecas, .monta, .estados-secao'), function (n) { n.classList.add('visivel'); });
+    each(document.querySelectorAll('.revela, .revela-foto, .revela-lado, .quadro-horas, .marcas, .contorno, [data-linhas], .coluna.entra-pecas, .monta, .estados-secao, .efotos'), function (n) { n.classList.add('visivel'); });
     if (colunas.sozinha) aplicar(colunas.sozinha, 1);
   }
 })();
