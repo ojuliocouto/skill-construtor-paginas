@@ -23,6 +23,7 @@
 import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
+import { exigirServidor } from './servidor-no-ar.mjs';
 import { DETECTAR_TOPO } from './topo-da-pagina.mjs';
 
 const require = createRequire(import.meta.url);
@@ -37,6 +38,7 @@ const args = process.argv.slice(2);
 const URL_ALVO = args[args.indexOf('--url') + 1];
 if (!URL_ALVO || URL_ALVO.startsWith('--')) { console.error('uso: node medir-dobra.mjs --url <url>'); process.exit(2); }
 
+await exigirServidor(URL_ALVO);   // servidor caído: uma mensagem clara (saída 3), não ERR_CONNECTION_REFUSED (P11)
 const navegador = await chromium.launch();
 const saida = {};
 for (const [tag, w, h, movel] of [['desk', 1440, 900, false], ['mob', 390, 844, true]]) {

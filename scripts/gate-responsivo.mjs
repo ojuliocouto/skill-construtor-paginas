@@ -38,6 +38,7 @@
 import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
+import { exigirServidor } from './servidor-no-ar.mjs';
 import { DETECTAR_TOPO } from './topo-da-pagina.mjs';
 
 const require = createRequire(import.meta.url);
@@ -197,6 +198,7 @@ async function caixaAssentada(el, teto = 2000, tolerancia = 1) {
   return anterior;
 }
 
+await exigirServidor(URL_ALVO);   // servidor caído: uma mensagem clara (saída 3), não ERR_CONNECTION_REFUSED (P11)
 const navegador = await chromium.launch();
 
 console.log('\nGATE DE RESPONSIVIDADE  ' + URL_ALVO);

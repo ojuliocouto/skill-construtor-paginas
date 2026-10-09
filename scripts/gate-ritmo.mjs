@@ -36,6 +36,7 @@
 import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
+import { exigirServidor } from './servidor-no-ar.mjs';
 import { avaliarRitmo, CENTRO_CARTOES, MAXIMO_CENTRO_CARTOES } from './ritmo-regras.mjs';
 
 const require = createRequire(import.meta.url);
@@ -56,6 +57,7 @@ if (!URL_ALVO || URL_ALVO.startsWith('--')) {
 // Dois blocos lado a lado pesam "parecido" quando o menor tem pelo menos 70% da largura do maior.
 const PESO_PARECIDO = 0.7;
 
+await exigirServidor(URL_ALVO);   // servidor caído: uma mensagem clara (saída 3), não ERR_CONNECTION_REFUSED (P11)
 const navegador = await chromium.launch();
 const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 } });
 const page = await ctx.newPage();

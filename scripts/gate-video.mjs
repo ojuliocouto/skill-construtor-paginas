@@ -25,6 +25,7 @@ import { raizGlobal as raizGlobalNpm } from "./npm-global.cjs";
 import { sairSeAusente } from "./ffmpeg-ausente.cjs";
 import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { exigirServidor } from "./servidor-no-ar.mjs";
 
 // playwright e CommonJS e o NODE_PATH nao vale pra `import` (so pra `require`).
 // createRequire segue a resolucao CommonJS: projeto, NODE_PATH ou root global do
@@ -98,6 +99,7 @@ let falhas = 0;
 const reprova = (msg) => { falhas++; console.log(`   REPROVA  ${msg}`); };
 const ok = (msg) => console.log(`   ok       ${msg}`);
 
+await exigirServidor(URL_ALVO);   // servidor caído: uma mensagem clara (saída 3), não ERR_CONNECTION_REFUSED (P11)
 let browser;
 if (CDP) {
   try {

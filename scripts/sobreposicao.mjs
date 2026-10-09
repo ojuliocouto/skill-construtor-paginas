@@ -20,6 +20,7 @@
 import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
+import { exigirServidor } from './servidor-no-ar.mjs';
 
 const require = createRequire(import.meta.url);
 function carregarPlaywright() {
@@ -40,6 +41,7 @@ if (!URL_ALVO || !FIXO || !CONTRA || TELAS.some((t) => t.length !== 2 || t.some(
   process.exit(2);
 }
 
+await exigirServidor(URL_ALVO);   // servidor caído: uma mensagem clara (saída 3), não ERR_CONNECTION_REFUSED (P11)
 const navegador = await chromium.launch();
 const falhas = [];
 console.log('\nSOBREPOSIÇÃO DO ELEMENTO FIXO  ' + URL_ALVO);
