@@ -224,6 +224,8 @@ img, svg { display: block; max-width: 100%; }
 .estados-img { display: block; width: 100%; height: 100%; object-fit: cover; transform-origin: center; }
 .estados-marca { display: none; position: absolute; left: var(--mx); top: var(--my); width: 22%; aspect-ratio: 1; margin: -11% 0 0 -11%; border-radius: 50%; border: 3px solid #fffdf8; box-shadow: 0 0 0 2px rgba(31,38,34,.55); }
 [data-estado="1"] .estados-img, .estados-foto[data-ativo="1"] .estados-img { transform: scale(var(--zoom)) translate(var(--zx), var(--zy)); }
+/* a miniatura 16:10 corta a foto 4:5 em cima e embaixo (mostra de 25% a 75% da altura): y na miniatura = (y - 25%) x 2 */
+.estados-mini .estados-marca { left: var(--mx-mini, var(--mx)); top: var(--my-mini, var(--my)); }
 [data-estado="2"] .estados-marca { display: block; } /* sem script: só a miniatura do estado 3 mostra a marca */
 .js .estados-img { transition: transform 1.2s cubic-bezier(.2,.8,.2,1); }
 .js .estados-marca { display: block; opacity: 0; transform: scale(.6); transition: opacity .5s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
@@ -530,7 +532,7 @@ img, svg { display: block; max-width: 100%; }
       <p class="selo">Receita: <code>produto-em-estados</code></p>
       <h2>Produto em estados</h2>
       <p class="nota">A mesma foto do produto atravessa três seções: no desktop ela fica fixa ao lado e muda de enquadramento quando cada seção cruza o meio da tela; no celular ela reaparece no topo de cada seção e passa do enquadramento anterior para o dela. A imagem deste exemplo é um desenho gerado, no lugar da foto do produto.</p>
-      <div class="estados" data-estados data-assimetrico="foto fixa do produto ao lado das 3 seções, pedida no plano" style="--zoom: 2.2; --zx: -14%; --zy: 10%; --mx: 64%; --my: 40%;">
+      <div class="estados" data-estados data-assimetrico="foto fixa do produto ao lado das 3 seções, pedida no plano" style="--zoom: 2.2; --zx: -14%; --zy: 10%; --mx: 64%; --my: 40%; --mx-mini: 64%; --my-mini: 30%;">
         <div class="estados-coluna">
           <figure class="estados-foto" data-assinatura>
             <img class="estados-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 500'%3E%3Crect width='400' height='500' fill='%23e9dcc4'/%3E%3Crect y='360' width='400' height='140' fill='%23cbb48f'/%3E%3Cellipse cx='200' cy='300' rx='150' ry='90' fill='%23a07850'/%3E%3Cg fill='%235a3a22'%3E%3Cellipse cx='150' cy='280' rx='26' ry='17' transform='rotate%28-20 150 280%29'/%3E%3Cellipse cx='205' cy='262' rx='26' ry='17' transform='rotate%2815 205 262%29'/%3E%3Cellipse cx='256' cy='200' rx='40' ry='26' transform='rotate%28-25 256 200%29'/%3E%3Cellipse cx='180' cy='320' rx='26' ry='17' transform='rotate%2830 180 320%29'/%3E%3Cellipse cx='240' cy='310' rx='26' ry='17' transform='rotate%28-10 240 310%29'/%3E%3C/g%3E%3Cpath d='M232 212c14-6 30-14 48-26' stroke='%23e9dcc4' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" alt="Grãos de café torrados sobre o pano de juta, vistos de cima" width="400" height="500">

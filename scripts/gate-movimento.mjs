@@ -202,7 +202,8 @@ function reescrever(html, modo) {
 }
 
 /** 3.5.10: elementos com texto ou imagem que a pessoa não consegue ver AGORA, sem rolar. `onde`: 'todos', 'primeira' (pelo menos
- *  24 px ou metade da altura dentro da janela), 'acima' (acima da janela), 'contar' (conta, por elemento, as paradas da visita em
+ *  24 px ou metade da altura dentro da janela), 'acima' (acima da janela), 'fim' (a página toda, menos o que está fora da largura
+ *  da janela, como cartão de carrossel não rolado), 'contar' (conta, por elemento, as paradas da visita em
  *  que ele estava na janela e invisível; devolve nada) ou 'na-tela' (os que ficaram invisíveis na janela em 2 paradas ou mais).
  *  Roda dentro da página (page.evaluate). */
 function ocultosAgora(onde) {
@@ -226,6 +227,11 @@ function ocultosAgora(onde) {
   const vh = window.innerHeight;
   const achados = [];
   window.__ocultosNaTela = window.__ocultosNaTela || new Map();
+  // Entrada em curso não é defeito: na contagem da visita, elemento com animação ou transição rodando (inclusive na fase de
+  // atraso, como a foto da foto-que-se-monta, que espera 1,5 s as faixas montarem por cima) nele ou num pai não conta a parada.
+  const animando = new Set();
+  if (onde === 'contar' && document.getAnimations) for (const a of document.getAnimations()) if ((a.playState === 'running' || a.pending) && a.effect && a.effect.target) animando.add(a.effect.target);
+  const emCurso = (el) => { for (let n = el; n && n !== document.documentElement; n = n.parentElement) if (animando.has(n)) return true; return false; };
   if (onde === 'na-tela') {
     for (const [el, n] of window.__ocultosNaTela) if (n.vezes >= 2) achados.push(`${n.rotulo} (${n.porque}; invisível na tela em ${n.vezes} paradas da visita)`);
     return achados;
@@ -235,6 +241,18 @@ function ocultosAgora(onde) {
     const temTexto = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 1);
     const ehMidia = ['IMG', 'VIDEO', 'PICTURE'].includes(el.tagName);
     if (!temTexto && !ehMidia) continue;
+    // posição antes do estilo: nas provas com lugar (primeira tela, parada da visita, acima) só quem está nele paga o estilo dos pais
+    const r = el.getBoundingClientRect();
+    if (r.width <= 1 && r.height <= 1) continue;               // texto só para leitor de tela (ou display: none)
+    if (onde === 'primeira' || onde === 'contar') {
+      const dentro = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+      // também na horizontal: cartão de carrossel à direita da janela (overflow-x) não está na tela (falso positivo medido na Torra Clara)
+      const dentroX = Math.min(r.right, window.innerWidth) - Math.max(r.left, 0);
+      if (dentro < Math.min(24, r.height / 2) || dentroX < Math.min(24, r.width / 2)) continue;
+    }
+    if (onde === 'acima' && r.bottom > 0) continue;
+    // fim da visita: a visita só rola na vertical; cartão de carrossel fora da largura da janela não foi visto, não se julga
+    if (onde === 'fim' && (Math.min(r.right, window.innerWidth) - Math.max(r.left, 0)) < Math.min(24, r.width / 2)) continue;
     const cs = getComputedStyle(el);
     if (cs.display === 'none') continue;
     let fixo = false, op = 1, oculto = false, recorte = null;
@@ -247,16 +265,12 @@ function ocultosAgora(onde) {
       if (n.tagName === 'DETAILS' && !n.open && el.tagName !== 'SUMMARY' && !el.closest('summary')) { oculto = true; break; }
     }
     if (oculto || fixo) continue;
-    const r = el.getBoundingClientRect();
-    if (r.width <= 1 && r.height <= 1) continue;               // texto só para leitor de tela
-    if (onde === 'primeira' || onde === 'contar') { const dentro = Math.min(r.bottom, vh) - Math.max(r.top, 0); if (dentro < Math.min(24, r.height / 2)) continue; }
-    if (onde === 'acima' && r.bottom > 0) continue;
     let porque = null;
     if (op < 0.05) porque = 'opacidade 0';
     else if (cs.visibility === 'hidden') porque = 'visibility: hidden';
     else if (recorte) porque = 'recortado por ' + recorte;
     const rotulo = `${caminho(el)} "${(el.innerText || el.getAttribute('alt') || '').replace(/\s+/g, ' ').trim().slice(0, 24)}"`;
-    if (porque && onde === 'contar') {
+    if (porque && onde === 'contar' && !emCurso(el)) {
       const n = window.__ocultosNaTela.get(el) || { vezes: 0, rotulo, porque };
       n.vezes++; n.porque = porque;
       window.__ocultosNaTela.set(el, n);
@@ -339,7 +353,7 @@ for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
   const eventos = await page.evaluate(() => window.__mov);
   // 6. Durante e no fim da visita (P12): nada com texto pode ficar invisível na tela, nem continuar invisível no fim.
   const naTela = await page.evaluate(ocultosAgora, 'na-tela');
-  const restam = [...new Set([...naTela, ...(await page.evaluate(ocultosAgora, 'todos'))])];
+  const restam = [...new Set([...naTela, ...(await page.evaluate(ocultosAgora, 'fim'))])];
 
   const onde = `${nome} (${w}x${h})`;
   const fora = new Map();

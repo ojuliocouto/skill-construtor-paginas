@@ -1036,7 +1036,7 @@ Como funciona: as 5 faixas são camadas do MESMO arquivo, cada uma recortada por
 **Layout e gates:** a coluna fixa ao lado das seções é o par "coluna à esquerda + lista à direita" que o `gate-simetria.mjs` reprova sem `data-assimetrico` no contêiner (como na `assinatura-em-tres-estados`). Toda cópia da foto leva `data-assinatura` (a coluna e as 3 miniaturas do celular): o `gate-imagens.py` aceita a mesma foto repetida com a marca. No celular nada é fixo, então os 15% de espaço fixo do `gate-responsivo.mjs` não mudam. O nome de cada estado mora no título de cada seção, não na foto: a foto só tem imagem, então texto escondido não existe em nenhum modo.
 
 ```html
-<div class="estados" data-estados data-assimetrico="foto fixa do produto ao lado das 3 seções, pedida no plano" style="--zoom: 2.2; --zx: -14%; --zy: 10%; --mx: 64%; --my: 40%;">
+<div class="estados" data-estados data-assimetrico="foto fixa do produto ao lado das 3 seções, pedida no plano" style="--zoom: 2.2; --zx: -14%; --zy: 10%; --mx: 64%; --my: 40%; --mx-mini: 64%; --my-mini: 30%;">
   <div class="estados-coluna">
     <figure class="estados-foto" data-assinatura>
       <img class="estados-img" src="mesa.webp" alt="Mesa de jantar em carvalho maciço, vista de cima" width="1200" height="1500">
@@ -1064,6 +1064,8 @@ Como funciona: as 5 faixas são camadas do MESMO arquivo, cada uma recortada por
 .estados-marca { display: none; position: absolute; left: var(--mx); top: var(--my); width: 22%; aspect-ratio: 1; margin: -11% 0 0 -11%; border-radius: 50%; border: 3px solid #fffdf8; box-shadow: 0 0 0 2px rgba(31,38,34,.55); }
 /* os 3 enquadramentos: inteiro, detalhe ampliado, inteiro com a marca no detalhe (sem script, cada miniatura já mostra o seu) */
 [data-estado="1"] .estados-img, .estados-foto[data-ativo="1"] .estados-img { transform: scale(var(--zoom)) translate(var(--zx), var(--zy)); }
+/* a miniatura 16:10 corta a foto 4:5 em cima e embaixo (mostra de 25% a 75% da altura): y na miniatura = (y - 25%) x 2 */
+.estados-mini .estados-marca { left: var(--mx-mini, var(--mx)); top: var(--my-mini, var(--my)); }
 [data-estado="2"] .estados-marca { display: block; } /* sem script: só a miniatura do estado 3 mostra a marca */
 .js .estados-img { transition: transform 1.2s cubic-bezier(.2,.8,.2,1); }
 .js .estados-marca { display: block; opacity: 0; transform: scale(.6); transition: opacity .5s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
@@ -1096,4 +1098,5 @@ Como funciona: as 5 faixas são camadas do MESMO arquivo, cada uma recortada por
 
 **Fora da janela:** a troca da foto fixa só acontece quando uma seção cruza o meio da tela, então a foto está à vista; as miniaturas usam o `io` da base, com `.instantaneo` e o "já passou = estado final".
 **Reserva:** sem script a classe `.js` não liga: a coluna fixa mostra o produto inteiro (estado 1) e cada miniatura já mostra o enquadramento dela, com a marca no estado 3. Movimento reduzido: os enquadramentos trocam sem transição (sem zoom animado), o texto é o mesmo.
+**Marca no detalhe:** `--mx` e `--my` dão o centro do detalhe na foto da coluna (4:5, a foto inteira à vista). A miniatura do celular é 16:10 e mostra só a faixa de 25% a 75% da altura da foto: `--mx-mini` é o mesmo x e `--my-mini` é (y − 25%) × 2 (40% vira 30%). Sem isso a marca cai fora do detalhe no celular (medido no demo).
 **Custo no celular:** baixo: uma imagem por seção, animada só por `transform` (a mesma foto, decodificada uma vez). Use foto de até 150 KB em WebP, com o detalhe nítido o bastante para a ampliação de 2,2x (foto de 1200 px de largura ou mais).

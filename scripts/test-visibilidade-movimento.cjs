@@ -57,6 +57,10 @@ const ROTAS = {
     + '<script>document.querySelectorAll(".revela").forEach(function(e){var c=e.getBoundingClientRect();if(c.top<innerHeight&&c.bottom>0){e.classList.add("visivel");io.unobserve(e)}})</script>',
   '/salto-sem-passou': BASE + heroi + secoes('revela') + observa('.revela', OPCOES, false),
   '/salto-com-passou': BASE + heroi + secoes('revela') + observa('.revela', OPCOES, true),
+  // carrossel lateral no celular (os depoimentos da Torra Clara): cartão à direita da janela, ainda não revelado, não está "na tela"
+  '/carrossel': BASE + heroi + secoes('revela') + '<section class="alta"><h2 class="revela">Depoimentos</h2><ul style="display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;list-style:none;padding:0">'
+    + [1, 2, 3].map((i) => `<li class="revela" style="flex:none;width:min(82vw,330px);scroll-snap-align:start;background:#eee;padding:16px"><blockquote>Depoimento ${i} de quem assina há meses.</blockquote></li>`).join('')
+    + '</ul></section>' + observa('.revela', OPCOES, true),
   '/frete-span-em-linha': BASE + heroi + frete('clip-path:inset(-4px)'),
   '/frete-span-em-bloco': BASE + heroi + frete('display:block;clip-path:inset(-4px)'),
 };
@@ -83,6 +87,7 @@ const CASOS = [
   ['P13b: o que já está na primeira tela revelado na carga passa', MOV('/fatos-revelados-na-carga'), 0],
   ['P14: sem "já passou", o que ficou acima depois do salto continua invisível', MOV('/salto-sem-passou'), 1, /depois de um salto at[eé] o fim[^\n]*acima da tela continuam invis[ií]veis[^\n]*j[aá] passou/],
   ['P14: com "já passou = estado final", passa', MOV('/salto-com-passou'), 0],
+  ['carrossel lateral: cartão fora da janela na horizontal não conta como invisível na tela', MOV('/carrossel'), 0],
   ['P13a: clip-path no span em linha corta a 2ª linha do frete', ['gate-oclusao.mjs', ['--url', '/frete-span-em-linha']], 1, /CORTADO[^\n]*"[^"]*" linha 2 de 3[^\n]*clip-path em span/],
   ['P13a: o span em bloco mostra as linhas inteiras', ['gate-oclusao.mjs', ['--url', '/frete-span-em-bloco']], 0],
 ];

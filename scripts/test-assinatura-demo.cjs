@@ -42,7 +42,9 @@ const servidor = http.createServer((req, res) => {
 const rodar = (script, args) => new Promise((resolve) => {
   const f = spawn(process.execPath, [path.join(__dirname, script), ...args]);
   let s = ''; f.stdout.on('data', (d) => { s += d; }); f.stderr.on('data', (d) => { s += d; });
-  const t = setTimeout(() => f.kill(), 300000);
+  // 3.5.10: o gate-movimento inteiro no demo levou 299,8 s na 3.5.9 (no limite do teto antigo de 300 s) e 313 s com as provas de
+  // visibilidade (parada, visita e salto); teto de 480 s.
+  const t = setTimeout(() => f.kill(), 480000);
   f.on('close', (c) => { clearTimeout(t); resolve({ code: c, texto: s }); });
 });
 
