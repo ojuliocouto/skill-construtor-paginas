@@ -19,15 +19,17 @@
  *   título: à esquerda e em cima, centralizado, ou ao lado do conteúdo;
  *   corpo:  cartões (2 ou mais blocos de texto lado a lado de peso parecido, com caixa ou sem),
  *           assimétrico (blocos lado a lado de pesos muito diferentes: largo x estreito),
- *           configurador (3.5.12: uma coluna com 4 ou mais controles, radios, campos ou botões de
- *           escolha, ao lado de um resumo: não é "cartões iguais" mesmo com larguras parecidas),
+ *           configurador (3.5.12; 3.5.13: uma coluna com 4 ou mais controles VISÍVEIS em 2 ou mais grupos, ao lado de um
+ *           resumo sem controles; só uma coluna da fileira: não é "cartões iguais" mesmo com larguras parecidas),
  *           split com imagem, faixa de fotos, lista (3 ou mais itens empilhados, ou colunas de
- *           perguntas `details` ou de `li`: 3.5.12, duas colunas de FAQ não são cartões) ou texto.
+ *           perguntas `details` ou de `li`: 3.5.12, duas colunas de FAQ não são cartões; 3.5.13: ul, ol e dl com caixa própria
+ *           ou com título nos itens são cartões) ou texto.
  *
  * Como o título é classificado (3.5.10): pelo alinhamento real, não pelo centro da caixa do texto.
  *   lado:   há conteúdo (120 px ou mais de largura) à direita do título, na altura dele (3.5.12:
  *           sobreposição vertical de pelo menos 24 px ou 30% do título; conteúdo que só começa logo
- *           abaixo do título, como o 3º cartão de uma fileira sob um título curto, não é "ao lado");
+ *           abaixo do título, como o 3º cartão de uma fileira sob um título curto, não é "ao lado"; 3.5.13: o conteúdo é uma
+ *           coluna IRMÃ do título, em fluxo, com texto ou mídia: selo aria-hidden, enfeite em position absolute e caixa vazia não contam);
  *   centro: `text-align` calculado centralizado E a primeira linha com o centro a menos de 40 px
  *           do centro da seção; ou texto à esquerda numa caixa que se ajusta ao texto (até 60%
  *           da seção) e está no meio da seção (flex ou margin auto);

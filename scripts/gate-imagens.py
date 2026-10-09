@@ -58,6 +58,9 @@ em sequência. A regra 8 e `data-assinatura` simples aceitam UMA foto só; a seq
      entre os estados, tudo no mesmo grupo e espalhado por pelo menos tantas seções quanto estados. Um momento assinatura só:
      sequência mais `data-assinatura` simples em outra foto reprova, e 2 ou mais fotos diferentes com `data-assinatura` simples,
      sem a declaração, continuam reprovando (regra 8). A mesma foto do estado numa seção sem a marca é repetição.
+     3.5.13 (auditoria): a sequência só vale com o PLANO.md declarando `Momento assinatura: ...; seções: ...; estados: x -> y -> z` e o
+     mesmo número de estados da página; cada estado mora na sua seção (a primeira em que é o estado mais novo), distintas e em ordem
+     crescente; a foto do estado k só aparece na seção dela e na do estado k+1; estado 0 não existe.
 Mede com Pillow e numpy (`pip install pillow numpy`).
 
 Uso: node scripts/py.mjs gate-imagens.py --projeto <dir> [--dist <dir>/dist] [--url <url>] [--trafego-real]

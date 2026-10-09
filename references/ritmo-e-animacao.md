@@ -36,7 +36,8 @@ precisam da marca: cada uma é uma foto.
 torrado, na xícara), `data-assinatura` simples reprova (só uma foto pode levá-lo). A saída é declarar a sequência no lugar dele:
 `data-assinatura-estado="1"`, `"2"`, `"3"` na `<figure>`, na `<img>` ou num `<div>` que a envolve, com `data-assinatura-grupo="nome"`
 opcional. O gate (`gate-imagens.py`, regra 13) aceita quando são de 2 a 4 estados, sem buraco, cada estado numa foto, fotos diferentes
-entre os estados, no mesmo grupo e em pelo menos tantas seções quanto estados. Não pode haver `data-assinatura` simples em outra foto
+entre os estados, no mesmo grupo e em pelo menos tantas seções quanto estados. 3.5.13: o `PLANO.md` declara `Momento assinatura:
+...; estados: x -> y -> z` com o mesmo número de estados da página; cada estado na sua seção, em ordem crescente, e a foto do estado k só na dela e na do k+1. Não pode haver `data-assinatura` simples em outra foto
 junto (um momento assinatura só), e duas fotos diferentes com `data-assinatura` simples seguem reprovando. Como fazer as 3 fotos lerem
 como uma sequência e não como 3 fotos soltas: a variante de 3 fotos da receita `produto-em-estados`
 (`references/receitas-de-movimento.md`).
@@ -47,9 +48,9 @@ Esqueleto = posição do título x tipo de corpo (cartões, assimétrico, config
 ou com desenho, faixa de fotos, lista, texto). Duas seções VIZINHAS nunca têm o mesmo esqueleto, e
 no máximo 1 seção é "título centralizado + cartões" (o molde de template). Cartões são blocos de
 peso parecido lado a lado; largo contra estreito é assimétrico e quebra o molde. Uma coluna com 4
-ou mais controles (radios, campos, botões de escolha) ao lado de um resumo é um configurador, e
-colunas de perguntas (`details`) ou de itens (`li`) são lista: nenhum dos dois é "cartões", mesmo
-com larguras parecidas. O título só conta como "ao lado do conteúdo" quando o conteúdo está na
+ou mais controles VISÍVEIS em 2 grupos ou mais, ao lado de um resumo sem controles, é um configurador (só uma coluna);
+colunas de perguntas (`details`) ou de itens leves (`li`) são lista; coluna com caixa própria (fundo, borda, sombra, padding) é cartão
+em qualquer tag. O título só conta como "ao lado do conteúdo" quando o conteúdo é coluna irmã dele (sem selo aria-hidden nem absolute), na
 mesma altura dele; cartões que começam logo ABAIXO de um título curto não são "ao lado". Exceção
 declarada: `data-ritmo-ok="motivo"` na seção. Assimetria pedida no plano leva
 `data-assimetrico="motivo"` (o `gate-simetria.mjs` vira aviso).

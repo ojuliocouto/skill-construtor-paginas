@@ -1,5 +1,5 @@
 """3.5.12: o conserto do gate-ritmo (configurador e colunas de perguntas não são cartões; "ao lado" exige sobreposição vertical)
-precisa estar nos textos que o aluno e o agente leem, e a versão tem que ser a 3.5.12. O gate tem teste próprio (test-ritmo-3512.cjs)."""
+precisa estar nos textos que o aluno e o agente leem, e a 3.5.12 é história (a atual é a 3.5.13, test-docs-3513.py). O gate tem teste próprio (test-ritmo-3512.cjs)."""
 import pathlib
 import re
 import unittest
@@ -21,10 +21,10 @@ def plano(t):
 
 class Versao3512(unittest.TestCase):
     def test_versao_nos_tres_lugares(self):
-        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.12$")
-        self.assertIn("router (v3.5.12)", ler(README))
-        self.assertNotIn("router (v3.5.11)", ler(README))
-        self.assertTrue(ler(CHANGELOG).startswith("# Changelog\n\n## 3.5.12"))
+        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.13$")
+        self.assertIn("router (v3.5.13)", ler(README))
+        self.assertNotIn("router (v3.5.12)", ler(README))
+        self.assertIn("\n## 3.5.12 (09/10/2026)", ler(CHANGELOG))
         self.assertIn("## What is new in 3.5.12", ler(README))
 
     def test_skill_md_nao_passa_de_330_linhas(self):
