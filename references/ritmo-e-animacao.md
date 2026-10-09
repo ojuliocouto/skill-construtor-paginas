@@ -43,10 +43,14 @@ como uma sequência e não como 3 fotos soltas: a variante de 3 fotos da receita
 
 ## Esqueleto de cada seção (`gate-ritmo.mjs`)
 
-Esqueleto = posição do título x tipo de corpo (cartões, assimétrico, split com foto ou com
-desenho, faixa de fotos, lista, texto). Duas seções VIZINHAS nunca têm o mesmo esqueleto, e no
-máximo 1 seção é "título centralizado + cartões" (o molde de template). Cartões são blocos de
-peso parecido lado a lado; largo contra estreito é assimétrico e quebra o molde. Exceção
+Esqueleto = posição do título x tipo de corpo (cartões, assimétrico, configurador, split com foto
+ou com desenho, faixa de fotos, lista, texto). Duas seções VIZINHAS nunca têm o mesmo esqueleto, e
+no máximo 1 seção é "título centralizado + cartões" (o molde de template). Cartões são blocos de
+peso parecido lado a lado; largo contra estreito é assimétrico e quebra o molde. Uma coluna com 4
+ou mais controles (radios, campos, botões de escolha) ao lado de um resumo é um configurador, e
+colunas de perguntas (`details`) ou de itens (`li`) são lista: nenhum dos dois é "cartões", mesmo
+com larguras parecidas. O título só conta como "ao lado do conteúdo" quando o conteúdo está na
+mesma altura dele; cartões que começam logo ABAIXO de um título curto não são "ao lado". Exceção
 declarada: `data-ritmo-ok="motivo"` na seção. Assimetria pedida no plano leva
 `data-assimetrico="motivo"` (o `gate-simetria.mjs` vira aviso).
 
