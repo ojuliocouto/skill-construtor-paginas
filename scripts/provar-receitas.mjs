@@ -256,6 +256,66 @@ if (!SO || SO === 'titulo-fixo') {
   await ctx.close();
 }
 
+// 1c. Produto em estados, variante de 3 fotos (3.5.11, P5): (a) os 3 quadros têm a mesma largura, altura e posição à esquerda;
+// (b) a cortina muda os pixels do quadro dos estados 2 e 3 (a foto de baixo é a do estado anterior; as animações do quadro ficam
+// paradas no instante da chegada e depois terminadas, para a medida não depender da carga da máquina); (c) com movimento
+// reduzido o quadro já chega no estado final.
+if (!SO || SO === 'produto-em-estados') {
+  const SEL = '[data-receita="produto-em-estados"] .efotos';
+  const medidas = {};
+  for (const [tn, tela, opc] of TELAS) {
+    const ctx = await navegador.newContext({ viewport: tela, ...opc });
+    const p = await ctx.newPage();
+    await p.goto(URL_ALVO, { waitUntil: 'load' });
+    await espera(500);
+    const quadros = await p.evaluate((s) => Array.prototype.map.call(document.querySelectorAll(s + ' .efotos-quadro'), (q) => {
+      const r = q.getBoundingClientRect(); return { esquerda: +r.left.toFixed(1), largura: +r.width.toFixed(1), altura: +r.height.toFixed(1) };
+    }), SEL);
+    const igual = quadros.length >= 3 && quadros.every((q) => ['esquerda', 'largura', 'altura'].every((k) => Math.abs(q[k] - quadros[0][k]) <= 1));
+    const estados = [];
+    for (let i = 1; i < quadros.length; i++) {
+      const topo = await p.evaluate(([s, k]) => document.querySelectorAll(s)[k].getBoundingClientRect().top + window.scrollY, [SEL, i]);
+      await rolarPara(p, topo - tela.height * 0.2);
+      await p.waitForFunction(([s, k]) => document.querySelectorAll(s)[k].classList.contains('visivel'), [SEL, i], { timeout: 6000 });
+      const parar = (t) => p.evaluate(([s, k, tempo]) => { const as = document.querySelectorAll(s)[k].getAnimations({ subtree: true }); as.forEach((a) => { a.pause(); a.currentTime = tempo; }); return as.length; }, [SEL, i, t]);
+      const animacoes = await parar(0);
+      const quadro = p.locator(SEL + ' .efotos-quadro').nth(i);
+      const antes = await quadro.screenshot();
+      await p.evaluate(([s, k]) => document.querySelectorAll(s)[k].getAnimations({ subtree: true }).forEach((a) => a.finish()), [SEL, i]);
+      await espera(120);
+      const depois = await quadro.screenshot();
+      const dir = path.join(SAIDA, tn); fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'estados-fotos-' + (i + 1) + '-antes.png'), antes);
+      fs.writeFileSync(path.join(dir, 'estados-fotos-' + (i + 1) + '-depois.png'), depois);
+      estados.push({ estado: i + 1, animacoes, mudou: await porcentagemMudou(folha, antes, depois) });
+    }
+    await ctx.close();
+    // (c) movimento reduzido: o quadro de cada estado já está no estado final ao chegar
+    const cr = await navegador.newContext({ viewport: tela, reducedMotion: 'reduce', ...opc });
+    const pr = await cr.newPage();
+    await pr.goto(URL_ALVO, { waitUntil: 'load' });
+    await espera(400);
+    const reduzido = [];
+    for (let i = 0; i < quadros.length; i++) {
+      const topo = await pr.evaluate(([s, k]) => document.querySelectorAll(s)[k].getBoundingClientRect().top + window.scrollY, [SEL, i]);
+      await rolarPara(pr, topo - tela.height * 0.2);
+      await espera(150);
+      const quadro = pr.locator(SEL + ' .efotos-quadro').nth(i);
+      const antes = await quadro.screenshot();
+      await espera(1600);
+      const depois = await quadro.screenshot();
+      const css = await pr.evaluate(([s, k]) => { const c = getComputedStyle(document.querySelectorAll(s)[k].querySelector('.efotos-atual')); return { clip: c.clipPath, transform: c.transform }; }, [SEL, i]);
+      reduzido.push({ estado: i + 1, mudou: await porcentagemMudou(folha, antes, depois), clip: css.clip, transform: css.transform, final: !/100%/.test(css.clip) && css.transform === 'none' });
+    }
+    await cr.close();
+    medidas[tn] = { quadros, mesma_posicao: igual, estados, reduzido };
+    const ok = igual && estados.length >= 2 && estados.every((e) => e.mudou >= MINIMO_MUDOU) && reduzido.every((r) => r.final && r.mudou < MINIMO_MUDOU);
+    if (!ok) falhou = true;
+    console.log((ok ? 'OK    ' : 'FALHOU') + ' ' + tn + ' produto-em-estados, variante de 3 fotos: quadros iguais=' + igual + ', cortina muda ' + estados.map((e) => 'estado ' + e.estado + ' ' + e.mudou + '%').join(' e ') + ', movimento reduzido já no estado final=' + reduzido.every((r) => r.final && r.mudou < MINIMO_MUDOU));
+  }
+  resultado.estados_fotos = medidas;
+}
+
 // 2. Sem script: nada com opacidade zero ou escondido, e o conteúdo está lá
 {
   const ctx = await navegador.newContext({ viewport: TELAS[0][1], javaScriptEnabled: false });

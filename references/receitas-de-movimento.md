@@ -141,7 +141,8 @@ visual real conta mais que qualquer outra coisa."
 - **Negócio de produto físico (móveis, comida, imóvel, moda, obra, carro, joia, planta): o momento assinatura usa foto real do produto,
   nunca desenho nem ilustração figurativa.** A receita é `foto-que-se-monta` (a foto se monta em peças até ficar inteira). Quando o
   plano pede que o momento atravesse 3 seções mudando de estado, a receita é `produto-em-estados` (a mesma foto fixa ao lado das
-  seções, mudando de enquadramento com a rolagem), e a `foto-que-se-monta` pode ser a entrada dela, uma vez só. O desenho
+  seções, mudando de enquadramento com a rolagem; quando o produto muda de FOTO, cru, torrado e na xícara, a variante de 3 fotos
+  da mesma receita, com `data-assinatura-estado`), e a `foto-que-se-monta` pode ser a entrada dela, uma vez só. O desenho
   de tábuas, pratos, plantas baixas ou peças de roupa, mesmo bem feito, perde para a foto da peça de verdade: quem compra o que se
   toca quer ver o que vai receber.
 - **Desenho só quando o que se vende não tem imagem:** serviço abstrato (consultoria, contabilidade, seguro), método, software. Mesmo
@@ -1030,7 +1031,7 @@ Como funciona: as 5 faixas são camadas do MESMO arquivo, cada uma recortada por
 `data-receita`: `produto-em-estados`. Nome: **Produto em estados** (a 17ª receita; 3.5.10, achado P5 do teste da Torra Clara).
 
 **Quando usar:** momento assinatura de produto físico que precisa atravessar 3 seções e mudar de estado (a regra do momento assinatura). A MESMA foto real do produto fica fixa (`sticky`) ao lado das 3 seções no desktop e muda de enquadramento quando cada seção cruza o meio da tela: estado 1, o produto inteiro; estado 2, o detalhe ampliado (o grão, o encaixe, a costura); estado 3, o produto inteiro de novo com uma marca redonda no detalhe. No celular a foto não fica fixa: ela reaparece no topo de cada seção, no mesmo quadro, e ao entrar passa do enquadramento da seção anterior para o dela, então a mudança de estado continua à vista.
-**Quando NÃO usar:** quando o produto muda de verdade de uma foto para outra (grão cru, torrado, na xícara): hoje o `gate-imagens.py` aceita `data-assinatura` em uma foto só e reprova a mesma foto repetida sem a marca, então três fotos diferentes como assinatura reprovam (proposta registrada para a 3.5.11); foto de pessoa (ampliar rosto lê como defeito); foto sem um detalhe que valha ampliar (o estado 2 fica vazio); página com menos de 3 seções para atravessar (use `foto-que-se-monta`).
+**Quando NÃO usar:** quando o produto muda de verdade de uma foto para outra (grão cru, torrado, na xícara): use a **variante de 3 fotos** no fim desta receita (3.5.11), que o `gate-imagens.py` aceita com `data-assinatura-estado`; três fotos diferentes com `data-assinatura` simples reprovam; foto de pessoa (ampliar rosto lê como defeito); foto sem um detalhe que valha ampliar (o estado 2 fica vazio); página com menos de 3 seções para atravessar (use `foto-que-se-monta`).
 **Por que resolve a contradição da 3.5.8:** a `foto-que-se-monta` diz "uma vez por página" e o momento assinatura pede 3 seções com mudança de estado. Aqui a montagem pode ser a ENTRADA do estado 1, uma vez só; os estados 2 e 3 são a mesma foto mudando de enquadramento. Na Torra Clara saíram 3 fotos soltas (cru, torrado, xícara) e o auditor disse que nada atravessava a página.
 **Origem no teste real da 3.5.8:** `_input.css:140-149` (a `foto-que-se-monta` da semana) e `_resto.html:17, 56, 220` da Torra Clara (as 3 figuras soltas com `data-assinatura`, uma por estado).
 **Layout e gates:** a coluna fixa ao lado das seções é o par "coluna à esquerda + lista à direita" que o `gate-simetria.mjs` reprova sem `data-assimetrico` no contêiner (como na `assinatura-em-tres-estados`). Toda cópia da foto leva `data-assinatura` (a coluna e as 3 miniaturas do celular): o `gate-imagens.py` aceita a mesma foto repetida com a marca. No celular nada é fixo, então os 15% de espaço fixo do `gate-responsivo.mjs` não mudam. O nome de cada estado mora no título de cada seção, não na foto: a foto só tem imagem, então texto escondido não existe em nenhum modo.
@@ -1100,3 +1101,70 @@ Como funciona: as 5 faixas são camadas do MESMO arquivo, cada uma recortada por
 **Reserva:** sem script a classe `.js` não liga: a coluna fixa mostra o produto inteiro (estado 1) e cada miniatura já mostra o enquadramento dela, com a marca no estado 3. Movimento reduzido: os enquadramentos trocam sem transição (sem zoom animado), o texto é o mesmo.
 **Marca no detalhe:** `--mx` e `--my` dão o centro do detalhe na foto da coluna (4:5, a foto inteira à vista). A miniatura do celular é 16:10 e mostra só a faixa de 25% a 75% da altura da foto: `--mx-mini` é o mesmo x e `--my-mini` é (y − 25%) × 2 (40% vira 30%). Sem isso a marca cai fora do detalhe no celular (medido no demo).
 **Custo no celular:** baixo: uma imagem por seção, animada só por `transform` (a mesma foto, decodificada uma vez). Use foto de até 150 KB em WebP, com o detalhe nítido o bastante para a ampliação de 2,2x (foto de 1200 px de largura ou mais).
+
+
+### Variante de 3 fotos (3.5.11, o P5 que a 3.5.10 deixou pela metade)
+
+**Quando usar:** o produto muda de verdade de uma foto para outra: grão cru, torrado, na xícara; massa, forno, prato; terreno, obra, casa pronta. De 2 a 4 estados, cada estado é uma foto real e mora na sua seção. As seções não precisam ser vizinhas (a Torra Clara tem 3 seções com outras no meio): por isso o quadro não é fixo, ele se repete no mesmo lugar de cada seção.
+**Quando NÃO usar:** o mesmo produto na mesma foto em enquadramentos diferentes (é a receita acima); mais de 4 estados; foto de pessoa.
+**O que faz as 3 fotos lerem como UMA sequência e não como 3 fotos soltas (a Torra Clara da 3.5.8 tinha 3 fotos de enquadramentos e lados diferentes, e o auditor disse que nada atravessava a página):**
+1. **O mesmo quadro nas 3 seções:** mesma proporção (4:5 no exemplo), mesmo lado da seção e mesma largura. Quem rola vê o quadro voltar no mesmo lugar com outro estado dentro.
+2. **A mesma âncora:** o assunto que muda (o grão, a obra, o prato) cai no mesmo ponto do quadro nas 3 fotos. Cada `<img>` leva `--ancora` (vira `object-position`) para levar o assunto a esse ponto; foto cujo assunto não chega lá pelo recorte vai recortada de novo, nunca esticada.
+3. **A transição lê como continuação:** a foto do estado anterior já está dentro do quadro, por baixo (`.efotos-antes`, uma cópia com `alt=""` e `aria-hidden`), e a foto nova passa por cima dela da esquerda para a direita, assentando de 1,06x para 1x (1,1 s, a curva da base). O estado 1 não tem cópia por baixo: o quadro nasce da cor de fundo (e a `foto-que-se-monta` pode ser a entrada dele, uma vez só). A cópia vem do mesmo arquivo da seção anterior, então o navegador não baixa de novo.
+4. **A trilha de 3 passos** sob o quadro ("1 Cru, 2 Torrado, 3 Na xícara"): texto de verdade, igual nas 3 seções, com o passo da seção marcado (`aria-current="step"`) e os anteriores preenchidos. É o fio que liga as seções; o nome do estado mora nela e no título da seção, nunca dentro da foto.
+**Declaração para o gate (`gate-imagens.py`, regra 13):** cada foto leva `data-assinatura-estado="1"`, `"2"`, `"3"` (na `<figure>`, na `<img>` ou num `<div>` que a envolve) e o `data-assinatura-grupo="nome"` é opcional (o mesmo nas 3). A cópia por baixo leva o número do estado DELA (`data-assinatura-estado="1"` na `<img>` da seção 2), senão herda o da figura. O gate aceita fotos diferentes com a marca SÓ nesta forma: de 2 a 4 estados, sem buraco, cada estado em uma foto, fotos diferentes entre os estados, no mesmo grupo e em pelo menos tantas seções quanto estados. Não use `data-assinatura` simples junto: um momento assinatura só por página. Duas ou mais fotos diferentes com `data-assinatura` simples, sem a declaração, continuam reprovando. A foto do estado numa seção sem a marca é repetição.
+**Layout e gates:** o par "quadro à esquerda + texto à direita" é o que o `gate-simetria.mjs` reprova sem `data-assimetrico` no contêiner de cada seção (como no `produto-em-estados`). No celular o quadro empilha em cima do texto, sem nada fixo.
+
+```html
+<section class="efotos-secao" data-assimetrico="quadro do produto ao lado do texto, pedido no plano">
+  <figure class="efotos" data-assinatura-grupo="graos" data-assinatura-estado="2">
+    <div class="efotos-quadro">
+      <img class="efotos-antes" src="cru-800.webp" alt="" aria-hidden="true" data-assinatura-estado="1" width="800" height="1000" loading="lazy" style="--ancora: 50% 62%">
+      <img class="efotos-atual" src="torrado-800.webp" alt="Grãos de café torrados, marrom escuros, vistos de cima" width="800" height="1000" style="--ancora: 50% 62%">
+    </div>
+    <figcaption>
+      <ol class="efotos-trilha" aria-label="Os 3 estados do grão">
+        <li class="feito"><span class="efotos-n">1</span>Cru</li>
+        <li aria-current="step"><span class="efotos-n">2</span>Torrado</li>
+        <li><span class="efotos-n">3</span>Na xícara</li>
+      </ol>
+    </figcaption>
+  </figure>
+  <div><h2>O grão torrado</h2><p>Texto do estado 2.</p></div>
+</section>
+<!-- estado 1: sem .efotos-antes e com data-assinatura-estado="1"; estado 3: a cópia por baixo é a foto do estado 2 -->
+```
+
+```css
+.efotos-secao { display: grid; gap: 20px; padding-block: 24px; }
+.efotos { margin: 0; }
+.efotos-quadro { position: relative; overflow: hidden; aspect-ratio: 4 / 5; border-radius: 22px; background: #e4dccb; }
+.efotos-quadro img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: var(--ancora, 50% 50%); }
+.efotos-trilha { display: flex; flex-wrap: wrap; gap: 8px 18px; list-style: none; margin: 14px 0 0; padding: 0; font-size: 1rem; line-height: 1.2; }
+.efotos-trilha li { display: flex; align-items: center; gap: 8px; color: #5c615b; }
+.efotos-n { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #8a8f86; font-size: .875rem; font-weight: 600; line-height: 1; }
+.efotos-trilha .feito, .efotos-trilha [aria-current] { color: #1f2622; }
+.efotos-trilha .feito .efotos-n, .efotos-trilha [aria-current] .efotos-n { background: #4f7a63; border-color: #4f7a63; color: #fff; }
+/* o clip-path final é escrito (inset(0)): de "none" para inset() o navegador não interpola e a cortina vira um estalo */
+.js .efotos-atual { clip-path: inset(0 0 0 0); transition: clip-path 1.1s cubic-bezier(.2,.8,.2,1), transform 1.4s cubic-bezier(.2,.8,.2,1); }
+.js .efotos-n { transition: background-color .45s ease .5s, color .45s ease .5s; }
+/* o recorte de entrada está na IMAGEM, nunca na figure que o observador olha (P12) */
+.js .efotos:not(.visivel) .efotos-atual { clip-path: inset(0 100% 0 0); transform: scale(1.06); }
+.js .efotos:not(.visivel) .efotos-trilha [aria-current] .efotos-n { background: transparent; border-color: #8a8f86; color: #1f2622; }
+@media (min-width: 900px) {
+  .efotos-secao { grid-template-columns: 5fr 7fr; gap: 64px; align-items: center; min-height: calc(var(--vh, 1vh) * 70); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .efotos:not(.visivel) .efotos-atual { clip-path: none; transform: none; }
+  .js .efotos-atual, .js .efotos-n { transition: none; }
+}
+```
+
+```js
+observar(document.querySelectorAll('.efotos'));
+```
+
+**Fora da janela:** a cortina só começa quando o `.efotos` entra (`visivel`); se o aviso chega atrasado ou a pessoa pulou a seção, o `revelar` põe `.instantaneo` e o estado final entra de uma vez, sem transição (a base já zera `clip-path` e `transform` ali).
+**Reserva:** sem script a classe `.js` não liga: só a foto do estado aparece, inteira (a cópia por baixo fica coberta) e a trilha completa. Movimento reduzido: o estado final desde a carga, sem cortina nem transição, com o mesmo texto.
+**Prova:** o `provar-receitas.mjs` mede, no demo, que as 3 áreas do quadro têm a mesma largura, altura e posição à esquerda; que a cortina muda os pixels do quadro (do estado anterior para o novo); que o estado 3 também; e que com movimento reduzido o quadro já chega no estado final.
+**Custo no celular:** baixo a médio: 2 imagens por quadro (a de baixo é a mesma já baixada na seção anterior) e uma transição de `clip-path` e `transform`. Foto de até 150 KB em WebP, já recortada em 4:5 (800 px de largura para o celular, 1100 para o desktop).
