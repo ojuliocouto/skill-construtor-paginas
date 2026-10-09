@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.8)
+SKILL.md                       router (v3.5.9)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,15 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.5.9
+
+- `scripts/rodar-gates.mjs` runs every mechanical gate of step f in one command, in parallel (browser cap derived from the machine, 1 to 4), one local server per gate, and prints a single consolidated report with PASS or FAIL per gate, timings and the full failure text; exit code 1 if any gate fails. It only calls the existing gate scripts with their documented arguments. Options: `--so`, `--reprovados` (re-run only the failed ones), `--paralelo`, `--confirmar-sozinho`.
+- Measured on a real test page: 426 s serial versus 197 s parallel, with identical verdicts and failure text for all 15 gates on a good page and on a deliberately broken one.
+- `assets-search.py --folha sheet.png` builds ONE numbered contact sheet of the result thumbnails (same numbering as the text list), honouring the pause between calls and HTTP 429 handling.
+- **Motion gate measures reduced motion.** With `prefers-reduced-motion: reduce`, the gate now fails when any animation or transition is still running after load or while scrolling, and names the element and property. Before, it only checked smooth scrolling, and two real defects passed green.
+- Also: `data-assinatura` lets the signature photo repeat across its sections (one photo only), `wave.py reabrir --motivo` reopens round 1 after a large owner-requested change between rounds, the auditor budget counts until the answer arrives, and the session log goes in the project folder, never in the skill folder.
+- Known limit: in 1 of 6 runs on a good page, `gate-responsivo` failed only in parallel mode (machine under load); `--confirmar-sozinho` re-runs a failed browser gate alone and takes that verdict. That option was only proven with fake gates.
 
 ## What is new in 3.5.8
 

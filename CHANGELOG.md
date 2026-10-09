@@ -1,5 +1,33 @@
 # Changelog
 
+## 3.5.9 (08/10/2026): gates num comando só, gate de movimento com movimento reduzido e achados N22 a N27
+
+O reteste de ponta a ponta fechou em 3 h 15 min e em NÃO ENTREGAR: duas vezes o auditor achou animação rodando com movimento
+reduzido e o gate de movimento passou verde. Esta versão fecha esse furo e ataca os dois ralos de tempo fora da auditoria
+(gates, 37 min; achar foto, 21 min). Nenhum gate foi afrouxado.
+
+### Tempo
+- Novo `scripts/rodar-gates.mjs`: roda todos os gates mecânicos da etapa f num comando só, em paralelo (teto pela máquina, de 1 a 4 navegadores), com um servidor em porta livre por gate, e imprime um relatório consolidado com PASSA ou REPROVA por gate, tempo, texto inteiro das falhas e total. Grava `gates/<nome>-rN.txt` e `gates/_execucoes.txt` como o fluxo antigo e sai com 1 se qualquer gate reprova. Opções `--so`, `--reprovados`, `--paralelo`, `--confirmar-sozinho`, `--com animacao,video,sobreposicao`. Não substitui nem afrouxa nenhum gate: chama os mesmos scripts com os mesmos argumentos.
+- Medido numa cópia da página do teste de 3.5.6: rodada completa de 426 s em série para 197 s em paralelo, com o mesmo veredito e o mesmo texto de falha em todos os 15 gates, na página boa e numa página quebrada de propósito.
+- `references/caminhos/criar.md`, etapa f: o comando único é o caminho padrão (rodar tudo, ler o relatório, corrigir tudo, `--reprovados`, rodada completa no fim); os comandos individuais ficam como referência.
+- `assets-search.py`: nova opção `--folha <arquivo.png>` monta UMA imagem em grade com as miniaturas dos resultados e o número de cada uma (o mesmo da lista), respeitando a pausa entre chamadas e o HTTP 429; a saída de texto não muda. Acentos corrigidos na saída (achado A9): crédito, condição, saída, atribuição e vizinhos.
+- Testes novos: `test-rodar-gates.cjs` (21, portátil, confere o catálogo do comando contra o `criar.md`) e `test-folha-assets.py` (15, precisa de Pillow), ambos provados com mutantes.
+- Limite conhecido: em 1 de 6 rodadas na página boa, o `gate-responsivo` reprovou só no paralelo (barra fixa do celular medida com a
+  máquina cheia). `--confirmar-sozinho` roda de novo, sozinho, o gate de navegador que reprovou e adota esse veredito; essa opção só
+  foi provada com gates falsos.
+
+### Corrigido (N22 a N27)
+- **N26** `gate-movimento.mjs`: com movimento reduzido, o gate reprova se sobrar animação ou transição em curso depois da carga e
+  durante a rolagem, e nomeia o elemento e a propriedade. Antes só conferia a rolagem suave. As receitas do `demo.html` que não tinham
+  a regra de movimento reduzido ganharam a regra.
+- **N22** `gate-imagens.py`: `data-assinatura` libera a MESMA foto nas seções do momento assinatura (uma foto só; a mesma foto
+  repetida sem a marca continua reprovando).
+- **N27** `wave.py reabrir --motivo`: mudança grande pedida pelo dono entre as rodadas reabre a rodada 1, uma vez por ciclo; o
+  `criar.md` diz o que fazer quando a correção vem depois da rodada 2 em sessão não interativa.
+- **N23** `wave.py --eixos-abaixo` aceita `acabamento` (os cinco eixos da lente).
+- **N24** `pacote-auditoria.py`: o orçamento do auditor conta até a resposta chegar, com blocos curtos por lente.
+- **N25** o registro da sessão vai na pasta do projeto, nunca na pasta da skill.
+
 ## 3.5.8 (08/10/2026): segunda rodada do teste de ponta a ponta (achados N1 a N21) e foto real no momento assinatura
 
 Um segundo teste criou uma página real do zero (`ACHADOS` N1 a N21). Teste vermelho antes de cada conserto; nenhum gate foi
