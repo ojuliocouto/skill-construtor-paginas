@@ -170,3 +170,33 @@ test("P1: mutante: página longa e boa que fala de segurança de conexão em out
   const texto = TEXTO_BOM + " Nossa política: protegemos a segurança da sua conexão com criptografia. " + TEXTO_BOM;
   assert.equal(classificar({ ...base, texto }).estado, "ok");
 });
+
+// ---- 3.5.10, achado P3: o meio igual à dobra e a página de uma tela só (Omsom saiu ok com 900 px) ----
+test("P3: página mais alta que a janela cujo print do meio é igual ao da dobra é vazia (a rolagem não andou)", () => {
+  const r = classificar({ ...base, altura: 4200, meioIgualDobra: true });
+  assert.equal(r.estado, "vazia");
+  assert.match(r.motivo, /meio/);
+  assert.match(r.motivo, /dobra/);
+  assert.equal(classificar({ ...base, altura: 4200, meioIgualDobra: false }).estado, "ok");
+});
+
+test("P3: página de uma tela só (900 px) que o aluno sabe ser longa (--longa) é vazia quando o meio é igual à dobra", () => {
+  const r = classificar({ ...base, altura: 900, meioIgualDobra: true, esperadaLonga: true });
+  assert.equal(r.estado, "vazia");
+  assert.match(r.motivo, /900/);
+});
+
+test("P3: página de uma tela só com muitos links (30 ou mais) e meio igual à dobra é vazia: só o topo renderizou", () => {
+  assert.equal(classificar({ ...base, altura: 900, meioIgualDobra: true, ancoras: 48 }).estado, "vazia");
+});
+
+test("P3: mutante: página curta de verdade (uma tela, poucos links, sem --longa) segue ok mesmo com o meio igual à dobra", () => {
+  assert.equal(classificar({ ...base, altura: 900, meioIgualDobra: true, ancoras: 6 }).estado, "ok");
+  assert.equal(classificar({ ...base, altura: 900, meioIgualDobra: true }).estado, "ok");
+});
+
+test("P3: sem as medidas novas o resultado não muda, e vazia não vence bloqueada, quebrada nem coberta", () => {
+  assert.equal(classificar({ ...base, altura: 4200 }).estado, "ok");
+  assert.equal(classificar({ ...base, http: 403, altura: 4200, meioIgualDobra: true }).estado, "bloqueada");
+  assert.equal(classificar({ ...base, cobertura: 0.9, altura: 4200, meioIgualDobra: true }).estado, "coberta");
+});

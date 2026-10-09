@@ -10,7 +10,8 @@
  *   bloqueada  HTTP 401/403/429, ou texto de bloqueio/desafio dominando a página
  *   quebrada   HTTP 400 ou mais, página sem folha de estilo aplicada, ou página vazia
  *   coberta    modal ou aviso cobrindo mais de 40% da janela mesmo depois de tentar fechar
- *   vazia      (3.5.8) a primeira dobra é uma folha lisa, ou o meio é de uma cor só com fotos que não carregaram
+ *   vazia      (3.5.8) a primeira dobra é uma folha lisa, ou o meio é de uma cor só com fotos que não carregaram;
+ *              (3.5.10) o print do meio é igual ao da dobra numa página que deveria rolar
  *   ok         nenhuma das anteriores
  */
 export const ESTADOS = ['ok', 'bloqueada', 'quebrada', 'coberta', 'vazia'];
@@ -19,6 +20,8 @@ export const LIMITE_COBERTURA = 0.4;
 // (herói em vídeo que não rodou); de 80% para cima só avisa, porque página minimalista de verdade passa.
 export const LIMITE_FOLHA_LISA = 0.97;
 export const LIMITE_AVISO_DOMINANCIA = 0.8;
+// 3.5.10 (P3): página de uma tela só com tantos links assim não é página curta de verdade: só o topo renderizou.
+export const ANCORAS_DE_PAGINA_LONGA = 30;
 
 // Frases de página de bloqueio. Só valem quando dominam a página (texto curto) ou estão no título.
 const BLOQUEIO = [
@@ -46,7 +49,7 @@ const TITULO_BLOQUEIO = [/just a moment/i, /attention required/i, /access denied
 const TEXTO_CURTO = 800; // abaixo disso, a frase de bloqueio domina a página
 const TEXTO_VAZIO = 400; // página do tamanho da janela com menos texto que isso não tem conteúdo
 
-export function classificar({ http, titulo = '', texto = '', temEstilo = true, altura = 0, janela = 900, cobertura = 0, dominanciaDobra, dominanciaMeio, imagensSemCarregar = 0 }) {
+export function classificar({ http, titulo = '', texto = '', temEstilo = true, altura = 0, janela = 900, cobertura = 0, dominanciaDobra, dominanciaMeio, imagensSemCarregar = 0, meioIgualDobra = false, esperadaLonga = false, ancoras = 0 }) {
   const t = String(texto || '').replace(/\s+/g, ' ').trim();
   const pct = (x) => `${Math.round(x * 100)}%`;
   if ([401, 403, 429].includes(http)) return { estado: 'bloqueada', motivo: `HTTP ${http}: o site recusou o acesso automático` };
@@ -58,6 +61,14 @@ export function classificar({ http, titulo = '', texto = '', temEstilo = true, a
   if (!temEstilo) return { estado: 'quebrada', motivo: 'a página não rendeu estilo (nenhuma folha de estilo aplicada)' };
   if (altura <= janela + 5 && t.length < TEXTO_VAZIO) return { estado: 'quebrada', motivo: `página vazia: altura ${altura}px (a da janela) e só ${t.length} caracteres de texto` };
   if (cobertura > LIMITE_COBERTURA) return { estado: 'coberta', motivo: `um modal ou aviso cobre ${pct(cobertura)} da janela (limite ${pct(LIMITE_COBERTURA)})` };
+  // 3.5.10 (P3): o meio igual à dobra. Com a página mais alta que a janela, a rolagem não andou (modal que trava a
+  // rolagem, só o topo renderizou). Com uma tela só, só vale se a página deveria ser longa: --longa ou links demais.
+  if (meioIgualDobra) {
+    if (altura > janela + 5) return { estado: 'vazia', motivo: `o print do meio é igual ao da dobra numa página de ${altura}px: a rolagem não andou ou só o topo renderizou` };
+    if (esperadaLonga || ancoras >= ANCORAS_DE_PAGINA_LONGA) {
+      return { estado: 'vazia', motivo: `a página saiu com ${altura}px (uma tela) e o print do meio é igual ao da dobra, mas ${esperadaLonga ? 'ela foi dada como longa (--longa)' : `ela tem ${ancoras} links`}: só o topo renderizou` };
+    }
+  }
   if (typeof dominanciaDobra === 'number' && dominanciaDobra >= LIMITE_FOLHA_LISA) {
     return { estado: 'vazia', motivo: `a primeira dobra é ${pct(dominanciaDobra)} de uma cor só (o herói não rendeu: vídeo ou imagem que não carregou)` };
   }
