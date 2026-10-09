@@ -142,6 +142,50 @@ class Verdade(unittest.TestCase):
         self.assertEqual(code, 0, out)
 
 
+    # v3.5.10 (achado P8 da página Torra Clara): a regex do dono atravessava a quebra de linha.
+    # "Fundadora: Helena Duarte" sem ponto final e, na linha de baixo, "Helena Duarte, fundadora..."
+    # virava o nome "Helena Duarte\nHelena Duarte", que não está em lugar nenhum da página.
+    BRIEFING_QUEBRA = ("\n## Quem é a dona\nFundadora: Helena Duarte\n"
+                       "Helena Duarte, fundadora e torrefadora. Abriu a Torra Clara em 2021.\n")
+
+    def montar_briefing_dono(self, trecho_dono, corpo):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        r = pathlib.Path(self.tmp.name)
+        (r / "evidencias").mkdir()
+        (r / "evidencias" / "briefing.md").write_text(BRIEFING + trecho_dono, encoding="utf-8")
+        (r / "evidencias" / "sustentacao.md").write_text(TABELA_OK + NAO_AFIRMAR, encoding="utf-8")
+        (r / "index.html").write_text(html(corpo), encoding="utf-8")
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            code = gate.main(["--projeto", str(r)])
+        return code, saida.getvalue()
+
+    def test_regex_do_dono_nao_atravessa_quebra_de_linha(self):
+        nomes = [m.group(1).strip() for m in gate.DONO.finditer(self.BRIEFING_QUEBRA)]
+        self.assertEqual(nomes, ["Helena Duarte"])
+
+    def test_dono_sem_ponto_e_nome_repetido_na_linha_de_baixo_passa_com_o_nome_no_corpo(self):
+        code, out = self.montar_briefing_dono(
+            self.BRIEFING_QUEBRA, CORPO_OK + "<section><p>A torrefadora é a Helena Duarte.</p></section>")
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("\n", "".join(l for l in out.splitlines() if "nomeia" in l).replace("\n", ""))
+
+    def test_dono_com_quebra_continua_reprovando_quando_o_nome_nao_esta_no_corpo(self):
+        # o caso ruim de verdade: o nome não está na página, e o gate tem de acusar o nome certo
+        code, out = self.montar_briefing_dono(self.BRIEFING_QUEBRA, CORPO_OK)
+        self.assertEqual(code, 1, out)
+        self.assertIn("nomeia Helena Duarte e a página", out)
+
+    def test_dono_na_mesma_linha_com_nome_composto_continua_pegando(self):
+        nomes = [m.group(1).strip() for m in gate.DONO.finditer("Profissional: Maria da Silva Souza\n")]
+        self.assertEqual(nomes, ["Maria da Silva Souza"])
+
+    def test_dono_em_linha_vizinha_apos_dois_pontos_vazio_nao_vira_nome(self):
+        nomes = [m.group(1).strip() for m in gate.DONO.finditer("Responsável:\nPagamento Online aceito\n")]
+        self.assertEqual(nomes, [])
+
+
 # ----- v3.5.6: achados A3 a A6 do teste de ponta a ponta (Ateliê Veio, 08/10/2026) -----
 BRIEFING_ATELIE = """# Briefing
 1. O que vende: móveis sob medida de madeira maciça.

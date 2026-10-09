@@ -15,6 +15,13 @@ regra ("até 15%", "máximo 4 px", "pelo menos 35%") não é medida e fica de fo
 Reprova (exit 1): medida sem arquivo citado; arquivo citado inexistente ou só imagem; número
 que não está no arquivo citado; medida anterior à dist/.
 
+Medida HISTÓRICA (3.5.10): a linha (ou a célula da tabela) que COMEÇA com `rodada N:`, `rodada
+anterior:`, `antes:`, `histórico:` ou `versão anterior:` conta a história do trabalho, não o estado
+entregue, e fica fora só da regra "anterior à dist/". Continua obrigada a citar o arquivo e a ter o
+número nele. O marcador não vale no meio da frase, nem na linha que também fala do estado atual
+(agora, atual, hoje, final, entregue, depois): essa continua cobrando a medida da dist/ final. A
+saída lista as linhas tratadas como histórico.
+
 Uso: node scripts/py.mjs gate-relatorio.py --relatorio <md> [--base <dir>] [--dist <dir>/dist]
 """
 import argparse
@@ -27,6 +34,19 @@ MEDIDA = re.compile(r"(?<![\w.,])(\d+(?:[.,]\d+)?)\s?(" + UNIDADE + r")(?![\w])"
 LIGHTHOUSE = re.compile(r"Lighthouse\D{0,40}?\b(\d{2,3})\b", re.I)
 LIMITE = re.compile(r"(at[eé]|m[aá]ximo|m[ií]nimo|limite|pelo menos|a partir de|acima de|abaixo de|menos de|mais de|[±≤≥<>])\s*(de\s+)?$", re.I)
 TEXTO = {".txt", ".json", ".md", ".log", ".csv", ".tsv"}
+MARCADOR_HISTORICO = re.compile(r"^(?:na\s+)?(?:rodada\s*\d+|rodada\s+anterior|antes|hist[oó]rico|vers[aã]o\s+anterior)[*_\s]*:", re.I)
+ESTADO_ATUAL = re.compile(r"\b(agora|atual|atualmente|hoje|final|entregue|depois)\b", re.I)
+
+
+def eh_historica(linha):
+    """True se a linha (ou uma célula da tabela) começa com o marcador de histórico e não fala do estado atual."""
+    if ESTADO_ATUAL.search(linha):
+        return False
+    for celula in linha.split("|"):
+        s = re.sub(r"^\d+[.)]\s+", "", celula.strip().lstrip(">-*+#_ \t").strip())
+        if MARCADOR_HISTORICO.match(s):
+            return True
+    return False
 
 
 def variantes(num):
@@ -64,7 +84,7 @@ def medidas(linha):
     return out
 
 
-def checar(relatorio, base=None, dist=None):
+def checar(relatorio, base=None, dist=None, historicas=None):
     relatorio = Path(relatorio)
     base = Path(base) if base else relatorio.parent
     problemas = []
@@ -85,6 +105,9 @@ def checar(relatorio, base=None, dist=None):
         arquivos = citados(linha, base, relatorio.parent)
         textos = [p for p in arquivos if p.suffix.lower() in TEXTO]
         resumo = linha.strip()[:90]
+        historica = eh_historica(linha)
+        if historica and historicas is not None:
+            historicas.append(f"linha {n}: {resumo}")
         if not arquivos:
             problemas.append(f"linha {n}: afirma {', '.join(m[2] for m in ms[:3])} sem citar o arquivo de medida: \"{resumo}\"")
             continue
@@ -95,7 +118,7 @@ def checar(relatorio, base=None, dist=None):
         for num, _, bruto in ms:
             if not any(v in conteudo for v in variantes(num)):
                 problemas.append(f"linha {n}: {bruto} não aparece em {', '.join(p.name for p in textos)}: \"{resumo}\"")
-        if fim_dist:
+        if fim_dist and not historica:
             for p in textos:
                 if p.suffix.lower() == ".md":
                     continue  # texto de referência (auditoria, licenças), não arquivo de medida
@@ -112,9 +135,12 @@ def main():
     ap.add_argument("--base", help="pasta contra a qual os caminhos citados se resolvem (padrão: a do relatório)")
     ap.add_argument("--dist", help="dist/ publicada: medida mais antiga que ela reprova")
     a = ap.parse_args()
-    problemas = checar(a.relatorio, a.base, a.dist)
+    historicas = []
+    problemas = checar(a.relatorio, a.base, a.dist, historicas)
     print("\nGATE DO RELATÓRIO  " + str(Path(a.relatorio).resolve()))
     print("=" * 80)
+    for h in historicas:
+        print("  histórico (marcador explícito, fora da regra 'anterior à dist/'): " + h)
     if problemas:
         for p in problemas:
             print("  FALHA: " + p)

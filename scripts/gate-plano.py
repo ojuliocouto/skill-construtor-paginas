@@ -19,6 +19,10 @@ v3.5 (padrão da v7, 04/10/2026). Cobra também o que fez a v7 sair melhor que a
     escolhida, nenhuma célula vazia e no máximo 2 seções com o mesmo tipo de animação (o tipo é
     o que vem antes dos dois pontos da célula; o tipo `assinatura` é o próprio momento
     assinatura, que aparece em 3 seções por regra, e fica fora da contagem);
+  - (3.5.10) o tipo da animação de cada seção é o nome de uma receita de
+    `references/receitas-de-movimento.md` (lido do próprio arquivo, `## Receita: <nome>`), ou
+    `assinatura`, ou `criação nova: <motivo>` (motivo de pelo menos 15 caracteres); descrição solta
+    sem receita nem motivo reprova;
   - (3.5.6) `Ícone do site: <motivo>`: o favicon é decidido no plano, não no passo e.4;
   - `Material da cliente pedido:` com a lista do que só a cliente tem (foto real, número do
     WhatsApp, depoimento com autorização). `nenhum` só vale com o motivo.
@@ -131,6 +135,25 @@ def tipo_da_animacao(celula):
     return sem_acento(celula.split(":", 1)[0]).strip()
 
 
+ARQ_RECEITAS = pathlib.Path(__file__).resolve().parent.parent / "references" / "receitas-de-movimento.md"
+MIN_MOTIVO_CRIACAO = 15
+
+
+def chave_do_tipo(tipo):
+    """'Texto em linhas', 'texto_em_linhas' e 'texto-em-linhas' são o mesmo tipo."""
+    return re.sub(r"[\s_-]+", "-", sem_acento(tipo).strip()).strip("-")
+
+
+def repertorio_de_receitas(arquivo=None):
+    """Nomes das receitas (`## Receita: <nome>`) lidos do arquivo do repertório, ou None se não der para ler."""
+    try:
+        texto = (arquivo or ARQ_RECEITAS).read_text(encoding="utf-8-sig")
+    except OSError:
+        return None
+    nomes = {chave_do_tipo(n) for n in re.findall(r"(?m)^##[ \t]+Receita:[ \t]*(\S+)[ \t]*$", texto)}
+    return nomes or None
+
+
 def linhas_da_composicao(texto):
     """A tabela Seção | Desktop | Celular | Animação do PLANO.md como lista de dicts, ou None."""
     tabela, cab = [], None
@@ -167,12 +190,29 @@ def checar_composicao(texto, sec, ordem_itens):
         erros.append(f"Composição por seção: {len(linhas)} linha(s) para {ordem_itens} seções da ordem escolhida "
                      "(uma linha por seção)")
     tipos = {}
+    receitas = repertorio_de_receitas()
+    if receitas is None:
+        erros.append(f"Composição por seção: não consegui ler o repertório de receitas ({ARQ_RECEITAS.name} em "
+                     "references/); sem ele não dá para conferir o tipo de animação de cada seção")
     for c in linhas:
         nome = c["secao"] or "?"
         for k, rot in (("desktop", "Desktop"), ("celular", "Celular"), ("animacao", "Animação")):
             if vazio(c[k]):
                 erros.append(f"Composição por seção: célula vazia em '{nome}' sem {rot}")
         anim = c["animacao"]
+        if receitas is not None and not vazio(anim):
+            chave = chave_do_tipo(anim.split(":", 1)[0])
+            if chave == "criacao-nova":
+                motivo = anim.split(":", 1)[1].strip() if ":" in anim else ""
+                if len(motivo) < MIN_MOTIVO_CRIACAO:
+                    erros.append(f"Composição por seção: '{nome}' declara 'criação nova' sem o motivo "
+                                 "('criação nova: <por que nenhuma receita serve>', pelo menos "
+                                 f"{MIN_MOTIVO_CRIACAO} caracteres)")
+            elif chave != "assinatura" and chave not in receitas:
+                erros.append(f"Composição por seção: '{nome}' usa o tipo '{anim.split(':', 1)[0].strip()}', que não "
+                             "está no repertório (references/receitas-de-movimento.md) e não declara "
+                             "'criação nova: <motivo>'; use o nome de uma receita ("
+                             f"{', '.join(sorted(receitas))}) ou declare a criação nova")
         if not vazio(anim) and tipo_da_animacao(anim) != "assinatura":
             tipos.setdefault(tipo_da_animacao(anim), (anim.split(":", 1)[0].strip(), []))[1].append(nome)
     for chave, (tipo, nomes) in tipos.items():

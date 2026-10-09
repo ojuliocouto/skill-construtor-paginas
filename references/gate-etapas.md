@@ -79,3 +79,6 @@ Sem a linha, ou com `não`, esse nome reprova.
 
 `gate-etapas.py revalidar --motivo "<texto>"` percorre as etapas registradas em ordem. Intacta: fica. Só o briefing mudou: o gate da etapa roda de novo
 e ela é re-registrada com o motivo. Outra evidência mudou: bloqueia e manda `registrar` aquela etapa (o gate dela continua obrigatório).
+Quando uma etapa bloqueia no meio, as etapas que já passaram ANTES dela ficam gravadas (cada uma rodou o gate de novo e passou) e a saída lista
+`gravadas: etapa(s) ...`; a etapa que bloqueou e as seguintes NÃO são gravadas, seguem como estavam e continuam bloqueadas até `registrar` de novo.
+Se bloqueia já na primeira, a saída diz `nada foi gravado`.
