@@ -20,8 +20,8 @@ na entrega as decisões que o dono deveria ter aprovado. A exceção dispensa a 
    conduza a instalação (o comando aparece na saída) e só então siga. Opcional ausente não
    bloqueia nada.
 2. Leia `references/preferencias-de-design.md`: vale para toda página.
-3. Projeto que já existiu: leia `references/projects/<projeto>.md` e a sessão mais recente em
-   `references/sessions/` (arquivos locais, fora do Git).
+3. Projeto que já existiu: leia `<projeto>/contexto-do-projeto.md` e a sessão mais recente em
+   `<projeto>/sessoes/` (na pasta do projeto, nunca na da skill).
 
 ## a. Briefing
 
@@ -370,7 +370,7 @@ estique a foto até a mesma altura; se a assimetria é pedida no plano, declare 
 `node <dir-da-skill>/scripts/gate-texto.mjs --url http://localhost:8765/` (viúva em título e subtítulo, de h1 a h4, dt e summary, e em parágrafo na fonte do título ou dentro de caixa, em 7 telas de 320 a 1440; item em minúscula; itálico colorido repetido)
 `node <dir-da-skill>/scripts/gate-composicao.mjs --url http://localhost:8765/ --projeto <dir>` (mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, desenho que lê como wireframe, linha do tempo que passa do último marco, nenhuma pessoa na primeira tela para público de pessoas, destaque abaixo de 3:1)
 Negócio de produto físico (móveis, comida, imóvel, moda, obra, carro): acrescente `--produto-fisico` ao comando acima. Se o momento assinatura estiver só em desenho, o gate AVISA (não reprova) que ele deve ser foto real do produto, receita `foto-que-se-monta`.
-`node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, pelo menos 2 seções animam ao chegar, nenhum item chega parado numa rolagem de 300 px/s em 1440, 390 e 320, e rolagem sem animação com movimento reduzido)
+`node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, pelo menos 2 seções animam ao chegar, nenhum item chega parado numa rolagem de 300 px/s em 1440, 390 e 320, e, com movimento reduzido, nenhuma animação em curso acima de 0,2 s nem rolagem suave)
 `node <dir-da-skill>/scripts/py.mjs gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas, e o dono nomeado no briefing no corpo da página)
 `node <dir-da-skill>/scripts/py.mjs gate-imagens.py --projeto <dir> --url http://localhost:8765/` (licença com versão e link, crédito no HTML com o título real da fonte, aviso no og-image; foto repetida entre seções por pHash e origem, nitidez abaixo de 100, "imagem ilustrativa" e 60% de foto na primeira tela medidos no navegador; pessoa identificável de banco é aviso de tráfego real, e `--trafego-real` a reprova)
 `node <dir-da-skill>/scripts/gate-ritmo.mjs --url http://localhost:8765/` (duas seções vizinhas com o mesmo esqueleto e mais de 1 "título centralizado + cartões")
@@ -470,6 +470,11 @@ A `comparacao-referencias` responde também, com `--gosto bonito|correto`, a per
 depois da SobrAI (9,05 nas lentes e "que página FEIA"): **isso é bonito ou só está correto?**
 "correto" não aprova e a rodada não entrega: corrija os eixos abaixo das referências (`--eixos-abaixo`); sem resposta, a rodada também não entrega.
 `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> checar`
+   **Correção depois da rodada 2 (3.5.9):** se a conferência fechou em NÃO ENTREGAR e você corrigiu o achado, em sessão não interativa
+   (ninguém para autorizar a rodada extra) a regra é: feche em NÃO ENTREGAR, liste na entrega cada correção feita depois do
+   ciclo (achado, o que mudou, a medida do conserto) e peça a rodada extra por escrito; nota de autoavaliação não libera.
+   Mudança GRANDE pedida pelo dono ENTRE as rodadas reabre a rodada 1: `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> reabrir --motivo "<o que o dono pediu>"`
+   (uma vez por ciclo, registrada; lentes e gates recomeçam). Detalhe em `references/auditores.md`.
 `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`
 
 **Teto de 2 rodadas.** Saiu CONTINUA na rodada 1: corrige, refaz os gates do passo f que a
@@ -521,8 +526,9 @@ passe de gosto: tells antes e depois, o depois é 0.
 
 ## Depois da entrega
 
-Registre a sessão em `references/sessions/AAAA-MM-DD-<projeto>.md` e o projeto em
-`references/projects/<projeto>.md` (locais, fora do Git; modelos em `EXAMPLE.md`). Medição
+Registre a sessão em `<projeto>/sessoes/AAAA-MM-DD.md` e o projeto em
+`<projeto>/contexto-do-projeto.md` (na pasta do PROJETO: dado de cliente nunca fica na pasta da skill, regra de
+`references/gate-etapas.md`; os modelos, só para copiar, são `references/sessions/EXAMPLE.md` e `references/projects/EXAMPLE.md`). Medição
 real (mapa de calor, conversão) só depois de tráfego: primeira leitura em 48 horas.
 
 ## Mudança de briefing no meio do trabalho (A32)

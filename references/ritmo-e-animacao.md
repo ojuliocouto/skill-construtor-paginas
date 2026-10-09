@@ -25,6 +25,13 @@ momento assinatura. `data-icone-repetido-ok` no SVG é a exceção geral e faz o
 assinatura (sem o marcador) continua reprovando. O gate também não mede o que está invisível (opacity 0,
 `visibility: hidden`, `display: none`), como o pino que só aparece no estado travado.
 
+**A mesma FOTO em 3 seções (assinatura em foto real, 3.5.9).** O `gate-imagens.py` reprova a mesma foto em duas seções, e a
+assinatura em foto pede exatamente isso. A saída é a mesma do desenho: `data-assinatura` na `<figure>` (ou `<picture>`) ou na
+própria `<img>` libera a MESMA foto nas seções marcadas, que contam como uma só. Três limites, todos medidos: só UMA foto pode
+levar a marca (marca em duas fotos diferentes reprova); a mesma foto numa seção SEM a marca continua sendo foto repetida; e a
+foto sem marca repetida em duas seções reprova como sempre. Fotos diferentes da mesma mesa (de frente, na sala, de perto) não
+precisam da marca: cada uma é uma foto.
+
 ## Esqueleto de cada seção (`gate-ritmo.mjs`)
 
 Esqueleto = posição do título x tipo de corpo (cartões, assimétrico, split com foto ou com

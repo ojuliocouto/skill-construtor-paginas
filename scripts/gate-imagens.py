@@ -214,6 +214,8 @@ class _Regioes(HTMLParser):
         self.regiao = "(fora de seção)"
         self.ordem = []
         self.imagens = {}
+        self.marcadas = {}   # 3.5.9 (N22): por região, as imagens marcadas com data-assinatura (na <img> ou na <figure>/<picture> que a envolve)
+        self.pilha_marca = []
         self.texto = {}
         self.cabeca = False
         self.ignorar = 0
@@ -223,15 +225,18 @@ class _Regioes(HTMLParser):
         if chave not in self.ordem:
             self.ordem.append(chave)
             self.imagens[chave] = []
+            self.marcadas[chave] = set()
             self.texto[chave] = []
 
-    def _ref(self, valor):
+    def _ref(self, valor, marcada=False):
         for parte in re.split(r",", valor or ""):
             alvo = parte.strip().split(" ")[0]
             if alvo and not alvo.startswith("data:"):
                 nome = Path(urlparse(alvo).path).name
                 if Path(nome).suffix.lower() in EXTENSOES:
                     self.imagens[self.regiao].append(nome)
+                    if marcada:
+                        self.marcadas[self.regiao].add(nome)
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
@@ -250,13 +255,18 @@ class _Regioes(HTMLParser):
             self.profundidade += 1
         elif tag in ("header", "footer", "nav") and self.profundidade == 0:
             self._abre(tag)
+        if tag in ("figure", "picture"):
+            self.pilha_marca.append("data-assinatura" in a)
+        marcada = any(self.pilha_marca) or "data-assinatura" in a
         if tag in ("img", "source"):
-            self._ref(a.get("src") or a.get("data-src"))
-            self._ref(a.get("srcset"))
+            self._ref(a.get("src") or a.get("data-src"), marcada)
+            self._ref(a.get("srcset"), marcada)
         for m in re.finditer(r"url\(['\"]?([^'\")]+)", a.get("style") or ""):
-            self._ref(m.group(1))
+            self._ref(m.group(1), marcada)
 
     def handle_endtag(self, tag):
+        if tag in ("figure", "picture") and self.pilha_marca:
+            self.pilha_marca.pop()
         if tag == "head":
             self.cabeca = False
         if tag in ("script", "style") and self.ignorar:
@@ -367,9 +377,12 @@ def checar_fotos(dist, usados, regioes, problemas, avisos):
             continue
         por_base.setdefault(base(Path(rel).name), {"item": it, "arquivos": []})["arquivos"].append(dist / rel)
     secoes_de = {}
+    marcadas_de = {}   # base -> seções onde a foto aparece COM data-assinatura
     for chave in regioes.ordem:
         for nome in regioes.imagens[chave]:
             secoes_de.setdefault(base(nome), set()).add(chave)
+            if nome in regioes.marcadas[chave]:
+                marcadas_de.setdefault(base(nome), set()).add(chave)
     lidas = {}
     for b, info in sorted(por_base.items()):
         caminho, im = maior_variante(Image, info["arquivos"])
@@ -414,12 +427,27 @@ def checar_fotos(dist, usados, regioes, problemas, avisos):
     grupos = {}
     for b in nomes:
         grupos.setdefault(raiz(b), []).append(b)
+    com_marca = [m for m in grupos.values() if any(marcadas_de.get(b) for b in m)]
+    if len(com_marca) > 1:
+        quem_marcou = "; ".join(" + ".join(sorted(b for b in m if marcadas_de.get(b))) for m in com_marca)
+        problemas.append(f"data-assinatura em {len(com_marca)} fotos diferentes ({quem_marcou}): só uma foto pode ser a do momento assinatura; "
+                         "tire a marca das outras (a exceção libera a MESMA foto em várias seções, não fotos diferentes)")
     for membros in grupos.values():
         secoes = set()
         for b in membros:
             secoes |= secoes_de.get(b, set())
         if len(secoes) < 2:
             continue
+        # 3.5.9 (N22): o momento assinatura em foto real repete a MESMA foto em 3 seções. As seções onde ela leva data-assinatura
+        # contam como uma só; a mesma foto numa seção SEM a marca continua sendo repetição. Se a marca está em mais de uma
+        # foto diferente, a exceção não vale (já reprovado acima).
+        if len(com_marca) == 1 and membros is com_marca[0]:
+            marcadas = set().union(*(marcadas_de.get(b, set()) for b in membros))
+            soltas = set()
+            for b in membros:
+                soltas |= secoes_de.get(b, set()) - marcadas
+            if len(soltas) + (1 if marcadas else 0) < 2:
+                continue
         razoes = sorted({v for (x, y), v in motivo.items() if x in membros and y in membros})
         quem = ", ".join(f"{b} (em {', '.join(sorted(secoes_de.get(b, set())))})" for b in membros)
         problemas.append(f"foto repetida entre seções {', '.join(sorted(secoes))}: {quem}"

@@ -36,6 +36,12 @@ Uso:
     node scripts/py.mjs wave.py --projeto <dir> checar        # o AUDITOR MASTER
     node scripts/py.mjs wave.py --projeto <dir> --caminho clonar checar   # clone fiel: sem gate de referencias
     node scripts/py.mjs wave.py --projeto <dir> rodada --criticos 0 --altos 4 --pendencias-do-usuario 2 --regressoes 0
+    node scripts/py.mjs wave.py --projeto <dir> reabrir --motivo "<mudança grande que o dono pediu entre as rodadas>"
+
+3.5.9 (N27): mudança GRANDE pedida pelo dono ENTRE as rodadas (mexeu em metade da página) reabre a rodada 1 com `reabrir`,
+uma vez por ciclo, registrada com o motivo. A rodada de conferência não é gasta com o que o dono pediu. Correção PEQUENA feita
+depois da rodada 2 não reabre nada: em sessão não interativa o ciclo fecha em NÃO ENTREGAR, lista a correção e pede a rodada extra
+na entrega (ver a mensagem de NÃO ENTREGAR e references/caminhos/criar.md).
 """
 import argparse
 import datetime
@@ -62,7 +68,7 @@ LENTES = {
     "comparacao-referencias": "a página está no nível das referências printadas no passo b?",
 }
 LENTE_REFERENCIAS = "comparacao-referencias"
-EIXOS = ("composicao", "tipografia", "imagem", "ritmo")
+EIXOS = ("composicao", "tipografia", "imagem", "ritmo", "acabamento")   # os 5 de references/auditores.md (3.5.9, N23)
 # Orçamento do auditor independente (A27, auditoria real: 51 min, 113 chamadas, mais de 200 arquivos na rodada 1).
 ORCAMENTO = {1: (15, 30), 2: (8, 15)}
 GOSTOS = ("bonito", "correto")
@@ -200,6 +206,33 @@ def cmd_registrar(args):
     salvar(args.projeto, d)
     print(f"lente registrada: {args.lente} -> {args.veredito} [{d['lentes'][args.lente]['origem']}]"
           + (f" (nota {args.nota})" if args.nota is not None else ""))
+    return 0
+
+
+def cmd_reabrir(args):
+    """Mudança grande pedida pelo dono entre as rodadas: o histórico vai para `ciclos_anteriores` e a rodada 1 começa de novo.
+    Uma vez por ciclo, com o motivo registrado. Lentes e gates também recomeçam: a página mudou e ninguém os mediu de novo."""
+    d = carregar(args.projeto)
+    motivo = (getattr(args, "motivo", None) or "").strip()
+    if len(motivo) < 10:
+        print("ERRO: --motivo precisa dizer o que o dono pediu (pelo menos uma frase curta).", file=sys.stderr)
+        return 2
+    if not d.get("rodadas"):
+        print("ERRO: nenhuma rodada fechada ainda; a mudança entra na rodada 1 normalmente, não há o que reabrir.", file=sys.stderr)
+        return 2
+    if d.get("reaberturas"):
+        print("ERRO: este ciclo já foi reaberto uma vez (" + d["reaberturas"][-1].get("motivo", "")[:80] + "). Reabrir de novo seria um laço sem fim. "
+              "Feche o ciclo em ENTREGA COM RESSALVAS ou NÃO ENTREGAR e peça a rodada extra (--rodada-extra-pedida) na entrega.", file=sys.stderr)
+        return 2
+    d.setdefault("ciclos_anteriores", []).append({"rodadas": d.get("rodadas"), "lentes": d.get("lentes"), "gates": d.get("gates")})
+    d["reaberturas"] = [{"quando": datetime.datetime.now().isoformat(timespec="seconds"), "motivo": motivo,
+                         "rodadas_fechadas": len(d["rodadas"])}]
+    d["rodadas"] = []
+    d["lentes"] = {}
+    d["gates"] = {}
+    salvar(args.projeto, d)
+    print("REABERTO: a rodada 1 começa de novo. Motivo registrado: " + motivo)
+    print("  Refaça os gates e a wave inteira (as 9 lentes) na página como ela está agora. Isto vale UMA vez por ciclo.")
     return 0
 
 
@@ -482,7 +515,7 @@ def cmd_rodada(args):
         return fechar(1, "CONTINUA")
     if ref_ruim and not no_teto:
         # A26: o teto é 2 rodadas e a segunda é só conferência, então reprovar esta lente NÃO manda reconstruir sozinha.
-        quais = "os eixos abaixo das referências" if ref.get("eixos_abaixo") else "os 4 eixos (o auditor não disse quais ficaram abaixo; releia os achados da lente)"
+        quais = "os eixos abaixo das referências" if ref.get("eixos_abaixo") else "os 5 eixos (o auditor não disse quais ficaram abaixo; releia os achados da lente)"
         print("  ABAIXO DAS REFERÊNCIAS: a comparacao-referencias não respondeu que a página é bonita no nível")
         print(f"  das referências printadas no passo b (veredito: {ref.get('veredito')}, resposta: {ref.get('gosto')}).")
         print(f"  EIXOS a corrigir: {', '.join(eixos_ref)} ({quais}).")
@@ -495,7 +528,10 @@ def cmd_rodada(args):
     if no_teto and args.criticos > 0:
         print(f"  NÃO ENTREGAR: crítico aberto. {args.criticos} crítico(s) confirmado(s) na rodada {len(hist)}, a última do ciclo.")
         print("  O teto de rodadas fecha o ciclo, não afrouxa crítico. Corrija o crítico, refaca os gates que ele")
-        print("  toca e peça à pessoa uma rodada extra (--rodada-extra-pedida) ou entregue só depois de resolvido.\n")
+        print("  toca e peça à pessoa uma rodada extra (--rodada-extra-pedida) ou entregue só depois de resolvido.")
+        print("  Sessão não interativa (ninguém para autorizar a rodada extra): feche em NÃO ENTREGAR, liste na entrega cada correção")
+        print("  feita DEPOIS do ciclo (achado, o que mudou, a medida que mostra o conserto) e peça a rodada extra por escrito. Nota de")
+        print("  autoavaliação não libera. Se o dono pediu uma mudança GRANDE entre as rodadas, o certo era `wave.py reabrir --motivo`.\n")
         return fechar(1, "NAO_ENTREGAR")
     if no_teto and regrediu:
         print("  NÃO ENTREGAR: regressão aberta. A correção quebrou outra coisa e o ciclo não tem mais rodada:")
@@ -594,7 +630,7 @@ def main():
                    help="só na comparacao-referencias, obrigatório: a página é bonita no nível das "
                         "referências, ou só está correta? 'correto' reprova e volta ao plano visual")
     r.add_argument("--eixos-abaixo", dest="eixos_abaixo", default=None,
-                   help="só na comparacao-referencias reprovada: os eixos abaixo das referências (`composicao`, `tipografia`, `imagem`, `ritmo`)")
+                   help="só na comparacao-referencias reprovada: os eixos abaixo das referências (`composicao`, `tipografia`, `imagem`, `ritmo`, `acabamento`)")
     r.add_argument("--duracao-min", dest="duracao_min", type=float, default=None,
                    help="minutos que o auditor levou na rodada (a maior duração entre as lentes vale no aviso de orçamento)")
     r.add_argument("--chamadas", type=int, default=None, help="chamadas de ferramenta do auditor na rodada")
@@ -630,6 +666,10 @@ def main():
                     help="a PESSOA pediu uma terceira rodada. Fica registrada no historico; a terceira "
                          "também fecha sempre e nunca existe quarta")
     ro.set_defaults(func=cmd_rodada)
+
+    rb = sub.add_parser("reabrir", help="mudança grande pedida pelo dono ENTRE as rodadas: reabre a rodada 1 (uma vez por ciclo)")
+    rb.add_argument("--motivo", required=True, help="o que o dono pediu (fica registrado)")
+    rb.set_defaults(func=cmd_reabrir)
 
     args = ap.parse_args()
     return args.func(args)
