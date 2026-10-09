@@ -25,6 +25,10 @@
  *     caixa, passo e pergunta revela quando ELE entra na tela (observar o filho, não o grupo);
  *  4. (auditoria da v5) rolagem suave (scroll-behavior: smooth) ligada para quem pediu
  *     movimento reduzido: os botões de âncora rolavam animados.
+ *  4b. (3.5.9, N26) QUALQUER animação ou transição em curso com `prefers-reduced-motion: reduce`. A página é carregada e rolada
+ *     inteira em 390 e 1440 com `reducedMotion: 'reduce'`, e um laço de quadros anota o que `document.getAnimations()` devolve
+ *     em curso com duração acima de 0,2 s (ou infinita, ou presa à rolagem). A mensagem nomeia o elemento e a propriedade.
+ *     Duas auditorias acharam animação rodando com movimento reduzido e este gate passou verde, porque só olhava o scroll-behavior.
  * Fica de fora o que é fixo na tela (cabeçalho, barra do celular) e o cabeçalho.
  *
  *  5. (3.5.6, A28) CONTEÚDO INVISÍVEL SEM O SCRIPT. Duas provas, em desktop e celular: `script bloqueado` (os `.js` da própria
@@ -344,15 +348,69 @@ for (const [nome, w, h, mob] of ((SO_CELULAR || SO_PROVA_SCRIPT) ? [] : TELAS_IT
   await ctx.close();
 }
 
-// 4. Movimento reduzido: nada de rolagem suave.
-{
-  const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+// 4. Movimento reduzido: nada de rolagem suave e nada animado em curso (3.5.9, N26).
+// Duas vezes o auditor achou animação rodando com prefers-reduced-motion: reduce e este gate passou verde, porque só
+// olhava o scroll-behavior. Agora, com reducedMotion: 'reduce', a página é carregada e rolada inteira, e um laço de quadros
+// anota toda animação ou transição em curso (document.getAnimations()) cuja duração passa do limiar. A skill diz que
+// "movimento reduzido desliga tudo" e não declara número; o limiar é 0,2 s (LIMIAR_REDUZIDO_MS), o de uma troca de cor ou
+// de foco que a pessoa nem percebe como movimento.
+const LIMIAR_REDUZIDO_MS = 200;
+function escutaReduzido(limiar) {
+  window.__red = new Map();
+  const rotulo = (el) => {
+    if (!el || !el.tagName) return 'elemento desconhecido';
+    return el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
+  };
+  const volta = () => {
+    try {
+      for (const a of document.getAnimations()) {
+        if (a.playState === 'finished' || a.playState === 'idle' || a.playState === 'paused') continue;
+        const ef = a.effect;
+        if (!ef) continue;
+        const t = ef.getComputedTiming();
+        const dur = Number(t.duration);
+        const infinita = t.iterations === Infinity;
+        const longa = Number.isNaN(dur) || dur > limiar;   // 'auto' (animação presa à rolagem) conta
+        if (!longa && !(infinita && dur > 0)) continue;
+        const alvo = ef.target;
+        const prop = a.transitionProperty || a.animationName || (ef.getKeyframes ? [...new Set(ef.getKeyframes().flatMap((k) => Object.keys(k)).filter((k) => !['offset', 'easing', 'composite', 'computedOffset'].includes(k)))].join(', ') : '') || 'propriedade desconhecida';
+        const tipo = a.transitionProperty ? 'transição' : (a.animationName ? 'animação CSS' : 'animação');
+        const pseudo = ef.pseudoElement ? ' ' + ef.pseudoElement : '';
+        const k = tipo + '|' + prop + '|' + rotulo(alvo) + pseudo;
+        if (!window.__red.has(k)) window.__red.set(k, { tipo, prop, alvo: rotulo(alvo) + pseudo, dur: Number.isNaN(dur) ? null : Math.round(dur), infinita, sy: Math.round(window.scrollY) });
+      }
+    } catch (e) { /* navegador sem getAnimations: nada a medir */ }
+    requestAnimationFrame(volta);
+  };
+  requestAnimationFrame(volta);
+}
+for (const [nome, w, h, mob] of [['iphone padrao', 390, 844, true], ['desktop comum', 1440, 900, false]]) {
+  if ((SO_CELULAR || SO_PROVA_SCRIPT) && !mob) continue;
+  const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob, reducedMotion: 'reduce' });
+  await ctx.addInitScript(`(${escutaReduzido.toString()})(${LIMIAR_REDUZIDO_MS})`);
   const page = await ctx.newPage();
   try { await page.goto(URL_ALVO, { waitUntil: 'load', timeout: 45000 }); }
   catch { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
-  const suave = await page.evaluate(() => [document.documentElement, document.body].filter((el) => getComputedStyle(el).scrollBehavior === 'smooth').map((el) => el.tagName.toLowerCase()));
-  console.log(`movimento reduzido: scroll-behavior ${suave.length ? 'smooth em ' + suave.join(', ') : 'auto'}`);
-  if (suave.length) falhas.push(`movimento reduzido: scroll-behavior: smooth em ${suave.join(' e ')} com prefers-reduced-motion: reduce; os botões de âncora rolam animados para quem pediu menos movimento (use auto dentro de @media (prefers-reduced-motion: reduce))`);
+  if (mob) {
+    const suave = await page.evaluate(() => [document.documentElement, document.body].filter((el) => getComputedStyle(el).scrollBehavior === 'smooth').map((el) => el.tagName.toLowerCase()));
+    console.log(`movimento reduzido: scroll-behavior ${suave.length ? 'smooth em ' + suave.join(', ') : 'auto'}`);
+    if (suave.length) falhas.push(`movimento reduzido: scroll-behavior: smooth em ${suave.join(' e ')} com prefers-reduced-motion: reduce; os botões de âncora rolam animados para quem pediu menos movimento (use auto dentro de @media (prefers-reduced-motion: reduce))`);
+  }
+  await page.waitForTimeout(1200);
+  const altura = await page.evaluate(() => document.documentElement.scrollHeight);
+  const passo = Math.round(h * 0.4);
+  for (let y = 0; y <= altura; y += passo) {
+    await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), y);
+    await page.waitForTimeout(350);
+  }
+  await page.waitForTimeout(800);
+  const rodando = await page.evaluate(() => [...window.__red.values()]);
+  const onde = `${nome} (${w}x${h})`;
+  console.log(`movimento reduzido ${onde}: ${rodando.length ? rodando.length + ' animação(ões) em curso' : '0 animações em curso'}`);
+  if (rodando.length) {
+    const lista = rodando.slice(0, 5).map((r) => `${r.tipo} de ${r.prop} em ${r.alvo} (${r.infinita ? 'infinita' : r.dur === null ? 'presa à rolagem' : r.dur + ' ms'}, scrollY ${r.sy})`).join('; ');
+    falhas.push(`movimento reduzido ${onde}: ${rodando.length} animação(ões) ou transição(ões) em curso com prefers-reduced-motion: reduce, acima de ${LIMIAR_REDUZIDO_MS} ms: ${lista}${rodando.length > 5 ? '; ...' : ''}. Dentro de @media (prefers-reduced-motion: reduce) ponha animation: none e transition: none nesses elementos (a página aparece no estado final, sem movimento)`);
+  }
   await ctx.close();
 }
 await navegador.close();
@@ -365,4 +423,4 @@ if (falhas.length) {
   console.log('  Conteúdo continua visível sem JavaScript e com movimento reduzido.\n');
   process.exit(1);
 }
-console.log(`  PASSA: ${TELAS.length} telas, nenhuma animação fora da tela e seções animando ao chegar; nenhum item chega parado a ${VELOCIDADE} px/s; rolagem sem animação com movimento reduzido.\n`);
+console.log(`  PASSA: ${TELAS.length} telas, nenhuma animação fora da tela e seções animando ao chegar; nenhum item chega parado a ${VELOCIDADE} px/s; nenhuma animação em curso com movimento reduzido.\n`);

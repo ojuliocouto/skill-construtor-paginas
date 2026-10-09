@@ -36,7 +36,11 @@ nomes neutros pelos do assunto é o caminho curto; o que não pode mudar é a gr
   `opacity: 0`, `transform` de entrada e `clip-path` só em seletor que começa com `.js`.
 - **Bloco de movimento reduzido** (`@media (prefers-reduced-motion: reduce)`) devolve cada
   receita ao estado final, e o script lê `matchMedia` e pula o que não é só CSS. Texto igual,
-  só sem o movimento. `scroll-behavior: smooth` volta a `auto` ali.
+  só sem o movimento. `scroll-behavior: smooth` volta a `auto` ali. **Regra medida (3.5.9, `gate-movimento.mjs`):** com
+  movimento reduzido, depois da carga e durante a rolagem inteira, nenhuma animação ou transição pode estar em curso com
+  mais de 0,2 s (as infinitas e as presas à rolagem também contam). Trocas de cor ou de foco de até 0,2 s passam; a entrada
+  do título, o desenho de traço e a revelação por rolagem precisam de `animation: none` / `transition: none` dentro do bloco.
+  Ao trocar um elemento da receita, confira que a regra de movimento reduzido dele veio junto.
 - **Propriedades:** `transform`, `opacity` e `clip-path` à vontade; altura, largura e sombra só
   quando a receita pede, em elemento pequeno.
 - **Movimento não é enfeite:** cada receita liga o movimento ao conteúdo da seção (barras que
@@ -278,6 +282,10 @@ sem script mostra a pilha, e o script só inclina e alinha.
 .passo .marco { transition: background-color .25s ease, border-color .25s ease, transform .25s ease; }
 .passo.ativo .marco { background: var(--claro); border-color: var(--claro); transform: scale(1.15); }
 .passo.instantaneo .marco { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .js .coluna.entra-pecas .peca-dentro, .js .coluna.entra-pecas.visivel .peca-dentro { animation: none; opacity: 1; transform: none; }
+  .passo .marco, .passo.ativo .marco { transition: none; }
+}
 ```
 
 ```js
@@ -817,7 +825,7 @@ function barraFixa() {
 ```
 
 **Reserva:** sem script a barra fica escondida (`visibility: hidden`) e a página usa os botões do
-corpo. Movimento reduzido: `.barra { transition: none; }` (aparece sem deslizar).
+corpo. Movimento reduzido: `.barra, .barra.mostra { transition: none; }` (aparece sem deslizar; sem o `.barra.mostra` a regra perde na especificidade e o gate de movimento reduzido reprova).
 **Custo no celular:** baixo; lê a posição de poucos botões por quadro.
 
 ---

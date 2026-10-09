@@ -10,7 +10,7 @@ import unittest
 
 AQUI = pathlib.Path(__file__).resolve().parent
 ANTES_DA_DIVISAO = 85
-MINIMO_3_5_8 = 97  # 12 controles novos na 3.5.8 (N13 a N17 e N21): a contagem só sobe
+MINIMO_3_5_8 = 101  # 12 controles novos na 3.5.8 (N13 a N17 e N21) e 4 na 3.5.9 (N26): a contagem só sobe
 
 
 def ler(p):
