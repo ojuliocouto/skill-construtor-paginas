@@ -64,6 +64,9 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlparse
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lugares_br import nomes_de_pessoa  # noqa: E402
+
 EXTENSOES = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".gif", ".svg"}
 LEGIVEIS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 LIMIAR_PHASH = 10          # distância de Hamming (de 64 bits) abaixo da qual duas fotos são a mesma cena
@@ -482,7 +485,6 @@ def checar_dobra(medida, precisa_aviso, problemas):
 # ---- A28: foto de banco com NOME de pessoa em alt, legenda ou depoimento --------------------------------------
 # Em projeto de cliente real, "Marina Coutinho" no depoimento ao lado de um retrato de banco afirma que aquela pessoa é a
 # Marina: afirmação falsa. Exceção única e explícita: o briefing declara `Negócio fictício de teste: sim`.
-NOME_PROPRIO = re.compile(r"\b[A-ZÀ-Ý][a-zà-ÿ]{2,}(?:\s+(?:d[aeo]s?\s+)?[A-ZÀ-Ý][a-zà-ÿ]{2,})+\b")
 BLOCO_DEPOIMENTO = re.compile(r"depoimento|testemunho|testimonial|review|avalia[cç]|cliente-diz|citacao", re.I)
 CAMPO_TESTE = re.compile(r"(?im)^\s*[-*]?\s*neg[oó]cio\s+fict[ií]cio\s+de\s+teste\s*:\s*(sim|true|verdadeiro)\b")
 VAZIOS_HTML = {"img", "br", "meta", "link", "input", "source", "hr", "wbr", "area", "base", "col", "embed", "track"}
@@ -563,8 +565,8 @@ def banco_com_nome(pagina, usados, briefing_txt):
                     break
                 n = n.pai
             for onde, txt in contextos:
-                for m in NOME_PROPRIO.finditer(txt):
-                    nome_prop = m.group(0)
+                # 3.5.10 (P10): cidade, bairro e região ("Belo Horizonte", "Sul de Minas") não são pessoa.
+                for nome_prop in nomes_de_pessoa(txt):
                     if nome_prop.lower() in titulo or any(w.lower() in titulo for w in nome_prop.split() if len(w) > 4):
                         continue  # o nome do próprio negócio, no título da página
                     achados.append((rel, onde, nome_prop))
