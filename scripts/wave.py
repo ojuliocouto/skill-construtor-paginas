@@ -371,7 +371,7 @@ def _preparar_lente(b, dur, cham):
     """Um bloco do auditor virado em registro de lente. Devolve (registro, None) ou (None, mensagem de erro)."""
     lente = b.get("lente")
     veredito = b.get("veredito")
-    if veredito in ("nao_verificado", "nao verificado", "não verificado"):
+    if veredito in ("nao_verificado", "não verificado"):
         return None, ("voltou como NÃO VERIFICADA. Lente que ninguém olhou não vira registro: "
                       "a rodada precisa olhar de novo, ou a lente fica sem registro")
     if veredito not in ("aprovado", "reprovado", "nao_aplicavel"):
