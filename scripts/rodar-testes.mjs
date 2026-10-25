@@ -44,6 +44,7 @@ const PRECISAM = {
   'test-espera-entrada.cjs': 'navegador (print do topo espera a animação de entrada)',
   'test-gates-visuais-responsivo.cjs': 'navegador (gates visuais: responsivo, oclusão, clique, identidade, vídeo)',
   'test-gates-visuais-composicao.cjs': 'navegador (gates visuais: composição e texto)',
+  'test-cara-de-ia.cjs': 'navegador (gate-texto e gate-composicao nas fixtures das páginas reais da auditoria de 25/10/2026: filete, enfeite de título, motivo repetido e público de profissão)',
   'test-gates-visuais-movimento.cjs': 'navegador (gates visuais: simetria e movimento)',
   'test-gates-v35.cjs': 'navegador e Pillow/numpy (gates visuais com fotos geradas)',
   'test-gravar-video-integracao.cjs': 'navegador (grava vídeo da página)',
@@ -61,6 +62,7 @@ const PRECISAM = {
   'test-animacao.py': 'Pillow e numpy (prancha de animação)',
   'test-imagens.py': 'Pillow e numpy (repetição e nitidez de foto)',
   'test-folha-assets.py': 'Pillow (monta a folha de contato numerada da busca de foto)',
+  'test-gosto-heroi.py': 'Pillow (monta a prancha da lente curta de gosto no herói)',
 };
 
 function achar() {

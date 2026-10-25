@@ -178,7 +178,7 @@ A sessão registra de novo só as lentes cujos achados mudaram de estado (`regis
 
 ### 1. design-critic (cara de IA, gosto)
 Lê a página inteira no print e em recortes 1:1. Conta os tells de
-`references/anti-vibe-coding.md` (V1 a V17, o V16 é o "jornal de filetes" e o V17 o esqueleto repetido) e as proibições de
+`references/anti-vibe-coding.md` (V1 a V20: o V16 é o "jornal de filetes", o V17 o esqueleto repetido, o V18 o mesmo enfeite em todo título, o V19 o mesmo motivo como papel de parede e o V20 o público de gente sem ninguém no topo) e as proibições de
 `references/preferencias-de-design.md`, item por item (inclusive itens paralelos em caixas
 iguais, passos em grade, FAQ e fecho com movimento, legenda que explica o design). Aplica a autocrítica da `frontend-design`: alguma
 parte do plano virou o padrão que sairia para qualquer página parecida? Os três visuais
@@ -270,6 +270,30 @@ registre os eixos abaixo (`--eixos-abaixo composicao,tipografia,imagem,ritmo,aca
 eixos, na página, entre as rodadas, com o que faltou escrito nos achados. Voltar ao plano visual (passo c) e reconstruir é
 um ciclo novo, que a pessoa decide ("refazer o plano e reconstruir custa mais que a rodada 2"). No caminho
 CLONAR a referência é a página original. Esta lente não aceita "não aplicável".
+
+## Lente curta de gosto no herói (passo e.1, 5 minutos)
+
+Por que existe (auditoria de 25/10/2026). O veredito de gosto chegava só no passo g, 2 a 3 horas depois do
+começo, quando a regra acima já não deixa reconstruir. A página de produção com 22 filetes, o mesmo traço
+em 9 de 10 títulos e nenhuma pessoa no topo saiu "bonito" no fim. A autoavaliação do herói falha (7,78
+contra 5,5 do auditor independente). Esta lente põe um olhar independente no ponto barato: o herói está
+pronto e o resto ainda não existe.
+
+1. Tire o print da dobra do herói em 1440 e em 390 (`screenshot-prova.js`, só o herói).
+2. Monte a prancha e o briefing:
+   `node <dir-da-skill>/scripts/py.mjs gosto-heroi.py --projeto <dir> --heroi <dobra-1440.png> --celular <dobra-390.png> --refs <ref1-dobra.png>,<ref2-dobra.png>`
+   As 2 referências são as mais fortes de `referencias/sintese.md`. Sem `--refs`, o script pega as 2 primeiras dobras.
+3. Lance 1 subagente que não construiu a página com o conteúdo de `auditoria/gosto-heroi/briefing.md`. Orçamento:
+   5 minutos e até 6 chamadas, 1 imagem; ele não captura nada. Grave a resposta em `auditoria/gosto-heroi/resultado.json`.
+4. `gosto` "correto" ou "generico": aplique a `uma_mudanca` e os tells no HERÓI e rode a lente uma vez mais. Só
+   depois construa as outras seções. A lente não manda reconstruir a página, porque o resto ainda não existe.
+
+**Custo medido (25/10/2026, subagente `auditor`, as duas lentes em paralelo):** página de produção, 4,4 min, 6 chamadas,
+cerca de 69 mil tokens; torrefação, 5,8 min, 6 chamadas, cerca de 78 mil tokens. Na página de produção a lente
+deu "generico" e achou V20 (advogados sem ninguém no topo) e V19 (o glifo do logo como papel de parede), os dois sinais
+que o auditor de 64 min deixou passar como "bonito". Na torrefação também deu "generico" (foto ilustrativa e caixa-alta
+condensada padrão): a lente é mais severa que o auditor do fim, que deu "correto" na rodada 1. Ela pede uma mudança no
+herói, não um veredito de entrega.
 
 ## Passe de gosto (último ato antes da entrega)
 

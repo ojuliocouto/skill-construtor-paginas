@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ateliê de exemplo</title>
+<!-- Fixture tirada da página de teste da 3.5.6 (ateliê de móveis fictício, auditoria de 25/10/2026): zero filetes,
+     10 títulos sem enfeite, só desenhos de controle (o "+" das perguntas e a seta dos botões) e a foto do topo com a mão
+     de quem trabalha a madeira no desktop. O público ("quem está montando ou reformando casa") não nomeia gente: a regra
+     de pessoa no topo não vale aqui. Tem que PASSAR. -->
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#f7f1e6; color:#1f2a44; font:17px/1.6 Georgia, serif; }
+  section { min-height:990px; padding:80px 6vw; }
+  h1, h2 { font-weight:700; text-wrap:balance; margin:0 0 24px; max-width:620px; }
+  h1 { font-size:46px; } h2 { font-size:34px; }
+  p { max-width:560px; margin:0 0 16px; }
+  .lado { display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start; }
+  .botao { display:inline-flex; gap:8px; align-items:center; background:#1f4fa0; color:#fff; padding:16px 26px; border-radius:10px; text-decoration:none; font:700 16px Arial, sans-serif; }
+  summary { display:flex; justify-content:space-between; align-items:center; padding:14px 0; cursor:pointer; }
+  .escuro { background:#1f2a44; color:#f7f1e6; }
+  .centro { text-align:center; }
+  .centro h2, .centro p { margin-left:auto; margin-right:auto; }
+  .bloco { min-height:90px; }
+  @media (max-width: 760px) { .lado { grid-template-columns:1fr; } section { padding:56px 20px; } h1 { font-size:34px; } }
+</style>
+</head>
+<body data-viuva-ok="a viúva não é o assunto desta fixture: ela prova filete, enfeite, motivo e público">
+<section class="lado">
+  <div>
+    <h1>Móveis de madeira maciça feitos sob medida</h1>
+    <p>Um marceneiro desenha, corta e monta cada peça na sua casa.</p>
+    <a class="botao" href="#fim">Agendar a visita técnica <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="2" fill="none"/></svg></a>
+  </div>
+  <img src="/pixel.png" width="560" height="200" alt="Mão de um homem lixando uma peça de madeira na bancada" style="width:100%;max-width:560px;height:200px;object-fit:cover;background:#8a6a4a">
+</section>
+<section class="lado"><h2>O que o ateliê faz</h2><p class="bloco">Mesas, estantes e armários desenhados para o seu espaço, em madeira maciça e com encaixe feito à mão.</p></section>
+<section class="escuro centro"><h2>Um marceneiro há doze anos</h2><p>Cada peça sai da bancada dele.</p></section>
+<section><h2>Madeira de manejo certificado</h2><p>Freijó, jequitibá e cumaru com nota fiscal.</p></section>
+<section class="escuro lado"><h2>Da primeira mensagem ao móvel montado</h2><p class="bloco">Visita, projeto, produção e montagem, com a data de cada etapa combinada antes de começar.</p></section>
+<section class="centro"><h2>Preços de partida, para você saber antes</h2><p>O valor final sai do projeto.</p></section>
+<section class="escuro"><h2>Quem já recebeu o móvel em casa</h2><p>Relatos de clientes do ateliê.</p></section>
+<section class="lado"><h2>Cinco anos de garantia na estrutura</h2><p class="bloco">Se a estrutura ceder em cinco anos, o ateliê vai até a sua casa e conserta sem custo.</p></section>
+<section>
+  <h2>Dúvidas antes de agendar</h2>
+  <details><summary>A visita é paga? <svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M13 6v14M6 13h14" stroke="currentColor" stroke-width="2"/></svg></summary><p>Não é.</p></details>
+  <details><summary>Quanto tempo leva? <svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M13 6v14M6 13h14" stroke="currentColor" stroke-width="2"/></svg></summary><p>De 30 a 45 dias.</p></details>
+  <details><summary>Atende fora da cidade? <svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M13 6v14M6 13h14" stroke="currentColor" stroke-width="2"/></svg></summary><p>Atende a região.</p></details>
+</section>
+<section id="fim" class="escuro lado">
+  <h2>Chame no WhatsApp e marque a visita técnica</h2>
+  <a class="botao" href="#fim">Chamar no WhatsApp <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="2" fill="none"/></svg></a>
+</section>
+</body>
+</html>

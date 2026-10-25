@@ -271,8 +271,9 @@ coluna alinha enquanto sobe de 90% a 40% da tela (o JS lê `celular.matches`), o
 rolagem, e o momento fica visível sem ocupar espaço fixo. O CSS e o JS da variante estão abaixo e no `demo.html`.
 **Desenho repetido (gate-composicao):** o momento assinatura repete o mesmo desenho em 3 ou mais seções por regra do
 plano, e o `gate-composicao.mjs` reprova desenho repetido. O SVG da assinatura leva `data-assinatura` (o marcador desta
-receita: o gate o reconhece como o momento assinatura). `data-icone-repetido-ok` no SVG faz o mesmo efeito para outros
-casos. O mesmo traçado FORA da assinatura continua reprovando.
+receita: o gate o reconhece como o momento assinatura). Para outros casos, `data-icone-repetido-ok="motivo"` libera o
+mesmo traçado em dois lugares, com o motivo escrito em 3 palavras ou mais ("1", "sim" ou vazio reprovam, 25/10/2026).
+O mesmo traçado FORA da assinatura continua reprovando, e o mesmo motivo em mais de 6 desenhos reprova com ou sem exceção.
 **Cores do traço:** o traço fino precisa de 3:1 contra o que está embaixo. O exemplo usa variáveis que passam em fundo
 escuro (padrão) e em fundo claro (`class="coluna sobre-claro"`), conferidas no demo. O gate não mede o que está invisível
 (opacity 0, `visibility: hidden`, `display: none`).
@@ -286,7 +287,7 @@ sem script mostra a pilha, e o script só inclina e alinha.
 ```html
 <div class="assin-grade" data-assimetrico="coluna fixa da assinatura ao lado dos passos, pedida no plano">
 <div class="assin-coluna">
-<svg class="coluna entra-pecas" data-coluna="rolagem" data-assinatura data-desenho="encaixe de peças que se alinham com a rolagem" data-icone-repetido-ok viewBox="0 0 120 232" role="img" aria-label="...">
+<svg class="coluna entra-pecas" data-coluna="rolagem" data-assinatura data-desenho="encaixe de peças que se alinham com a rolagem" viewBox="0 0 120 232" role="img" aria-label="...">
   <polyline class="fio" points=""/>
   <g class="peca" data-dx="6.23" data-rot="15.26" data-cy="11.5"><g class="peca-dentro" style="--i:0"><ellipse class="corpo" cx="60" cy="11.5" rx="17" ry="5.5"/></g></g>
   <!-- uma .peca por peça; data-dx e data-rot são o desvio e a inclinação do estado torto -->
