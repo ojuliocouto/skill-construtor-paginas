@@ -50,11 +50,14 @@
  *     Invisível = opacidade efetiva abaixo de 0,05 (somando os pais), visibility: hidden ou recortado por inteiro por clip ou
  *     clip-path no próprio elemento ou num pai (a mensagem diz em quem).
  *
- * Uso: node scripts/gate-movimento.mjs --url <url> [--espera 8000] [--so-prova-script | --sem-prova-script | --so-visibilidade]
+ * Uso: node scripts/gate-movimento.mjs --url <url> [--espera 8000] [--so-prova-script | --sem-prova-script | --so-visibilidade] [--em-serie]
+ *   --em-serie: tudo em fila, como na 3.5.14. Sem ele, as provas de estado (script bloqueado ou atrasado, parada no topo, salto, movimento
+ *   reduzido) rodam juntas e as de tempo (visita e rolagem a 300 px/s) seguem sozinhas; o veredito e o texto da saída são os mesmos.
  *   --so-visibilidade: só a visita e as três provas do item 6 (sem a prova do script, sem o item a item e sem o movimento reduzido)
  */
 import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
+import os from 'node:os';
 import path from 'node:path';
 import { exigirServidor } from './servidor-no-ar.mjs';
 
@@ -180,6 +183,20 @@ await exigirServidor(URL_ALVO);   // servidor caído: uma mensagem clara (saída
 const navegador = await chromium.launch();
 const falhas = [];
 
+// 3.6 (corte 9 da auditoria de velocidade; o patch medido na 3.5.8 e nunca aplicado). Cada medição abre o PRÓPRIO contexto do
+// navegador e escreve no próprio buffer; a saída sai na ordem de sempre, assim que a medição da vez termina.
+// As provas que olham o ESTADO depois de uma espera fixa e não dependem do relógio da página rodam juntas (até ROBUSTAS_JUNTAS
+// de uma vez, todas no mesmo navegador): o conteúdo sem o script (bloqueado e atrasado), a página parada no topo, o salto até o
+// fim e o movimento reduzido. As medições de TEMPO (a visita e a rolagem a 300 px/s) comparam o instante em que um item termina
+// de animar com o instante em que entra na tela: medidas com 3 ou 4 delas ao mesmo tempo, o veredito mudou em 4 de 7 execuções
+// (falso "chegam parados"). Por isso elas seguem uma depois da outra, como antes, e nunca ao mesmo tempo que as outras.
+// `--em-serie` volta a tudo em fila, como era na 3.5.14.
+const EM_SERIE = args.includes('--em-serie');
+const ROBUSTAS_JUNTAS = EM_SERIE ? 1 : Math.max(2, Math.min(4, Math.floor(os.cpus().length / 3)));
+const tarefas = [];
+const nova = (rodar, robusta = false) => { const t = { rodar, robusta, feito: false, saida: { linhas: [], falhas: [] } }; tarefas.push(t); return t; };
+const texto = (linha) => { const t = nova(null); t.feito = true; t.saida.linhas.push(linha); };
+
 /** O script principal em linha: tudo que não é o script curto que só troca a classe do <html> (a rede de segurança). */
 function ehScriptPrincipal(codigo) {
   return codigo.length > 600 || MARCAS_DO_PRINCIPAL.test(codigo);
@@ -292,7 +309,7 @@ async function invisiveis(page) {
   return page.evaluate(ocultosAgora, 'todos');
 }
 
-async function provaScript(nome, w, h, mob, modo) {
+async function provaScript(nome, w, h, mob, modo, saida) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
   const origem = new URL(URL_ALVO).origin;
   await ctx.route('**/*', async (rota) => {
@@ -313,8 +330,8 @@ async function provaScript(nome, w, h, mob, modo) {
   await page.waitForTimeout(6000);   // a rede de segurança dispara aos 5 s; o script atrasado só chega aos 7 s
   const lista = await invisiveis(page);
   const rotulo = modo === 'bloqueado' ? 'script bloqueado' : 'script que demora 7 s';
-  console.log(`${(nome + ' (' + w + 'x' + h + ')').padEnd(30)} ${lista.length ? 'FALHA' : 'ok'}  ${rotulo}: ${lista.length} elemento(s) com texto ou imagem invisível(is)`);
-  if (lista.length) falhas.push(`${nome} (${w}x${h}): ${rotulo}: ${lista.length} elemento(s) com texto ou imagem invisível(is) sem o script (${lista.slice(0, 4).join('; ')}${lista.length > 4 ? '; ...' : ''}). Falta a rede de segurança: classe \`js\` posta por script em linha no <head> e retirada por temporizador se o script principal não confirmar (references/receitas-de-movimento.md)`);
+  saida.linhas.push(`${(nome + ' (' + w + 'x' + h + ')').padEnd(30)} ${lista.length ? 'FALHA' : 'ok'}  ${rotulo}: ${lista.length} elemento(s) com texto ou imagem invisível(is)`);
+  if (lista.length) saida.falhas.push(`${nome} (${w}x${h}): ${rotulo}: ${lista.length} elemento(s) com texto ou imagem invisível(is) sem o script (${lista.slice(0, 4).join('; ')}${lista.length > 4 ? '; ...' : ''}). Falta a rede de segurança: classe \`js\` posta por script em linha no <head> e retirada por temporizador se o script principal não confirmar (references/receitas-de-movimento.md)`);
   await ctx.close();
 }
 
@@ -323,11 +340,12 @@ console.log(`visita: ${ESPERA / 1000} s parada no topo, depois rolagem em passos
 console.log('='.repeat(88));
 
 if (!SEM_PROVA_SCRIPT) {
-  console.log('conteúdo sem o script (6 s de espera por prova):');
-  for (const [nome, w, h, mob] of TELAS) for (const modo of ['bloqueado', 'demora']) await provaScript(nome, w, h, mob, modo);
+  texto('conteúdo sem o script (6 s de espera por prova):');
+  for (const [nome, w, h, mob] of TELAS) for (const modo of ['bloqueado', 'demora']) { const t = nova(null, true); t.rodar = () => provaScript(nome, w, h, mob, modo, t.saida); }
 }
 
-for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
+/** A visita: parada no topo, rolagem em passos com pausa de leitura, e o que as animações fizeram. Medição de TEMPO: roda sozinha. */
+async function visita(nome, w, h, mob, saida) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
   await ctx.addInitScript(escuta);
   if (ENGASGO > 0) await ctx.addInitScript(`setInterval(function(){var f=performance.now()+${ENGASGO};while(performance.now()<f){}},120)`);
@@ -377,16 +395,18 @@ for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
   if (animam.length < minimo) {
     lista.push(`só ${animam.length} de ${abaixo.length} seções abaixo da dobra animam ao chegar (mínimo ${minimo}): ${abaixo.filter((s) => !chegaram.has(s.i)).map((s) => `"${s.nome}"`).slice(0, 6).join(', ')} chegam paradas`);
   }
-  console.log(`${onde.padEnd(30)} ${lista.length ? 'FALHA (' + lista.length + ')' : 'ok'}  ${animam.length}/${abaixo.length} seções animam ao chegar, ${fora.size} com animação fora da tela`);
-  for (const l of lista) falhas.push(`${onde}: ${l}`);
-  console.log(`${onde.padEnd(30)} ${restam.length ? 'FALHA' : 'ok'}  fim da visita: ${restam.length} elemento(s) com texto ou imagem invisível(is) na tela ou no fim`);
-  if (restam.length) falhas.push(`${onde}: no fim da visita, ${restam.length} elemento(s) com texto ou imagem continuam invisíveis (na tela por quase 1 s, ou depois de a página inteira passar): ${restam.slice(0, 4).join('; ')}${restam.length > 4 ? '; ...' : ''}. Se o recorte de entrada (clip-path) está no próprio alvo do IntersectionObserver, a área visível do alvo é 0 e, com threshold acima de 0, o observador nunca dispara: o clip-path de entrada vai no filho, o observador olha o pai (references/receitas-de-movimento.md)`);
+  saida.linhas.push(`${onde.padEnd(30)} ${lista.length ? 'FALHA (' + lista.length + ')' : 'ok'}  ${animam.length}/${abaixo.length} seções animam ao chegar, ${fora.size} com animação fora da tela`);
+  for (const l of lista) saida.falhas.push(`${onde}: ${l}`);
+  saida.linhas.push(`${onde.padEnd(30)} ${restam.length ? 'FALHA' : 'ok'}  fim da visita: ${restam.length} elemento(s) com texto ou imagem invisível(is) na tela ou no fim`);
+  if (restam.length) saida.falhas.push(`${onde}: no fim da visita, ${restam.length} elemento(s) com texto ou imagem continuam invisíveis (na tela por quase 1 s, ou depois de a página inteira passar): ${restam.slice(0, 4).join('; ')}${restam.length > 4 ? '; ...' : ''}. Se o recorte de entrada (clip-path) está no próprio alvo do IntersectionObserver, a área visível do alvo é 0 e, com threshold acima de 0, o observador nunca dispara: o clip-path de entrada vai no filho, o observador olha o pai (references/receitas-de-movimento.md)`);
   await ctx.close();
 }
-// 6. Parada no topo (P13b) e salto até o fim (P14), em contextos novos.
-for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
+for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) { const t = nova(null); t.rodar = () => visita(nome, w, h, mob, t.saida); }
+
+// 6. Parada no topo (P13b) e salto até o fim (P14), em contextos novos. Provas de ESTADO depois de uma espera fixa: rodam juntas.
+async function paradaOuSalto(nome, w, h, mob, prova, saida) {
   const onde = `${nome} (${w}x${h})`;
-  for (const prova of ['parada', 'salto']) {
+  {
     const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
     const page = await ctx.newPage();
     try { await page.goto(URL_ALVO, { waitUntil: 'load', timeout: 45000 }); }
@@ -394,24 +414,25 @@ for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) {
     if (prova === 'parada') {
       await page.waitForTimeout(PARADA_MS);
       const lista = await page.evaluate(ocultosAgora, 'primeira');
-      console.log(`${onde.padEnd(30)} ${lista.length ? 'FALHA' : 'ok'}  parada no topo por ${PARADA_MS / 1000} s: ${lista.length} elemento(s) da primeira tela invisível(is)`);
-      if (lista.length) falhas.push(`${onde}: parada no topo por ${PARADA_MS / 1000} s, ${lista.length} elemento(s) com texto da primeira tela continuam invisíveis: ${lista.slice(0, 4).join('; ')}${lista.length > 4 ? '; ...' : ''}. Com a página parada o observador não dispara para o que está abaixo da linha do rootMargin (ou empurrado para baixo dela por translate): o que já está na primeira tela entra na carga (references/receitas-de-movimento.md, "a primeira tela entra na carga")`);
+      saida.linhas.push(`${onde.padEnd(30)} ${lista.length ? 'FALHA' : 'ok'}  parada no topo por ${PARADA_MS / 1000} s: ${lista.length} elemento(s) da primeira tela invisível(is)`);
+      if (lista.length) saida.falhas.push(`${onde}: parada no topo por ${PARADA_MS / 1000} s, ${lista.length} elemento(s) com texto da primeira tela continuam invisíveis: ${lista.slice(0, 4).join('; ')}${lista.length > 4 ? '; ...' : ''}. Com a página parada o observador não dispara para o que está abaixo da linha do rootMargin (ou empurrado para baixo dela por translate): o que já está na primeira tela entra na carga (references/receitas-de-movimento.md, "a primeira tela entra na carga")`);
     } else {
       await page.waitForTimeout(1000);
       // Salto direto ao fim, sem passar pelo meio: como uma âncora, um painel ou a volta do WhatsApp que restaura a rolagem.
       await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
       await page.waitForTimeout(1500);
       const lista = await page.evaluate(ocultosAgora, 'acima');
-      console.log(`${onde.padEnd(30)} ${lista.length ? 'FALHA' : 'ok'}  salto até o fim: ${lista.length} elemento(s) acima da tela invisível(is)`);
-      if (lista.length) falhas.push(`${onde}: depois de um salto até o fim (âncora, painel, voltar do WhatsApp), ${lista.length} elemento(s) que ficaram acima da tela continuam invisíveis: ${lista.slice(0, 4).join('; ')}${lista.length > 4 ? '; ...' : ''}. A base das receitas põe no estado final, sem animação, o que já passou ("já passou = estado final" em references/receitas-de-movimento.md)`);
+      saida.linhas.push(`${onde.padEnd(30)} ${lista.length ? 'FALHA' : 'ok'}  salto até o fim: ${lista.length} elemento(s) acima da tela invisível(is)`);
+      if (lista.length) saida.falhas.push(`${onde}: depois de um salto até o fim (âncora, painel, voltar do WhatsApp), ${lista.length} elemento(s) que ficaram acima da tela continuam invisíveis: ${lista.slice(0, 4).join('; ')}${lista.length > 4 ? '; ...' : ''}. A base das receitas põe no estado final, sem animação, o que já passou ("já passou = estado final" em references/receitas-de-movimento.md)`);
     }
     await ctx.close();
   }
 }
+for (const [nome, w, h, mob] of (SO_PROVA_SCRIPT ? [] : TELAS)) for (const prova of ['parada', 'salto']) { const t = nova(null, true); t.rodar = () => paradaOuSalto(nome, w, h, mob, prova, t.saida); }
 
-// 3. Item por item, numa rolagem contínua a 300 px/s.
-console.log(`por item: rolagem contínua a ${VELOCIDADE} px/s`);
-for (const [nome, w, h, mob] of ((SO_CELULAR || SO_PROVA_SCRIPT || SO_VISIBILIDADE) ? [] : TELAS_ITEM)) {
+// 3. Item por item, numa rolagem contínua a 300 px/s. Medição de TEMPO: roda sozinha, uma tela depois da outra.
+texto(`por item: rolagem contínua a ${VELOCIDADE} px/s`);
+async function porItem(nome, w, h, mob, saida) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
   await ctx.addInitScript(escutaItens);
   const page = await ctx.newPage();
@@ -443,12 +464,13 @@ for (const [nome, w, h, mob] of ((SO_CELULAR || SO_PROVA_SCRIPT || SO_VISIBILIDA
     return [...porItem.entries()];
   });
   const onde = `${nome} (${w}x${h})`;
-  console.log(`${onde.padEnd(30)} ${parados.length ? 'FALHA' : 'ok'}  ${parados.length} item(ns) chegam parados`);
+  saida.linhas.push(`${onde.padEnd(30)} ${parados.length ? 'FALHA' : 'ok'}  ${parados.length} item(ns) chegam parados`);
   if (parados.length) {
-    falhas.push(`${onde}: ${parados.length} item(ns) chegam parados na tela a ${VELOCIDADE} px/s (terminaram de animar antes de entrar): ${parados.slice(0, 5).map(([k, ms]) => `${k} ${ms} ms antes`).join(', ')}; revele cada item quando ele entra, não o grupo`);
+    saida.falhas.push(`${onde}: ${parados.length} item(ns) chegam parados na tela a ${VELOCIDADE} px/s (terminaram de animar antes de entrar): ${parados.slice(0, 5).map(([k, ms]) => `${k} ${ms} ms antes`).join(', ')}; revele cada item quando ele entra, não o grupo`);
   }
   await ctx.close();
 }
+for (const [nome, w, h, mob] of ((SO_CELULAR || SO_PROVA_SCRIPT || SO_VISIBILIDADE) ? [] : TELAS_ITEM)) { const t = nova(null); t.rodar = () => porItem(nome, w, h, mob, t.saida); }
 
 // 4. Movimento reduzido: nada de rolagem suave e nada animado em curso (3.5.9, N26).
 // Duas vezes o auditor achou animação rodando com prefers-reduced-motion: reduce e este gate passou verde, porque só
@@ -486,9 +508,7 @@ function escutaReduzido(limiar) {
   };
   requestAnimationFrame(volta);
 }
-for (const [nome, w, h, mob] of [['iphone padrao', 390, 844, true], ['desktop comum', 1440, 900, false]]) {
-  if (SO_VISIBILIDADE) continue;
-  if ((SO_CELULAR || SO_PROVA_SCRIPT) && !mob) continue;
+async function reduzido(nome, w, h, mob, saida) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob, reducedMotion: 'reduce' });
   await ctx.addInitScript(`(${escutaReduzido.toString()})(${LIMIAR_REDUZIDO_MS})`);
   const page = await ctx.newPage();
@@ -496,8 +516,8 @@ for (const [nome, w, h, mob] of [['iphone padrao', 390, 844, true], ['desktop co
   catch { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
   if (mob) {
     const suave = await page.evaluate(() => [document.documentElement, document.body].filter((el) => getComputedStyle(el).scrollBehavior === 'smooth').map((el) => el.tagName.toLowerCase()));
-    console.log(`movimento reduzido: scroll-behavior ${suave.length ? 'smooth em ' + suave.join(', ') : 'auto'}`);
-    if (suave.length) falhas.push(`movimento reduzido: scroll-behavior: smooth em ${suave.join(' e ')} com prefers-reduced-motion: reduce; os botões de âncora rolam animados para quem pediu menos movimento (use auto dentro de @media (prefers-reduced-motion: reduce))`);
+    saida.linhas.push(`movimento reduzido: scroll-behavior ${suave.length ? 'smooth em ' + suave.join(', ') : 'auto'}`);
+    if (suave.length) saida.falhas.push(`movimento reduzido: scroll-behavior: smooth em ${suave.join(' e ')} com prefers-reduced-motion: reduce; os botões de âncora rolam animados para quem pediu menos movimento (use auto dentro de @media (prefers-reduced-motion: reduce))`);
   }
   await page.waitForTimeout(1200);
   const altura = await page.evaluate(() => document.documentElement.scrollHeight);
@@ -509,12 +529,36 @@ for (const [nome, w, h, mob] of [['iphone padrao', 390, 844, true], ['desktop co
   await page.waitForTimeout(800);
   const rodando = await page.evaluate(() => [...window.__red.values()]);
   const onde = `${nome} (${w}x${h})`;
-  console.log(`movimento reduzido ${onde}: ${rodando.length ? rodando.length + ' animação(ões) em curso' : '0 animações em curso'}`);
+  saida.linhas.push(`movimento reduzido ${onde}: ${rodando.length ? rodando.length + ' animação(ões) em curso' : '0 animações em curso'}`);
   if (rodando.length) {
     const lista = rodando.slice(0, 5).map((r) => `${r.tipo} de ${r.prop} em ${r.alvo} (${r.infinita ? 'infinita' : r.dur === null ? 'presa à rolagem' : r.dur + ' ms'}, scrollY ${r.sy})`).join('; ');
-    falhas.push(`movimento reduzido ${onde}: ${rodando.length} animação(ões) ou transição(ões) em curso com prefers-reduced-motion: reduce, acima de ${LIMIAR_REDUZIDO_MS} ms: ${lista}${rodando.length > 5 ? '; ...' : ''}. Dentro de @media (prefers-reduced-motion: reduce) ponha animation: none e transition: none nesses elementos (a página aparece no estado final, sem movimento)`);
+    saida.falhas.push(`movimento reduzido ${onde}: ${rodando.length} animação(ões) ou transição(ões) em curso com prefers-reduced-motion: reduce, acima de ${LIMIAR_REDUZIDO_MS} ms: ${lista}${rodando.length > 5 ? '; ...' : ''}. Dentro de @media (prefers-reduced-motion: reduce) ponha animation: none e transition: none nesses elementos (a página aparece no estado final, sem movimento)`);
   }
   await ctx.close();
+}
+for (const [nome, w, h, mob] of [['iphone padrao', 390, 844, true], ['desktop comum', 1440, 900, false]]) {
+  if (SO_VISIBILIDADE) continue;
+  if ((SO_CELULAR || SO_PROVA_SCRIPT) && !mob) continue;
+  const t = nova(null, true); t.rodar = () => reduzido(nome, w, h, mob, t.saida);
+}
+
+// Roda e imprime. A saída sai SEMPRE na ordem de sempre, assim que a medição da vez e todas as de antes terminaram: o texto e o
+// veredito são os mesmos do modo em fila. Primeiro as provas de estado, juntas; depois as de tempo, uma por vez e sozinhas.
+{
+  let proxima = 0;
+  const descarregar = () => {
+    while (proxima < tarefas.length && tarefas[proxima].feito) {
+      for (const l of tarefas[proxima].saida.linhas) console.log(l);
+      falhas.push(...tarefas[proxima].saida.falhas);
+      proxima++;
+    }
+  };
+  const executar = async (t) => { await t.rodar(); t.feito = true; descarregar(); };
+  const juntas = (fila, n) => Promise.all(Array.from({ length: Math.min(n, fila.length) }, async () => { while (fila.length) await executar(fila.shift()); }));
+  descarregar();
+  await juntas(tarefas.filter((t) => t.rodar && t.robusta), ROBUSTAS_JUNTAS);
+  await juntas(tarefas.filter((t) => t.rodar && !t.robusta), 1);
+  descarregar();
 }
 await navegador.close();
 
