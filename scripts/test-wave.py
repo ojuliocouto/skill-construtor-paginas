@@ -530,6 +530,125 @@ class CasoRealA30(unittest.TestCase):
         self.assertIn("regressão", o2)
 
 
+class RegressaoTrivialNaoFechaOCiclo(unittest.TestCase):
+    """3.6.1, corte 2. No teste de aluno da 3.6.0 o ciclo fechou em NÃO ENTREGAR por uma regressão trivial (o crédito de 4 fotos
+    que saíram da página continuava no rodapé) e a etapa g levou 41 min. Trivial, de forma testável: a regressão é pega por um
+    gate do catálogo, esse gate PASSA depois do conserto (registrado depois da auditoria) e ela não é achado crítico nem alto.
+    Crítico ou alto do auditor fecha o ciclo como antes."""
+
+    LENTES_QUANDO = "2026-10-25T20:00:00"
+    GATE_DEPOIS = "2026-10-25T20:10:00"
+    GATE_ANTES = "2026-10-25T19:30:00"
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.projeto = self.temp.name
+
+    def preparar(self, gate_quando=None, gate_exit=0, rodadas_antes=1):
+        gate_quando = gate_quando or self.GATE_DEPOIS
+        wave.salvar(self.projeto, {
+            "lentes": {n: {"nota": 8, "veredito": "aprovado", "origem": "subagente", "gosto": "bonito", "quando": self.LENTES_QUANDO,
+                           "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES},
+            "gates": {n: {"exit": 0, "detalhe": "ok", "quando": self.GATE_DEPOIS} for n in wave.GATES},
+            "rodadas": [{"n": i + 1, "media": 8.0, "criticos": 0, "altos": 0, "notas": {}, "desfecho": "CONTINUA"} for i in range(rodadas_antes)],
+        })
+        d = wave.carregar(self.projeto)
+        d["gates"]["imagens"] = {"exit": gate_exit, "detalhe": "rodar-gates", "quando": gate_quando}
+        wave.salvar(self.projeto, d)
+
+    def rodar(self, regressoes=1, triviais=("imagens:medio",), criticos=0, altos=0):
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida), contextlib.redirect_stderr(saida):
+            code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, criticos=criticos, altos=altos, regressoes=regressoes,
+                                                      pendencias_do_usuario=0, rodada_extra_pedida=False,
+                                                      regressao_trivial=list(triviais)))
+        return code, saida.getvalue()
+
+    def test_regressao_trivial_com_o_gate_verde_depois_do_conserto_entrega(self):
+        self.preparar()
+        code, texto = self.rodar()
+        self.assertEqual(code, 0, texto)
+        self.assertIn("REGRESSÃO TRIVIAL", texto)
+        self.assertNotIn("NÃO ENTREGAR", texto)
+        self.assertNotEqual(wave.carregar(self.projeto)["rodadas"][-1]["desfecho"], "NAO_ENTREGAR")
+
+    def test_a_regressao_trivial_fica_no_historico_da_rodada(self):
+        self.preparar()
+        self.rodar()
+        rodada = wave.carregar(self.projeto)["rodadas"][-1]
+        self.assertEqual(rodada["regressoes_triviais"], [{"gate": "imagens", "gravidade": "medio"}])
+
+    def test_regressao_de_gravidade_alta_continua_fechando_o_ciclo(self):
+        self.preparar()
+        for grav in ("alto", "critico", "crítico"):
+            code, texto = self.rodar(triviais=(f"imagens:{grav}",))
+            self.assertEqual(code, 1, texto)
+            self.assertIn("NÃO ENTREGAR", texto)
+            self.assertIn("crítico ou alto", texto)
+            self.preparar()
+
+    def test_gate_que_ainda_reprova_continua_fechando_o_ciclo(self):
+        self.preparar(gate_exit=1)
+        code, texto = self.rodar()
+        self.assertEqual(code, 1, texto)
+        # o auditor master já barra gate vermelho antes de o ciclo olhar a regressão: o conserto só vale com o gate verde
+        self.assertIn("BLOQUEIA: gate(s) vermelho(s): imagens", texto)
+        self.assertNotIn("REGRESSÃO TRIVIAL CONSERTADA", texto)
+
+    def test_gate_registrado_antes_da_auditoria_nao_prova_o_conserto(self):
+        self.preparar(gate_quando=self.GATE_ANTES)
+        code, texto = self.rodar()
+        self.assertEqual(code, 1, texto)
+        self.assertIn("NÃO ENTREGAR", texto)
+        self.assertIn("antes da auditoria", texto)
+        self.assertIn("--registrar-conserto", texto)
+
+    def test_gate_sem_registro_de_hora_nao_prova_o_conserto(self):
+        self.preparar()
+        d = wave.carregar(self.projeto)
+        del d["gates"]["imagens"]["quando"]
+        wave.salvar(self.projeto, d)
+        code, _ = self.rodar()
+        self.assertEqual(code, 1)
+
+    def test_critico_do_auditor_continua_fechando_o_ciclo_mesmo_com_regressao_trivial(self):
+        self.preparar()
+        code, texto = self.rodar(criticos=1)
+        self.assertEqual(code, 1, texto)
+        self.assertIn("NÃO ENTREGAR: crítico aberto", texto)
+
+    def test_uma_regressao_trivial_nao_cobre_a_segunda(self):
+        self.preparar()
+        code, texto = self.rodar(regressoes=2)
+        self.assertEqual(code, 1, texto)
+        self.assertIn("NÃO ENTREGAR", texto)
+        self.assertIn("1 achado(s)", texto)
+
+    def test_mais_triviais_do_que_regressoes_e_erro(self):
+        self.preparar()
+        code, texto = self.rodar(regressoes=1, triviais=("imagens:medio", "responsivo:baixo"))
+        self.assertEqual(code, 2, texto)
+
+    def test_gate_desconhecido_e_gravidade_invalida_sao_erro(self):
+        self.preparar()
+        self.assertEqual(self.rodar(triviais=("inexistente:medio",))[0], 2)
+        self.assertEqual(self.rodar(triviais=("imagens:gravissimo",))[0], 2)
+        self.assertEqual(self.rodar(triviais=("imagens",))[0], 2)
+
+    def test_regressao_sem_declarar_trivial_fecha_como_sempre(self):
+        self.preparar()
+        code, texto = self.rodar(triviais=())
+        self.assertEqual(code, 1, texto)
+        self.assertIn("NÃO ENTREGAR", texto)
+
+    def test_na_primeira_rodada_a_trivial_consertada_nao_vira_continua(self):
+        self.preparar(rodadas_antes=0)
+        code, texto = self.rodar(altos=0)
+        self.assertEqual(code, 0, texto)
+        self.assertNotIn("CONTINUA: houve REGRESSAO", texto)
+
+
 class CincoEixosEReabrir(unittest.TestCase):
     """3.5.9: N23 (acabamento é o quinto eixo) e N27 (mudança grande do dono entre as rodadas reabre a rodada 1, uma vez)."""
 

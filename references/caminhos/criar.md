@@ -554,6 +554,15 @@ depois da SobrAI (9,05 nas lentes e "que página FEIA"): **isso é bonito ou só
    (uma vez por ciclo, registrada; lentes e gates recomeçam). Detalhe em `references/auditores.md`.
 `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`
 
+**Regressão trivial não fecha o ciclo (3.6.1).** No teste de aluno da 3.6.0 o ciclo fechou em NÃO ENTREGAR por uma regressão de 1 minuto
+(o crédito de 4 fotos que saíram da página continuava no rodapé) e a etapa g levou 41 min. Regressão é "trivial" quando as TRÊS valem:
+(1) um gate do catálogo a pega (crédito de foto no `imagens`, folga de 2 px no `responsivo`); (2) esse gate passa depois do conserto, com
+registro na wave posterior à auditoria; (3) ela não é achado crítico nem alto do auditor. Nesse caso: conserte, rode SÓ aquele gate com
+`node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir> --so <gate> --registrar-conserto` (ou `--reprovados --registrar-conserto`) e feche a rodada com
+`--regressoes <N> --regressao-trivial <gate>:<medio|baixo>` (uma vez por regressão trivial; ela conta dentro de `--regressoes`). A entrega segue e a
+regressão consertada vai escrita na entrega. Crítico ou alto do auditor continua fechando o ciclo como antes, e uma regressão que não cumpre as três
+continua aberta. Sem o `--registrar-conserto` o `rodar-gates` parcial não grava nada na wave.
+
 **Teto de 2 rodadas.** Saiu CONTINUA na rodada 1: corrige, refaz os gates do passo f que a
 correção toca, junta o pacote de novo (`pacote-auditoria.py --rodada 2`, depois de salvar os achados
 em `auditoria/achados-rodada-1.json`) e fecha a rodada 2, que é de CONFERÊNCIA (`references/auditores.md`,

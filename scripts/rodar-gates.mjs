@@ -40,6 +40,8 @@
  *   --explicar-cache     não roda gate nenhum: mostra, gate por gate, se o cache acerta ou erra e por quê (a dist, o projeto, os
  *                        scripts, o ambiente ou os argumentos mudaram), e sai 0. Monta a dist antes, como uma rodada de verdade.
  *   --sem-registrar      não grava o resultado da rodada completa na wave.
+ *   --registrar-conserto numa rodada parcial (--so ou --reprovados), grava na wave SÓ os gates que rodaram. É o conserto de uma regressão
+ *                        trivial depois da auditoria (3.6.1): o gate refeito prova que a regressão sumiu sem pagar a rodada completa.
  *
  * Cache por conteúdo (3.6, corte 4 da auditoria de velocidade). Gate que PASSOU e cujo insumo não mudou
  * (dist, projeto, argumentos, scripts e ambiente, tudo por hash do conteúdo) devolve o laudo de então, sem
@@ -47,7 +49,8 @@
  *
  * Registro na wave (3.6, corte 5). Uma rodada COMPLETA (sem --so nem --reprovados) grava o exit real de cada
  * gate na wave (`wave.py gates-lote`), no lugar de 15 chamadas à mão. Rodada parcial não registra: o
- * criar.md manda registrar só depois da rodada completa.
+ * criar.md manda registrar só depois da rodada completa. Exceção (3.6.1): `--registrar-conserto` registra os gates da rodada parcial,
+ * e só eles, para provar o conserto de uma regressão trivial achada na auditoria (`wave.py rodada --regressao-trivial`).
  *
  * Tempo (3.6, corte 3). A rodada completa leva de 1 a 5 minutos: rode em PRIMEIRO plano com tempo-limite de
  * 10 minutos (no Bash, `timeout` de 600000). Com o limite padrão de 120 s o Bash corta o comando no meio, e
@@ -296,6 +299,7 @@ function lerArgs(argv) {
     else if (a === '--sem-cache') o.semCache = true;
     else if (a === '--explicar-cache') o.explicarCache = true;
     else if (a === '--sem-registrar') o.semRegistrar = true;
+    else if (a === '--registrar-conserto') o.registrarConserto = true;
     else if (a === '--produto-fisico') o.produtoFisico = true;
     else if (a === '--trafego-real') o.trafegoReal = true;
     else if (a === '--lista') o.lista = true;
@@ -329,11 +333,14 @@ export function motivoDoErro(registro, partes) {
  */
 function registrarNaWave({ o, escolhidos, resultados, projeto, gatesDir, rodada }) {
   if (o.semRegistrar) return 'Wave: --sem-registrar, não registrei nada. Registre à mão: wave.py gate <nome> --exit <0|1>.';
-  if (o.so || o.reprovados) return 'Wave: rodada parcial, não registrei nada. Faça a rodada completa (sem --so nem --reprovados) e ela registra o exit real de cada gate.';
+  const parcial = Boolean(o.so || o.reprovados);
+  if (parcial && !o.registrarConserto) return 'Wave: rodada parcial, não registrei nada. Faça a rodada completa (sem --so nem --reprovados) e ela registra o exit real de cada gate. Para provar só o conserto de uma regressão trivial achada na auditoria, repita com --registrar-conserto: ele grava na wave apenas os gates desta rodada parcial.';
   const itens = escolhidos.filter((g) => NOMES_NA_WAVE.has(g.nome)).map((g) => {
     const r = resultados.get(g.nome);
     const onde = `gates/${g.nome}-r${rodada}.txt`;
-    const detalhe = r.cache
+    const detalhe = parcial
+      ? `rodar-gates r${rodada}: conserto parcial, ${r.codigo === 0 ? 'PASSA' : `REPROVA (saída ${r.codigo})`}${r.cache ? ', laudo reaproveitado do cache' : ''} em ${fmt(r.segundos)} s (${onde})`
+      : r.cache
       ? `rodar-gates r${rodada}: PASSA, laudo da rodada ${r.cache.rodada} reaproveitado do cache, entrada idêntica (${onde})`
       : `rodar-gates r${rodada}: ${r.codigo === 0 ? 'PASSA' : `REPROVA (saída ${r.codigo})`} em ${fmt(r.segundos)} s (${onde})`;
     return { nome: g.nome, exit: r.codigo, detalhe };

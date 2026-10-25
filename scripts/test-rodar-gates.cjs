@@ -793,6 +793,40 @@ teste('registro: rodada parcial (--so, --reprovados) NÃO registra; o criar.md m
   assert.equal(r2.codigo, 0);
 });
 
+teste('registro: --registrar-conserto numa rodada parcial grava SÓ os gates que rodaram (conserto de regressão trivial, 3.6.1)', async () => {
+  const { CATALOGO, falsos, marcas, proj } = await cenarioCache();
+  montarFalsos(falsos, corposContando(CATALOGO, marcas, { texto: 'console.log("falhei");\nprocess.exit(1);' }))(CATALOGO);
+  rodar(BASE_CACHE(proj, falsos));
+  assert.equal(lerWave(proj).gates.texto.exit, 1);
+  const antes = JSON.stringify(lerWave(proj).gates.ritmo);
+  // o conserto: o gate passa agora, e só ele roda
+  montarFalsos(falsos, corposContando(CATALOGO, marcas))(CATALOGO);
+  const r = rodar([...BASE_CACHE(proj, falsos), '--so', 'texto', '--registrar-conserto']);
+  assert.equal(r.codigo, 0, r.saida);
+  const w = lerWave(proj);
+  assert.equal(w.gates.texto.exit, 0, 'o vermelho vira verde');
+  assert.match(w.gates.texto.detalhe, /conserto parcial/);
+  assert.equal(JSON.stringify(w.gates.ritmo), antes, 'os outros gates não são tocados');
+  assert.match(r.saida, /Wave: 1 gate\(s\) registrado\(s\)/);
+});
+
+teste('registro: --registrar-conserto com --reprovados registra o exit real, inclusive o que continua vermelho', async () => {
+  const { CATALOGO, falsos, marcas, proj } = await cenarioCache();
+  montarFalsos(falsos, corposContando(CATALOGO, marcas, { texto: 'console.log("falhei");\nprocess.exit(1);' }))(CATALOGO);
+  rodar(BASE_CACHE(proj, falsos));
+  const r = rodar([...BASE_CACHE(proj, falsos), '--reprovados', '--registrar-conserto']);
+  assert.equal(r.codigo, 1, r.saida);
+  assert.equal(lerWave(proj).gates.texto.exit, 1);
+  assert.match(lerWave(proj).gates.texto.detalhe, /conserto parcial/);
+});
+
+teste('registro: a rodada parcial sem --registrar-conserto continua sem registrar e diz como registrar o conserto', async () => {
+  const { base, proj } = await cenarioCache();
+  const r = rodar([...base, '--so', 'texto']);
+  assert.ok(!fs.existsSync(path.join(proj, '.wave-auditoria.json')));
+  assert.match(r.saida, /--registrar-conserto/);
+});
+
 teste('registro: --sem-registrar não toca na wave', async () => {
   const { base, proj } = await cenarioCache();
   const r = rodar([...base, '--sem-registrar']);

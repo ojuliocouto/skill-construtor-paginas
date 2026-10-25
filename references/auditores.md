@@ -164,7 +164,10 @@ Schema de retorno (um item por achado da rodada 1):
 - **não corrigido:** a evidência mostra que o defeito segue lá. Segue como achado aberto com a
   mesma severidade.
 - **regressão:** a evidência mostra o que a correção quebrou. Conta em `--regressoes` e, se for
-  crítico, em `--criticos`.
+  crítico, em `--criticos`. **Regressão trivial (3.6.1)** não fecha o ciclo: um gate do catálogo a pega, o conserto leva cerca
+  de 1 minuto (crédito de foto que saiu da página, folga de 2 px), o gate passa depois do conserto e ela não é crítica nem alta.
+  O auditor marca a gravidade da regressão; a sessão conserta, roda só aquele gate (`rodar-gates.mjs --so <gate> --registrar-conserto`)
+  e declara `--regressao-trivial <gate>:<medio|baixo>`. Regressão crítica ou alta fecha o ciclo como sempre.
 
 **Nota nova só onde houve achado corrigido ou regressão (A31).** O auditor da rodada 2 devolve nota nova SÓ das lentes que tiveram achado
 corrigido ou regressão; as outras ficam com a nota da rodada 1 (o `wave.py rodada` mostra "nota da rodada 1 mantida" e que a média da

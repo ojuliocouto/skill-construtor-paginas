@@ -52,6 +52,7 @@ depois da rodada 2 não reabre nada: em sessão não interativa o ciclo fecha em
 na entrega (ver a mensagem de NÃO ENTREGAR e references/caminhos/criar.md).
 """
 import argparse
+import unicodedata
 import datetime
 import json
 import math
@@ -555,6 +556,61 @@ def cmd_checar(args):
 # rodada o ciclo fecha SEMPRE: aprovado, "ENTREGA COM RESSALVAS" (nota real e o que sobrou) ou
 # "NAO ENTREGAR" (critico ou regressao abertos, que o teto nao afrouxa). Terceira rodada so com
 # --rodada-extra-pedida, que fica registrada, e ela tambem fecha sempre. Nunca ha quarta.
+# REGRESSÃO TRIVIAL (3.6.1, teste de aluno da 3.6.0). O ciclo fechou em NÃO ENTREGAR por uma regressão de 1 minuto (o crédito de 4
+# fotos que saíram da página continuava no rodapé) e a etapa g levou 41 min. "Trivial" aqui é testável, as três juntas:
+#   1. um gate do catálogo (GATES) pega a regressão;
+#   2. esse gate PASSA depois do conserto: o registro dele na wave tem exit 0 e hora igual ou posterior à da última lente
+#      registrada (o conserto veio depois da auditoria);
+#   3. a regressão não é achado crítico nem alto do auditor (a gravidade vem declarada, e crítico ou alto fecha o ciclo como sempre).
+# Declara-se com `--regressao-trivial <gate>:<gravidade>` (gravidade: medio ou baixo), uma vez por regressão, e cada uma conta dentro
+# de --regressoes. Quem não cumpre as três continua regressão aberta.
+GRAVIDADES_QUE_FECHAM = ("critico", "alto")
+GRAVIDADES_TRIVIAIS = ("medio", "baixo")
+
+
+def _sem_acento(s):
+    return "".join(c for c in unicodedata.normalize("NFD", str(s)) if unicodedata.category(c) != "Mn").lower().strip()
+
+
+def _ler_triviais(brutos):
+    """['imagens:medio'] -> ([(gate, gravidade)], erro). Erro só para entrada malformada (gate fora do catálogo, gravidade desconhecida)."""
+    lidos = []
+    for bruto in brutos or []:
+        gate, sep, grav = str(bruto).partition(":")
+        gate, grav = gate.strip(), _sem_acento(grav)
+        if not sep or not gate or not grav:
+            return None, f"--regressao-trivial '{bruto}': o formato é <gate>:<gravidade> (por exemplo imagens:medio)."
+        if gate not in GATES:
+            return None, f"--regressao-trivial '{bruto}': gate desconhecido '{gate}'. Validos: {', '.join(sorted(GATES))}."
+        if grav not in GRAVIDADES_QUE_FECHAM + GRAVIDADES_TRIVIAIS:
+            return None, f"--regressao-trivial '{bruto}': gravidade '{grav}' desconhecida. Use medio ou baixo (critico e alto não são triviais)."
+        lidos.append((gate, grav))
+    return lidos, None
+
+
+def _classificar_triviais(d, triviais):
+    """Separa as declaradas em (consertadas, abertas). Aberta traz o motivo, que vai impresso."""
+    corte = max((v.get("quando") or "" for v in d.get("lentes", {}).values()), default="")
+    consertadas, abertas = [], []
+    for gate, grav in triviais:
+        reg = d.get("gates", {}).get(gate)
+        refaz = f"Conserte e rode `rodar-gates.mjs --so {gate} --registrar-conserto`, depois feche a rodada de novo."
+        if grav in GRAVIDADES_QUE_FECHAM:
+            motivo = f"{gate} ({grav}): achado crítico ou alto do auditor não é regressão trivial e fecha o ciclo"
+        elif not isinstance(reg, dict):
+            motivo = f"{gate} ({grav}): o gate não tem registro na wave. {refaz}"
+        elif reg.get("exit") != 0:
+            motivo = f"{gate} ({grav}): o gate ainda reprova (exit {reg.get('exit')}). {refaz}"
+        elif not reg.get("quando") or reg["quando"] < corte:
+            motivo = (f"{gate} ({grav}): o registro do gate é de antes da auditoria desta rodada ({reg.get('quando') or 'sem hora'} contra "
+                      f"{corte}), então não prova o conserto. {refaz}")
+        else:
+            consertadas.append({"gate": gate, "gravidade": grav})
+            continue
+        abertas.append(motivo)
+    return consertadas, abertas
+
+
 TETO_RODADAS = 2
 RODADAS_EXTRAS_MAX = 1
 GANHO_MINIMO = 0.3
@@ -584,6 +640,14 @@ def cmd_rodada(args):
               "--altos e não pode ser maior que ele.")
         return 2
     altos_reais = None if altos_informados is None else altos_informados - pend
+    triviais, erro_trivial = _ler_triviais(getattr(args, "regressao_trivial", None))
+    if erro_trivial:
+        print("ERRO: " + erro_trivial, file=sys.stderr)
+        return 2
+    if len(triviais) > (getattr(args, "regressoes", 0) or 0):
+        print(f"ERRO: {len(triviais)} --regressao-trivial para {getattr(args, 'regressoes', 0) or 0} --regressoes: cada trivial conta "
+              "dentro de --regressoes, então ele não pode ser menor.", file=sys.stderr)
+        return 2
     # Fechar o ciclo sem os gates permitia imprimir ENTREGA para um processo incompleto.
     if cmd_checar(args) != 0:
         return 1
@@ -669,8 +733,17 @@ def cmd_rodada(args):
     # depende de quem auditou. A queda de nota continua sendo impressa, como sinal, nunca como
     # trava.
     regrediu = []
-    if getattr(args, "regressoes", 0):
-        regrediu = [f"{args.regressoes} achado(s) confirmado(s) causado(s) por correção da rodada anterior"]
+    consertadas, abertas = _classificar_triviais(d, triviais)
+    restantes = (getattr(args, "regressoes", 0) or 0) - len(consertadas)
+    if restantes > 0:
+        regrediu = [f"{restantes} achado(s) confirmado(s) causado(s) por correção da rodada anterior"] + abertas
+    if consertadas:
+        atual["regressoes_triviais"] = consertadas
+        salvar(args.projeto, d)
+        print("-" * 74)
+        print(f"  REGRESSÃO TRIVIAL CONSERTADA (não fecha o ciclo): {len(consertadas)}")
+        for c in consertadas:
+            print(f"    - gate {c['gate']} ({c['gravidade']}): verde depois da auditoria; sem crítico nem alto. Vai na entrega como regressão consertada.")
     caiu = []
     if len(hist) >= 2:
         ant = hist[-2]["notas"]
@@ -729,7 +802,9 @@ def cmd_rodada(args):
         print("  NÃO ENTREGAR: regressão aberta. A correção quebrou outra coisa e o ciclo não tem mais rodada:")
         for r in regrediu:
             print(f"    - {r}")
-        print("  Conserte a regressão antes de entregar.\n")
+        print("  Conserte a regressão antes de entregar.")
+        print("  Regressão que um gate pega e que se conserta em 1 minuto (crédito de foto, folga de 2 px) não fecha o ciclo: conserte, rode só aquele")
+        print("  gate (`rodar-gates.mjs --so <gate> --registrar-conserto`) e declare `--regressao-trivial <gate>:<gravidade>` (médio ou baixo).\n")
         return fechar(1, "NAO_ENTREGAR")
     if args.criticos > 0:
         print(f"  CONTINUA: {args.criticos} crítico(s) confirmado(s). Crítico não negocia com média.")
@@ -865,6 +940,10 @@ def main():
                     help="quantos achados confirmados desta rodada foram CAUSADOS por uma "
                          "correção da rodada anterior. E isto que trava o ciclo, não nota que "
                          "caiu: cada rodada sorteia auditor novo e a nota não e calibrada")
+    ro.add_argument("--regressao-trivial", dest="regressao_trivial", action="append", default=None, metavar="GATE:GRAVIDADE",
+                    help="regressão TRIVIAL já consertada, uma por uso, e conta dentro de --regressoes. Só vale se um gate do catálogo "
+                         "a pega, o gate está verde na wave com registro posterior à auditoria e a gravidade é medio ou baixo "
+                         "(crítico ou alto fecha o ciclo). Exemplo: --regressao-trivial imagens:medio")
     ro.add_argument("--rodada-extra-pedida", dest="rodada_extra_pedida", action="store_true",
                     help="a PESSOA pediu uma terceira rodada. Fica registrada no historico; a terceira "
                          "também fecha sempre e nunca existe quarta")
