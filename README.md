@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.5.14)
+SKILL.md                       router (v3.6.0)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,18 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.6.0
+
+Faster builds without changing what is checked, and four loopholes that let an "AI-looking" page pass are closed.
+
+- **Content cache for gates** (`scripts/gates-cache.mjs`): a gate that PASSED with unchanged inputs (dist, project, arguments, skill scripts and environment, all hashed) returns its previous report; failures are never cached. Second run with no change: 255.7 s down to 0.5 s; after changing one evidence file: 11.7 s. Flags `--sem-cache` and `--explicar-cache`.
+- **Faster full run**: 255.8 s down to 210.9 s cold, since the motion gate overlaps its state checks. The fixed 8 s wait at the top stays; a test proves a page revealing everything at 7 s would slip past a shorter wait.
+- **Hash instead of file date** for stale-capture checks, so the auditor package no longer flags fresh captures as old, and a CSS change after capture is caught.
+- **Parallel capture, video and proof** (at most 2 browsers; new `scripts/provar.mjs`): full-page proof 192 s down to 90 s.
+- **Batch registration** (`wave.py gates-lote` and `registrar-lote`) and a one-line "Conserto: ..." (fix hint) under every failing gate.
+- **AI-look loopholes**: decorative rules fail at 10 or more and above 1.2 per 900 px screen; the same title ornament on more than 3 h2 fails; `data-icone-repetido-ok` needs a written reason and the same motif in more than 6 drawings fails; about 55 professions (lawyers, doctors, dentists...) require people at the top.
+- **Short taste lens on the hero** (`scripts/gosto-heroi.py`, step e.1): one auditor subagent for 5 minutes in the background. It is advice and never blocks.
 
 ## What is new in 3.5.14
 

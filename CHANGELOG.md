@@ -1,5 +1,30 @@
 # Changelog
 
+## 3.6.0 (25/10/2026): velocidade e brechas de cara de IA
+
+Auditoria de 25/10/2026: o CRIAR levou de 3h12 a 3h15 nos testes e 7h26 numa página real, e a página da Justa Pena passou nos gates com 15 "+" repetidos, enfeite sob 9 de 10 títulos e ninguém no herói.
+
+### Velocidade (sem mudar o que é avaliado)
+- Cache de gate por conteúdo (`scripts/gates-cache.mjs`): gate que PASSOU e cujo insumo não mudou (dist, projeto, argumentos, scripts da skill e ambiente, tudo por hash) devolve o laudo de então. Reprovação nunca entra no cache. Na Torra Clara: segunda rodada sem mudança de 255,7 s para 0,5 s; mudando só uma evidência, 11,7 s. `--sem-cache` e `--explicar-cache`.
+- Rodada completa fria de 255,8 s para 210,9 s: o gate de movimento sobrepõe as esperas das provas de estado (256 para 200 s). A espera fixa de 8 s no topo fica: um teste prova que uma página que revela tudo aos 7 s escaparia com espera menor.
+- Hash no lugar da data (`scripts/dist_hash.py`, `montar-dist.py`, `pacote-auditoria.py`, `gate-relatorio.py`): o pacote do auditor não marca mais captura VELHA à toa, e CSS trocado depois da captura deixa de passar como fresco.
+- Captura de referências, vídeo e prova em paralelo, com teto de 2 navegadores (`capturar-referencias.mjs`, `gravar-video.js`, novo `provar.mjs`): prova de tela inteira de 192 s para 90 s.
+- Registro automático na wave (`wave.py gates-lote` e `registrar-lote`): uma rodada completa grava o exit real de cada gate, no lugar de 15 chamadas à mão.
+- Todo gate que reprova termina com uma linha "Conserto: ..." (`scripts/conserto-de-gate.mjs`).
+- `criar.md`: a rodada de gates roda em primeiro plano com tempo-limite de 10 minutos, nunca em segundo plano com laço de espera (custou 102,7 min numa página real).
+
+### Cara de IA
+- Filete: reprova com 10 ou mais filetes de enfeite e mais de 1,2 por tela de 900 px (linha de tabela e de `dl` não conta). Justa Pena 1,79 reprova; Studio v7 aprovada 0,71 e Torra Clara 0,09 passam.
+- Enfeite de título: o mesmo traço, sublinhado, borda ou glifo em mais de 3 h2 reprova.
+- `data-icone-repetido-ok` exige motivo escrito de 3 palavras ou mais, e o mesmo motivo em mais de 6 desenhos reprova.
+- Público de profissão (cerca de 55, como advogados, médicos e dentistas) exige gente no topo.
+- Lente curta de gosto no herói (`scripts/gosto-heroi.py`, seção em `references/auditores.md`, passo e.1 do `criar.md`): prancha com 2 referências e o herói, 1 subagente auditor por 5 minutos em segundo plano. É conselho e não trava: ela chamou de "genérica" também a Torra Clara. Medido: 4 a 6 min e 6 chamadas.
+- Regras puras em `scripts/cara-de-ia.mjs`; 25 controles com fixtures das páginas reais (10 de 25 certos com os gates da 3.5.14, 25 de 25 agora).
+
+### Testes
+- `node scripts/rodar-testes.mjs`: 62 arquivos na 3.5.14; 74 depois da junção.
+- Ficou de fora: auditor só com o briefing gerado e pista rápida de gates na construção (mudam o que é avaliado e esperam decisão do dono); o gate responsivo (145 s) agora é o piso com o de movimento; o cache não enxerga fonte ou imagem remota (use `--sem-cache`).
+
 ## 3.5.14 (09/10/2026): conserto dos achados BAIXOS de código da auditoria da 3.5.11 e da 3.5.12 (10, 11 e 12)
 
 Teste vermelho antes, conserto, teste verde, como na 3.5.13. O achado 9 (estado 0 fura o máximo de 4) já estava consertado na 3.5.13:

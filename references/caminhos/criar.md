@@ -239,6 +239,13 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    `node <dir-da-skill>/scripts/screenshot-prova.js "file://<dir>/index.html" <dir>/prova-hero --sem-identidade`
    Abra o PNG. Ele corresponde ao plano visual? Fica de pé ao lado da referência mais forte?
    Se não, corrija o hero agora: é o único ponto em que corrigir é barato.
+   **Lente curta de gosto no herói (3.6.0, conselho, não trava):** monte a prancha com
+   `node <dir-da-skill>/scripts/py.mjs gosto-heroi.py --projeto <dir> --heroi <dir>/prova-hero/prova-desktop.png`
+   e mande UM subagente `auditor` com a
+   seção "Lente curta de gosto no herói" de `references/auditores.md` (teto de 5 minutos), em segundo
+   plano, enquanto você segue para as imagens. Veredito "generico" com motivo vira ajuste no hero antes
+   de replicar o padrão; não é reprovação nem volta de gate. Medido em 25/10: 4 a 6 min e 6 chamadas, e
+   ela pegou na Justa Pena os 2 sinais que o auditor de 64 min deixou passar.
 2. **Imagens:** material real do cliente primeiro. Sem ele, banco com licença livre (Openverse
    pelo `scripts/assets-search.py "<tema em inglês>" --type photo`; se a Openverse não responder
    (conexão recusada, HTTP, resposta fora do formato), a busca, inclusive a de `--type openverse`, cai

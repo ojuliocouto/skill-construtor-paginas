@@ -253,7 +253,7 @@ class Estrutura(unittest.TestCase):
         self.assertIn("```json", ler(REF / "auditores.md").split("Rodada 2", 1)[1])
 
     def test_v354_versao_e_registro_de_mudancas(self):
-        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.5\.14$")
+        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.6\.0$")
         self.assertIn("## 3.5.4", ler(RAIZ / "CHANGELOG.md"))
         self.assertIn("## 3.5.5", ler(RAIZ / "CHANGELOG.md"))
         self.assertIn("3.5.5", ler(RAIZ / "README.md"))
@@ -311,7 +311,7 @@ class Estrutura(unittest.TestCase):
         s = ler(SKILL)
         for item in ("references/plano.md", "PLANO", "gate-plano.py", "gate-rastreamento.py", "previa-direcoes.mjs"):
             self.assertIn(item, s, item)
-        self.assertRegex(s[:600], r"(?m)^version: 3\.[45]\.\d+$")
+        self.assertRegex(s[:600], r"(?m)^version: 3\.[456]\.\d+$")
         self.assertIn("3.4.0", ler(RAIZ / "CHANGELOG.md"))
 
     def test_v34_plano_tem_as_sete_secoes(self):
@@ -331,7 +331,7 @@ class Estrutura(unittest.TestCase):
     # SKILL.md continua curto: o detalhe mora nas references.
     def test_v35_skill_na_versao_e_curta(self):
         s = ler(SKILL)
-        self.assertRegex(s[:600], r"(?m)^version: 3\.5\.\d+$")
+        self.assertRegex(s[:600], r"(?m)^version: 3\.[56]\.\d+$")
         self.assertLessEqual(len(s.splitlines()), 330, "SKILL.md passou de ~330 linhas: o detalhe vai para references")
         for item in ("gate-ritmo.mjs", "gate-animacao.py", "anim.mjs", "prancha.py", "sobreposicao.mjs", "Momento assinatura",
                      "references/imagem.md", "references/ritmo-e-animacao.md", "references/densidade-servico-local.md",
