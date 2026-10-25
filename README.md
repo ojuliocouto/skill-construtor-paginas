@@ -274,6 +274,16 @@ Fixes from an end-to-end test where a student built a real page with the skill a
 - **Motion lens aligned with the approved page**: the motion-auditor and AI-tell 2 now reject the SAME generic fade applied to everything, not the number of revealed items; one curve and one duration scale, each item entering when it reaches the screen, plus moments tied to the content.
 - **Scroll proof video** (`scripts/gravar-video.js`, `scripts/video/`, `roteiro-pagina.json`): records desktop and mobile from top to bottom at reading pace with Playwright's native recorder (no ffmpeg of your own, no OS-specific tool), plus a contact sheet per profile. Duration band 10 to 90 s in this skill. `gate-etapas.py registrar 5` now requires the two `.webm` files.
 
+## Speed of a full build
+
+A page used to take about 3 h 15 min, of which 2 h 25 min to 2 h 50 min was gates, proof, audit and fixes. Machine-only cuts that change nothing that is judged:
+
+- **Gates in the foreground, 10-minute limit.** `references/caminhos/criar.md` (step f) tells the builder to run `rodar-gates.mjs` in the foreground with `timeout: 600000`, never in the background with a wait loop (the default 120 s tool limit cut the command and a real builder fell into 65 wait loops, 102.7 min).
+- **Gate cache by content.** `rodar-gates.mjs` re-uses the report of a gate that PASSED when nothing it reads changed: hash of the `dist/`, of the project (without `gates/` and `auditoria/`), of the exact arguments, of the skill scripts and `references/`, and of the environment. A failing gate never enters the cache; a page served by you (`--url`) and the video gate stay out. `--sem-cache` runs everything again. Rules and tests: `scripts/gates-cache.mjs`, `scripts/test-gates-cache.cjs`.
+- **Hash instead of file date.** `montar-dist.py` writes only the files whose content changed and records the content hash in `gates/_dist-hash.json` (`scripts/dist_hash.py`). The auditor package and `gate-relatorio.py` call a capture old only when the `dist/` CONTENT changed since it was taken, so remounting an identical `dist/` no longer says "PACOTE VELHO". Without the record the old date rule applies.
+- **Capture and proof in parallel, at most 2 browsers.** `capturar-referencias.mjs` captures two addresses at a time (`--em-serie` for one); `gravar-video.js` records desktop and phone together (`--em-serie`, or `--paralelo` to force it on a machine with fewer than 3 cores); `provar.mjs` runs the screenshots, the scroll video and the animation frames two at a time. The movement gate runs its state proofs (script blocked or late, parked on top, jump to the end, reduced motion) together and keeps the two timing measurements alone and in line (`--em-serie` for the old order). Same verdict and same output text in both modes.
+- **Automatic registration.** A full `rodar-gates.mjs` round writes the real exit of each gate to the wave (`wave.py gates-lote`), `provar.mjs` writes `identidade`, and `wave.py registrar-lote` registers the 9 lenses from the auditor answer in one call (all or nothing).
+
 ## Tests
 
 Run from the repository root, on any system:
@@ -316,6 +326,14 @@ node scripts/test-previa-direcoes.cjs
 node scripts/test-capturar-referencias.cjs
 node scripts/test-gates-visuais-responsivo.cjs   # e -composicao.cjs, -movimento.cjs
 node scripts/test-gates-v35.cjs
+node scripts/py.mjs test-dist-hash.py                # hash instead of file date (Python and Node compute the same hash)
+node scripts/test-gates-cache.cjs                    # gate cache: what invalidates it, what never enters it
+node scripts/test-provar.cjs                         # proof of the screen, two at a time
+node scripts/py.mjs test-wave-lote.py                # gates-lote and registrar-lote, all or nothing
+node scripts/test-capturar-paralelo.cjs              # reference capture, two addresses at a time, same result as the line
+node scripts/test-gravar-video-paralelo.cjs          # both video profiles together, same quality as in line
+node scripts/test-movimento-paralelo.cjs             # movement gate: same verdict and same text in parallel and in line
+node scripts/py.mjs test-docs-velocidade.py
 node scripts/test-print-cabecalho.cjs
 node scripts/py.mjs test-servidor-gzip.py           # free port, URL printed, dist rebuilt without dropping the server (3.5.10)
 node scripts/test-servidor-fora.cjs                 # every browser gate says "servidor fora do ar" (exit 3) instead of a stack trace
