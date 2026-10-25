@@ -17,12 +17,16 @@ de bloqueio de renderização na v3.
 Uso: node scripts/py.mjs montar-dist.py --projeto <dir> [--saida dist] [--css-em-linha]
 """
 import argparse
+import filecmp
 import os
 import re
 import shutil
 import sys
 from html.parser import HTMLParser
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import dist_hash  # noqa: E402  (hash do conteúdo da dist e o registro de quando ela mudou de verdade)
 
 EXTRAS = ("robots.txt", "sitemap.xml", "_headers", "_redirects", "_routes.json", "favicon.ico")
 URL_CSS = re.compile(r"url\(\s*(['\"]?)([^'\")]+)\1\s*\)")
@@ -121,6 +125,54 @@ def css_em_linha(raiz, html, usados):
     return re.sub(r"<link\b[^>]*rel\s*=\s*[\"']stylesheet[\"'][^>]*>", trocar, html, flags=re.I)
 
 
+def sincronizar(raiz, saida, usados, html_bytes):
+    """Deixa `saida` com exatamente os arquivos de `usados`, gravando SÓ o que mudou.
+
+    Achado A1 da auditoria de velocidade: esvaziar a pasta e copiar tudo de novo mudava a data de todos os arquivos
+    (e da index.html, sempre), e o pacote do auditor e o gate do relatório julgavam toda captura "anterior à dist".
+    Aqui o arquivo de conteúdo igual fica como está, com a data de antes. A pasta nunca é apagada: servidor ou
+    terminal que está "dentro" da dist perde o chão se a pasta some (P11 da 3.5.10).
+    Devolve (lista dos gravados, quantidade de iguais mantidos)."""
+    desejados = set(usados) | {"index.html"}
+    pastas = {pai.as_posix() for rel in desejados for pai in PurePosixPath(rel).parents if pai.as_posix() != "."}
+    # 1. tira o que a página não usa mais (arquivo, pasta, link, e o arquivo que virou pasta ou o contrário)
+    for atual, subpastas, nomes in os.walk(saida, topdown=True, followlinks=False):
+        base = Path(atual)
+        rel_base = base.relative_to(saida).as_posix()
+        for nome in list(subpastas):
+            rel = nome if rel_base == "." else f"{rel_base}/{nome}"
+            p = base / nome
+            if p.is_symlink():
+                p.unlink()
+                subpastas.remove(nome)
+            elif rel in desejados or rel not in pastas:
+                shutil.rmtree(p)
+                subpastas.remove(nome)
+        for nome in nomes:
+            rel = nome if rel_base == "." else f"{rel_base}/{nome}"
+            p = base / nome
+            if rel not in desejados or p.is_symlink() or rel in pastas:
+                p.unlink()
+    # 2. grava o que mudou
+    gravados, iguais = [], 0
+    for rel in sorted(desejados):
+        destino = saida / rel
+        if rel == "index.html":
+            igual = destino.is_file() and destino.read_bytes() == html_bytes
+        else:
+            igual = destino.is_file() and filecmp.cmp(raiz / rel, destino, shallow=False)
+        if igual:
+            iguais += 1
+            continue
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        if rel == "index.html":
+            destino.write_bytes(html_bytes)
+        else:
+            shutil.copy2(raiz / rel, destino)
+        gravados.append(rel)
+    return gravados, iguais
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--projeto", required=True)
@@ -141,27 +193,19 @@ def main(argv=None):
         html = css_em_linha(raiz, html, usados)
         # o CSS em linha pode ter trazido url() que antes só o .css citava: já estão em `usados`
     refeita = saida.exists()
-    if refeita:
-        # Esvazia a pasta SEM apagá-la: servidor ou terminal que está "dentro" da dist perde o chão se a pasta some
-        # (P11 da 3.5.10: o servidor local caiu quando a dist servida foi refeita).
-        for item in list(saida.iterdir()):
-            if item.is_dir() and not item.is_symlink():
-                shutil.rmtree(item)
-            else:
-                item.unlink()
     saida.mkdir(parents=True, exist_ok=True)
-    for rel in sorted(usados):
-        if rel == "index.html":
-            continue
-        destino = saida / rel
-        destino.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(raiz / rel, destino)
-    (saida / "index.html").write_text(html, encoding="utf-8")
+    gravados, iguais = sincronizar(raiz, saida, usados, html.encode("utf-8"))
     total = sum(p.stat().st_size for p in saida.rglob("*") if p.is_file())
     print(f"dist montada: {len(usados)} arquivo(s), {total / 1024:.1f} KiB em {saida}")
     if refeita:
         print(f"dist refeita: o conteúdo de {saida} foi trocado e a pasta foi mantida. Um servidor que serve esta pasta segue no ar "
               "e entrega a versão nova; se ele caiu, suba de novo com servidor-gzip.py (ele imprime a URL).")
+        print(f"  {len(gravados)} arquivo(s) gravado(s), {iguais} igual(is) mantido(s) com a data de antes"
+              + ("; dist inalterada: nenhum arquivo mudou." if not gravados else "."))
+    if saida.parent == raiz:
+        # O registro do hash mora no projeto (gates/), nunca dentro da dist: o gate-publicacao reprova arquivo que a página não usa.
+        h, mudou = dist_hash.registrar(raiz, saida)
+        print(f"  conteúdo da dist: {h[:12]} ({'mudou' if mudou else 'o mesmo da montagem anterior'})")
     for rel in sorted(usados):
         print(f"  {rel}")
     return 0
