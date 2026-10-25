@@ -7,7 +7,7 @@ Base: dissecação frame a frame do reel de Patrick Minardi (@patrickwithprospec
 vibe-coded website", analisando o que ele **aponta na tela** (SaaS "LaunchLand"), não só o que fala.
 
 Complementa `references/preferencias-de-design.md` (gosto medido em correção real). Aqui o foco é
-**funcionalidade e substância**, e depois **aparência** (os tells V1 a V17).
+**funcionalidade e substância**, e depois **aparência** (os tells V1 a V20).
 
 ---
 
@@ -47,9 +47,9 @@ Itens **1, 2 e 5** são **YELLOW**: corrigir se presentes, mas não bloqueiam so
 3 ou 4 FALHA → NÃO entregar até resolver
 ```
 
-### Limiar de bloqueio dos tells VISUAIS (V1-V17)
+### Limiar de bloqueio dos tells VISUAIS (V1-V20)
 
-Os tells visuais abaixo (V1 a V17) não bloqueavam sozinhos. Agora bloqueiam por acúmulo:
+Os tells visuais abaixo (V1 a V20) não bloqueavam sozinhos. Agora bloqueiam por acúmulo:
 
 ```
 0-2 tells visuais presentes → YELLOW (corrigir, mas não bloqueia)
@@ -89,8 +89,11 @@ onde o cliente apontou cada um destes em prints. A lente design-critic conta est
 | V13 | **Separador decorativo de ícone** (raio/bolt) entre itens de marquee | Enfeite que a IA cospe | Ponto (•), barra, ou só espaçamento. |
 | V14 | **Seção com clip diagonal + gradiente** repetida com tratamentos diferentes | Estética de template; incoerência de marca | Padronizar (cor chapada). Variar superfícies por cor (claro/escuro), não por efeito. |
 | V15 | **Logo minúscula** (<56px desktop) | Faz a marca parecer "perdida"/genérica | Logo proeminente: mín 56-64px desktop, 40-48px mobile. Ao clonar, baixar o logo REAL do site. |
-| V16 | **"Jornal de filetes"**: muitos filetes finos de 1 px (cabeçalho, seção, item, card), serifa com UMA palavra em itálico colorida repetida em vários títulos e fundo de grade decorativo | Medido na auditoria de 02/10/2026: 14 filetes, itálico colorido em 3 de 7 títulos e grade no fecho. Serifa + filete + muito branco é o terceiro visual padrão de IA, depois do creme com terracota e do quase preto com acento ácido | No máximo um trecho em itálico colorido na página (`gate-texto.mjs` reprova o segundo); separar por cor de superfície e espaço, não por fio; nada de grade de fundo como enfeite. `gate-texto.mjs` avisa a partir de 10 filetes |
+| V16 | **"Jornal de filetes"**: muitos filetes finos de 1 px (cabeçalho, seção, item, card), serifa com UMA palavra em itálico colorida repetida em vários títulos e fundo de grade decorativo | Medido na auditoria de 02/10/2026: 14 filetes, itálico colorido em 3 de 7 títulos e grade no fecho. Serifa + filete + muito branco é o terceiro visual padrão de IA, depois do creme com terracota e do quase preto com acento ácido | No máximo um trecho em itálico colorido na página (`gate-texto.mjs` reprova o segundo); separar por cor de superfície e espaço, não por fio; nada de grade de fundo como enfeite. **Gate executável (25/10/2026):** `gate-texto.mjs` reprova, em 1440x900, 10 ou mais filetes de enfeite com mais de 1,2 por tela de 900 px; filete dentro de `dl` ou `table` (tabela de rótulo e valor) não conta. Medido: 1,79 por tela na página de produção que o auditor chamou de "bonito" e 1,83 no "jornal" original (reprovam); 0,71 na página que o dono aprovou e 0,09 na torrefação (passam). A contagem crua não serve: a aprovada tem 32 filetes, 20 de tabela. Continua o aviso a partir de 10 no total |
 | V17 | **Esqueleto repetido**: o mesmo h2 à esquerda com uma grade de caixas embaixo em seção após seção, e ícone de biblioteca (balão de conversa, calendário com check, boneco de palito) | Medido na auditoria da v4 (02/10/2026): 4 seções seguidas com a mesma composição, 14 caixas na página, 2 ícones de biblioteca e o mesmo par de bonecos em duas seções. As referências fortes dão a cada seção uma composição própria | Cada seção com um tratamento próprio tirado de uma referência (lista editorial, linha do tempo, split com imagem, faixa cheia) e registrado em `secoes` na etapa 2; desenho feito para o assunto, com `data-desenho`. `gate-composicao.mjs` reprova mais de 2 seções seguidas com o mesmo esqueleto e ícone genérico |
+| V18 | **O mesmo enfeite embaixo de quase todo título**: o mesmo traço curto, sublinhado, borda ou barrinha colorida em h2 após h2 | Medido na auditoria de 25/10/2026: o mesmo traço de 56x3 px embaixo de 9 dos 10 h2 da página de produção. É o "acento" que o gerador põe em todo título por falta de hierarquia própria | Hierarquia por tamanho, peso e espaço. Um enfeite, se houver, marca um título só, com motivo. **Gate executável:** `gate-texto.mjs` reprova o mesmo enfeite (mesmo tipo, tamanho e cor) em mais de 3 h2, medido em 1440x900; enfeites diferentes não se somam |
+| V19 | **O mesmo motivo como papel de parede**: o glifo do logo (ou qualquer desenho) como marcador de lista, ornamento de card e enfeite gigante, dezenas de vezes | Medido na auditoria de 25/10/2026: "sinal de mais do logo" 16 vezes (15 marcadores e 1 gigante), "sinal de vezes do logo" 8 vezes, e 3 marcos com `data-icone-repetido-ok="1"` sem motivo. A marca vira estampa e a página vira template | Marcador de lista tipográfico (ponto, número, texto) ou desenhos diferentes ligados a cada item; o glifo da marca aparece poucas vezes, com papel. **Gate executável:** `gate-composicao.mjs` reprova o mesmo motivo (primeira oração do `data-desenho`; sem declaração, o traçado) em mais de 6 desenhos de qualquer tamanho, fora de controle e do `data-assinatura`; o marcador de lista de menos de 24 px, dentro de `li` e sem `data-desenho`, fica fora (a página aprovada tem 27 marcas de visto assim). `data-icone-repetido-ok` exige motivo de 3 palavras ou mais e não livra do limite de 6 |
+| V20 | **Público de gente sem ninguém no topo**: página de serviço de pessoa para pessoa (advogado, médico, dentista, contador, nutricionista, corretor) com a primeira tela só de logo, ícone ou objeto | Medido na auditoria de 25/10/2026: briefing "Para quem: advogados" e o topo saiu com o logo ampliado; a regra de pessoa no topo existia, mas a regex de público não reconhecia profissão | Foto real autorizada de quem atende ou de quem é atendido, ou ilustração própria com `data-figura="pessoa"`. **Gate executável:** `gate-composicao.mjs --projeto` lê o público do briefing e reconhece profissões no singular, plural, masculino e feminino (lista em `scripts/cara-de-ia.mjs`, teste em `cara-de-ia.test.mjs`) |
 
 **Regra-mãe destes tells:** quando o brief é *clonar e melhorar* uma loja real, a referência de
 "bonito" é o concorrente do nicho (Netshoes, Centauro, Nike.com.br, Dafiti), **não** o Dribbble/landing

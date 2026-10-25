@@ -62,6 +62,7 @@ const PRECISAM = {
   'test-animacao.py': 'Pillow e numpy (prancha de animação)',
   'test-imagens.py': 'Pillow e numpy (repetição e nitidez de foto)',
   'test-folha-assets.py': 'Pillow (monta a folha de contato numerada da busca de foto)',
+  'test-gosto-heroi.py': 'Pillow (monta a prancha da lente curta de gosto no herói)',
 };
 
 function achar() {
