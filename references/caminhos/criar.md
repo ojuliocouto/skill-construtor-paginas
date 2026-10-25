@@ -190,9 +190,15 @@ pode dar ideia, nunca decide.
 Toda frase com número, preço, credencial ou resultado precisa de fonte no briefing.
 
 **Tabela de sustentação (bloqueia):** junto com a copy, escreva `evidencias/sustentacao.md` com a
-tabela `| Frase da página | Linha do briefing que sustenta |`, uma linha por frase que promete
+tabela `| Frase da página | Linha do briefing que sustenta |`, uma linha por FATO que a página promete
 (grátis, número, prazo, preço, resultado, credencial), mais o title, a meta description, o
-og:title e a og:description (a prévia do link no WhatsApp também promete). A sustentação é a
+og:title e a og:description (a prévia do link no WhatsApp também promete). **A coluna 1 traz o TRECHO que
+promete (o número, o preço ou a palavra), não a frase inteira** (3.6.1). O gate casa a frase da página com a linha por igualdade ou
+por um trecho de 12 caracteres ou mais contido em um dos dois lados: uma linha com "R$ 290 por mês" cobre a tabela de preços, a FAQ e o
+rodapé que repetem esse trecho. Não escreva uma linha por ocorrência. O trecho cobre a frase só quando a frase não promete mais nada
+fora dele: outro número, preço ou "grátis" na mesma frase ganha a própria linha, e trecho sem o número ou o "grátis" que a frase promete não
+vale (o gate casa por trecho contido e não vê a promessa extra, então quem confere é você e o auditor). Frase com marca de promessa sem
+trecho na tabela continua reprovando, e o trecho continua precisando estar no briefing. A sustentação é a
 linha do briefing entre aspas; "interpretação" só serve para frase que não promete nada. Embaixo,
 a seção `## Não afirmar (pendências)`: para cada frase PENDENTE do briefing, um padrão entre
 crases com o que a página não pode insinuar. Caso real: com "se a avaliação é gratuita e se é no

@@ -185,6 +185,38 @@ class Verdade(unittest.TestCase):
         nomes = [m.group(1).strip() for m in gate.DONO.finditer("Responsável:\nPagamento Online aceito\n")]
         self.assertEqual(nomes, [])
 
+    # --- 3.6.1, corte 4: uma linha por FATO. A tabela do criar.md pedia a frase literal e, no teste de aluno da 3.6.0, gerou 28 linhas
+    # numa volta. O gate casa por igualdade ou por trecho de 12 caracteres ou mais contido em um dos lados, então uma linha com o TRECHO que
+    # promete cobre toda frase que o repete. A simplificação é só do texto do criar.md: o que o gate confere não muda, e estes controles provam.
+    TABELA_FATO = """# Sustentação
+| Frase da página | Linha do briefing que sustenta |
+|---|---|
+| aulas em grupo de até 4 pessoas | "aulas em grupo de até 4 pessoas" |
+| Pilates com fisioterapeuta. | "pilates com fisioterapeuta" |
+| Studio | interpretação: nome da marca |
+| Studio \\| Pilates | interpretação: nome da marca no title |
+"""
+
+    def fato(self, corpo, tabela=None):
+        return self.montar(corpo=corpo, tabela=tabela or self.TABELA_FATO, meta="Pilates com fisioterapeuta.")
+
+    def test_361_uma_linha_com_o_trecho_cobre_as_frases_que_o_repetem(self):
+        corpo = ("<h1>Studio</h1><p>Turmas pequenas: aulas em grupo de até 4 pessoas, no estúdio.</p>"
+                 "<p>Resumo da proposta: aulas em grupo de até 4 pessoas.</p>")
+        code, out = self.fato(corpo)
+        self.assertEqual(code, 0, out)
+
+    def test_361_mutante_o_mesmo_trecho_com_outro_numero_continua_pedindo_linha(self):
+        code, out = self.fato("<h1>Studio</h1><p>Turmas pequenas: aulas em grupo de até 6 pessoas, no estúdio.</p>")
+        self.assertEqual(code, 1, out)
+        self.assertIn("sem linha de sustentação", out)
+
+    def test_361_mutante_o_trecho_continua_precisando_estar_no_briefing(self):
+        tabela = self.TABELA_FATO.replace('"aulas em grupo de até 4 pessoas"', '"aulas em grupo de até 9 pessoas"')
+        code, out = self.fato("<h1>Studio</h1><p>Turmas pequenas: aulas em grupo de até 4 pessoas, no estúdio.</p>", tabela)
+        self.assertEqual(code, 1, out)
+        self.assertIn("não está no briefing", out)
+
 
 # ----- v3.5.6: achados A3 a A6 do teste de ponta a ponta (Ateliê Veio, 08/10/2026) -----
 BRIEFING_ATELIE = """# Briefing
@@ -203,7 +235,6 @@ TABELA_ATELIE = """| Frase da página | Linha do briefing que sustenta |
 | Visita gratuita em Niterói; na zona sul do Rio, R$ 150, abatidos se fechar. | "Visita técnica gratuita em Niterói; R$ 150 na zona sul do Rio, abatidos se fechar o projeto" |
 | Entrega montada em 30 a 45 dias depois da aprovação. | "entrega montada em 30 a 45 dias depois da aprovação" |
 """
-
 
 class V356(unittest.TestCase):
     def projeto(self, corpo=None, tabela=TABELA_ATELIE, briefing=BRIEFING_ATELIE, plano=None):
