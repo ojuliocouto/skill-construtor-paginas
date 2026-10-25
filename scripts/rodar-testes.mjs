@@ -60,6 +60,7 @@ const PRECISAM = {
   'test-print-cabecalho.cjs': 'navegador (print com cabeçalho fixo)',
   'test-receitas-navegador.cjs': 'navegador (prova as receitas de movimento)',
   'test-primeira-tela.cjs': 'navegador (primeira tela visível no celular, com as barras do navegador)',
+  'test-responsivo-320.cjs': 'navegador (a foto do herói em 320x568: o texto ganha até o piso de 20% e a tolerância de 0,5 ponto no limite)',
   'test-visibilidade-movimento.cjs': 'navegador (texto invisível parado no topo, na visita e depois de um salto; linha recortada)',
   'test-servidor-fora.cjs': 'Playwright instalado (os gates o carregam antes de ler a URL); não abre navegador: servidor caído vira mensagem clara, saída 3',
   'test-animacao.py': 'Pillow e numpy (prancha de animação)',

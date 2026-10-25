@@ -318,8 +318,9 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    ou coberto pela barra. Na v4 eram 152 px fixos (18% em 390, 28% em 320), 3 botões na mesma tela
    e a barra cobrindo o botão de "Duas formas". **Topo do celular na área que a pessoa vê** (390x664: a tela de 844
    menos as barras do Safari; 360x616 no Android): manchete inteira, texto de apoio inteiro e o botão principal a 8 px ou mais do pé, e a
-   foto com 35% dessa área. Quando não cabem os três e a foto, o texto ganha: a foto pode cair até 20%; abaixo disso, encurte a manchete
-   (`gate-responsivo.mjs --so-primeira-tela` mede só isso). Na v7 a foto quadrada pôs o botão 146 px abaixo da dobra no iPhone, e na Torra
+   foto com 35% dessa área (3.6.1: tolerância de 0,5 ponto no limite, 34,9% passa). Quando não cabem os três e a foto, o texto ganha: a foto pode cair até 20%; abaixo disso, encurte a manchete
+   (`gate-responsivo.mjs --so-primeira-tela` mede só isso). A mesma regra vale em 320x568 (3.6.1), que não tem área visível medida e mede
+   contra a tela cheia: foto de 21% com o texto ocupando o resto passa. Na v7 a foto quadrada pôs o botão 146 px abaixo da dobra no iPhone, e na Torra
    Clara o apoio ficou depois do botão, fora da primeira tela; os dois passaram no gate antigo, que media contra a janela cheia (na v4:
    134 px de foto em 390 e nenhum em 320, com o rosto cortado na dobra). A barra escondida leva
    `visibility: hidden` além do `translate`: só deslocada, ela aparece no print de página

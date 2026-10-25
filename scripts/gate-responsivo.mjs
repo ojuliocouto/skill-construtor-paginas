@@ -80,7 +80,14 @@ const SO_PRIMEIRA_TELA = args.includes('--so-primeira-tela');
    ganha. A foto precisa de 35% da área visível; se ela não chega a 35% porque manchete, apoio e botão ocupam o resto (crescer a
    foto até 35% empurraria o botão para menos de 8 px do pé), vale o piso de PISO_FOTO (20%). Abaixo do piso, a manchete é que está
    grande demais para o celular. Por isso, nas telas que têm área visível medida (390 e 360), a regra antiga de 35% da tela cheia
-   sai e fica só a da área visível; em 430x932 e 320x568, sem par medido, segue a regra antiga. */
+   sai e fica só a da área visível; em 430x932, sem par medido, segue a regra antiga.
+
+   320x568 (3.6.1). A menor tela suportada também não tem área visível medida, mas a mesma regra vale nela: o texto ganha e a foto
+   cai até o piso de 20% da tela cheia quando manchete, apoio e botão ocupam o resto. No teste de aluno da 3.6.0 a foto de 21,0% (119 px
+   de 568) reprovava contra 35% mesmo com o texto ocupando a tela, e essa tela causou 3 das 5 voltas da etapa f.
+
+   Tolerância de 0,5 ponto percentual (3.6.1) no limite da foto (o de 35% e o piso de 20%): 34,9% contra 35% reprovava por arredondamento
+   (232 px de 664 em 390; 326 px de 932 em 430). */
 const PRIMEIRA_TELA = [
   // [nome, largura, altura visível, altura da tela, barra?]
   ['iphone 12 a 14 com as barras do Safari', 390, 664, 844, true],
@@ -89,6 +96,9 @@ const PRIMEIRA_TELA = [
 ];
 const FOLGA_PE = 8;
 const PISO_FOTO = 0.20;
+const TOLERANCIA_FOTO = 0.005;   // 0,5 ponto percentual: 34,9% contra 35% é arredondamento, não defeito
+// Telas SEM área visível medida em que o texto também ganha da foto (piso de 20% da tela cheia), 3.6.1.
+const TELAS_TEXTO_GANHA = new Set(['320x568']);
 const TELAS_COM_PAR_VISIVEL = new Set(PRIMEIRA_TELA.filter((t) => t[4]).map((t) => `${t[1]}x${t[3]}`));
 
 // O que é o topo (herói, manchete, apoio, botão principal): definido uma vez em topo-da-pagina.mjs, usado aqui e no medir-dobra.mjs.
@@ -476,7 +486,9 @@ for (const [nome, w, h, mob] of (SO_PRIMEIRA_TELA ? [] : TELAS)) {
         if (c.bottom >= window.innerHeight - 1 && c.top < window.innerHeight) base = Math.min(base, c.top);
       }
       const vis = Math.max(...fotos.map((m) => { const c = m.getBoundingClientRect(); return Math.max(0, Math.min(c.bottom, base) - Math.max(c.top, topo)); }));
-      return { px: Math.round(vis), frac: vis / window.innerHeight };
+      // O fim do botão principal do herói e o pé livre da tela: a sobra embaixo do botão diz se o texto ocupa o resto (3.6.1, 320x568).
+      const botao = window.__topo && window.__topo().botao;
+      return { px: Math.round(vis), frac: vis / window.innerHeight, base, botaoFim: botao ? botao.getBoundingClientRect().bottom : null };
     });
     const altura = await page.evaluate(() => document.documentElement.scrollHeight);
     // Passo de 1/6 de tela: com 1/3, um botao de 52 px podia passar por baixo da barra entre duas paradas.
@@ -591,8 +603,17 @@ for (const [nome, w, h, mob] of (SO_PRIMEIRA_TELA ? [] : TELAS)) {
   if (mob && r.cobertos.length)
     falhas.push(`${onde}: botão coberto ou encostado na barra fixa (menos de 8 px): ${[...new Set(r.cobertos)].slice(0, 3).join(', ')}`);
   // G22: em 390x844 e 360x740 a foto se mede contra a área visível (bloco PRIMEIRA_TELA), não contra a tela cheia.
-  if (mob && r.fotoHeroi && r.fotoHeroi.frac < MINIMO_FOTO && !TELAS_COM_PAR_VISIVEL.has(`${w}x${h}`))
-    falhas.push(`${onde}: foto do herói ocupa ${r.fotoHeroi.px}px na primeira tela (${(100 * r.fotoHeroi.frac).toFixed(1)}% da altura, mínimo ${MINIMO_FOTO * 100}%): no celular a foto entra antes do texto longo`);
+  // 3.6.1: em 320x568 o texto ganha da foto (piso de 20%) e todo limite de foto tem tolerância de 0,5 ponto percentual.
+  if (mob && r.fotoHeroi && !TELAS_COM_PAR_VISIVEL.has(`${w}x${h}`)) {
+    const f = r.fotoHeroi;
+    const sobra = f.botaoFim == null ? 0 : Math.max(0, f.base - f.botaoFim - FOLGA_PE);
+    const textoGanha = TELAS_TEXTO_GANHA.has(`${w}x${h}`) && f.px + sobra < MINIMO_FOTO * h;
+    const minimo = textoGanha ? PISO_FOTO : MINIMO_FOTO;
+    if (f.frac < minimo - TOLERANCIA_FOTO)
+      falhas.push(textoGanha
+        ? `${onde}: foto do herói ocupa ${f.px}px na primeira tela (${(100 * f.frac).toFixed(1)}% da altura, abaixo do piso de ${PISO_FOTO * 100}%): a manchete e o apoio estão grandes demais para o celular; encurte ou diminua o texto, não a foto`
+        : `${onde}: foto do herói ocupa ${f.px}px na primeira tela (${(100 * f.frac).toFixed(1)}% da altura, mínimo ${MINIMO_FOTO * 100}%): no celular a foto entra antes do texto longo`);
+  }
   if (r.toqueRuim.length) falhas.push(`${onde}: ${r.toqueRuim.length} alvo(s) de toque < 44px: ${r.toqueRuim.slice(0, 3).join(', ')}`);
   if (r.textoPequeno.length) falhas.push(`${onde}: texto de corpo < 14px: ${r.textoPequeno.slice(0, 3).join(', ')}`);
   if (r.cortado.length) falhas.push(`${onde}: texto cortado pela caixa: ${r.cortado.slice(0, 3).join(', ')}`);
@@ -666,7 +687,7 @@ for (const [nome, w, hv, ht, barra] of PRIMEIRA_TELA) {
     const textoOcupa = m.foto + sobra < MINIMO_FOTO * area;
     const minimo = textoOcupa ? PISO_FOTO : MINIMO_FOTO;
     fotoTxt = `foto ${m.foto} px (${(100 * m.foto / area).toFixed(1)}%, ${textoOcupa ? `piso ${PISO_FOTO * 100}%: o texto ocupa o resto` : `mínimo ${MINIMO_FOTO * 100}%`})`;
-    if (m.foto < minimo * area) {
+    if (m.foto < (minimo - TOLERANCIA_FOTO) * area) {
       problemas.push(textoOcupa
         ? `foto do herói ocupa ${m.foto} px da área visível (${(100 * m.foto / area).toFixed(1)}%, abaixo do piso de ${PISO_FOTO * 100}%): a manchete e o apoio estão grandes demais para o celular; encurte ou diminua o texto, não a foto`
         : `foto do herói ocupa ${m.foto} px da área visível (${(100 * m.foto / area).toFixed(1)}%, mínimo 35%) e sobram ${sobra} px embaixo do botão: a foto pode crescer sem empurrar o texto`);
