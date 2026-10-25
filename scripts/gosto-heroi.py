@@ -12,16 +12,26 @@ O script NÃO julga. Ele monta UMA imagem (as 2 referências mais fortes em cima
 em 390 embaixo, na mesma escala) e o briefing com orçamento, perguntas e schema de retorno. Quem
 julga é um subagente que não construiu a página (references/auditores.md, "Lente curta do herói").
 
+UMA RODADA SÓ (3.6.1). No teste de aluno da 3.6.0 a lente rodou duas vezes (9,3 e 7,9 min contra o teto de 5) e as duas
+deram "generico" pelo mesmo motivo: a foto de banco, que só a cliente resolve. Agora: (1) o teto de 5 minutos e a rodada única
+estão escritos no briefing do auditor; (2) o resultado com motivo que depende de material da cliente (foto real, logo,
+depoimento) vira pendência registrada para a entrega e não manda rodar de novo; (3) o script RECUSA montar a lente uma
+segunda vez depois que o resultado.json existe (saída 3).
+
 Uso:
     node scripts/py.mjs gosto-heroi.py --projeto <dir> --heroi <dobra-1440.png> [--celular <dobra-390.png>]
          [--refs <ref1-dobra.png>,<ref2-dobra.png>] [--saida <pasta>]
+    node scripts/py.mjs gosto-heroi.py --projeto <dir> --registrar [--saida <pasta>]   # lê o resultado.json do auditor
 
 Sem --refs, usa as duas primeiras capturas "*-dobra.png" de <dir>/referencias/ em ordem de nome.
-Sem --saida, grava em <dir>/auditoria/gosto-heroi/. Saída 0 com os caminhos; 2 sem Pillow ou sem imagem.
+Sem --saida, grava em <dir>/auditoria/gosto-heroi/. Saída 0 com os caminhos; 2 sem Pillow, sem imagem ou com resultado
+inválido; 3 quando a rodada única já foi usada.
 """
 import argparse
 import importlib.util
+import json
 import pathlib
+import re
 import sys
 
 try:
@@ -84,6 +94,9 @@ def montar(refs, heroi, celular, destino):
 BRIEFING = """# Lente curta de gosto no herói
 
 Você NÃO construiu esta página. Olhe uma imagem só e responda.
+
+TETO DE {minutos} MINUTOS, DURO. Esta é a ÚNICA rodada da lente: não existe segunda.
+No minuto {aviso}, pare de olhar e devolva o JSON com o que já viu. Passar de {minutos} minutos é falha da lente, não zelo.
 Orçamento: {minutos} minutos e até {chamadas} chamadas de ferramenta. Não capture nada, não abra a página, não leia o código.
 
 Imagem: `{prancha}`
@@ -100,26 +113,105 @@ Responda nesta ordem:
 4. Um designer exigente poria este herói na mesma pasta das referências?
 5. O herói é bonito, só correto ou genérico (cara de template)?
 6. A UMA mudança que mais sobe o herói, concreta (o que sai, o que entra).
+7. O que dessa mudança depende de material que SÓ a cliente tem (foto real, logo, depoimento, autorização de imagem)?
+   Liste em `depende_do_cliente`. Isso não é ajuste do herói: vira pendência da entrega. `uma_mudanca` traz só o que o
+   construtor resolve sozinho, com o material que já existe.
 
 Devolva só este JSON:
 {{"gosto": "bonito|correto|generico", "tells": ["V18: ..."], "eixos_abaixo": ["composicao"],
-  "gente_no_topo": true, "mesma_pasta": false, "uma_mudanca": "...", "duracao_min": 0, "chamadas": 0}}
+  "gente_no_topo": true, "mesma_pasta": false, "uma_mudanca": "...", "depende_do_cliente": ["foto real da ..."],
+  "duracao_min": 0, "chamadas": 0}}
 
-Regra de uso (para quem lançou): "correto" ou "generico" = corrigir o HERÓI agora, antes de construir as
-outras seções, e rodar esta lente uma vez mais. Ela não manda reconstruir a página: o resto ainda não existe.
+Regra de uso (para quem lançou): a lente roda UMA vez. "correto" ou "generico" = aplicar `uma_mudanca` no HERÓI agora, antes de
+construir as outras seções, SEM rodar a lente de novo. O que está em `depende_do_cliente` vira pendência registrada para a entrega
+(`gosto-heroi.py --registrar` faz isso). A lente não manda reconstruir a página: o resto ainda não existe.
 """
+
+# O que, no texto do auditor, só a cliente resolve: foto real, logo, depoimento, autorização de imagem. Serve de rede quando o
+# auditor esquece o campo `depende_do_cliente`.
+PADRAO_CLIENTE = re.compile(
+    r"foto(?:s)? real|retrato(?:s)? real|imagem real|foto(?:s)? (?:da|do) (?:cliente|clínica|clinica|espaço|espaco|equipe)|"
+    r"imagem(?:ns)? ilustrativa|foto(?:s)? (?:de|do) banco|banco de imagem|"
+    r"logo (?:real|oficial|da cliente|do cliente|da clínica)|logotipo (?:real|oficial|da cliente|do cliente)|"
+    r"depoimento(?:s)? (?:real|reais|verdadeiro)|material (?:real )?d[ao] cliente|autoriza[cç][aã]o de imagem",
+    re.IGNORECASE)
+GOSTOS_VALIDOS = ("bonito", "correto", "generico")
+
+
+def _estado(saida):
+    return saida / "resultado.json"
+
+
+def registrar(saida, projeto):
+    """Lê o resultado.json do auditor, separa o que depende da cliente (pendência) do que o construtor aplica, e fecha a lente."""
+    arq = _estado(saida)
+    if not arq.is_file():
+        print(f"sem resultado.json em {saida}: grave a resposta do auditor em {arq} antes de registrar.", file=sys.stderr)
+        return 2
+    try:
+        r = json.loads(arq.read_text(encoding="utf-8").lstrip("\ufeff"))
+    except ValueError as e:
+        print(f"resultado.json não é JSON: {e}", file=sys.stderr)
+        return 2
+    if not isinstance(r, dict) or r.get("gosto") not in GOSTOS_VALIDOS:
+        print(f"resultado.json sem \"gosto\" válido (bonito, correto ou generico); veio: {r.get('gosto') if isinstance(r, dict) else r!r}.", file=sys.stderr)
+        return 2
+    gosto = r["gosto"]
+    cliente = [str(x).strip() for x in (r.get("depende_do_cliente") or []) if str(x).strip()] if isinstance(r.get("depende_do_cliente"), list) else []
+    achados = [str(x) for x in (r.get("tells") or [])] if isinstance(r.get("tells"), list) else []
+    texto = " ".join([str(r.get("uma_mudanca") or ""), *achados])
+    if gosto != "bonito" and not cliente and PADRAO_CLIENTE.search(texto):
+        achou = PADRAO_CLIENTE.search(texto).group(0)
+        cliente = [f"material da cliente apontado pelo auditor ({achou}): {str(r.get('uma_mudanca') or '').strip()[:160]}"]
+    dur = r.get("duracao_min")
+    print(f"LENTE DE GOSTO NO HERÓI: {gosto}. Rodada única, fechada.")
+    if isinstance(dur, (int, float)) and not isinstance(dur, bool) and dur > ORCAMENTO_MIN:
+        print(f"  AVISO: o auditor passou do teto de {ORCAMENTO_MIN} min ({dur:g} min). Não reprova, mas o teto é duro.")
+    if gosto == "bonito":
+        print("  Nada a ajustar no herói. Siga para as imagens e as outras seções.")
+        return 0
+    if cliente:
+        pend = projeto / "evidencias" / "pendencias-do-heroi.md"
+        pend.parent.mkdir(parents=True, exist_ok=True)
+        ja = pend.read_text(encoding="utf-8") if pend.is_file() else ""
+        novas = [c for c in cliente if f"- {c}\n" not in ja]
+        if novas or not ja:
+            cabeca = "" if ja else "# Pendências do herói que só a cliente resolve\n\nVão em PENDÊNCIAS DECLARADAS da entrega (etapa 5, campo `pendencias`).\n\n"
+            pend.write_text(ja + cabeca + "".join(f"- {c}\n" for c in novas), encoding="utf-8")
+        print(f"  PENDÊNCIA DA CLIENTE registrada em {pend} ({len(cliente)} item(ns)):")
+        for c in cliente:
+            print(f"    - {c}")
+        print("  O motivo do veredito depende de material que só a cliente tem: não rode a lente de novo, o resultado seria o mesmo.")
+    mudanca = str(r.get("uma_mudanca") or "").strip()
+    if mudanca and not (cliente and PADRAO_CLIENTE.search(mudanca) and not r.get("depende_do_cliente")):
+        print("  Aplique no HERÓI, com o material que já existe, e siga para as outras seções, sem segunda rodada:")
+        print(f"    {mudanca}")
+    elif cliente:
+        print("  Aplique no HERÓI só o que não depende da cliente (enquadramento, escala e recorte da imagem que já existe) e siga, sem segunda rodada.")
+    return 0
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Prancha e briefing da lente curta de gosto no herói.")
+    ap = argparse.ArgumentParser(description="Prancha e briefing da lente curta de gosto no herói (uma rodada só).")
     ap.add_argument("--projeto", required=True)
-    ap.add_argument("--heroi", required=True, help="print da dobra em 1440")
+    ap.add_argument("--heroi", help="print da dobra em 1440")
+    ap.add_argument("--registrar", action="store_true", help="lê o resultado.json do auditor, registra a pendência da cliente e fecha a lente")
     ap.add_argument("--celular", help="print da dobra em 390")
     ap.add_argument("--refs", help="duas capturas de referência, separadas por vírgula")
     ap.add_argument("--saida", help="pasta de saída (padrão: <projeto>/auditoria/gosto-heroi)")
     ap.add_argument("--publico", help="público do briefing (padrão: lido de evidencias/briefing.md)")
     a = ap.parse_args()
     projeto = pathlib.Path(a.projeto)
+    saida = pathlib.Path(a.saida) if a.saida else projeto / "auditoria" / "gosto-heroi"
+    if a.registrar:
+        sys.exit(registrar(saida, projeto))
+    if not a.heroi:
+        ap.error("--heroi é obrigatório (ou use --registrar)")
+    if _estado(saida).is_file():
+        print("A lente de gosto no herói roda 1 rodada só e ela já deu o resultado "
+              f"({_estado(saida)}). A lente não roda de novo: se o motivo do veredito depende de material da cliente, ele já é pendência "
+              "da entrega (gosto-heroi.py --registrar); o resto você aplica no herói.", file=sys.stderr)
+        sys.exit(3)
     if a.refs:
         refs = [pathlib.Path(r.strip()) for r in a.refs.split(",") if r.strip()]
     else:
@@ -147,17 +239,16 @@ def main():
                     break
         except OSError:
             publico = None
-    saida = pathlib.Path(a.saida) if a.saida else projeto / "auditoria" / "gosto-heroi"
     prancha = saida / "prancha.jpg"
     tamanho = montar(refs[:2], pathlib.Path(a.heroi), pathlib.Path(a.celular) if a.celular else None, prancha)
     briefing = saida / "briefing.md"
-    briefing.write_text(BRIEFING.format(minutos=ORCAMENTO_MIN, chamadas=ORCAMENTO_CHAMADAS, prancha=prancha.resolve(),
+    briefing.write_text(BRIEFING.format(minutos=ORCAMENTO_MIN, aviso=ORCAMENTO_MIN - 1, chamadas=ORCAMENTO_CHAMADAS, prancha=prancha.resolve(),
                                         publico=publico or "não informado", dir_skill=AQUI.parent), encoding="utf-8")
     print(f"prancha: {prancha} ({tamanho[0]}x{tamanho[1]})")
     print(f"briefing: {briefing}")
     print(f"orçamento: {ORCAMENTO_MIN} min e até {ORCAMENTO_CHAMADAS} chamadas, 1 imagem")
-    print("próximo passo: lance 1 subagente que não construiu a página com o conteúdo do briefing; "
-          "grave a resposta em " + str(saida / "resultado.json"))
+    print("próximo passo: lance 1 subagente que não construiu a página com o conteúdo do briefing (rodada única, teto de "
+          f"{ORCAMENTO_MIN} min); grave a resposta em " + str(saida / "resultado.json") + " e rode gosto-heroi.py --projeto <dir> --registrar")
 
 
 if __name__ == "__main__":

@@ -283,10 +283,19 @@ pronto e o resto ainda não existe.
 2. Monte a prancha e o briefing:
    `node <dir-da-skill>/scripts/py.mjs gosto-heroi.py --projeto <dir> --heroi <dobra-1440.png> --celular <dobra-390.png> --refs <ref1-dobra.png>,<ref2-dobra.png>`
    As 2 referências são as mais fortes de `referencias/sintese.md`. Sem `--refs`, o script pega as 2 primeiras dobras.
-3. Lance 1 subagente que não construiu a página com o conteúdo de `auditoria/gosto-heroi/briefing.md`. Orçamento:
-   5 minutos e até 6 chamadas, 1 imagem; ele não captura nada. Grave a resposta em `auditoria/gosto-heroi/resultado.json`.
-4. `gosto` "correto" ou "generico": aplique a `uma_mudanca` e os tells no HERÓI e rode a lente uma vez mais. Só
-   depois construa as outras seções. A lente não manda reconstruir a página, porque o resto ainda não existe.
+3. Lance 1 subagente que não construiu a página com o conteúdo de `auditoria/gosto-heroi/briefing.md`. O briefing traz o teto
+   escrito: TETO DE 5 MINUTOS, DURO, rodada única, até 6 chamadas, 1 imagem; no minuto 4 o auditor para de olhar e devolve o
+   JSON. Ele não captura nada. Grave a resposta em `auditoria/gosto-heroi/resultado.json` e rode
+   `gosto-heroi.py --projeto <dir> --registrar`.
+4. **Uma rodada só (3.6.1).** `gosto` "correto" ou "generico": aplique no HERÓI a `uma_mudanca` (só o que o construtor resolve
+   com o material que já existe) e os tells, e siga para as outras seções. NÃO rode a lente de novo. O que o auditor lista em
+   `depende_do_cliente` (foto real, logo, depoimento, autorização de imagem) vira pendência da entrega, registrada em
+   `evidencias/pendencias-do-heroi.md` pelo `--registrar`. O script recusa montar a lente uma segunda vez (saída 3). A lente
+   não manda reconstruir a página, porque o resto ainda não existe.
+
+**Por que uma rodada só (teste de aluno da 3.6.0, Studio Equilíbrio, 25/10/2026):** a lente rodou 2 vezes, 9,3 e 7,9 min contra o
+teto de 5, e as duas deram "generico" pelo mesmo motivo, a foto de banco com a legenda "Imagem ilustrativa", que só a cliente resolve.
+A segunda rodada gastou 7,9 min para repetir a primeira. O motivo que depende da cliente é pendência, não ajuste.
 
 **Custo medido (25/10/2026, subagente `auditor`, as duas lentes em paralelo):** página de produção, 4,4 min, 6 chamadas,
 cerca de 69 mil tokens; torrefação, 5,8 min, 6 chamadas, cerca de 78 mil tokens. Na página de produção a lente

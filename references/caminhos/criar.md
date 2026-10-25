@@ -239,13 +239,19 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    `node <dir-da-skill>/scripts/screenshot-prova.js "file://<dir>/index.html" <dir>/prova-hero --sem-identidade`
    Abra o PNG. Ele corresponde ao plano visual? Fica de pé ao lado da referência mais forte?
    Se não, corrija o hero agora: é o único ponto em que corrigir é barato.
-   **Lente curta de gosto no herói (3.6.0, conselho, não trava):** monte a prancha com
+   **Lente curta de gosto no herói (3.6.0, conselho, não trava; 3.6.1: UMA rodada, teto de 5 minutos):** monte a prancha com
    `node <dir-da-skill>/scripts/py.mjs gosto-heroi.py --projeto <dir> --heroi <dir>/prova-hero/prova-desktop.png`
-   e mande UM subagente `auditor` com a
-   seção "Lente curta de gosto no herói" de `references/auditores.md` (teto de 5 minutos), em segundo
-   plano, enquanto você segue para as imagens. Veredito "generico" com motivo vira ajuste no hero antes
-   de replicar o padrão; não é reprovação nem volta de gate. Medido em 25/10: 4 a 6 min e 6 chamadas, e
-   ela pegou na Justa Pena os 2 sinais que o auditor de 64 min deixou passar.
+   e mande UM subagente `auditor` com o `auditoria/gosto-heroi/briefing.md` que o script escreveu. O teto de 5 minutos e a
+   rodada única estão no prompt dele; em segundo plano, enquanto você segue para as imagens. Quando ele devolver, grave a resposta em
+   `auditoria/gosto-heroi/resultado.json` e rode `gosto-heroi.py --projeto <dir> --registrar`.
+   **A lente roda 1 vez e não volta.** Veredito "generico" ou "correto" cujo motivo é só do construtor (enquadramento,
+   escala, tipografia) vira ajuste no hero antes de replicar o padrão, SEM segunda rodada. Veredito cujo motivo depende de
+   material que só a cliente tem (foto real, logo, depoimento, autorização de imagem) vira PENDÊNCIA registrada
+   (`evidencias/pendencias-do-heroi.md`, que entra em PENDÊNCIAS DECLARADAS da entrega) e também não roda de novo: o script
+   recusa montar a lente uma segunda vez (saída 3). Não é reprovação nem volta de gate. Medido em 25/10: 4 a 6 min e 6 chamadas,
+   e ela pegou na Justa Pena os 2 sinais que o auditor de 64 min deixou passar. Medido no teste de aluno da 3.6.0 (Studio
+   Equilíbrio): 2 rodadas de 9,3 e 7,9 min, as duas "generico" pela mesma foto de banco; a segunda rodada custou 7,9 min para
+   dizer o que a primeira já tinha dito.
 2. **Imagens:** material real do cliente primeiro. Sem ele, banco com licença livre (Openverse
    pelo `scripts/assets-search.py "<tema em inglês>" --type photo`; se a Openverse não responder
    (conexão recusada, HTTP, resposta fora do formato), a busca, inclusive a de `--type openverse`, cai
