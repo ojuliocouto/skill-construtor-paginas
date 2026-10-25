@@ -33,6 +33,9 @@
  *   node scripts/capturar-referencias.mjs --projeto <dir> --remover <url> [<url> ...]
  *       (3.5.8: tira do manifesto uma referência que capturou ok e não serve; aceita o endereço ou um
  *        trecho que só case uma; os PNG vão para <projeto>/descartados/referencias/)
+ * (3.6) Os endereços são capturados DOIS por vez, cada um na própria aba do mesmo navegador (eram 21,5 s por endereço, um depois do
+ * outro). Os números dos prints saem na ordem do pedido, o manifesto recebe as entradas novas na ordem do pedido e a saída também
+ * vem na ordem do pedido, como na fila. `--em-serie` volta a um por vez. Endereço repetido no mesmo pedido é capturado uma vez.
  * Sai 0 se sobraram pelo menos 6 referências boas no manifesto (--minimo N muda o número, só
  * para teste), 1 se faltam. Falhar uma URL isolada não derruba a rodada: as que deram certo
  * ficam gravadas.
@@ -59,6 +62,8 @@ const tipo = valor('--tipo');
 const TIPOS = ['mesmo-negocio', 'design'];
 const limparRuins = args.includes('--limpar-ruins');
 const esperadaLonga = args.includes('--longa');
+const EM_SERIE = args.includes('--em-serie');
+const JUNTAS = EM_SERIE ? 1 : 2;      // no máximo 2 abas capturando ao mesmo tempo (memória da máquina)
 const MINIMO = Number(valor('--minimo') || 6);
 const iRemover = args.indexOf('--remover');
 const remover = [];
@@ -305,87 +310,121 @@ const browser = await chromium.launch({ headless: true });
 const ctxMedida = await browser.newContext();
 const falhas = [];
 const resultado = [];
+let unicasTotal = 0;
+
+/** Captura UM endereço na própria aba. Escreve a saída em `saida` (não no console) para a fila de impressão manter a ordem do pedido.
+ *  Devolve a entrada do manifesto quando é nova (o chamador a acrescenta na ordem do pedido). */
+async function capturarUm({ url, existente, base }, saida) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, locale: 'pt-BR' });
+  const page = await ctx.newPage();
+  try {
+    const resposta = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    const http = resposta ? resposta.status() : 0;
+    await page.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => {});
+    await page.waitForTimeout(1500);
+    const aviso = await fecharAviso(page);
+    const fechou = aviso.fechou;
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await page.waitForTimeout(400);
+    const dobra = path.join(pasta, `${base}-dobra.png`);
+    const bufDobra = await page.screenshot({ path: dobra });
+    const dominanciaDobra = await medirDominancia(ctxMedida, bufDobra);
+
+    const medidas = await page.evaluate(medirPagina);
+    const altura = medidas.altura;
+    const cobertura = await page.evaluate(medirCobertura);
+    const alvo = Math.max(900, Math.round(altura * 0.45) - 450);
+    for (let y = 0; y < alvo; y += 600) {
+      await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), y);
+      await page.waitForTimeout(250);
+    }
+    await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), alvo);
+    await page.waitForTimeout(1200);
+    await esperarImagensVisiveis(page);
+    const meio = path.join(pasta, `${base}-meio.png`);
+    // conta as fotos pendentes ANTES do print: o que não carregou até aqui é o que o print mostra em branco
+    const imagensSemCarregar = await page.evaluate(medirImagensSemCarregar);
+    const bufMeio = await page.screenshot({ path: meio });
+    const dominanciaMeio = await medirDominancia(ctxMedida, bufMeio);
+    const meioIgualDobra = await medirIguais(ctxMedida, bufDobra, bufMeio);
+    const veredito = classificar({ http, titulo: await page.title(), texto: medidas.texto, temEstilo: medidas.temEstilo, altura, janela: 900, cobertura, dominanciaDobra, dominanciaMeio, imagensSemCarregar, meioIgualDobra, esperadaLonga, ancoras: medidas.ancoras });
+    // 3.5.10 (P2): botão apertado não é aviso fechado. Se o aviso continua na tela, a captura diz isso e manda abrir o PNG.
+    const avisoCookies = aviso.clicou && !fechou ? `o aviso de cookies continua visível depois do clique (cobre ${Math.round(cobertura * 100)}% da janela): abra o PNG da dobra antes de gastar leitura` : '';
+    const avisos = [veredito.aviso, avisoCookies].filter(Boolean).join('; ');
+
+    const titulo = (await page.title()).trim().slice(0, 140);
+    const entrada = existente || { url };
+    Object.assign(entrada, {
+      tipo,
+      titulo,
+      prints: { dobra: path.relative(path.resolve(projeto), dobra).split(path.sep).join('/'), meio: path.relative(path.resolve(projeto), meio).split(path.sep).join('/') },
+      altura_pagina: altura,
+      captura: { estado: veredito.estado, motivo: veredito.motivo, http, cobertura: Math.round(cobertura * 100) / 100, aviso_fechado: fechou,
+        dominancia_dobra: dominanciaDobra === undefined ? null : Math.round(dominanciaDobra * 100) / 100,
+        dominancia_meio: dominanciaMeio === undefined ? null : Math.round(dominanciaMeio * 100) / 100, imagens_sem_carregar: imagensSemCarregar,
+        meio_igual_dobra: meioIgualDobra, ...(avisos ? { aviso: avisos } : {}) },
+      capturado_em: new Date().toISOString().slice(0, 19),
+    });
+    if (!existente) {
+      Object.assign(entrada, {
+        faz_bem: { composicao: '', tipografia: '', imagem: '', ritmo: '' },
+        principio: '',
+        lido: false,
+      });
+    }
+    resultado.push(veredito.estado);
+    const rotulo = veredito.estado.padEnd(9);
+    saida.out.push(`${rotulo} ${url}${veredito.motivo ? `\n     motivo: ${veredito.motivo}` : ''}${avisos ? `\n     AVISO: ${avisos}` : ''}\n     ${entrada.prints.dobra}\n     ${entrada.prints.meio}  (pagina com ${altura}px${fechou ? ', aviso de cookies fechado' : aviso.clicou ? ', o aviso de cookies continua visível' : ''})`);
+    return existente ? null : entrada;
+  } catch (e) {
+    falhas.push(url);
+    saida.err.push(`FALHA ${url}: ${String(e.message || e).split('\n')[0]}`);
+    return null;
+  } finally {
+    await ctx.close();
+  }
+}
+
 try {
-  for (const url of urls) {
+  // Um endereço por pedido, na ordem do pedido (o repetido, com ou sem barra no fim, vale uma vez).
+  const vistas = new Set();
+  const unicas = urls.filter((u) => { const k = u.replace(/\/$/, ''); if (vistas.has(k)) return false; vistas.add(k); return true; });
+  // O número do print de cada endereço NOVO é combinado agora, na ordem do pedido: capturando juntos, ninguém pode pegar o número de ninguém.
+  unicasTotal = unicas.length;
+  const reservados = [];
+  const planos = unicas.map((url) => {
     const existente = doc.referencias.find((r) => (r.url || '').replace(/\/$/, '') === url.replace(/\/$/, ''));
     // recaptura da mesma URL regrava os mesmos arquivos; URL nova ganha o próximo número livre (N2)
     const baseAnterior = existente && existente.prints && existente.prints.dobra ? path.basename(existente.prints.dobra).replace(/-dobra\.png$/, '') : '';
-    const base = baseAnterior || `${String(proximoPrefixo(nomesUsados())).padStart(2, '0')}-${slug(url)}`;
-    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, locale: 'pt-BR' });
-    const page = await ctx.newPage();
-    try {
-      const resposta = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
-      const http = resposta ? resposta.status() : 0;
-      await page.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => {});
-      await page.waitForTimeout(1500);
-      const aviso = await fecharAviso(page);
-      const fechou = aviso.fechou;
-      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
-      await page.waitForTimeout(400);
-      const dobra = path.join(pasta, `${base}-dobra.png`);
-      const bufDobra = await page.screenshot({ path: dobra });
-      const dominanciaDobra = await medirDominancia(ctxMedida, bufDobra);
-
-      const medidas = await page.evaluate(medirPagina);
-      const altura = medidas.altura;
-      const cobertura = await page.evaluate(medirCobertura);
-      const alvo = Math.max(900, Math.round(altura * 0.45) - 450);
-      for (let y = 0; y < alvo; y += 600) {
-        await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), y);
-        await page.waitForTimeout(250);
-      }
-      await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), alvo);
-      await page.waitForTimeout(1200);
-      await esperarImagensVisiveis(page);
-      const meio = path.join(pasta, `${base}-meio.png`);
-      // conta as fotos pendentes ANTES do print: o que não carregou até aqui é o que o print mostra em branco
-      const imagensSemCarregar = await page.evaluate(medirImagensSemCarregar);
-      const bufMeio = await page.screenshot({ path: meio });
-      const dominanciaMeio = await medirDominancia(ctxMedida, bufMeio);
-      const meioIgualDobra = await medirIguais(ctxMedida, bufDobra, bufMeio);
-      const veredito = classificar({ http, titulo: await page.title(), texto: medidas.texto, temEstilo: medidas.temEstilo, altura, janela: 900, cobertura, dominanciaDobra, dominanciaMeio, imagensSemCarregar, meioIgualDobra, esperadaLonga, ancoras: medidas.ancoras });
-      // 3.5.10 (P2): botão apertado não é aviso fechado. Se o aviso continua na tela, a captura diz isso e manda abrir o PNG.
-      const avisoCookies = aviso.clicou && !fechou ? `o aviso de cookies continua visível depois do clique (cobre ${Math.round(cobertura * 100)}% da janela): abra o PNG da dobra antes de gastar leitura` : '';
-      const avisos = [veredito.aviso, avisoCookies].filter(Boolean).join('; ');
-
-      const titulo = (await page.title()).trim().slice(0, 140);
-      const entrada = existente || { url };
-      Object.assign(entrada, {
-        tipo,
-        titulo,
-        prints: { dobra: path.relative(path.resolve(projeto), dobra).split(path.sep).join('/'), meio: path.relative(path.resolve(projeto), meio).split(path.sep).join('/') },
-        altura_pagina: altura,
-        captura: { estado: veredito.estado, motivo: veredito.motivo, http, cobertura: Math.round(cobertura * 100) / 100, aviso_fechado: fechou,
-          dominancia_dobra: dominanciaDobra === undefined ? null : Math.round(dominanciaDobra * 100) / 100,
-          dominancia_meio: dominanciaMeio === undefined ? null : Math.round(dominanciaMeio * 100) / 100, imagens_sem_carregar: imagensSemCarregar,
-          meio_igual_dobra: meioIgualDobra, ...(avisos ? { aviso: avisos } : {}) },
-        capturado_em: new Date().toISOString().slice(0, 19),
-      });
-      if (!existente) {
-        Object.assign(entrada, {
-          faz_bem: { composicao: '', tipografia: '', imagem: '', ritmo: '' },
-          principio: '',
-          lido: false,
-        });
-        doc.referencias.push(entrada);
-      }
-      resultado.push(veredito.estado);
-      const rotulo = veredito.estado.padEnd(9);
-      console.log(`${rotulo} ${url}${veredito.motivo ? `\n     motivo: ${veredito.motivo}` : ''}${avisos ? `\n     AVISO: ${avisos}` : ''}\n     ${entrada.prints.dobra}\n     ${entrada.prints.meio}  (pagina com ${altura}px${fechou ? ', aviso de cookies fechado' : aviso.clicou ? ', o aviso de cookies continua visível' : ''})`);
-    } catch (e) {
-      falhas.push(url);
-      console.error(`FALHA ${url}: ${String(e.message || e).split('\n')[0]}`);
-    } finally {
-      await ctx.close();
+    const base = baseAnterior || `${String(proximoPrefixo([...nomesUsados(), ...reservados])).padStart(2, '0')}-${slug(url)}`;
+    if (!baseAnterior) reservados.push(`${base}-dobra.png`, `${base}-meio.png`);
+    return { url, existente, base, saida: { out: [], err: [] }, entrada: null, feito: false };
+  });
+  let proximo = 0;
+  const imprimirNaOrdem = () => {
+    while (proximo < planos.length && planos[proximo].feito) {
+      const p = planos[proximo++];
+      for (const l of p.saida.out) console.log(l);
+      for (const l of p.saida.err) console.error(l);
     }
-  }
+  };
+  const fila = [...planos];
+  await Promise.all(Array.from({ length: Math.min(JUNTAS, fila.length) }, async () => {
+    while (fila.length) {
+      const p = fila.shift();
+      p.entrada = await capturarUm(p, p.saida);
+      p.feito = true;
+      imprimirNaOrdem();
+    }
+  }));
+  for (const p of planos) if (p.entrada) doc.referencias.push(p.entrada);   // entradas novas na ordem do pedido
 } finally {
   await browser.close();
   fs.writeFileSync(manifesto, JSON.stringify(doc, null, 2) + '\n');
 }
 const boas = resumirBoas(doc.referencias);
 const ruins = resultado.filter((e) => e !== 'ok').length;
-console.log(`\n${urls.length - falhas.length} de ${urls.length} capturada(s), ${resultado.filter((e) => e === 'ok').length} ok, ${ruins} ruim(ns), ${falhas.length} com falha. Manifesto: ${path.relative(process.cwd(), manifesto).split(path.sep).join('/') || manifesto}`);
+console.log(`\n${unicasTotal - falhas.length} de ${unicasTotal} capturada(s), ${resultado.filter((e) => e === 'ok').length} ok, ${ruins} ruim(ns), ${falhas.length} com falha. Manifesto: ${path.relative(process.cwd(), manifesto).split(path.sep).join('/') || manifesto}`);
 console.log(`Referências boas no manifesto: ${boas} (mínimo ${MINIMO}).`);
 if (ruins) console.log(`Tire as ruins do manifesto e dos prints: node ${scriptCmd} --projeto <dir> --limpar-ruins`);
 console.log(`Uma ok que não serve (feia, cookie, sem foto)? node ${scriptCmd} --projeto <dir> --remover <url>`);
