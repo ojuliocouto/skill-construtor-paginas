@@ -36,6 +36,20 @@
  *   --fixo <sel> --contra <sel>   seletores do gate de sobreposição (--com sobreposicao).
  *   --tempo-max <s>      segundos por gate antes de interromper e reprovar (padrão 900).
  *   --scripts-dir <dir>  pasta dos gates (padrão: a desta skill; os testes trocam por gates falsos).
+ *   --sem-cache          roda todos os gates de novo, mesmo os de entrada idêntica (o resultado novo ainda é guardado).
+ *   --sem-registrar      não grava o resultado da rodada completa na wave.
+ *
+ * Cache por conteúdo (3.6, corte 4 da auditoria de velocidade). Gate que PASSOU e cujo insumo não mudou
+ * (dist, projeto, argumentos, scripts e ambiente, tudo por hash do conteúdo) devolve o laudo de então, sem
+ * rodar de novo. Reprovação nunca entra no cache. Detalhe e regras de invalidação: `gates-cache.mjs`.
+ *
+ * Registro na wave (3.6, corte 5). Uma rodada COMPLETA (sem --so nem --reprovados) grava o exit real de cada
+ * gate na wave (`wave.py gates-lote`), no lugar de 15 chamadas à mão. Rodada parcial não registra: o
+ * criar.md manda registrar só depois da rodada completa.
+ *
+ * Tempo (3.6, corte 3). A rodada completa leva de 1 a 5 minutos: rode em PRIMEIRO plano com tempo-limite de
+ * 10 minutos (no Bash, `timeout` de 600000). Com o limite padrão de 120 s o Bash corta o comando no meio, e
+ * o laço de espera que o modelo escreve depois custou 102,7 min numa página real.
  *
  * Saída: 0 se todos passam, 1 se algum reprova, 2 se o pedido está errado (nome de gate, pasta).
  */
@@ -45,6 +59,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { acerto, chaveDoGate, criarMemo, gravarCache, partesDoGate } from './gates-cache.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const posix = (p) => String(p).split(path.sep).join('/');
@@ -93,13 +108,17 @@ export const CATALOGO = [
   // Opcionais: dependem de uma etapa anterior ou de argumentos que só o projeto conhece.
   { nome: 'animacao', arquivo: 'gate-animacao.py', opcional: true, peso: 1,
     args: (c) => ['--pasta', path.join(c.projeto, 'prova', 'anim'), '--plano', path.join(c.projeto, 'PLANO.md')] },
-  { nome: 'video', arquivo: 'gate-video.mjs', opcional: true, navegador: true, url: true, peso: 60,
+  { nome: 'video', arquivo: 'gate-video.mjs', opcional: true, navegador: true, url: true, peso: 60, semCache: true,   // lê a pasta pública, que o comando não conhece
     exige: (c) => (c.opcoes.publico ? null : 'o gate de vídeo pede --publico <pasta pública>'),
     args: (c) => ['--url', c.url, '--publico', c.opcoes.publico] },
   { nome: 'sobreposicao', arquivo: 'sobreposicao.mjs', opcional: true, navegador: true, url: true, peso: 20,
     exige: (c) => (c.opcoes.fixo && c.opcoes.contra ? null : 'o gate de sobreposição pede --fixo <seletor> e --contra <seletor>'),
     args: (c) => ['--url', c.url, '--fixo', c.opcoes.fixo, '--contra', c.opcoes.contra] },
 ];
+
+/** Gates do catálogo que têm nome na wave (`wave.py gate <nome>`): os outros (vídeo, sobreposição) não se registram. */
+export const NOMES_NA_WAVE = new Set(['movimento', 'responsivo', 'oclusao', 'simetria', 'composicao', 'imagens', 'texto', 'ritmo',
+  'sem-kicker', 'classes-mortas', 'verdade', 'publicacao', 'rastreamento', 'plano', 'referencias', 'animacao']);
 
 /** Teto de gates de navegador ao mesmo tempo. Cada Chromium pesa uns 300 a 500 MB e disputa CPU
  *  com os outros: o padrão é metade dos núcleos, entre 1 e 4 (medido em `RELATORIO-PAGINA-358-D.md`). */
@@ -188,7 +207,7 @@ function comandoDe(g, ctx) {
   return [process.execPath, [caminho, ...args]];
 }
 
-function executar(g, ctx, saidaArquivo, tempoMaxS) {
+export function executar(g, ctx, saidaArquivo, tempoMaxS) {
   return new Promise((resolve) => {
     const t0 = Date.now();
     const log = createWriteStream(saidaArquivo);
@@ -227,7 +246,7 @@ function executar(g, ctx, saidaArquivo, tempoMaxS) {
 }
 
 /** Pool: roda `tarefas` (funções async) com no máximo `limite` ao mesmo tempo. */
-async function pool(tarefas, limite) {
+export async function pool(tarefas, limite) {
   const fila = [...tarefas];
   const trabalhadores = Array.from({ length: Math.max(1, Math.min(limite, fila.length || 1)) }, async () => {
     while (fila.length) { const t = fila.shift(); await t(); }
@@ -271,6 +290,8 @@ function lerArgs(argv) {
     else if (a === '--reprovados') o.reprovados = true;
     else if (a === '--sem-montar') o.semMontar = true;
     else if (a === '--confirmar-sozinho') o.confirmarSozinho = true;
+    else if (a === '--sem-cache') o.semCache = true;
+    else if (a === '--sem-registrar') o.semRegistrar = true;
     else if (a === '--produto-fisico') o.produtoFisico = true;
     else if (a === '--trafego-real') o.trafegoReal = true;
     else if (a === '--lista') o.lista = true;
@@ -278,6 +299,32 @@ function lerArgs(argv) {
     else throw new Error(`opção desconhecida: ${a}`);
   }
   return o;
+}
+
+/**
+ * Grava o exit REAL de cada gate da rodada na wave (`wave.py gates-lote`), no lugar de uma chamada à mão por gate.
+ * Só a rodada completa registra: com `--so` ou `--reprovados` os outros gates não foram olhados de novo, e o criar.md
+ * manda registrar depois da rodada completa. Devolve a linha que entra no relatório.
+ */
+function registrarNaWave({ o, escolhidos, resultados, projeto, gatesDir, rodada }) {
+  if (o.semRegistrar) return 'Wave: --sem-registrar, não registrei nada. Registre à mão: wave.py gate <nome> --exit <0|1>.';
+  if (o.so || o.reprovados) return 'Wave: rodada parcial, não registrei nada. Faça a rodada completa (sem --so nem --reprovados) e ela registra o exit real de cada gate.';
+  const itens = escolhidos.filter((g) => NOMES_NA_WAVE.has(g.nome)).map((g) => {
+    const r = resultados.get(g.nome);
+    const onde = `gates/${g.nome}-r${rodada}.txt`;
+    const detalhe = r.cache
+      ? `rodar-gates r${rodada}: PASSA, laudo da rodada ${r.cache.rodada} reaproveitado do cache, entrada idêntica (${onde})`
+      : `rodar-gates r${rodada}: ${r.codigo === 0 ? 'PASSA' : `REPROVA (saída ${r.codigo})`} em ${fmt(r.segundos)} s (${onde})`;
+    return { nome: g.nome, exit: r.codigo, detalhe };
+  });
+  if (!itens.length) return 'Wave: nenhum gate desta rodada tem nome na wave; nada a registrar.';
+  const arquivo = path.join(gatesDir, `_wave-r${rodada}.json`);
+  writeFileSync(arquivo, JSON.stringify({ gates: itens }, null, 2), 'utf8');
+  const r = spawnSync(process.execPath, [path.join(AQUI, 'py.mjs'), path.join(AQUI, 'wave.py'), '--projeto', projeto, 'gates-lote', '--arquivo', arquivo], {
+    encoding: 'utf8', windowsHide: true, timeout: 60000, env: { ...process.env, PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8' },
+  });
+  if (r.status === 0) return `Wave: ${itens.length} gate(s) registrado(s) com o exit real, sem digitar (wave.py gates-lote, ${path.relative(projeto, arquivo).split(path.sep).join('/')}).`;
+  return `Wave: NÃO consegui registrar (saída ${r.status}): ${`${r.stdout || ''}${r.stderr || ''}`.trim().split(/\r?\n/).slice(0, 3).join(' | ')}. Registre à mão: wave.py gate <nome> --exit <0|1>.`;
 }
 
 function linhaDeRepeticao(o, extra) {
@@ -292,7 +339,7 @@ function linhaDeRepeticao(o, extra) {
   return partes.join(' ');
 }
 
-const fmt = (s) => (s < 10 ? s.toFixed(1) : Math.round(s).toString()).replace('.', ',');
+export const fmt = (s) => (s < 10 ? s.toFixed(1) : Math.round(s).toString()).replace('.', ',');
 
 async function principal() {
   let o;
@@ -340,6 +387,7 @@ async function principal() {
   const t0 = Date.now();
   console.log(`RODAR-GATES  rodada ${rodada}  projeto: ${posix(projeto)}`);
   console.log(`Máquina: ${process.platform}, ${os.cpus().length} CPUs. ${escolhidos.length} gate(s); teto de ${teto} de navegador ao mesmo tempo.`);
+  console.log('Tempo: a rodada completa leva de 1 a 5 minutos. Rode este comando em primeiro plano, com tempo-limite de 10 minutos (Bash: timeout de 600000 ms), e nunca em segundo plano com laço de espera.');
 
   // 2. montar a dist (os gates de tela olham o que vai para o ar)
   const precisaDist = escolhidos.some((g) => g.url || g.dist);
@@ -358,11 +406,31 @@ async function principal() {
     process.exit(2);
   }
 
+  // 2b. cache por conteúdo: a chave de cada gate é calculada AGORA, com a dist já montada e antes de qualquer gate escrever em gates/
+  const memo = criarMemo();
+  const pastasDeScripts = [['gates', scriptsDir], ...(scriptsDir !== AQUI ? [['skill', AQUI]] : []), ['references', path.join(AQUI, '..', 'references')]];
+  const planoDeCache = new Map();
+  for (const g of escolhidos) {
+    if (g.semCache) continue;                // lê algo que o comando não conhece
+    if (g.url && o.url) continue;            // página servida por quem chamou: não sabemos o que há lá
+    const partes = partesDoGate(g, ctxBase, memo, pastasDeScripts);
+    planoDeCache.set(g.nome, { partes, chave: chaveDoGate(partes) });
+  }
+
   // 3. rodar: gates de navegador no pool com teto; os demais, numa pista à parte
   const resultados = new Map();
   const rodarUm = (g) => async () => {
     let servidor = null;
     const ctx = { ...ctxBase, url: o.url };
+    const alvoDeCache = planoDeCache.get(g.nome);
+    const guardado = alvoDeCache && !o.semCache ? acerto(gatesDir, g.nome, alvoDeCache.chave) : null;
+    if (guardado) {
+      writeFileSync(path.join(gatesDir, `${g.nome}-r${rodada}.txt`),
+        `[laudo reaproveitado da rodada ${guardado.rodada} (${guardado.quando}): nada que este gate lê mudou, chave ${alvoDeCache.chave.slice(0, 12)}. Saída de então:]\n${guardado.laudo}`, 'utf8');
+      resultados.set(g.nome, { codigo: 0, segundos: 0, cache: { rodada: guardado.rodada, segundos: guardado.segundos } });
+      process.stdout.write(`  passa   ${g.nome} (cache da rodada ${guardado.rodada}, 0,0 s)\n`);
+      return;
+    }
     try {
       if (g.url && !o.url) { servidor = await subirServidor(dist, scriptsDir); ctx.url = servidor.url; }
     } catch (e) {
@@ -388,6 +456,10 @@ async function principal() {
     if (servidor) servidor.parar();
     resultados.set(g.nome, r);
     process.stdout.write(`  ${r.codigo === 0 ? 'passa  ' : 'REPROVA'} ${g.nome} (${fmt(r.segundos)} s)\n`);
+    if (alvoDeCache && r.codigo === 0) {      // só PASSA vira cache; reprovação, queda e estouro de tempo rodam de novo na próxima
+      try { gravarCache(gatesDir, g.nome, { chave: alvoDeCache.chave, partes: alvoDeCache.partes, segundos: r.segundos, rodada, laudo: readFileSync(arquivo, 'utf8') }); }
+      catch (_) { /* sem cache: o gate roda de novo na próxima rodada */ }
+    }
   };
   const porPeso = (a, b) => b.peso - a.peso;
   const pesados = escolhidos.filter((g) => g.navegador).sort(porPeso);
@@ -418,7 +490,8 @@ async function principal() {
   linhas.push('', `===== RELATÓRIO DA RODADA ${rodada} =====`);
   for (const g of escolhidos) {
     const r = resultados.get(g.nome);
-    linhas.push(`${r.codigo === 0 ? 'PASSA   ' : 'REPROVA '} ${g.nome.padEnd(15)} ${fmt(r.segundos).padStart(5)} s   gates/${g.nome}-r${rodada}.txt${r.codigo === 0 ? '' : `   (saída ${r.codigo})`}`);
+    const nota = r.cache ? `   (cache: laudo da rodada ${r.cache.rodada}, entrada idêntica)` : (r.codigo === 0 ? '' : `   (saída ${r.codigo})`);
+    linhas.push(`${r.codigo === 0 ? 'PASSA   ' : 'REPROVA '} ${g.nome.padEnd(15)} ${fmt(r.segundos).padStart(5)} s   gates/${g.nome}-r${rodada}.txt${nota}`);
   }
   const reprovados = escolhidos.filter((g) => resultados.get(g.nome).codigo !== 0);
   const somaS = [...resultados.values()].reduce((s, r) => s + r.segundos, 0);
@@ -447,16 +520,22 @@ async function principal() {
     }
   }
   linhas.push('', `Total: ${fmt(totalS)} s de relógio (soma dos gates: ${fmt(somaS)} s, ${escolhidos.length} gate(s), teto ${teto}).`);
+  const doCache = escolhidos.filter((g) => resultados.get(g.nome).cache);
+  if (doCache.length) {
+    const poupados = doCache.reduce((s, g) => s + (resultados.get(g.nome).cache.segundos || 0), 0);
+    linhas.push(`Cache: ${doCache.length} de ${escolhidos.length} gate(s) vieram do cache (nada que eles leem mudou desde que passaram): ${doCache.map((g) => g.nome).join(', ')}. Poupou cerca de ${fmt(poupados)} s. Para rodar tudo de novo: --sem-cache.`);
+  }
   if (reprovados.length) {
     linhas.push(`RESULTADO: REPROVA em ${reprovados.length} de ${escolhidos.length}: ${reprovados.map((g) => g.nome).join(', ')}.`);
     linhas.push('Corrija TUDO o que está acima e repita só esses:');
     linhas.push(`  ${linhaDeRepeticao(o, ['--reprovados'])}`);
-    linhas.push('Quando tudo passar, faça uma rodada completa (sem --so e sem --reprovados) antes de registrar na wave.');
+    linhas.push('Quando tudo passar, faça uma rodada completa (sem --so e sem --reprovados): ela registra sozinha o exit real de cada gate na wave.');
   } else {
     linhas.push(`RESULTADO: PASSA em ${escolhidos.length} de ${escolhidos.length}.`);
     if (o.so || o.reprovados) linhas.push('Foi uma rodada parcial: falta a rodada completa no fim, antes de registrar na wave.');
   }
-  linhas.push('Registre na wave o exit REAL de cada gate (wave.py gate <nome> --exit <0|1>): este comando não registra nem aprova nada.');
+  linhas.push(registrarNaWave({ o, escolhidos, resultados, projeto, gatesDir, rodada }));
+  linhas.push('Este comando não aprova nada: grava o exit real que cada gate devolveu, e a decisão de entregar continua sendo do wave.py checar e rodada.');
   const texto = linhas.join('\n');
   console.log(texto);
   writeFileSync(path.join(gatesDir, `_relatorio-r${rodada}.txt`), texto + '\n', 'utf8');
