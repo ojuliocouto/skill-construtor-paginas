@@ -388,7 +388,7 @@ abaixo juntos (teto de navegadores pela máquina; `--paralelo N` muda), grava a 
 `gates/<nome>-r<N>.txt` e imprime UM relatório: PASSA ou REPROVA por gate, o tempo de cada um, a
 mensagem de falha inteira e o total. Sai com 1 se qualquer gate reprova. Não substitui nem afrouxa
 gate nenhum: chama os mesmos scripts, com os mesmos argumentos listados abaixo. O fluxo:
-1. rode tudo e leia o relatório consolidado inteiro, até o fim;
+1. rode tudo e leia o relatório consolidado inteiro, até o fim; cada gate que reprova termina com UMA linha `Conserto: ...` que diz o que mudar (leia essa linha primeiro);
 2. corrija TUDO o que reprovou, de todos os gates, antes de rodar de novo (um gate por vez foi o que custou 37 min);
 3. rode só os que reprovaram: `node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir> --reprovados` (ou `--so texto,ritmo`);
 4. repita 2 e 3 até passar, e no fim faça UMA rodada completa (o comando sem `--so` nem `--reprovados`): correção de um gate pode ter quebrado outro;
@@ -401,7 +401,7 @@ que reprovou e adota o veredito isolado (o do modo em série), avisando no relat
 **Cache por conteúdo.** Gate que PASSOU e cujo insumo não mudou (hash do conteúdo da `dist/`, do projeto, dos argumentos, dos scripts da skill e do
 ambiente) devolve o laudo de então sem rodar de novo, e o relatório diz "cache" e quanto tempo poupou. Só o que passou entra no cache (reprovação nunca
 entra e roda de novo na rodada seguinte); página servida por você (`--url`) não entra. Corrigiu só evidência, ou repetiu a rodada sem mudar a página:
-os gates de tela voltam do cache e só rodam os que leem o que você mexeu. `--sem-cache` roda tudo de novo (use depois de atualizar o Python, o Pillow ou o Chromium, ou quando a página lê algo de fora, como fonte ou imagem de um site).
+os gates de tela voltam do cache e só rodam os que leem o que você mexeu. O relatório diz, em cada gate que rodou, o que mudou desde o último PASSA (a dist, o projeto, os scripts, o ambiente ou os argumentos). `--explicar-cache` mostra isso sem rodar gate nenhum: confira ali que o gate de movimento acerta o cache quando HTML, CSS e JS não mudaram. `--sem-cache` roda tudo de novo (use depois de atualizar o Python, o Pillow ou o Chromium, ou quando a página lê algo de fora, como fonte ou imagem de um site).
 Negócio de produto físico: `--produto-fisico`. Gates opcionais, que dependem de passos anteriores:
 `--com animacao` (depois do `anim.mjs` e da prancha), `--com video --publico <dir>`, `--com sobreposicao --fixo "<sel>" --contra "<sel>"`.
 

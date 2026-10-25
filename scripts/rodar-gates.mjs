@@ -37,6 +37,8 @@
  *   --tempo-max <s>      segundos por gate antes de interromper e reprovar (padrão 900).
  *   --scripts-dir <dir>  pasta dos gates (padrão: a desta skill; os testes trocam por gates falsos).
  *   --sem-cache          roda todos os gates de novo, mesmo os de entrada idêntica (o resultado novo ainda é guardado).
+ *   --explicar-cache     não roda gate nenhum: mostra, gate por gate, se o cache acerta ou erra e por quê (a dist, o projeto, os
+ *                        scripts, o ambiente ou os argumentos mudaram), e sai 0. Monta a dist antes, como uma rodada de verdade.
  *   --sem-registrar      não grava o resultado da rodada completa na wave.
  *
  * Cache por conteúdo (3.6, corte 4 da auditoria de velocidade). Gate que PASSOU e cujo insumo não mudou
@@ -59,7 +61,8 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { acerto, chaveDoGate, criarMemo, gravarCache, partesDoGate } from './gates-cache.mjs';
+import { consertoDoGate } from './conserto-de-gate.mjs';
+import { acerto, chaveDoGate, criarMemo, gravarCache, lerCache, partesDoGate } from './gates-cache.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const posix = (p) => String(p).split(path.sep).join('/');
@@ -291,6 +294,7 @@ function lerArgs(argv) {
     else if (a === '--sem-montar') o.semMontar = true;
     else if (a === '--confirmar-sozinho') o.confirmarSozinho = true;
     else if (a === '--sem-cache') o.semCache = true;
+    else if (a === '--explicar-cache') o.explicarCache = true;
     else if (a === '--sem-registrar') o.semRegistrar = true;
     else if (a === '--produto-fisico') o.produtoFisico = true;
     else if (a === '--trafego-real') o.trafegoReal = true;
@@ -299,6 +303,23 @@ function lerArgs(argv) {
     else throw new Error(`opção desconhecida: ${a}`);
   }
   return o;
+}
+
+const ROTULO_DA_PARTE = {
+  dist: 'a dist mudou (HTML, CSS, JS ou imagem)',
+  projeto: 'o projeto mudou',
+  scripts: 'os scripts da skill mudaram',
+  ambiente: 'o ambiente mudou (sistema, Node ou Playwright)',
+  argumentos: 'os argumentos mudaram',
+  gate: 'outro gate', arquivo: 'outro arquivo de gate',
+};
+
+/** Por que o cache NÃO acertou: o que mudou desde o último PASSA guardado. `registro` é o laudo guardado (ou null). */
+export function motivoDoErro(registro, partes) {
+  if (!registro) return 'sem laudo PASSA guardado';
+  const chaves = [...new Set([...Object.keys(registro.partes || {}), ...Object.keys(partes)])];
+  const mudaram = chaves.filter((k) => (registro.partes || {})[k] !== partes[k]).map((k) => ROTULO_DA_PARTE[k] || k);
+  return mudaram.length ? mudaram.join(' e ') : 'a chave mudou';
 }
 
 /**
@@ -410,11 +431,32 @@ async function principal() {
   const memo = criarMemo();
   const pastasDeScripts = [['gates', scriptsDir], ...(scriptsDir !== AQUI ? [['skill', AQUI]] : []), ['references', path.join(AQUI, '..', 'references')]];
   const planoDeCache = new Map();
+  const foraDoCache = new Map();
   for (const g of escolhidos) {
-    if (g.semCache) continue;                // lê algo que o comando não conhece
-    if (g.url && o.url) continue;            // página servida por quem chamou: não sabemos o que há lá
+    if (g.semCache) { foraDoCache.set(g.nome, 'lê uma pasta pública que o comando não conhece'); continue; }
+    if (g.url && o.url) { foraDoCache.set(g.nome, 'a página é servida por você (--url): não sabemos o que há lá'); continue; }
     const partes = partesDoGate(g, ctxBase, memo, pastasDeScripts);
     planoDeCache.set(g.nome, { partes, chave: chaveDoGate(partes) });
+  }
+
+  if (o.explicarCache) {
+    const linhasC = ['', `===== CACHE DOS GATES (rodada ${rodada}; nada foi rodado) =====`];
+    const roda = [], vem = [];
+    for (const g of escolhidos) {
+      const alvo = planoDeCache.get(g.nome);
+      if (!alvo) { linhasC.push(`FORA     ${g.nome.padEnd(15)} ${foraDoCache.get(g.nome)}`); roda.push(g.nome); continue; }
+      const registro = lerCache(gatesDir, g.nome);
+      if (!o.semCache && registro && registro.chave === alvo.chave) {
+        linhasC.push(`ACERTA   ${g.nome.padEnd(15)} laudo da rodada ${registro.rodada}, ${fmt(registro.segundos || 0)} s poupados`);
+        vem.push(g.nome);
+      } else {
+        linhasC.push(`ERRA     ${g.nome.padEnd(15)} ${o.semCache ? 'forçado por --sem-cache' : motivoDoErro(registro, alvo.partes)}`);
+        roda.push(g.nome);
+      }
+    }
+    linhasC.push('', `Vêm do cache: ${vem.join(', ') || '(nenhum)'}.`, `Rodam de novo: ${roda.join(', ') || '(nenhum)'}.`);
+    console.log(linhasC.join('\n'));
+    process.exit(0);
   }
 
   // 3. rodar: gates de navegador no pool com teto; os demais, numa pista à parte
@@ -439,7 +481,9 @@ async function principal() {
       return;
     }
     const arquivo = path.join(gatesDir, `${g.nome}-r${rodada}.txt`);
+    const porQueRodou = alvoDeCache ? (o.semCache ? 'forçado por --sem-cache' : motivoDoErro(lerCache(gatesDir, g.nome), alvoDeCache.partes)) : null;
     let r = await executar(g, ctx, arquivo, o.tempoMax);
+    r.porQueRodou = porQueRodou;
     // Servidor que caiu no meio do gate (P11, 3.5.10): o gate não opinou sobre a página. Sobe outro servidor para este gate
     // e repete UMA vez. Reprovação sem a marca de "servidor fora do ar" nunca é repetida; com `--url` o servidor é do usuário
     // e a mensagem do gate (como subir de novo) fica no relatório.
@@ -490,7 +534,7 @@ async function principal() {
   linhas.push('', `===== RELATÓRIO DA RODADA ${rodada} =====`);
   for (const g of escolhidos) {
     const r = resultados.get(g.nome);
-    const nota = r.cache ? `   (cache: laudo da rodada ${r.cache.rodada}, entrada idêntica)` : (r.codigo === 0 ? '' : `   (saída ${r.codigo})`);
+    const nota = r.cache ? `   (cache: laudo da rodada ${r.cache.rodada}, entrada idêntica)` : (r.codigo === 0 ? '' : `   (saída ${r.codigo})`) + (r.porQueRodou ? `   (rodou: ${r.porQueRodou})` : '');
     linhas.push(`${r.codigo === 0 ? 'PASSA   ' : 'REPROVA '} ${g.nome.padEnd(15)} ${fmt(r.segundos).padStart(5)} s   gates/${g.nome}-r${rodada}.txt${nota}`);
   }
   const reprovados = escolhidos.filter((g) => resultados.get(g.nome).codigo !== 0);
@@ -516,7 +560,7 @@ async function principal() {
     for (const g of reprovados) {
       const r = resultados.get(g.nome);
       const txt = readFileSync(path.join(gatesDir, `${g.nome}-r${rodada}.txt`), 'utf8').trimEnd();
-      linhas.push('', `### ${g.nome} (saída ${r.codigo}, ${fmt(r.segundos)} s)`, txt || '(o gate não imprimiu nada)');
+      linhas.push('', `### ${g.nome} (saída ${r.codigo}, ${fmt(r.segundos)} s)`, txt || '(o gate não imprimiu nada)', consertoDoGate(g.nome, txt, r.codigo));
     }
   }
   linhas.push('', `Total: ${fmt(totalS)} s de relógio (soma dos gates: ${fmt(somaS)} s, ${escolhidos.length} gate(s), teto ${teto}).`);

@@ -80,6 +80,11 @@ class CacheERegistro(unittest.TestCase):
         self.assertRegex(F, r"(?i)rodada completa[^\n]*registra")
         self.assertIn("--sem-registrar", F)
 
+    def test_o_criar_md_explica_o_cache_e_a_linha_de_conserto(self):
+        self.assertIn("--explicar-cache", F)
+        self.assertIn("Conserto:", F)
+        self.assertRegex(F, r"(?i)movimento[^\n]*cache|cache[^\n]*movimento")
+
     def test_o_registro_a_mao_continua_documentado_para_os_gates_fora_do_comando(self):
         # identidade vem do screenshot-prova (registrada pelo provar.mjs); uso-ferramentas segue à mão
         self.assertIn("uso-ferramentas", F)

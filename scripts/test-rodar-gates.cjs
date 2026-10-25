@@ -687,6 +687,71 @@ teste('cache: o gate opcional de vídeo nunca entra no cache (lê uma pasta que 
   assert.equal(vezes(marcas, 'video'), 2);
 });
 
+// Por que o gate rodou de novo (pedido do coordenador: confirmar que o movimento pula quando HTML, CSS e JS não mudaram, e ver o motivo quando não pula)
+teste('cache: o relatório diz por que cada gate rodou de novo (a dist mudou) e quem veio do cache', async () => {
+  const { marcas, base, proj } = await cenarioCache();
+  const r1 = rodar(base);
+  assert.match(r1.saida, /movimento[^\n]*\(rodou: sem laudo PASSA guardado\)/, 'primeira rodada: não havia cache');
+  fs.writeFileSync(path.join(proj, 'dist', 'index.html'), '<html>x</html>', 'utf8');
+  const r2 = rodar(base);
+  assert.match(r2.saida, /PASSA\s+movimento[^\n]*\(rodou: a dist mudou/);
+  assert.match(r2.saida, /PASSA\s+sem-kicker[^\n]*\(cache: laudo da rodada 1/);
+  assert.equal(vezes(marcas, 'movimento'), 2);
+  assert.equal(vezes(marcas, 'sem-kicker'), 1);
+});
+
+teste('cache: o motivo nomeia o que mudou: o projeto, os scripts, os argumentos', async () => {
+  const { falsos, base, proj } = await cenarioCache();
+  rodar(base);
+  fs.writeFileSync(path.join(proj, 'PLANO.md'), 'Pixel pedido: nenhum\nmudou\n', 'utf8');
+  const a = rodar(base);
+  assert.match(a.saida, /PASSA\s+plano[^\n]*\(rodou: o projeto mudou/);
+  fs.appendFileSync(path.join(falsos, 'gate-ritmo.mjs'), '\n// outra versão\n');
+  const b = rodar(base);
+  assert.match(b.saida, /PASSA\s+ritmo[^\n]*\(rodou: os scripts da skill mudaram/);
+  const c = rodar([...base, '--produto-fisico']);
+  assert.match(c.saida, /PASSA\s+composicao[^\n]*\(rodou: os argumentos mudaram/);
+});
+
+teste('--explicar-cache: mostra, gate por gate, se acerta ou erra o cache e por quê, sem rodar gate nenhum', async () => {
+  const { marcas, base, proj } = await cenarioCache();
+  rodar(base);
+  fs.writeFileSync(path.join(proj, 'dist', 'index.html'), '<html>y</html>', 'utf8');
+  const antes = fs.readdirSync(path.join(proj, 'gates')).sort().join(',');
+  const r = rodar([...base, '--explicar-cache']);
+  assert.equal(r.codigo, 0, r.saida);
+  for (const n of SO_URL) assert.match(r.saida, new RegExp(`ERRA\\s+${n}\\s+a dist mudou`), `${n} devia errar por causa da dist`);
+  for (const n of SO_PROJETO) assert.match(r.saida, new RegExp(`ACERTA\\s+${n}\\s`), `${n} não lê a dist e devia acertar`);
+  assert.match(r.saida, /nada foi rodado/i);
+  for (const n of [...SO_URL, ...SO_PROJETO]) assert.equal(vezes(marcas, n), 1, `${n} rodou durante o --explicar-cache`);
+  assert.ok(!fs.existsSync(path.join(proj, 'gates', 'texto-r2.txt')), 'não pode gravar laudo de rodada');
+  assert.ok(!/^2 /m.test(fs.readFileSync(path.join(proj, 'gates', '_execucoes.txt'), 'utf8')), 'não pode entrar no histórico de rodadas');
+  assert.ok(fs.readdirSync(path.join(proj, 'gates')).sort().join(',').startsWith(antes.split(',')[0]));
+});
+
+teste('--explicar-cache: a conta bate com a rodada de verdade (quem acerta no resumo vem do cache, quem erra roda)', async () => {
+  const { marcas, base, proj } = await cenarioCache();
+  rodar(base);
+  fs.writeFileSync(path.join(proj, 'PLANO.md'), 'Pixel pedido: nenhum\notra\n', 'utf8');
+  const e = rodar([...base, '--explicar-cache']);
+  const acertam = [...e.saida.matchAll(/ACERTA\s+(\S+)/g)].map((m) => m[1]).sort();
+  const erram = [...e.saida.matchAll(/ERRA\s+(\S+)/g)].map((m) => m[1]).sort();
+  rodar(base);
+  for (const n of acertam) assert.equal(vezes(marcas, n), 1, `${n}: o resumo disse que acertava`);
+  for (const n of erram) assert.equal(vezes(marcas, n), 2, `${n}: o resumo disse que errava`);
+  assert.ok(acertam.length > 0 && erram.length > 0);
+});
+
+teste('--explicar-cache: --url de fora, vídeo e --sem-cache aparecem como FORA do cache, com o motivo', async () => {
+  const { base } = await cenarioCache();
+  const a = rodar([...base, '--url', 'http://127.0.0.1:1/', '--explicar-cache']);
+  assert.match(a.saida, /FORA\s+texto\s+.*--url/);
+  const b = rodar([...base, '--com', 'video', '--publico', 'pub', '--explicar-cache']);
+  assert.match(b.saida, /FORA\s+video\s+.*pasta pública/);
+  const c = rodar([...base, '--sem-cache', '--explicar-cache']);
+  assert.match(c.saida, /ERRA\s+texto\s+.*--sem-cache/);
+});
+
 // ---------------------------------------------------------------- 8. registro automático na wave (corte 5)
 const lerWave = (proj) => JSON.parse(fs.readFileSync(path.join(proj, '.wave-auditoria.json'), 'utf8'));
 
