@@ -38,6 +38,14 @@ Uso:
     node scripts/py.mjs wave.py --projeto <dir> rodada --criticos 0 --altos 4 --pendencias-do-usuario 2 --regressoes 0
     node scripts/py.mjs wave.py --projeto <dir> reabrir --motivo "<mudança grande que o dono pediu entre as rodadas>"
 
+Registro em lote (3.6, corte 5 da auditoria de velocidade; 15 chamadas à mão custaram 3,7 min de modelo):
+    node scripts/py.mjs wave.py --projeto <dir> gates-lote --arquivo gates/_wave-r3.json
+        o `rodar-gates.mjs` grava o exit REAL de cada gate de uma rodada completa numa chamada só.
+    node scripts/py.mjs wave.py --projeto <dir> registrar-lote --arquivo auditoria/resposta-rodada-1.json --origem subagente
+        registra as lentes direto da resposta do auditor (o schema do briefing: um bloco por lente, em lista,
+        em objeto `{"lentes": [...]}` ou soltos entre fences de markdown). Tudo ou nada: bloco ruim não grava nenhum.
+    As duas usam as MESMAS regras do `gate` e do `registrar`; o lote nunca aceita o que o registro um a um recusa.
+
 3.5.9 (N27): mudança GRANDE pedida pelo dono ENTRE as rodadas (mexeu em metade da página) reabre a rodada 1 com `reabrir`,
 uma vez por ciclo, registrada com o motivo. A rodada de conferência não é gasta com o que o dono pediu. Correção PEQUENA feita
 depois da rodada 2 não reabre nada: em sessão não interativa o ciclo fecha em NÃO ENTREGAR, lista a correção e pede a rodada extra
@@ -146,63 +154,66 @@ def salvar(projeto, dados):
     caminho(projeto).write_text(json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def cmd_registrar(args):
-    if args.nota is not None and (not math.isfinite(args.nota) or not 0 <= args.nota <= 10):
-        print("ERRO: nota precisa ser finita entre 0 e 10.", file=sys.stderr)
-        return 2
-    if args.lente not in LENTES:
-        print(f"ERRO: lente desconhecida '{args.lente}'. Validas: {', '.join(sorted(LENTES))}",
-              file=sys.stderr)
-        return 2
-    if args.lente == LENTE_REFERENCIAS and args.veredito == "nao_aplicavel":
-        print("ERRO: a comparação com as referências sempre se aplica. No CLONAR, a referência e a "
-              "página original; nos outros caminhos, os prints do passo b.", file=sys.stderr)
-        return 2
-    gosto = getattr(args, "gosto", None)
-    if args.lente == LENTE_REFERENCIAS:
+def _validar_lente(lente, nota, veredito, achados, gosto, eixos_txt, dur, cham):
+    """As regras de UMA lente, sem gravar nada. Devolve (mensagem de erro ou None, lista de eixos).
+    O `registrar` e o `registrar-lote` usam esta mesma conta: o lote nunca aceita o que o registro um a um recusa."""
+    if nota is not None and (not math.isfinite(nota) or not 0 <= nota <= 10):
+        return "nota precisa ser finita entre 0 e 10.", []
+    if lente not in LENTES:
+        return f"lente desconhecida '{lente}'. Validas: {', '.join(sorted(LENTES))}", []
+    if lente == LENTE_REFERENCIAS and veredito == "nao_aplicavel":
+        return ("a comparação com as referências sempre se aplica. No CLONAR, a referência e a "
+                "página original; nos outros caminhos, os prints do passo b."), []
+    if lente == LENTE_REFERENCIAS:
         # Auditoria da v5 (03/10/2026): 7,0 e "correta, mas vazia; o dono nao chamaria de foda".
         # A regua do dono depois da SobrAI e a pergunta "isso e bonito ou so esta correto?".
         if gosto not in GOSTOS:
-            print("ERRO: a comparação com as referências responde --gosto bonito|correto: a página "
-                  "é bonita no nível das referências, ou só está correta? Diga por que nos achados.",
-                  file=sys.stderr)
-            return 2
-        if gosto == "correto" and args.veredito == "aprovado":
-            print("ERRO: página só correta não aprova a comparação com as referências. Registre "
-                  "--veredito reprovado e corrija os eixos abaixo das referências na página (--eixos-abaixo).", file=sys.stderr)
-            return 2
-    eixos_txt = getattr(args, "eixos_abaixo", None)
+            return ("a comparação com as referências responde --gosto bonito|correto: a página "
+                    "é bonita no nível das referências, ou só está correta? Diga por que nos achados."), []
+        if gosto == "correto" and veredito == "aprovado":
+            return ("página só correta não aprova a comparação com as referências. Registre "
+                    "--veredito reprovado e corrija os eixos abaixo das referências na página (--eixos-abaixo)."), []
     eixos = [e.strip() for e in (eixos_txt or "").split(",") if e.strip()]
     if any(e not in EIXOS for e in eixos):
-        print(f"ERRO: --eixos-abaixo aceita {', '.join(EIXOS)} (separados por vírgula).", file=sys.stderr)
-        return 2
-    dur, cham = getattr(args, "duracao_min", None), getattr(args, "chamadas", None)
+        return f"--eixos-abaixo aceita {', '.join(EIXOS)} (separados por vírgula).", []
     if (dur is not None and (not math.isfinite(dur) or dur < 0)) or (cham is not None and cham < 0):
-        print("ERRO: --duracao-min e --chamadas não podem ser negativos.", file=sys.stderr)
-        return 2
-    if args.veredito != "nao_aplicavel" and (args.nota is None):
-        print("ERRO: lente que rodou precisa de --nota", file=sys.stderr)
-        return 2
-    if len((args.achados or "").strip()) < 25:
-        print("ERRO: --achados precisa dizer o que foi OLHADO e o que foi encontrado "
-              "(>= 25 caracteres). 'ok' não e auditoria.", file=sys.stderr)
-        return 2
-    d = carregar(args.projeto)
-    d["lentes"][args.lente] = {
+        return "--duracao-min e --chamadas não podem ser negativos.", []
+    if veredito != "nao_aplicavel" and nota is None:
+        return "lente que rodou precisa de --nota", []
+    if len((achados or "").strip()) < 25:
+        return ("--achados precisa dizer o que foi OLHADO e o que foi encontrado "
+                "(>= 25 caracteres). 'ok' não e auditoria."), []
+    return None, eixos
+
+
+def _gravar_lente(d, lente, nota, veredito, achados, origem, gosto, eixos, dur, cham):
+    d["lentes"][lente] = {
         "quando": datetime.datetime.now().isoformat(timespec="seconds"),
-        "veredito": args.veredito,
-        "nota": args.nota,
-        "achados": args.achados.strip(),
-        "origem": getattr(args, "origem", None) or "autoavaliacao",
+        "veredito": veredito,
+        "nota": nota,
+        "achados": achados.strip(),
+        "origem": origem or "autoavaliacao",
     }
     if gosto:
-        d["lentes"][args.lente]["gosto"] = gosto
+        d["lentes"][lente]["gosto"] = gosto
     if eixos:
-        d["lentes"][args.lente]["eixos_abaixo"] = eixos
+        d["lentes"][lente]["eixos_abaixo"] = eixos
     if dur is not None:
-        d["lentes"][args.lente]["duracao_min"] = dur
+        d["lentes"][lente]["duracao_min"] = dur
     if cham is not None:
-        d["lentes"][args.lente]["chamadas"] = cham
+        d["lentes"][lente]["chamadas"] = cham
+
+
+def cmd_registrar(args):
+    gosto = getattr(args, "gosto", None)
+    dur, cham = getattr(args, "duracao_min", None), getattr(args, "chamadas", None)
+    erro, eixos = _validar_lente(args.lente, args.nota, args.veredito, args.achados, gosto,
+                                 getattr(args, "eixos_abaixo", None), dur, cham)
+    if erro:
+        print(f"ERRO: {erro}", file=sys.stderr)
+        return 2
+    d = carregar(args.projeto)
+    _gravar_lente(d, args.lente, args.nota, args.veredito, args.achados, getattr(args, "origem", None), gosto, eixos, dur, cham)
     salvar(args.projeto, d)
     print(f"lente registrada: {args.lente} -> {args.veredito} [{d['lentes'][args.lente]['origem']}]"
           + (f" (nota {args.nota})" if args.nota is not None else ""))
@@ -250,6 +261,187 @@ def cmd_gate(args):
     salvar(args.projeto, d)
     marca = "verde" if args.exit_code == 0 else f"VERMELHO (exit {args.exit_code})"
     print(f"gate registrado: {args.nome} -> {marca}")
+    return 0
+
+
+def _ler_json_do_arquivo(caminho):
+    try:
+        return Path(caminho).read_text(encoding="utf-8-sig"), None
+    except OSError as e:
+        return None, f"não consegui ler {caminho}: {e.strerror or e}"
+
+
+def cmd_gates_lote(args):
+    """Grava vários gates de uma vez. Entrada: {"gates": [{"nome", "exit", "detalhe"}]}. Tudo ou nada."""
+    texto, erro = _ler_json_do_arquivo(args.arquivo)
+    if erro:
+        print(f"ERRO: {erro}", file=sys.stderr)
+        return 2
+    try:
+        doc = json.loads(texto)
+    except ValueError as e:
+        print(f"ERRO: {args.arquivo} não é JSON: {e}", file=sys.stderr)
+        return 2
+    itens = doc.get("gates") if isinstance(doc, dict) else doc
+    if not isinstance(itens, list) or not itens:
+        print('ERRO: o arquivo precisa trazer {"gates": [{"nome": ..., "exit": 0, "detalhe": ...}]} com pelo menos um gate.', file=sys.stderr)
+        return 2
+    problemas = []
+    for i, it in enumerate(itens, 1):
+        if not isinstance(it, dict) or it.get("nome") not in GATES:
+            problemas.append(f"item {i}: gate desconhecido '{it.get('nome') if isinstance(it, dict) else it}'. Validos: {', '.join(sorted(GATES))}")
+        elif type(it.get("exit")) is not int:
+            problemas.append(f"item {i} ({it['nome']}): \"exit\" precisa ser um número inteiro (o exit real do gate)")
+    if problemas:
+        for p_ in problemas:
+            print("ERRO: " + p_, file=sys.stderr)
+        print("Nada foi gravado.", file=sys.stderr)
+        return 2
+    d = carregar(args.projeto)
+    agora = datetime.datetime.now().isoformat(timespec="seconds")
+    for it in itens:
+        d["gates"][it["nome"]] = {"quando": agora, "exit": it["exit"], "detalhe": str(it.get("detalhe") or "").strip()}
+    salvar(args.projeto, d)
+    vermelhos = [it["nome"] for it in itens if it["exit"] != 0]
+    print(f"{len(itens)} gate(s) registrado(s) na wave: {len(itens) - len(vermelhos)} verde(s)"
+          + (f", {len(vermelhos)} VERMELHO(s): {', '.join(vermelhos)}" if vermelhos else ""))
+    return 0
+
+
+def _achatar_blocos(doc):
+    """Os blocos de lente (objetos com o campo `lente`) de um JSON: lista, objeto {"lentes": [...]} ou um bloco só."""
+    if isinstance(doc, list):
+        return [b for item in doc for b in _achatar_blocos(item)]
+    if isinstance(doc, dict):
+        if isinstance(doc.get("lentes"), list):
+            return _achatar_blocos(doc["lentes"])
+        if "lente" in doc:
+            return [doc]
+    return []
+
+
+def _blocos_do_texto(texto):
+    """Os blocos de lente do arquivo, na ordem. Aceita JSON puro ou a resposta do auditor: prosa com um bloco por lente entre fences."""
+    try:
+        return _achatar_blocos(json.loads(texto))
+    except ValueError:
+        pass
+    dec = json.JSONDecoder()
+    blocos, i = [], 0
+    while i < len(texto):
+        if texto[i] in "{[":
+            try:
+                obj, fim = dec.raw_decode(texto, i)
+                blocos.extend(_achatar_blocos(obj))
+                i = fim
+                continue
+            except ValueError:
+                pass
+        i += 1
+    return blocos
+
+
+def _achados_em_texto(achados, nota):
+    """O texto do registro a partir dos achados do auditor (lista de {item, severidade, evidencia, fix} ou um texto)."""
+    if isinstance(achados, str):
+        return achados.strip()
+    partes = []
+    for a in achados or []:
+        if isinstance(a, dict):
+            sev = str(a.get("severidade") or "").strip()
+            linha = (f"[{sev}] " if sev else "") + str(a.get("item") or "").strip()
+            if str(a.get("evidencia") or "").strip():
+                linha += ": " + str(a["evidencia"]).strip()
+            if str(a.get("fix") or "").strip():
+                linha += " (fix: " + str(a["fix"]).strip() + ")"
+            if linha.strip():
+                partes.append(linha.strip())
+        elif str(a).strip():
+            partes.append(str(a).strip())
+    if partes:
+        return "; ".join(partes)
+    return f"sem achados: o auditor devolveu a lente com a lista de achados vazia (nota {nota})"
+
+
+def _numero_ou_none(v):
+    return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+
+
+def _preparar_lente(b, dur, cham):
+    """Um bloco do auditor virado em registro de lente. Devolve (registro, None) ou (None, mensagem de erro)."""
+    lente = b.get("lente")
+    veredito = b.get("veredito")
+    if veredito in ("nao_verificado", "nao verificado", "não verificado"):
+        return None, ("voltou como NÃO VERIFICADA. Lente que ninguém olhou não vira registro: "
+                      "a rodada precisa olhar de novo, ou a lente fica sem registro")
+    if veredito not in ("aprovado", "reprovado", "nao_aplicavel"):
+        if not isinstance(b.get("aprovado"), bool):
+            return None, 'faltam "aprovado" (true/false) ou "veredito"'
+        veredito = "aprovado" if b["aprovado"] else "reprovado"
+    bruta = b.get("score", b.get("nota"))
+    nota = _numero_ou_none(bruta)
+    if bruta is not None and nota is None:
+        return None, "a nota (score) precisa ser número"
+    lista = b.get("achados") if isinstance(b.get("achados"), list) else []
+    achados = _achados_em_texto(b.get("achados"), bruta)
+    eixos = b.get("eixos_abaixo")
+    erro, eixos_lista = _validar_lente(lente, nota, veredito, achados, b.get("gosto"),
+                                       ",".join(eixos) if isinstance(eixos, list) else (eixos or ""), dur, cham)
+    if erro:
+        return None, erro
+    sevs = [str(a.get("severidade") or "").lower() for a in lista if isinstance(a, dict)]
+    return {"lente": lente, "nota": nota, "veredito": veredito, "achados": achados, "gosto": b.get("gosto"), "eixos": eixos_lista,
+            "criticos": sum(1 for x in sevs if x in ("critico", "crítico")), "altos": sum(1 for x in sevs if x == "alto"),
+            "sem_achados": achados.startswith("sem achados:") and not (isinstance(b.get("achados"), str) and b["achados"].strip())}, None
+
+
+def cmd_registrar_lote(args):
+    """Registra as lentes da resposta do auditor. Tudo ou nada: valida todos os blocos antes de gravar o primeiro."""
+    texto, erro = _ler_json_do_arquivo(args.arquivo)
+    if erro:
+        print(f"ERRO: {erro}", file=sys.stderr)
+        return 2
+    blocos = _blocos_do_texto(texto)
+    if not blocos:
+        print(f'ERRO: não achei nenhum bloco de lente (objeto JSON com o campo "lente") em {args.arquivo}.', file=sys.stderr)
+        return 2
+    try:
+        doc = json.loads(texto)
+    except ValueError:
+        doc = None
+    topo = doc if isinstance(doc, dict) else {}
+    dur = args.duracao_min if args.duracao_min is not None else _numero_ou_none(topo.get("duracao_min"))
+    cham = args.chamadas if args.chamadas is not None else (topo.get("chamadas") if type(topo.get("chamadas")) is int else None)
+    problemas, prontos, vistos = [], [], set()
+    for i, b in enumerate(blocos, 1):
+        rotulo = f"bloco {i} ({b.get('lente')})"
+        if b.get("lente") in vistos:
+            problemas.append(f"{rotulo}: a lente aparece mais de uma vez no mesmo lote")
+            continue
+        vistos.add(b.get("lente"))
+        pronto, erro_bloco = _preparar_lente(b, dur, cham)
+        if erro_bloco:
+            problemas.append(f"{rotulo}: {erro_bloco}")
+        else:
+            prontos.append(pronto)
+    if problemas:
+        for p_ in problemas:
+            print("ERRO: " + p_, file=sys.stderr)
+        print("Nada foi gravado.", file=sys.stderr)
+        return 2
+    d = carregar(args.projeto)
+    for r in prontos:
+        _gravar_lente(d, r["lente"], r["nota"], r["veredito"], r["achados"], args.origem, r["gosto"], r["eixos"], dur, cham)
+    salvar(args.projeto, d)
+    print(f"{len(prontos)} lente(s) registrada(s) [{args.origem}]: " + ", ".join(f"{r['lente']} {r['veredito']}" for r in prontos))
+    faltam = [l for l in LENTES if l not in d["lentes"]]
+    if faltam:
+        print(f"  Faltam {len(faltam)} lente(s) para fechar a rodada: {', '.join(faltam)}")
+    vazias = sum(1 for r in prontos if r["sem_achados"])
+    if vazias:
+        print(f"  {vazias} lente(s) sem achados: o registro diz isso com todas as letras.")
+    print(f"  Contados no JSON do auditor: {sum(r['criticos'] for r in prontos)} crítico(s) e {sum(r['altos'] for r in prontos)} alto(s). "
+          "CONFIRME cada um (refute o achado) antes de passar os números ao `wave.py rodada --criticos N --altos N`.")
     return 0
 
 
@@ -644,6 +836,17 @@ def main():
     g.add_argument("--exit", dest="exit_code", type=int, required=True)
     g.add_argument("--detalhe", default="")
     g.set_defaults(func=cmd_gate)
+
+    gl = sub.add_parser("gates-lote", help="registra vários gates de uma vez a partir de um JSON (o rodar-gates.mjs usa)")
+    gl.add_argument("--arquivo", required=True, help='JSON {"gates": [{"nome": ..., "exit": 0, "detalhe": ...}]}')
+    gl.set_defaults(func=cmd_gates_lote)
+
+    rl = sub.add_parser("registrar-lote", help="registra as lentes direto da resposta do auditor (JSON do schema do briefing)")
+    rl.add_argument("--arquivo", required=True, help="a resposta do auditor: lista, objeto {\"lentes\": [...]} ou blocos soltos entre fences")
+    rl.add_argument("--origem", choices=ORIGENS, required=True, help="quem auditou (sem padrão: o lote declara de quem é a nota)")
+    rl.add_argument("--duracao-min", dest="duracao_min", type=float, default=None, help="minutos do auditor (manda sobre o arquivo)")
+    rl.add_argument("--chamadas", type=int, default=None, help="chamadas de ferramenta do auditor (manda sobre o arquivo)")
+    rl.set_defaults(func=cmd_registrar_lote)
 
     c = sub.add_parser("checar", help="AUDITOR MASTER: o processo aconteceu inteiro?")
     c.set_defaults(func=cmd_checar)
