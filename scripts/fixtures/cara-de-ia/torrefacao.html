@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Torrefação de exemplo</title>
+<!-- Fixture tirada da página de teste da 3.5.8 (torrefação fictícia, a "mais própria" das três da auditoria de
+     25/10/2026). Mesmas medidas: 11 filetes de 1 px dentro das fichas dos sítios (dl de rótulo e valor), 1 filete no
+     aviso de caso fictício, cerca de 9.750 px de página em 1440, títulos sem enfeite, nenhum desenho decorativo (só o
+     "+" das perguntas e a seta dos botões, que são controle) e a foto do topo com as mãos de quem torra. Tem que PASSAR. -->
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#241712; color:#f4ead8; font:17px/1.6 Arial, sans-serif; }
+  section { min-height:1220px; padding:80px 6vw; }
+  h1, h2 { text-transform:uppercase; font:700 48px/1.05 "Arial Narrow", Arial, sans-serif; text-wrap:balance; margin:0 0 24px; max-width:640px; }
+  h3 { margin:0 0 12px; font-size:20px; }
+  p { max-width:560px; margin:0 0 16px; }
+  .claro { background:#f6efe3; color:#241712; }
+  .lado { display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start; }
+  .fichas { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:24px; }
+  .ficha { background:#fff; color:#241712; border-radius:12px; padding:20px; box-shadow:0 2px 0 #0002; }
+  dl { margin:0; }
+  dl div { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid #2417122e; }
+  dt, dd { margin:0; }
+  .botao { display:inline-flex; gap:8px; align-items:center; background:#f2b134; color:#241712; padding:16px 26px; border-radius:10px; text-decoration:none; font-weight:700; }
+  .ficticio { border-top:1px solid #f4ead833; padding-top:16px; font-size:14px; }
+  summary { display:flex; justify-content:space-between; align-items:center; padding:14px 0; cursor:pointer; }
+  .centro { text-align:center; }
+  .centro h2 { margin-left:auto; margin-right:auto; }
+  @media (max-width: 760px) { .lado, .fichas { grid-template-columns:1fr; } section { padding:56px 20px; } h1, h2 { font-size:36px; } }
+</style>
+</head>
+<body data-viuva-ok="a viúva não é o assunto desta fixture: ela prova filete, enfeite, motivo e público">
+<section id="topo" class="lado">
+  <div>
+    <h1>Café torrado na semana em que sai para a sua casa</h1>
+    <p>Café especial de quatro sítios, com o nome do produtor no rótulo. Por assinatura, a cada 15 ou 30 dias.</p>
+    <a class="botao" href="#plano">Ver de onde vem <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M10 4v12M5 11l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none"/></svg></a>
+  </div>
+  <img src="/pixel.png" width="600" height="700" alt="Grãos de café recém-torrados caindo do torrador na bandeja de resfriamento, com as mãos da pessoa que torra ao lado" style="width:100%;max-width:600px;height:700px;object-fit:cover;background:#5a3b2a">
+</section>
+
+<section class="claro centro">
+  <h2>No café de mercado você acha a validade</h2>
+  <div class="lado" style="text-align:left">
+    <p>Você não sabe de que sítio veio nem quem plantou.</p>
+    <p>Na torrefação, a data da torra e o nome do produtor vêm no rótulo.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Quatro sítios, o nome de quem plantou no rótulo</h2>
+  <div class="fichas">
+    <article class="ficha"><h3>Sítio Boa Vista</h3><dl><div><dt>Onde</dt><dd>Serra</dd></div><div><dt>Grão</dt><dd>Bourbon</dd></div><div><dt>Notas</dt><dd>Mel</dd></div><div><dt>Pontos</dt><dd>86</dd></div></dl></article>
+    <article class="ficha"><h3>Sítio Pedra Redonda</h3><dl><div><dt>Onde</dt><dd>Cristina</dd></div><div><dt>Grão</dt><dd>Catuaí</dd></div><div><dt>Notas</dt><dd>Caramelo</dd></div><div><dt>Pontos</dt><dd>85</dd></div></dl></article>
+    <article class="ficha"><h3>Sítio Três Irmãos</h3><dl><div><dt>Onde</dt><dd>Poço Fundo</dd></div><div><dt>Grão</dt><dd>Mundo Novo</dd></div><div><dt>Notas</dt><dd>Chocolate</dd></div></dl></article>
+  </div>
+</section>
+
+<section class="lado">
+  <h2>A semana do seu café</h2>
+  <p>Do pedido à entrega, dia por dia. A data da torra vai escrita no pacote.</p>
+</section>
+
+<section class="claro">
+  <h2>Quem prova cada lote é a mestra de torra</h2>
+  <p>Oito anos atrás do balcão de cafeterias antes de abrir a torrefação.</p>
+  <a class="botao" href="#plano">Montar a minha assinatura <svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="2" fill="none"/></svg></a>
+</section>
+
+<section id="plano" class="centro">
+  <h2>Monte o seu plano de café</h2>
+  <p style="margin:0 auto 24px">O preço é o mesmo a cada 15 ou a cada 30 dias. Sem fidelidade.</p>
+  <a class="botao" href="#plano">Assinar pelo WhatsApp <svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="2" fill="none"/></svg></a>
+</section>
+
+<section class="claro">
+  <h2>Dúvidas antes de assinar</h2>
+  <div class="lado">
+    <div>
+      <details><summary>Posso pausar ou cancelar? <svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M13 6v14M6 13h14" stroke="currentColor" stroke-width="2"/></svg></summary><p>Pode, pelo WhatsApp.</p></details>
+      <details><summary>Qual moagem eu escolho? <svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M13 6v14M6 13h14" stroke="currentColor" stroke-width="2"/></svg></summary><p>A do seu método.</p></details>
+      <details><summary>Quanto custa o frete? <svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M13 6v14M6 13h14" stroke="currentColor" stroke-width="2"/></svg></summary><p>Grátis na região.</p></details>
+      <details><summary>Quando o café chega? <svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M13 6v14M6 13h14" stroke="currentColor" stroke-width="2"/></svg></summary><p>Em até 7 dias.</p></details>
+    </div>
+    <div>
+      <details><summary>E se eu não gostar? <svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M13 6v14M6 13h14" stroke="currentColor" stroke-width="2"/></svg></summary><p>A torrefação troca.</p></details>
+      <details><summary>Dá para receber do mesmo sítio? <svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M13 6v14M6 13h14" stroke="currentColor" stroke-width="2"/></svg></summary><p>Dá.</p></details>
+      <details><summary>O que vem escrito no rótulo? <svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M13 6v14M6 13h14" stroke="currentColor" stroke-width="2"/></svg></summary><p>Sítio, produtor e data.</p></details>
+      <details><summary>Posso retirar na torrefação? <svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M13 6v14M6 13h14" stroke="currentColor" stroke-width="2"/></svg></summary><p>Pode.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="lado">
+  <div>
+    <h2>Escolha o tamanho, a mestra cuida da torra</h2>
+    <a class="botao" href="#plano">Assinar pelo WhatsApp <svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="2" fill="none"/></svg></a>
+  </div>
+  <p class="ficticio">Caso fictício para demonstração da skill.</p>
+</section>
+</body>
+</html>

@@ -34,8 +34,18 @@
  *     .acento / [data-acento] de um data-desenho com contraste menor que 3:1 contra o que está
  *     embaixo dele. O amarelo que dava sentido aos desenhos estava a 2,07:1 no palco.
  *
- * Exceções declaradas: `data-composicao-ok="motivo"` na seção, `data-icone-repetido-ok` no SVG e
+ *  7. (auditoria de 25/10/2026, A7) MOTIVO REPETIDO: o mesmo motivo em mais de 6 desenhos na página, de qualquer
+ *     tamanho, reprova. O motivo é a primeira oração do data-desenho ("sinal de mais do logo, gigante" conta como
+ *     "sinal de mais do logo"); desenho sem data-desenho conta pelo traçado. A página de produção que o auditor chamou de
+ *     "bonito" tinha 16 "sinal de mais do logo" (15 marcadores e 1 gigante). Ficam fora: controle (botão, link, pergunta,
+ *     rótulo), o momento assinatura (`data-assinatura`) e o marcador de lista tipográfico: SVG de menos de 24 px, dentro
+ *     de li e SEM data-desenho (a página que o dono aprovou tem 27 marcas de visto assim). Marcador com data-desenho é
+ *     desenho declarado e conta.
+ *
+ * Exceções declaradas: `data-composicao-ok="motivo"` na seção, `data-icone-repetido-ok="motivo"` no SVG e
  * `data-assinatura` no SVG do momento assinatura (que repete por regra do plano).
+ * (25/10/2026, A7) `data-icone-repetido-ok` exige motivo escrito, de 3 palavras ou mais: "1", "sim", "ok" ou vazio
+ * reprova. E ele só libera o "mesmo traçado em dois lugares"; o limite de 6 do mesmo motivo vale com ou sem ele.
  * `--produto-fisico` (3.5.8): AVISA (não reprova) quando o momento assinatura é só SVG, sem foto na seção.
  * O que está invisível (opacity 0, visibility hidden, display none) não entra na medida de contraste.
  *
@@ -46,6 +56,7 @@ import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { exigirServidor } from './servidor-no-ar.mjs';
+import { PALAVRAS_PESSOA, publicoDePessoas, motivoValido, motivoDoDesenho, contarMotivos, MOTIVO_REPETIDO_MAXIMO } from './cara-de-ia.mjs';
 
 const require = createRequire(import.meta.url);
 function carregarPlaywright() {
@@ -73,7 +84,8 @@ if (!PUBLICO && PROJETO) {
     try { PUBLICO = (fs.readFileSync(path.join(PROJETO, 'evidencias', 'briefing.md'), 'utf8').match(/Para quem:\s*(.+)/i) || [])[1] || null; } catch { PUBLICO = null; }
   }
 }
-const PESSOAS = /mulher|homem|homens|pessoa|m[aã]es|pais\b|crian[cç]a|alun[oa]|paciente|cliente|idos[oa]|jovens|adult|fam[ií]lia|gestante|atleta|estudante|profission|donos?\b|donas?\b|empreendedor|moradores|p[uú]blico feminino|p[uú]blico masculino/i;
+// O público de pessoas e as palavras de gente na foto (profissões no plural e no feminino, auditoria de 25/10/2026, A8)
+// vivem em cara-de-ia.mjs, com teste próprio (cara-de-ia.test.mjs).
 const MAXIMO_SEGUIDAS = 2;
 // Metáforas de biblioteca de ícone. O problema não é o ícone, é o genérico: desenhe o assunto.
 const GENERICOS = String.raw`bal[aã]o|chat|calend[aá]rio|agenda|check|sinal de visto|boneco|palito|estrela|cora[cç][aã]o|l[aâ]mpada|foguete|alvo|engrenagem|cadeado|escudo|trof[eé]u|medalha|sino|lupa|envelope|telefone|rel[oó]gio|raio|polegar|joinha|aperto de m[aã]o|gr[aá]fico subindo`;
@@ -243,6 +255,21 @@ const r = await page.evaluate((genericos) => {
   }
   const repetidos = [...tracados.values()].filter((l) => l.length > 1).map((l) => `${l.length}x: ${l.map((x) => `"${x}"`).join(', ')}`);
 
+  // 7. Motivo repetido (A7): todo SVG visível fora de controle, de qualquer tamanho. A decisão fica em cara-de-ia.mjs.
+  const motivos = [];
+  for (const v of document.querySelectorAll('svg')) {
+    if (!visivel(v) || v.closest('a, button, summary, label, [data-icone-ok]')) continue;
+    const c = v.getBoundingClientRect();
+    const d = (v.getAttribute('data-desenho') || (v.closest('[data-desenho]') || { getAttribute: () => '' }).getAttribute('data-desenho') || '').trim();
+    const tracado = [...v.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse')]
+      .map((n) => n.tagName + ':' + ['d', 'cx', 'cy', 'r', 'x', 'y', 'width', 'height', 'points', 'x1', 'y1', 'x2', 'y2'].map((a) => n.getAttribute(a) || '').join(',')).join('|');
+    motivos.push({
+      d, tracado, largura: Math.round(Math.max(c.width, c.height)), emLista: !!v.closest('li'),
+      assinatura: v.hasAttribute('data-assinatura'),
+      repetidoOk: v.hasAttribute('data-icone-repetido-ok') ? v.getAttribute('data-icone-repetido-ok') : null,
+    });
+  }
+
   // 3. Desenho que lê como wireframe. 6. Destaque abaixo de 3:1 contra o que está embaixo.
   const wireframes = [], fracos = [];
   let menorContraste = null;
@@ -303,12 +330,12 @@ const r = await page.evaluate((genericos) => {
       || [secao, ...secao.querySelectorAll('*')].some((e) => /url\(/.test(getComputedStyle(e).backgroundImage));
     if (!temFoto) soDesenho.push(rotulo(secao.querySelector('h1, h2') || secao));
   }
-  return { soDesenho: [...new Set(soDesenho)], assinaturas, semDesenho, genericosAchados, repetidos, nSvgs: svgs.length, wireframes, fracos: [...new Set(fracos)], menorContraste };
+  return { motivos, soDesenho: [...new Set(soDesenho)], assinaturas, semDesenho, genericosAchados, repetidos, nSvgs: svgs.length, wireframes, fracos: [...new Set(fracos)], menorContraste };
 }, GENERICOS);
 
 /** Linha do tempo e pessoa na primeira tela: medidas que valem em 1440 e em 390. */
 async function medirTela(pg, publico) {
-  return pg.evaluate(({ publico, PESSOAS_SRC }) => {
+  return pg.evaluate(({ publico, deGente, PALAVRAS_SRC, PALAVRAS_FLAGS }) => {
     const H = window.__H;
     const out = { linhas: [], pessoa: null, maiorPassagem: 0 };
     // 4. Linha do tempo: o fio de um ol (::before ou ::after) contra o marco do último passo.
@@ -344,8 +371,7 @@ async function medirTela(pg, publico) {
     }
     // 5. Pessoa na primeira tela (scrollY 0).
     if (publico) {
-      const pessoas = new RegExp(PESSOAS_SRC, 'i');
-      const PALAVRAS = /mulher|homem|pessoa|alun[oa]|fisioterapeuta|instrutor|instrutora|professor|professora|crian[cç]a|idos[oa]|paciente|senhora|senhor|menin[oa]|m[eé]dic[oa]|atendente|dona|dono/i;
+      const PALAVRAS = new RegExp(PALAVRAS_SRC, PALAVRAS_FLAGS);
       const vistoNaTela = (el) => { const c = el.getBoundingClientRect(); return Math.max(0, Math.min(c.bottom, window.innerHeight) - Math.max(c.top, 0)); };
       const candidatos = [];
       for (const img of document.querySelectorAll('img')) {
@@ -361,10 +387,10 @@ async function medirTela(pg, publico) {
         candidatos.push({ el: svg, nome: `desenho "${(dono.getAttribute('data-desenho') || 'pessoa').slice(0, 50)}"` });
       }
       const naTela = candidatos.map((c) => ({ ...c, px: Math.round(vistoNaTela(c.el)) })).filter((c) => c.px >= 100).sort((a, b) => b.px - a.px);
-      out.pessoa = { publicoDePessoas: pessoas.test(publico), naTela: naTela.slice(0, 2).map((c) => `${c.nome} (${c.px} px à vista)`), total: candidatos.length };
+      out.pessoa = { publicoDePessoas: deGente, naTela: naTela.slice(0, 2).map((c) => `${c.nome} (${c.px} px à vista)`), total: candidatos.length };
     }
     return out;
-  }, { publico, PESSOAS_SRC: PESSOAS.source });
+  }, { publico, deGente: publicoDePessoas(publico), PALAVRAS_SRC: PALAVRAS_PESSOA.source, PALAVRAS_FLAGS: PALAVRAS_PESSOA.flags });
 }
 const telasMedidas = [];
 await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
@@ -401,6 +427,20 @@ for (let i = 1; i <= r.assinaturas.length; i++) {
 r.semDesenho.forEach((s) => falhas.push(`desenho sem data-desenho (declare o que ele desenha, ligado ao conteúdo): ${s}`));
 r.genericosAchados.forEach((s) => falhas.push(`ícone genérico de biblioteca: ${s}; desenhe o assunto da seção`));
 r.repetidos.forEach((s) => falhas.push(`desenho repetido com o mesmo traçado ${s}`));
+// A7 (25/10/2026): a exceção precisa dizer por quê.
+for (const m of r.motivos.filter((x) => x.repetidoOk !== null && !motivoValido(x.repetidoOk))) {
+  falhas.push(`data-icone-repetido-ok sem motivo ("${m.repetidoOk}") em "${m.d || 'desenho sem data-desenho'}": escreva o porquê em 3 palavras ou mais (data-icone-repetido-ok="a mesma tecla marca os três passos"); "1", "sim" e vazio não valem`);
+}
+// A7 (25/10/2026): o mesmo motivo mais de 6 vezes é papel de parede, com ou sem exceção.
+const chaveDoMotivo = (m) => {
+  if (m.assinatura) return null;
+  if (m.d) return motivoDoDesenho(m.d);
+  if (m.largura < 24 && m.emLista) return null;   // marcador de lista tipográfico, sem desenho declarado
+  return m.tracado ? `traçado sem data-desenho de ${m.largura} px` : null;
+};
+for (const g of contarMotivos(r.motivos.map((m) => ({ chave: chaveDoMotivo(m), nome: m.d })))) {
+  falhas.push(`motivo "${g.chave}" repetido ${g.n} vezes na página (máximo ${MOTIVO_REPETIDO_MAXIMO}, contando todo tamanho, marcador de lista declarado e enfeite gigante): o mesmo glifo em toda parte é cara de template; troque o marcador por texto ou por desenhos diferentes ligados a cada item`);
+}
 r.wireframes.forEach((x) => falhas.push(`desenho ${x}: ninguém do público lê um retângulo; desenhe a cena (pessoa, aparelho com volume, gesto)`));
 r.fracos.forEach((x) => falhas.push(x));
 for (const [tela, m] of telasMedidas) {
@@ -408,6 +448,12 @@ for (const [tela, m] of telasMedidas) {
   if (m.pessoa && m.pessoa.publicoDePessoas && !m.pessoa.naTela.length) {
     falhas.push(`${tela}: nenhuma figura humana na primeira tela para um público de pessoas ("${PUBLICO}"): foto real com autorização ou ilustração própria com data-figura="pessoa" (${m.pessoa.total} figura(s) na página inteira)`);
   }
+}
+{
+  const conta = new Map();
+  for (const m of r.motivos) { const k = chaveDoMotivo(m); if (k) conta.set(k, (conta.get(k) || 0) + 1); }
+  const [k, n] = [...conta.entries()].sort((x, y) => y[1] - x[1])[0] || ['nenhum', 0];
+  console.log(`Motivo mais repetido: "${k}" ${n} vez(es) (máximo ${MOTIVO_REPETIDO_MAXIMO}); ${r.motivos.length} desenho(s) fora de controle, de todo tamanho`);
 }
 console.log(`Desenhos SVG medidos: ${r.nSvgs}; menor contraste de traço fino ou destaque: ${r.menorContraste === null ? 'nenhum medido' : r.menorContraste.toFixed(2) + ':1'}`);
 if (PRODUTO_FISICO && r.soDesenho.length) {

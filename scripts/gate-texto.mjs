@@ -21,7 +21,15 @@
  *     escreve assim, por exemplo). Fora da regra (3.5.10): item cuja primeira palavra é um e-mail
  *     ou um endereço de site (oi@torraclara.com.br, www.site.com.br, https://wa.me/...).
  *  3. mais de uma palavra ou trecho em itálico com cor diferente do texto em volta, na página.
- * Avisa (não reprova): 10 ou mais filetes de 1 px (uma borda só), sinal do "jornal de filetes".
+ *  4. (auditoria de 25/10/2026, A6) "JORNAL DE FILETES": em 1440x900, 10 ou mais filetes de 1 px de ENFEITE e mais
+ *     de 1,2 por tela de 900 px. Filete dentro de dl ou table é linha de tabela de rótulo e valor e não conta.
+ *     Calibrado em páginas reais (tabela em cara-de-ia.mjs): a de produção que o auditor chamou de "bonito" tem 1,79
+ *     por tela e o "jornal de filetes" original 1,83 (reprovam); a aprovada pelo dono tem 0,71 e a torrefação 0,09
+ *     (passam). A contagem crua não serve: a aprovada tem 32 filetes, 20 deles de tabela.
+ *  5. (auditoria de 25/10/2026) O MESMO ENFEITE EMBAIXO DE QUASE TODO TÍTULO: o mesmo traço, sublinhado, borda,
+ *     glifo ou barrinha irmã em mais de 3 h2 (medido em 1440x900). A página de produção tinha o mesmo traço de 56x3
+ *     embaixo de 9 dos 10 h2. Enfeites diferentes não se somam.
+ * Avisa (não reprova): 10 ou mais filetes de 1 px no total, contando os de tabela.
  *
  * Uso: node scripts/gate-texto.mjs --url <url>
  */
@@ -29,6 +37,7 @@ import { createRequire } from 'node:module';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
 import { exigirServidor } from './servidor-no-ar.mjs';
+import { julgarFiletes, julgarEnfeites, FILETES_POR_TELA_MAXIMO, TITULOS_COM_O_MESMO_ENFEITE_MAXIMO } from './cara-de-ia.mjs';
 
 const require = createRequire(import.meta.url);
 function carregarPlaywright() {
@@ -61,6 +70,7 @@ await exigirServidor(URL_ALVO);   // servidor caído: uma mensagem clara (saída
 const navegador = await chromium.launch();
 const falhas = [];
 const avisos = new Set();
+const medidas = [];
 console.log('\nGATE DE TEXTO NA TELA  ' + URL_ALVO);
 console.log('='.repeat(80));
 
@@ -73,7 +83,7 @@ for (const [nome, w, h, mob] of TELAS) {
   await page.waitForTimeout(400);
 
   const r = await page.evaluate(() => {
-    const out = { viuvas: [], minusculas: [], italicos: [], filetes: 0 };
+    const out = { viuvas: [], minusculas: [], italicos: [], filetes: 0, filetesTabela: 0, altura: document.documentElement.scrollHeight, enfeites: [] };
     const visivel = (el) => {
       const cs = getComputedStyle(el);
       if (cs.display === 'none' || cs.visibility === 'hidden') return false;
@@ -181,7 +191,32 @@ for (const [nome, w, h, mob] of TELAS) {
       if (!visivel(el)) continue;
       const cs = getComputedStyle(el);
       const lados = ['Top', 'Right', 'Bottom', 'Left'].filter((l) => cs['border' + l + 'Style'] !== 'none' && parseFloat(cs['border' + l + 'Width']) > 0 && parseFloat(cs['border' + l + 'Width']) <= 1.5);
-      if (lados.length >= 1 && lados.length <= 2) out.filetes++;
+      if (lados.length >= 1 && lados.length <= 2) { out.filetes++; if (el.closest('dl, table')) out.filetesTabela++; }
+    }
+
+    // 5. enfeite de título: o que se desenha junto de cada h2 visível ('' quando nada).
+    const transparente = (c) => !c || c === 'transparent' || c === 'rgba(0, 0, 0, 0)';
+    const px = (v) => Math.round(parseFloat(v) || 0);
+    for (const h of document.querySelectorAll('h2')) {
+      if (!visivel(h)) continue;
+      const partes = [];
+      for (const ps of ['::before', '::after']) {
+        const s = getComputedStyle(h, ps);
+        if (!s.content || s.content === 'none' || s.content === 'normal' || s.display === 'none') continue;
+        const texto = s.content.replace(/^["']|["']$/g, '').trim();
+        const desenhado = px(s.width) > 0 && px(s.height) > 0 && (!transparente(s.backgroundColor) || s.backgroundImage !== 'none' || px(s.borderTopWidth) > 0 || px(s.borderBottomWidth) > 0);
+        if (texto) partes.push(`glifo ${ps} "${texto.slice(0, 12)}"`);
+        else if (desenhado) partes.push(`traço ${ps} de ${px(s.width)}x${px(s.height)} px ${transparente(s.backgroundColor) ? s.borderBottomColor : s.backgroundColor}`);
+      }
+      const cs = getComputedStyle(h);
+      if (cs.borderBottomStyle !== 'none' && parseFloat(cs.borderBottomWidth) > 0) partes.push(`borda embaixo de ${cs.borderBottomWidth} ${cs.borderBottomColor}`);
+      if ((cs.textDecorationLine || '').includes('underline')) partes.push(`sublinhado ${cs.textDecorationColor}`);
+      for (const [irmao, lado] of [[h.nextElementSibling, 'depois'], [h.previousElementSibling, 'antes']]) {
+        if (!irmao || !visivel(irmao) || (irmao.innerText || '').trim() || irmao.querySelector('img, svg, video, canvas')) continue;
+        const c = irmao.getBoundingClientRect();
+        if (c.height <= 8 && c.width <= 240) partes.push(`traço logo ${lado} do título, ${Math.round(c.width)}x${Math.round(c.height)} px ${getComputedStyle(irmao).backgroundColor}`);
+      }
+      out.enfeites.push(partes.join(' + '));
     }
     return out;
   });
@@ -191,6 +226,17 @@ for (const [nome, w, h, mob] of TELAS) {
     .concat(r.minusculas.map((v) => `começa com minúscula: ${v}`))
     .concat(r.italicos.length > 1 ? [`${r.italicos.length} trechos em itálico colorido (máximo 1): ${r.italicos.slice(0, 3).join(', ')}`] : []);
   if (r.filetes >= 10) avisos.add(`${r.filetes} filetes de 1 px (${onde}): sinal do "jornal de filetes", conferir no print`);
+  // A6 e enfeite de título: medidos no desktop comum (1440x900), onde o "jornal" se lê e a tela tem 900 px.
+  if (nome === 'desktop comum') {
+    const enfeite = r.filetes - r.filetesTabela;
+    const j = julgarFiletes({ enfeite, tabela: r.filetesTabela, alturaPagina: r.altura, alturaTela: h });
+    const virgula = (x) => x.toFixed(2).replace('.', ',');
+    medidas.push(`filetes de enfeite: ${enfeite} em ${virgula(j.telas)} telas de 900 px (${virgula(j.porTela)} por tela; máximo ${virgula(FILETES_POR_TELA_MAXIMO)}); de tabela (dl, table), fora da conta: ${r.filetesTabela}`);
+    if (j.reprova) lista.push(`${enfeite} filetes de 1 px de enfeite em ${virgula(j.telas)} telas de 900 px, ${virgula(j.porTela)} por tela (máximo ${virgula(FILETES_POR_TELA_MAXIMO)}): é o "jornal de filetes"; separe por cor de superfície e espaço, não por fio (os ${r.filetesTabela} de tabela não contam)`);
+    const e = julgarEnfeites(r.enfeites);
+    medidas.push(`enfeite de título: ${e.pior ? `o mais repetido em ${e.pior.n} de ${e.pior.total} h2 (${e.pior.assinatura})` : 'nenhum h2 com enfeite'}; máximo ${TITULOS_COM_O_MESMO_ENFEITE_MAXIMO}`);
+    if (e.reprova) lista.push(`o mesmo enfeite em ${e.pior.n} de ${e.pior.total} títulos h2 (${e.pior.assinatura}; máximo ${TITULOS_COM_O_MESMO_ENFEITE_MAXIMO}): o traço embaixo de todo título é cara de template; a hierarquia vem do tamanho, do peso e do espaço`);
+  }
   console.log(`${onde.padEnd(32)} ${lista.length ? 'FALHA (' + lista.length + ')' : 'ok'}`);
   for (const l of lista) falhas.push(`${onde}: ${l}`);
   await ctx.close();
@@ -198,12 +244,14 @@ for (const [nome, w, h, mob] of TELAS) {
 await navegador.close();
 
 console.log('='.repeat(80));
+medidas.forEach((m) => console.log('  medido em 1440x900: ' + m));
 avisos.forEach((a) => console.log('  aviso: ' + a));
 if (falhas.length) {
   falhas.forEach((f) => console.log('  FALHA: ' + f));
   console.log(`\n  REPROVA: ${falhas.length} problema(s) de texto na tela.`);
   console.log('  Viúva: text-wrap: balance no título ou ajuste da copy. Minúscula: primeira letra maiúscula');
-  console.log('  em todo item. Itálico colorido: no máximo um trecho na página.\n');
+  console.log('  em todo item. Itálico colorido: no máximo um trecho na página. Filete: separar por cor e espaço.');
+  console.log('  Enfeite de título: tirar o traço repetido; a hierarquia vem de tamanho, peso e espaço.\n');
   process.exit(1);
 }
-console.log(`  PASSA: ${TELAS.length} telas (320 a 1440), sem viúva em título nem subtítulo, sem item em minúscula, itálico contido.\n`);
+console.log(`  PASSA: ${TELAS.length} telas (320 a 1440), sem viúva em título nem subtítulo, sem item em minúscula, itálico contido, filetes e enfeite de título dentro do limite.\n`);
