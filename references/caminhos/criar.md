@@ -401,7 +401,7 @@ que reprovou e adota o veredito isolado (o do modo em série), avisando no relat
 **Cache por conteúdo.** Gate que PASSOU e cujo insumo não mudou (hash do conteúdo da `dist/`, do projeto, dos argumentos, dos scripts da skill e do
 ambiente) devolve o laudo de então sem rodar de novo, e o relatório diz "cache" e quanto tempo poupou. Só o que passou entra no cache (reprovação nunca
 entra e roda de novo na rodada seguinte); página servida por você (`--url`) não entra. Corrigiu só evidência, ou repetiu a rodada sem mudar a página:
-os gates de tela voltam do cache e só rodam os que leem o que você mexeu. `--sem-cache` roda tudo de novo (use depois de atualizar o Playwright ou o Chromium).
+os gates de tela voltam do cache e só rodam os que leem o que você mexeu. `--sem-cache` roda tudo de novo (use depois de atualizar o Python, o Pillow ou o Chromium, ou quando a página lê algo de fora, como fonte ou imagem de um site).
 Negócio de produto físico: `--produto-fisico`. Gates opcionais, que dependem de passos anteriores:
 `--com animacao` (depois do `anim.mjs` e da prancha), `--com video --publico <dir>`, `--com sobreposicao --fixo "<sel>" --contra "<sel>"`.
 
