@@ -583,7 +583,7 @@ def _ler_triviais(brutos):
         if gate not in GATES:
             return None, f"--regressao-trivial '{bruto}': gate desconhecido '{gate}'. Validos: {', '.join(sorted(GATES))}."
         if grav not in GRAVIDADES_QUE_FECHAM + GRAVIDADES_TRIVIAIS:
-            return None, f"--regressao-trivial '{bruto}': gravidade '{grav}' desconhecida. Use medio ou baixo (critico e alto não são triviais)."
+            return None, f"--regressao-trivial '{bruto}': gravidade '{grav}' desconhecida. Use médio ou baixo (crítico e alto não são triviais)."
         lidos.append((gate, grav))
     return lidos, None
 
