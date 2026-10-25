@@ -19,15 +19,17 @@ const GATE = path.join(__dirname, 'gate-movimento.mjs');
 const REDE = '<script>(function(d){d.classList.add("js");setTimeout(function(){if(!d.hasAttribute("data-js-ok"))d.classList.remove("js")},5000)})(document.documentElement)</script>';
 const OK = 'document.documentElement.setAttribute("data-js-ok","");';
 const TEXTO = '<section><h1>Controle</h1><p>Texto normal da página de controle.</p></section>';
-const secoes = (comRede) => '<style>.js .revela{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}.js .revela.visivel{opacity:1;transform:none}@media (prefers-reduced-motion: reduce){.js .revela{transition:none}}.alta{min-height:1000px}</style>'
+const secoes = (comRede, extra = '') => '<style>.js .revela{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}.js .revela.visivel{opacity:1;transform:none}@media (prefers-reduced-motion: reduce){.js .revela{transition:none}}.alta{min-height:1000px}</style>'
   + (comRede ? REDE : '<script>document.documentElement.classList.add("js")</script>') + TEXTO
   + [1, 2, 3].map((i) => `<section class="alta"><h2 class="revela">Seção ${i}</h2><p class="revela">Texto da seção ${i} que entra ao rolar a página.</p></section>`).join('')
   + '<script>' + OK + 'var els=document.querySelectorAll(".revela");var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("visivel");io.unobserve(e.target)}})});els.forEach(function(e){io.observe(e)});'
-  + 'function jaPassou(){els.forEach(function(e){if(!e.classList.contains("visivel")&&e.getBoundingClientRect().bottom<=0){e.style.transition="none";e.classList.add("visivel");io.unobserve(e)}})}addEventListener("scroll",function(){requestAnimationFrame(jaPassou)},{passive:true});</script>';
+  + 'function jaPassou(){els.forEach(function(e){if(!e.classList.contains("visivel")&&e.getBoundingClientRect().bottom<=0){e.style.transition="none";e.classList.add("visivel");io.unobserve(e)}})}addEventListener("scroll",function(){requestAnimationFrame(jaPassou)},{passive:true});' + extra + '</script>';
 const ENTRADA = '<style>@keyframes sobe{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}.entra{animation:sobe 1.4s ease both}html{scroll-behavior:smooth}</style><section><h1 class="entra">Título que sobe</h1></section>';
 
 const PAGINAS = {
   '/ok': secoes(true),
+  // revela tudo por temporizador aos 7 s com a página parada no topo (o defeito da v4, com um prazo maior que o de 3 s)
+  '/timer-7s': secoes(true, 'setTimeout(function(){els.forEach(function(e){e.classList.add("visivel")})},7000);'),
   // reprova em 3 famílias: sem a rede de segurança (provas de script), rolagem suave com movimento reduzido e animação em curso com movimento reduzido
   '/ruim': ENTRADA + secoes(false),
 };
@@ -73,6 +75,14 @@ servidor.listen(0, '127.0.0.1', async () => {
     checa('página ruim: o gate achou as 3 famílias de defeito (script, rolagem suave, animação com movimento reduzido)',
       /script bloqueado: [1-9]/.test(ruimPar.saida) && /scroll-behavior: smooth em/.test(ruimPar.saida) && /animação CSS de sobe em h1\.entra/.test(ruimPar.saida), ruimPar.saida.slice(-600));
     checa('página ruim: o texto inteiro da saída é idêntico em paralelo e em fila (mesmas falhas, na mesma ordem)', semTempos(ruimPar.saida) === semTempos(ruimSer.saida), `\n${semTempos(ruimPar.saida)}\n---\n${semTempos(ruimSer.saida)}`);
+
+    // 2b. por que a espera de 8 s no topo é FIXA e não uma espera por condição (pedido do coordenador: trocar "se o resultado não mudar").
+    // Um temporizador de 7 s que revela tudo é achado pela espera de 8 s; com a espera cortada em 4 s (o que uma espera por "página
+    // quieta" faria) a mesma página passa sem a seção ter sido vista fora da tela durante a espera. A espera por condição MUDARIA o resultado.
+    const t7 = await rodar(['--url', base + '/timer-7s', '--so-visibilidade']);
+    checa('temporizador de 7 s: a espera de 8 s no topo pega (fora da tela)', t7.status === 1 && /rodaram com a seção fora da tela/.test(t7.saida), t7.saida.slice(-300));
+    const t7curto = await rodar(['--url', base + '/timer-7s', '--so-visibilidade', '--espera', '4000']);
+    checa('o mesmo temporizador com a espera cortada em 4 s NÃO é pego como fora da tela: cortar a espera muda o resultado', !/rodaram com a seção fora da tela/.test(t7curto.saida), t7curto.saida.slice(-300));
 
     // 3. página boa: PASSA nos dois
     const okPar = await rodar(['--url', base + '/ok', '--espera', '500']);
