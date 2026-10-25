@@ -6,7 +6,7 @@
  * Além do vídeo, tira quadros no meio do roteiro e monta a PRANCHA: quem revisa lê imagem.
  *
  * Uso:
- *   node gravar-video.js <url-da-pagina> --saida <pasta> [--roteiro arquivo.json] [--senha X] [--perfis desktop,mobile] [--em-serie]
+ *   node gravar-video.js <url-da-pagina> --saida <pasta> [--roteiro arquivo.json] [--senha X] [--perfis desktop,mobile] [--em-serie | --paralelo]
  *   node gravar-video.js --check          só diz se o Playwright (e o gravador de vídeo dele) respondem
  *
  * Sem --roteiro usa scripts/roteiro-pagina.json, que serve a qualquer página sem editar nada.
@@ -16,7 +16,8 @@
  *
  * (3.6) Os perfis gravam AO MESMO TEMPO, cada um no próprio contexto do mesmo navegador (eram 85,4 s medidos, um perfil depois do
  * outro). A saída e o video-info.json saem na ordem de sempre. `--em-serie` volta a um perfil por vez; em máquina com menos de
- * 4 núcleos o padrão já é um por vez (duas gravações de vídeo disputando a CPU podem perder quadro).
+ * 3 núcleos o padrão já é um por vez (duas gravações de vídeo disputando a CPU podem perder quadro), e `--paralelo` força os dois juntos
+ * mesmo assim.
  */
 const fs = require('node:fs');
 const os = require('node:os');
@@ -122,8 +123,8 @@ async function main() {
     if (r.falha) falhas.push(`[${nome}] ${r.falha}`);
   }
 
-  // Os perfis gravam juntos (a ordem das mensagens e do video-info.json é a do pedido). Em fila: --em-serie ou máquina com menos de 4 núcleos.
-  const emSerie = args.includes('--em-serie') || os.cpus().length < 4;
+  // Os perfis gravam juntos (a ordem das mensagens e do video-info.json é a do pedido). Em fila: --em-serie, ou máquina com menos de 3 núcleos (a menos de --paralelo).
+  const emSerie = args.includes('--em-serie') || (!args.includes('--paralelo') && os.cpus().length < 3);
   const saidas = perfis.map(() => ({ linhas: [], erros: [], feito: false }));
   let proximo = 0;
   const imprimirNaOrdem = () => {

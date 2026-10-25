@@ -87,7 +87,8 @@ const roteiro = {
     return { r, saida, info, fins: new Set(fins), distancia: Math.abs((aberturas.mobile || 0) - (aberturas.desktop || 0)) / 1000 };
   };
 
-  const par = await gravar('paralelo', []);
+  // máquina de 3 núcleos ou mais: o padrão já é paralelo e é o que se testa; com menos, o teste força --paralelo (o padrão ali é a fila)
+  const par = await gravar('paralelo', os.cpus().length >= 3 ? [] : ['--paralelo']);
   const ser = await gravar('serie', ['--em-serie']);
 
   for (const [rotulo, g] of [['paralelo', par], ['em fila', ser]]) {
