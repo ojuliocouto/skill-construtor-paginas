@@ -247,11 +247,11 @@ executa, nunca uma lista solta no fim de um arquivo.
 | `gate-verdade.py` | toda promessa (e a meta description) com linha do briefing que sustente; dono nomeado no briefing aparece no corpo | d, f |
 | `gate-imagens.py` | licença completa, crédito com o título real, aviso no og-image; foto repetida entre seções (pHash e origem), nitidez relativa (abaixo de 2,5 reprova, abaixo de 6 avisa), aviso e 60% de foto na primeira tela (`--url`), pessoa de banco como aviso (`--trafego-real` reprova), sequência de fotos do momento assinatura com `data-assinatura-estado` | e, f |
 | `gerar-icones.mjs` + `gerar-og-image.mjs` | favicon e ícone de tela inicial do `icones/icone.svg` do motivo do plano, com as duas linhas de `<link>` impressas com os nomes reais; a og:image de 1200x630 (`--fonte` do título, `--cor-fundo` e `--cor-texto` da paleta do plano, ou o script avisa que usou o padrão) | e |
-| `montar-dist.py` + `gate-publicacao.py` | `dist/` só com o que a página usa, e o gate que reprova a casa na publicação, comentário interno e ícone de outra identidade | f, h |
+| `montar-dist.py` + `gate-publicacao.py` + `dist_hash.py` | `dist/` só com o que a página usa (só grava o arquivo que mudou), e o gate que reprova a casa na publicação, comentário interno e ícone de outra identidade; o hash do conteúdo (`gates/_dist-hash.json`) decide se uma captura ficou velha, não a data do arquivo | f, g, h |
+| `rodar-gates.mjs` + `gates-cache.mjs` + `provar.mjs` | os gates da etapa f num comando só, em paralelo, UM relatório; gate que passou com insumo idêntico (hash) volta do cache; a rodada completa registra o exit real na wave. `provar.mjs`: prints, vídeo e quadros de animação, duas provas por vez. Os dois, em primeiro plano com tempo-limite de 10 minutos (`timeout: 600000`) | f, g, h |
 | `gate-relatorio.py` | o relatório final só afirma medida que um gate gravou: cada número cita o arquivo e está nele, nada anterior à `dist/`; a história do trabalho entra com o marcador no começo da linha (`rodada 1:`, `antes:`), que a tira só da regra da `dist/` | h |
-| `gate-video.mjs` | as 7 checagens de vídeo (só em página com vídeo) | f |
-| `uso-ferramentas.py` | Playwright e `frontend-design` foram usados de verdade | f |
-| `wave.py` | registro das 9 lentes (a de referências responde "bonito ou só correto?"), auditor master e ciclo de 2 rodadas | f, g |
+| `gate-video.mjs` + `uso-ferramentas.py` | as 7 checagens de vídeo (só em página com vídeo); Playwright e `frontend-design` foram usados de verdade | f |
+| `wave.py` | registro das 9 lentes (a de referências responde "bonito ou só correto?"), auditor master e ciclo de 2 rodadas; `registrar-lote` e `gates-lote` registram de uma vez (tudo ou nada) | f, g |
 | `pacote-auditoria.py` | junta e confere o pacote de evidência do auditor (sai 1 se faltar item) | g |
 | `lado-a-lado.py` | duas imagens lado a lado na mesma escala | g, CLONAR, MELHORAR |
 | `extrai-identidade.mjs` | paleta real, variáveis CSS, h1, CTA e imagens de uma URL | CLONAR |

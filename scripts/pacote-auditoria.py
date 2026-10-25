@@ -21,8 +21,10 @@ Itens (caminho CRIAR; os outros caminhos dispensam o que não existe neles):
   achados da rodada 1  auditoria/achados-rodada-1.(json|md)   (só com --rodada 2)
 Opcionais, listados se existirem: plano-visual.md e comparativos.
 
-Item mais velho que dist/index.html conta como VELHO (foi capturado antes da última mudança da
-página) e reprova: o auditor não pode julgar a versão anterior.
+Captura feita com OUTRO conteúdo de dist conta como VELHA (foi capturada antes da última mudança da
+página) e reprova: o auditor não pode julgar a versão anterior. O critério é o hash do conteúdo da
+dist (`dist_hash.py`), não a data do arquivo: remontar a dist com o conteúdo igual não deixa nada velho
+(achado A1 da auditoria de velocidade). Sem registro de hash, vale a data, como antes.
 
 Uso:
     node scripts/py.mjs pacote-auditoria.py --projeto <dir> --url http://localhost:8765/ [--rodada 1|2] [--caminho criar|clonar|...]
@@ -32,6 +34,9 @@ import datetime
 import json
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import dist_hash  # noqa: E402  (a captura é velha quando o CONTEÚDO da dist mudou, não quando a data do arquivo mudou)
 
 IGNORAR = {"node_modules", ".git", "dist", "__pycache__", "auditoria"}
 CAMINHOS = ("criar", "clonar", "clonar-elevar", "melhorar", "variante")
@@ -208,7 +213,7 @@ def main():
     if not args.url.startswith(("http://", "https://")):
         falta.append(f"url (precisa começar com http:// ou https://, veio '{args.url}')")
     dist = raiz / "dist" / "index.html"
-    marco = dist.stat().st_mtime if dist.is_file() else None
+    hash_da_dist = dist_hash.hash_pasta(raiz / "dist") if dist.is_file() else None
 
     print(f"\nPACOTE DO AUDITOR, rodada {args.rodada}, caminho {args.caminho}\n" + "=" * 74)
     print(f"  [ACHOU ] url                      {args.url}" if not falta else f"  [FALTA ] url                      {args.url}")
@@ -220,8 +225,9 @@ def main():
         rel = arq.relative_to(raiz).as_posix()
         itens[rel] = {"bytes": arq.stat().st_size, "modificado": datetime.datetime.fromtimestamp(arq.stat().st_mtime).isoformat(timespec="seconds")}
         eh_captura = arq.suffix == ".png" and rotulo.startswith(("prova-", "prancha-"))
-        if eh_captura and marco is not None and arq.stat().st_mtime < marco:
-            print(f"  [VELHO ] {rotulo:<26} {rel} é anterior à dist/index.html: refaça a captura")
+        fresca, motivo = (True, "") if not (eh_captura and hash_da_dist is not None) else dist_hash.captura_fresca(raiz, raiz / "dist", arq.stat().st_mtime)
+        if not fresca:
+            print(f"  [VELHO ] {rotulo:<26} {rel}: {motivo}; refaça a captura")
             velhos.append(rotulo)
         else:
             print(f"  [ACHOU ] {rotulo:<26} {rel}")
@@ -256,7 +262,7 @@ def main():
     saida.mkdir(exist_ok=True)
     (saida / "pacote.json").write_text(json.dumps({
         "quando": datetime.datetime.now().isoformat(timespec="seconds"),
-        "rodada": args.rodada, "caminho": args.caminho, "url": args.url,
+        "rodada": args.rodada, "caminho": args.caminho, "url": args.url, "dist_hash": hash_da_dist,
         "completo": completo, "faltando": falta, "velhos": velhos, "itens": itens,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 

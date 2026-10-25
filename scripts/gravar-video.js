@@ -6,15 +6,21 @@
  * Além do vídeo, tira quadros no meio do roteiro e monta a PRANCHA: quem revisa lê imagem.
  *
  * Uso:
- *   node gravar-video.js <url-da-pagina> --saida <pasta> [--roteiro arquivo.json] [--senha X] [--perfis desktop,mobile]
+ *   node gravar-video.js <url-da-pagina> --saida <pasta> [--roteiro arquivo.json] [--senha X] [--perfis desktop,mobile] [--em-serie | --paralelo]
  *   node gravar-video.js --check          só diz se o Playwright (e o gravador de vídeo dele) respondem
  *
  * Sem --roteiro usa scripts/roteiro-pagina.json, que serve a qualquer página sem editar nada.
  * Saída em <pasta>: video-desktop.webm, video-mobile.webm, prancha-desktop.png, prancha-mobile.png,
  * quadros/ (um PNG por print do roteiro) e video-info.json (formato, tamanho, duração, passos pulados).
  * Sai com código diferente de zero se o roteiro for inválido ou um passo obrigatório falhar.
+ *
+ * (3.6) Os perfis gravam AO MESMO TEMPO, cada um no próprio contexto do mesmo navegador (eram 85,4 s medidos, um perfil depois do
+ * outro). A saída e o video-info.json saem na ordem de sempre. `--em-serie` volta a um perfil por vez; em máquina com menos de
+ * 3 núcleos o padrão já é um por vez (duas gravações de vídeo disputando a CPU podem perder quadro), e `--paralelo` força os dois juntos
+ * mesmo assim.
  */
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { acharPlaywright } = require('./video/achar-playwright.cjs');
 const roteiro = require('./video/roteiro.cjs');
@@ -73,7 +79,9 @@ async function main() {
 
   const info = { url, roteiro: doc.nome || path.basename(arquivoDoRoteiro), gravadoEm: new Date().toISOString(), perfis: {} };
   const falhas = [];
-  for (const nome of perfis) {
+
+  /** Grava UM perfil no próprio contexto. A saída vai para `linhas`/`erros` (não para o console): a fila de impressão mantém a ordem dos perfis. */
+  async function gravarPerfil(nome, linhas, erros) {
     const perfil = roteiro.PERFIS[nome];
     const temporaria = roteiro.caminhoDeSaida(saida, `.gravando-${nome}`);
     fs.mkdirSync(temporaria, { recursive: true });
@@ -82,8 +90,8 @@ async function main() {
       ctx = await browser.newContext({ ...perfil, recordVideo: { dir: temporaria, size: perfil.viewport } });
     } catch (e) {
       falhas.push(`[${nome}] ${String(e.message).split('\n')[0]}`);
-      const dica = dicaDeInstalacao(e); if (dica) console.error(dica);
-      continue;
+      const dica = dicaDeInstalacao(e); if (dica) erros.push(dica);
+      return;
     }
     await ctx.addInitScript(CURSOR);
     const page = await ctx.newPage();
@@ -109,11 +117,28 @@ async function main() {
       prancha: prancha ? path.basename(prancha) : null, passosPulados: r.pulados, falha: r.falha,
     };
     const s = (duracaoWebmMs ?? duracaoDasMarcasMs) / 1000;
-    console.log(`  ${nome}: ${destino} (${info.perfis[nome].mb} MB, ${s.toFixed(1)} s, ${r.quadros.length} quadros, prancha ${prancha || 'não montada'})`);
-    r.pulados.forEach((p) => console.log(`    passo opcional pulado: ${p}`));
-    if (s < AVISO_FAIXA_S.min || s > AVISO_FAIXA_S.max) console.log(`    aviso: duração de ${s.toFixed(1)} s fora de ${AVISO_FAIXA_S.min} a ${AVISO_FAIXA_S.max} s (rede lenta? ajuste as esperas e o ritmo de rolagem do roteiro)`);
+    linhas.push(`  ${nome}: ${destino} (${info.perfis[nome].mb} MB, ${s.toFixed(1)} s, ${r.quadros.length} quadros, prancha ${prancha || 'não montada'})`);
+    r.pulados.forEach((p) => linhas.push(`    passo opcional pulado: ${p}`));
+    if (s < AVISO_FAIXA_S.min || s > AVISO_FAIXA_S.max) linhas.push(`    aviso: duração de ${s.toFixed(1)} s fora de ${AVISO_FAIXA_S.min} a ${AVISO_FAIXA_S.max} s (rede lenta? ajuste as esperas e o ritmo de rolagem do roteiro)`);
     if (r.falha) falhas.push(`[${nome}] ${r.falha}`);
   }
+
+  // Os perfis gravam juntos (a ordem das mensagens e do video-info.json é a do pedido). Em fila: --em-serie, ou máquina com menos de 3 núcleos (a menos de --paralelo).
+  const emSerie = args.includes('--em-serie') || (!args.includes('--paralelo') && os.cpus().length < 3);
+  const saidas = perfis.map(() => ({ linhas: [], erros: [], feito: false }));
+  let proximo = 0;
+  const imprimirNaOrdem = () => {
+    while (proximo < saidas.length && saidas[proximo].feito) {
+      saidas[proximo].erros.forEach((l) => console.error(l));
+      saidas[proximo].linhas.forEach((l) => console.log(l));
+      proximo++;
+    }
+  };
+  const gravar = async (i) => { await gravarPerfil(perfis[i], saidas[i].linhas, saidas[i].erros); saidas[i].feito = true; imprimirNaOrdem(); };
+  if (emSerie) for (let i = 0; i < perfis.length; i++) await gravar(i);
+  else await Promise.all(perfis.map((_, i) => gravar(i)));
+  // O video-info.json lista os perfis na ordem do pedido, não na ordem em que terminaram.
+  info.perfis = Object.fromEntries(perfis.filter((n) => info.perfis[n]).map((n) => [n, info.perfis[n]]));
   await browser.close();
   fs.writeFileSync(roteiro.caminhoDeSaida(saida, 'video-info.json'), JSON.stringify(info, null, 2), 'utf8');
 

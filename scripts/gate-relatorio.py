@@ -15,6 +15,10 @@ regra ("até 15%", "máximo 4 px", "pelo menos 35%") não é medida e fica de fo
 Reprova (exit 1): medida sem arquivo citado; arquivo citado inexistente ou só imagem; número
 que não está no arquivo citado; medida anterior à dist/.
 
+"Anterior à dist/" se julga pelo HASH do conteúdo da dist (`dist_hash.py`): medida feita com o mesmo
+conteúdo que está na dist hoje vale, mesmo que a dist tenha sido remontada depois (achado A1 da auditoria
+de velocidade). Sem o registro `gates/_dist-hash.json`, vale a data do arquivo, como antes.
+
 Medida HISTÓRICA (3.5.10): a linha (ou a célula da tabela) que COMEÇA com `rodada N:`, `rodada
 anterior:`, `antes:`, `histórico:` ou `versão anterior:` conta a história do trabalho, não o estado
 entregue, e fica fora só da regra "anterior à dist/". Continua obrigada a citar o arquivo e a ter o
@@ -28,6 +32,9 @@ import argparse
 import re
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import dist_hash  # noqa: E402  (medida velha = feita com OUTRO conteúdo de dist; a data do arquivo sozinha não decide)
 
 UNIDADE = r"(?:px|%|ms|s|KiB|KB|MB|:1|telas?)"
 MEDIDA = re.compile(r"(?<![\w.,])(\d+(?:[.,]\d+)?)\s?(" + UNIDADE + r")(?![\w])")
@@ -92,6 +99,7 @@ def checar(relatorio, base=None, dist=None, historicas=None):
     if dist and Path(dist).is_dir():
         tempos = [p.stat().st_mtime for p in Path(dist).rglob("*") if p.is_file()]
         fim_dist = max(tempos) if tempos else None
+    projeto_da_dist = Path(dist).resolve().parent if dist else None
     em_codigo = False
     for n, linha in enumerate(relatorio.read_text(encoding="utf-8-sig").splitlines(), 1):
         if linha.strip().startswith("```"):
@@ -124,7 +132,7 @@ def checar(relatorio, base=None, dist=None, historicas=None):
                     continue  # texto de referência (auditoria, licenças), não arquivo de medida
                 if not p.resolve().is_relative_to(Path(dist).resolve().parent):
                     continue  # medida de outra versão (fora do projeto da dist), citada como antes
-                if p.stat().st_mtime + 1 < fim_dist and not p.is_relative_to(Path(dist)):
+                if not p.is_relative_to(Path(dist)) and not dist_hash.captura_fresca(projeto_da_dist, dist, p.stat().st_mtime + 1)[0]:
                     problemas.append(f"linha {n}: {p.name} é anterior à dist/ final; meça de novo a versão entregue")
     return problemas
 

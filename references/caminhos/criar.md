@@ -65,6 +65,9 @@ uma e escrever o que ela faz bem e o princípio que se leva dela.
 `node <dir-da-skill>/scripts/capturar-referencias.mjs --projeto <dir> --tipo mesmo-negocio <url> <url> ...`
 `node <dir-da-skill>/scripts/capturar-referencias.mjs --projeto <dir> --tipo design <url> <url> ...`
 
+A captura roda dois endereços por vez (cada um na própria aba), e os números dos prints, o manifesto e a saída seguem a ordem do pedido, como
+na fila: dê todos os endereços de um tipo num comando só. `--em-serie` volta a um por vez.
+
 **A captura se julga** (cada URL sai com um estado em `captura`, e a saída diz qual): `ok`, `bloqueada` (HTTP 401, 403 ou 429, ou a tela
 de bloqueio de robô, como "We couldn't verify the security of your connection", "Just a moment", Cloudflare, Akamai ou Incapsula),
 `quebrada`, `coberta` (modal que cobre mais de 40% da janela) e `vazia` (a dobra é uma folha lisa, ou o print do meio é igual ao da
@@ -368,24 +371,37 @@ A porta é uma preferência, e 8765 é só o exemplo: se estiver ocupada (outra 
 comandos abaixo. O `rodar-gates.mjs` já faz isso sozinho (um servidor em porta livre por gate) e, se o servidor de um gate cair no meio,
 sobe outro e repete esse gate uma vez, dizendo isso. Gate de navegador que diz `servidor fora do ar em <url>` (saída 3) não opinou sobre a
 página: o servidor caiu. Suba de novo, com a URL que ele imprimir, e repita o gate; a saída 3 não é reprovação da página. O `montar-dist.py`
-esvazia a `dist/` sem apagar a pasta e avisa "dist refeita": um servidor que serve essa pasta segue no ar e entrega a versão nova (confira
-que ele continua de pé antes de rodar os gates).
+mantém a pasta `dist/` (sem apagá-la), grava só o arquivo cujo conteúdo mudou e avisa "dist refeita": um servidor que serve essa pasta segue no ar e
+entrega a versão nova (confira que ele continua de pé antes de rodar os gates). Ele registra o hash do conteúdo em `gates/_dist-hash.json`: remontar a
+dist com o conteúdo igual não deixa captura nem medida "velha"; só conteúdo diferente deixa (o pacote do auditor e o `gate-relatorio.py` julgam pelo hash,
+e sem o registro voltam à data do arquivo).
 
 **Caminho padrão: um comando só, todos os gates em paralelo.**
 `node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir>`
+
+**Rode em primeiro plano, com tempo-limite de 10 minutos (no Bash, `timeout: 600000`). Nunca em segundo plano com laço de espera.** A rodada completa leva de
+1 a 5 minutos (o gate de movimento sozinho leva de 3 a 4). O Bash corta qualquer comando em 120 s quando ninguém passa o tempo-limite. Foi assim que um
+construtor caiu em 65 laços de espera (`until`, `for i in $(seq ...)`, `sleep`): 102,7 min numa página real. Espere o comando voltar e leia o relatório inteiro.
+Se ele estourar os 10 minutos, algum gate travou: rode `--so <gate>` para achar qual, em vez de subir o limite.
 Ele monta a `dist/`, serve cada gate de tela numa porta própria (com compressão), roda os gates
 abaixo juntos (teto de navegadores pela máquina; `--paralelo N` muda), grava a saída de cada um em
 `gates/<nome>-r<N>.txt` e imprime UM relatório: PASSA ou REPROVA por gate, o tempo de cada um, a
 mensagem de falha inteira e o total. Sai com 1 se qualquer gate reprova. Não substitui nem afrouxa
 gate nenhum: chama os mesmos scripts, com os mesmos argumentos listados abaixo. O fluxo:
-1. rode tudo e leia o relatório consolidado inteiro, até o fim;
+1. rode tudo e leia o relatório consolidado inteiro, até o fim; cada gate que reprova termina com UMA linha `Conserto: ...` que diz o que mudar (leia essa linha primeiro);
 2. corrija TUDO o que reprovou, de todos os gates, antes de rodar de novo (um gate por vez foi o que custou 37 min);
 3. rode só os que reprovaram: `node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir> --reprovados` (ou `--so texto,ritmo`);
 4. repita 2 e 3 até passar, e no fim faça UMA rodada completa (o comando sem `--so` nem `--reprovados`): correção de um gate pode ter quebrado outro;
-5. só então registre o exit REAL de cada gate na wave (o comando não registra nem aprova nada).
+5. a rodada completa já registra sozinha o exit REAL de cada gate na wave (`wave.py gates-lote`, uma chamada, nada digitado); `--sem-registrar` desliga.
+   Rodada parcial (`--so`, `--reprovados`) não registra. O comando não aprova nada: só grava o exit que cada gate devolveu. Fica à mão o `uso-ferramentas`
+   (registro de uso, não gate de tela). O `provar.mjs` do passo g registra a `identidade`.
 Gate que reprova só com a máquina cheia (a medida de tempo da barra fixa ou da animação muda com a carga) se confirma
 sozinho: `--so <gate> --paralelo 1`, ou `--confirmar-sozinho` na rodada, que roda de novo, isolado, cada gate de navegador
 que reprovou e adota o veredito isolado (o do modo em série), avisando no relatório quando ficou INSTÁVEL.
+**Cache por conteúdo.** Gate que PASSOU e cujo insumo não mudou (hash do conteúdo da `dist/`, do projeto, dos argumentos, dos scripts da skill e do
+ambiente) devolve o laudo de então sem rodar de novo, e o relatório diz "cache" e quanto tempo poupou. Só o que passou entra no cache (reprovação nunca
+entra e roda de novo na rodada seguinte); página servida por você (`--url`) não entra. Corrigiu só evidência, ou repetiu a rodada sem mudar a página:
+os gates de tela voltam do cache e só rodam os que leem o que você mexeu. O relatório diz, em cada gate que rodou, o que mudou desde o último PASSA (a dist, o projeto, os scripts, o ambiente ou os argumentos). `--explicar-cache` mostra isso sem rodar gate nenhum: confira ali que o gate de movimento acerta o cache quando HTML, CSS e JS não mudaram. `--sem-cache` roda tudo de novo (use depois de atualizar o Python, o Pillow ou o Chromium, ou quando a página lê algo de fora, como fonte ou imagem de um site).
 Negócio de produto físico: `--produto-fisico`. Gates opcionais, que dependem de passos anteriores:
 `--com animacao` (depois do `anim.mjs` e da prancha), `--com video --publico <dir>`, `--com sobreposicao --fixo "<sel>" --contra "<sel>"`.
 
@@ -428,7 +444,7 @@ dá para inferir sai como `PREENCHER: ...` e o `anim.mjs` se recusa a rodar até
 ]
 ```
 
-`node <dir-da-skill>/scripts/anim.mjs --url http://localhost:8765/ --saida <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` e `node <dir-da-skill>/scripts/py.mjs prancha.py --pasta <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` (3 quadros por seção em 1440 e 390 e a prancha com a porcentagem de pixels que mudou; abra as pranchas)
+`node <dir-da-skill>/scripts/anim.mjs --url http://localhost:8765/ --saida <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` e `node <dir-da-skill>/scripts/py.mjs prancha.py --pasta <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` (3 quadros por seção em 1440 e 390 e a prancha com a porcentagem de pixels que mudou; abra as pranchas; o `provar.mjs` do passo g roda os dois, junto das outras provas de tela)
 `node <dir-da-skill>/scripts/py.mjs gate-animacao.py --pasta <dir>/prova/anim --plano <dir>/PLANO.md` (menos de 2% de pixels mudando entre início e fim, mais de 2 seções com o mesmo tipo, menos pranchas que linhas da tabela do plano)
 `node <dir-da-skill>/scripts/sobreposicao.mjs --url http://localhost:8765/ --fixo "<seletor do sticky>" --contra "<seletor do bloco largo>"` (um para cada elemento sticky que divide grid com bloco de largura total: 0 px² em 1024 a 1920.
 **Página sem elemento sticky nem fixo: o gate não se aplica e não roda** (sem `--com sobreposicao` o `rodar-gates.mjs` também não o chama);
@@ -437,7 +453,7 @@ confirme com `grep -nE "position: *(sticky|fixed)" <dir>/dist/index.html <dir>/d
 `node <dir-da-skill>/scripts/py.mjs montar-dist.py --projeto <dir> --css-em-linha` e `node <dir-da-skill>/scripts/py.mjs gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar, sem comentário interno, e ícones gerados do `icones/icone.svg` do motivo do plano)
 `node <dir-da-skill>/scripts/py.mjs gate-rastreamento.py --dist <dir>/dist --plano <dir>/PLANO.md` (pixel e eventos que o plano pediu; passa direto com `Pixel pedido: nenhum`)
 `node <dir-da-skill>/scripts/py.mjs gate-plano.py --projeto <dir>` (o plano continua aprovado depois das correções)
-`node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/prova --click "<seletor do botão>"` (identidade, scrollY 0, clique)
+`node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/prova --click "<seletor do botão>"` (identidade, scrollY 0, clique; o `provar.mjs` do passo g faz isto e registra a `identidade` na wave com o exit real)
 `node <dir-da-skill>/scripts/py.mjs uso-ferramentas.py --projeto <dir> registrar Playwright --arquivo prova/prova-desktop.png --detalhe "prova de tela lida"`
 `node <dir-da-skill>/scripts/py.mjs uso-ferramentas.py --projeto <dir> checar --caminho criar`
 `node <dir-da-skill>/scripts/py.mjs gate-referencias.py --projeto <dir>`
@@ -482,17 +498,22 @@ duração e as chamadas no `wave.py registrar` (`--duracao-min`, `--chamadas`); 
 real levou 51 minutos e 113 chamadas sem esse teto.)
 
 **Antes de chamar o auditor, junte o pacote de evidência UMA vez** (ele não captura as telas de
-novo). Gere o que ainda não existir, nesta ordem, e confira:
+novo). Gere o que ainda não existir e confira:
 
-1. Prints: `node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/provas --com-360 --com-320` (os gates do passo f já geram parte).
-2. Vídeo de prova: `node <dir-da-skill>/scripts/gravar-video.js http://localhost:8765/ --saida <dir>/videos` (passo h, item 3b, que reaproveita estes arquivos).
-3. `node <dir-da-skill>/scripts/py.mjs pacote-auditoria.py --projeto <dir> --url http://localhost:8765/` `--briefing-reflete-pedido sim|nao`
+1. **A prova de tela, de uma vez, duas por vez:** `node <dir-da-skill>/scripts/provar.mjs --projeto <dir> --click "<seletor do botão>"`. Ele serve a `dist/`
+   e roda ao mesmo tempo (no máximo 2 navegadores) os prints com 360 e 320, o vídeo de rolagem (desktop e celular juntos) e os quadros de animação com a
+   prancha: de 1 a 2 minutos contra 3 a 4 em fila. Rode em primeiro plano, com tempo-limite de 10 minutos (`timeout: 600000`), nunca em segundo plano com laço
+   de espera. Sem `prova/anim/secoes.json` a animação é PULADA, dizendo como gerar (`plano-para-secoes.py`); `--sem-anim` pula de propósito. Ele grava a
+   `identidade` na wave com o exit real. Os comandos de uma prova só continuam valendo, um a um:
+   - Prints: `node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/provas --com-360 --com-320` (os gates do passo f já geram parte).
+   - Vídeo de prova: `node <dir-da-skill>/scripts/gravar-video.js http://localhost:8765/ --saida <dir>/videos` (passo h, item 3b, que reaproveita estes arquivos).
+2. `node <dir-da-skill>/scripts/py.mjs pacote-auditoria.py --projeto <dir> --url http://localhost:8765/` `--briefing-reflete-pedido sim|nao`
 
 O pacote tem: a URL, a `dist/`, o briefing (`evidencias/briefing.md`), o `PLANO.md`, a tabela de
 sustentação, a pasta `referencias/` (síntese e `*-dobra.png`), as capturas dos gates
 (`prova-desktop.png` e `prova-mobile.png`) e as pranchas do vídeo (`prancha-desktop.png` e
-`prancha-mobile.png`). O script lista o que achou e o que falta, avisa se a captura é anterior à
-última mudança da `dist/` e sai 1 se faltar item obrigatório: sem pacote completo, não chame o auditor.
+`prancha-mobile.png`). O script lista o que achou e o que falta, avisa se a captura foi feita com OUTRO conteúdo de `dist/` (julga pelo hash do conteúdo:
+remontar a dist igual não deixa nada velho) e sai 1 se faltar item obrigatório: sem pacote completo, não chame o auditor.
 
 O auditor é um subagente independente (Agent ou Task com o tipo `auditor`, ou um subagente comum com o
 mandato de refutar): recebe o pacote (`auditoria/pacote.json`) e as preferências, e nunca o
@@ -505,6 +526,10 @@ responde AUDITORIA INDEPENDENTE PENDENTE até uma rodada de outra sessão (sem o
 deu média 7,78 e "tells 0"; o auditor independente deu 5,5 e cinco achados graves.
 
 `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> registrar <lente> --veredito <aprovado|reprovado> --nota <0-10> --origem <subagente|sessao-independente|pessoa|autoavaliacao> --achados "<o que olhou e achou>"`
+**As 9 lentes de uma vez, sem digitar:** salve a resposta do auditor (os blocos do schema, soltos entre fences ou em lista) em `auditoria/resposta-rodada-1.json` e rode
+`node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> registrar-lote --arquivo auditoria/resposta-rodada-1.json --origem subagente --duracao-min <min> --chamadas <n>`.
+É tudo ou nada: bloco que o `registrar` recusaria, lente repetida ou lente "não verificada" derrubam o lote inteiro e nada é gravado. Ele conta os críticos e os altos
+que o auditor escreveu; CONFIRME cada um (refute o achado) antes de passar os números ao `wave.py rodada`.
 A `comparacao-referencias` responde também, com `--gosto bonito|correto`, a pergunta do dono
 depois da SobrAI (9,05 nas lentes e "que página FEIA"): **isso é bonito ou só está correto?**
 "correto" não aprova e a rodada não entrega: corrija os eixos abaixo das referências (`--eixos-abaixo`); sem resposta, a rodada também não entrega.
@@ -534,9 +559,9 @@ passe de gosto: tells antes e depois, o depois é 0.
 2. **Leia os PNGs com os próprios olhos** (Read): a página inteira para ritmo e composição, e
    recortes 1:1 para texto, rótulo e borda. Screenshot reduzido não aprova detalhe.
 3. A interação principal clicada nos dois viewports (`--click "<seletor>"`). Botão que é link de WhatsApp ou outro link externo: o clique é capturado e a navegação cancelada, então o teste não sai da página e o print de depois mostra a página; o destino aparece na saída ("o clique levaria a ..."). Confira o número dígito por dígito pelo `href`. Navegação feita por script (`location.href`) também é barrada, mas aí o print de depois não é tirado.
-3b. **Vídeo da rolagem, junto dos prints** (já gravado no passo g para o pacote do auditor: reaproveite
-   se a página não mudou depois, refaça se mudou): com a página servida, grave desktop e celular do topo ao
-   fim em ritmo de leitura:
+3b. **Vídeo da rolagem, junto dos prints** (o `provar.mjs` do passo g já gravou para o pacote do auditor: reaproveite
+   se o conteúdo da `dist/` não mudou depois, refaça se mudou; o pacote diz qual dos dois pelo hash): com a página servida, o `gravar-video.js` grava desktop e celular
+   (os dois ao mesmo tempo, `--em-serie` para um por vez) do topo ao fim em ritmo de leitura:
    `node <dir-da-skill>/scripts/gravar-video.js http://localhost:8765/ --saida <dir>/videos`
    (usa o `roteiro-pagina.json` da pasta de scripts: abre, espera a abertura, rola meia janela a cada 1,5 s e
    tira 7 quadros; leva de 30 a 70 s). **Leia as duas pranchas** (`prancha-desktop.png` e
