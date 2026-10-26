@@ -107,10 +107,11 @@ class Estrutura(unittest.TestCase):
     def test_a26_a27_texto_do_briefing_e_da_regra_de_referencias(self):
         aud = ler(REF / "auditores.md")
         criar = ler(REF / "caminhos" / "criar.md")
-        for trecho in ("briefing-do-auditor.md", "15 minutos", "30 chamadas", "8 minutos", "15 chamadas", "Proibido recapturar",
-                       "6 capturas próprias", "não verificado", "--duracao-min", "--chamadas"):
+        # 3.7.0: rodada 1 com 8 minutos e 12 chamadas, sem captura nova; rodada 2 com 3 minutos e 4 chamadas (test-docs-370.py)
+        for trecho in ("briefing-do-auditor.md", "8 minutos", "12 chamadas", "3 minutos", "4 chamadas", "Não capture nada",
+                       "não verificado", "--duracao-min", "--chamadas"):
             self.assertIn(trecho, aud, trecho)
-        for trecho in ("briefing-do-auditor.md", "15 minutos", "30 chamadas", "8 minutos", "6 capturas próprias", "--eixos-abaixo"):
+        for trecho in ("briefing-do-auditor.md", "8 minutos", "12 chamadas", "3 minutos", "--eixos-abaixo"):
             self.assertIn(trecho, criar, trecho)
         self.assertNotRegex(criar + aud, r"(?i)reprovada\s*=\s*volta ao passo c")
         self.assertIn("ciclo novo", criar)

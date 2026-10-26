@@ -249,9 +249,11 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    **Lente curta de gosto no herói (3.6.0, conselho, não trava; 3.6.1: UMA rodada, teto de 5 minutos):** monte a prancha com
    `node <dir-da-skill>/scripts/py.mjs gosto-heroi.py --projeto <dir> --heroi <dir>/prova-hero/prova-desktop.png --celular <dir>/prova-hero/prova-mobile.png`
    (sem o `--celular` a lente julga só o 1440 e deixa o celular sem olhar; no teste de aluno da 3.6.1 foi assim)
-   e mande UM subagente `auditor` com o `auditoria/gosto-heroi/briefing.md` que o script escreveu. O teto de 5 minutos e a
-   rodada única estão no prompt dele; em segundo plano, enquanto você segue para as imagens. Quando ele devolver, grave a resposta em
-   `auditoria/gosto-heroi/resultado.json` e rode `gosto-heroi.py --projeto <dir> --registrar`.
+   e mande UM subagente `auditor` com o `auditoria/gosto-heroi/briefing.md` que o script escreveu. O teto de 5 minutos, até 4 chamadas
+   (3.7.0) e a rodada única estão no prompt dele. Ele roda em segundo plano e **a construção não espera por ele**: siga para as imagens e as
+   outras seções na mesma hora (no teste de aluno da 3.6.2 o herói só foi aprovado 512 s depois da primeira dobra, com a construção parada
+   esperando a lente de 6,4 min). Quando ele devolver, grave a resposta em `auditoria/gosto-heroi/resultado.json`, rode
+   `gosto-heroi.py --projeto <dir> --registrar` e aplique a mudança no herói.
    **A lente roda 1 vez e não volta.** Veredito "generico" ou "correto" cujo motivo é só do construtor (enquadramento,
    escala, tipografia) vira ajuste no hero antes de replicar o padrão, SEM segunda rodada. Veredito cujo motivo depende de
    material que só a cliente tem (foto real, logo, depoimento, autorização de imagem) vira PENDÊNCIA registrada
@@ -331,7 +333,8 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    contra a tela cheia: foto de 21% com o texto ocupando o resto passa. **Botão do herói em 320x568 (3.6.2):** até 12 px abaixo da dobra passa com
    aviso (no teste de aluno da 3.6.1 reprovou duas vezes, a 10 px e a 1 px); em 390 (844 e 664), 360, 430 e no desktop o botão cortado reprova como sempre.
    **A dobra do celular é uma janela só (3.6.2):** o gate mede 390x664 e `gate-responsivo.mjs --url <url> --so-primeira-tela --salvar-dobra <dir>/prints`
-   grava o print dessa MESMA janela (`dobra-390x664.png`, `dobra-360x616.png`, `dobra-375x553.png`, dpr 2). Esse é o print da dobra. Nunca recorte as primeiras
+   grava o print dessa MESMA janela (`dobra-390x664.png`, `dobra-360x616.png`, `dobra-375x553.png`, dpr 2) e, desde a 3.7.0, a dobra do desktop
+   (`dobra-1440x900.png`, dpr 1), a que a lente do herói pede em 1440. Esse é o print da dobra. Nunca recorte as primeiras
    linhas do print de página inteira em 390x844: o layout muda com a altura da janela e o botão aparece cortado onde o aparelho não corta (no teste de aluno da 3.6.1
    o recorte de 663 linhas mostrava o botão cortado e a janela medida o tinha 34 px acima do pé). Quando o layout de 844 passa da área visível o gate avisa. Na v7 a foto quadrada pôs o botão 146 px abaixo da dobra no iPhone, e na Torra
    Clara o apoio ficou depois do botão, fora da primeira tela; os dois passaram no gate antigo, que media contra a janela cheia (na v4:
@@ -422,6 +425,11 @@ gate nenhum: chama os mesmos scripts, com os mesmos argumentos listados abaixo. 
 3. rode só os que reprovaram: `node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir> --reprovados` (ou `--so texto,ritmo`);
 4. repita 2 e 3 até passar, e no fim faça UMA rodada completa (o comando sem `--so` nem `--reprovados`): correção de um gate pode ter quebrado outro;
 5. a rodada completa já registra sozinha o exit REAL de cada gate na wave (`wave.py gates-lote`, uma chamada, nada digitado); `--sem-registrar` desliga.
+6. **Gate de movimento só onde importa (3.7.0).** Ele roda na PRIMEIRA rodada completa e na rodada final (passo h). Nas rodadas completas do meio
+   (o fim do passo f, as do passo g), acrescente `--sem-movimento`: o gate é pulado quando a animação não mudou desde a última vez em que ele
+   passou (o HTML da dist sem o texto, o CSS e o JS iguais; copy corrigida e imagem trocada não contam) e roda sozinho quando ela mudou. O pulo
+   fica marcado na wave e a etapa 5 recusa a entrega com a marca: a rodada final roda SEM a flag. No teste de aluno da 3.6.2 o movimento rodou
+   em 5 rodadas completas, cerca de 150 s cada; com a flag, 3 delas pulam.
    Rodada parcial (`--so`, `--reprovados`) não registra. O comando não aprova nada: só grava o exit que cada gate devolveu. Fica à mão o `uso-ferramentas`
    (registro de uso, não gate de tela). O `provar.mjs` do passo g registra a `identidade`.
 Gate que reprova só com a máquina cheia (a medida de tempo da barra fixa ou da animação muda com a carga) se confirma
@@ -519,12 +527,14 @@ Uma lente por subagente é modo opcional, só se a pessoa pedir auditoria profun
 pedido novo), a data decide: briefing mais antigo que o último pedido dá AVISO e a pergunta é dispensada. Motivo: no teste real o
 cliente mudou o pedido no meio e o auditor conferiu a página contra um briefing velho.
 
-**Briefing pronto, com orçamento.** O `pacote-auditoria.py` grava `auditoria/briefing-do-auditor.md`: cole-o no prompt do
-auditor. Ele traz os caminhos do pacote e o orçamento (rodada 1: 15 minutos e 30 chamadas de ferramenta; rodada 2: 8 minutos
-e 15 chamadas), proíbe recapturar o que já está no pacote (só abre a página para interação, foco, hover e script bloqueado,
-no máximo 6 capturas próprias), manda devolver "não verificado" por lente o que não deu tempo, e pede só o schema. Informe a
-duração e as chamadas no `wave.py registrar` (`--duracao-min`, `--chamadas`); o `wave.py rodada` avisa se passou. (A auditoria
-real levou 51 minutos e 113 chamadas sem esse teto.)
+**Briefing pronto, com orçamento (3.7.0).** O `pacote-auditoria.py` grava `auditoria/briefing-do-auditor.md`: cole-o no prompt do
+auditor. Ele traz os caminhos do pacote e o teto rígido (rodada 1: 8 minutos e 12 chamadas de ferramenta; rodada 2, a conferência:
+3 minutos e 4 chamadas). Na rodada 1 ele manda não capturar nada (o pacote já traz prints, pranchas do vídeo, laudos dos gates,
+briefing, PLANO e HTML), dá o roteiro de leitura, diz lente por lente qual gate verde a cobre (com o laudo) e manda procurar só o
+que o gate não mede: hierarquia, gosto, coerência com o briefing e cara de IA. O que não deu tempo volta "não verificado". Informe
+a duração e as chamadas no `wave.py registrar-lote` (`--duracao-min`, `--chamadas`); o `wave.py rodada` avisa se passou. (A auditoria
+real levou 51 minutos e 113 chamadas sem teto; no teste de aluno da 3.6.2, com o teto antigo de 15 minutos, a rodada 1 levou 758 s e
+21 chamadas e a rodada 2, 662 s e 10 chamadas.)
 
 **Antes de chamar o auditor, junte o pacote de evidência UMA vez** (ele não captura as telas de
 novo). Gere o que ainda não existir e confira:
@@ -590,11 +600,21 @@ defeito, leia com os próprios olhos e feche a rodada com `--regressoes <N> --re
 substitui a rodada, não abre uma terceira. Crítico aberto não se refecha assim e pede a `--rodada-extra-pedida` da pessoa. Toda mensagem de bloqueio da wave e da etapa 5
 diz o próximo comando.
 
-**Teto de 2 rodadas.** Saiu CONTINUA na rodada 1: corrige, refaz os gates do passo f que a
-correção toca, junta o pacote de novo (`pacote-auditoria.py --rodada 2`, depois de salvar os achados
-em `auditoria/achados-rodada-1.json`) e fecha a rodada 2, que é de CONFERÊNCIA (`references/auditores.md`,
-"Rodada 2"): o mesmo auditor confere se cada achado foi corrigido, se a correção quebrou outra
-coisa, e mais nada; não reabre as 9 lentes. Depois dela o ciclo fecha SEMPRE: aprovado, ENTREGA COM
+**Sem crítico nem alto na rodada 1, não há rodada 2 (3.7.0).** O `wave.py rodada` fecha o ciclo na rodada 1 (ENTREGA, ou ENTREGA COM
+RESSALVAS com o que sobrou, inclusive a lente `comparacao-referencias` reprovada) e grava `sem_rodada_2`. Corrija os médios e baixos que
+couberem, rode a rodada completa dos gates (`rodar-gates.mjs --projeto <dir>`, com o cache ela volta na hora no que não mudou) e siga para
+o passo h. Os gates de novo são a conferência: a etapa 5 cobra todos verdes, registrados depois da rodada.
+
+**Teto de 2 rodadas.** Saiu CONTINUA na rodada 1 (crítico ou alto): salve os achados em `auditoria/achados-rodada-1.json`, corrija,
+refaça os gates que a correção toca (`--reprovados`, ou a rodada completa com `--sem-movimento` se a animação não mudou) e tire o print
+NOVO de cada crítico e alto no viewport que mostrou o defeito. Junte o pacote da conferência:
+`node <dir-da-skill>/scripts/py.mjs pacote-auditoria.py --projeto <dir> --url <url> --rodada 2`. Na primeira vez ele grava o modelo
+numerado `auditoria/correcoes-rodada-1.json`: preencha o `print` (e o `recorte`, se o print é de página inteira) e o `o_que_mudou` de cada
+número e rode de novo. Ele monta a prancha dos prints e o diff da dist contra a versão auditada. Mande o briefing ao MESMO auditor
+(3 minutos, 4 chamadas, sem nota nova), grave a resposta em `auditoria/resposta-rodada-2.json` e rode
+`node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> conferencia --arquivo auditoria/resposta-rodada-2.json`: ele conta o que
+ficou aberto e imprime o `wave.py rodada` do fechamento. A conferência confere se cada achado foi corrigido, se a correção quebrou
+outra coisa, e mais nada; não reabre as 9 lentes (`references/auditores.md`, "Rodada 2"). Depois dela o ciclo fecha SEMPRE: aprovado, ENTREGA COM
 RESSALVAS (achados que sobraram e nota real, na entrega) ou NÃO ENTREGAR: crítico aberto. Terceira
 rodada só se a pessoa pedir (`--rodada-extra-pedida`, registrada). **Lente `comparacao-referencias` reprovada NÃO manda reconstruir sozinha** (o teto é 2 rodadas e a segunda é
 conferência): o `wave.py rodada` lista os eixos abaixo das referências e você os corrige na página, entre as rodadas;
@@ -603,6 +623,8 @@ passe de gosto: tells antes e depois, o depois é 0.
 
 ## h. Prova e entrega
 
+0. **Rodada final dos gates, completa e SEM `--sem-movimento`** (`node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir>`): é ela que roda o
+   gate de movimento com a dist entregue. Com a marca de movimento pulado na wave, a etapa 5 não registra.
 1. Print final pelo `screenshot-prova.js` com `--com-360 --com-320` (desktop 1440, celular 390,
    Android 360 e o menor suportado, 320, página inteira em scrollY 0), servindo a `dist/`. Nunca por script próprio: cabeçalho fixo no meio do print é artefato de rolagem.
    Esses prints são de página inteira em 390x844: a dobra do celular NÃO é o recorte do topo deles, é o `--salvar-dobra` do passo f (390x664).

@@ -6,7 +6,13 @@ próprio erro. Por isso a página passa por **um subagente auditor independente 
 (dicionário `LENTES`): design-critic, assets-auditor, visual-auditor, motion-auditor,
 responsive-auditor, cro-auditor, a11y-auditor, content-auditor e comparacao-referencias.
 Quem decide se entrega é o ciclo (`wave.py rodada`), não a nota. O ciclo tem **teto de 2
-rodadas** e a segunda é de conferência, não uma auditoria nova (seção mais abaixo).
+rodadas** e a segunda é de conferência, não uma auditoria nova (seção mais abaixo). **Sem crítico nem alto na rodada 1, não há
+rodada 2 (3.7.0):** o ciclo fecha, os gates de novo bastam e a entrega segue com as ressalvas.
+
+**Por que o auditor ficou mais curto (3.7.0, teste de aluno da 3.6.2, 26/10/2026):** a página levou 74 min e o passo g, 35 min
+(2113 s, 47% do total). A rodada 1 gastou 758 s e 21 chamadas; a rodada 2, 662 s e 10 chamadas, só para dizer "corrigido ou não".
+Agora a rodada 1 tem 8 minutos e 12 chamadas e lê o pacote sem capturar nada; a rodada 2 tem 3 minutos e 4 chamadas e confere só os
+críticos e altos. O que reprova defeito real continua reprovando: crítico e alto confirmados seguem fechando o ciclo.
 
 Por que um só (v3.5.4): o dono perguntou "esses 9 revisores são necessários?", a regra dele é
 teto de 2 rodadas de corrigir e auditar, e a skill roda ao vivo em aula, onde a página demorar
@@ -27,7 +33,8 @@ Os critérios continuam todos; muda quantos agentes rodam e quantas rodadas.
      (`screenshot-prova.js`), com as de 360 e 320 se foram feitas;
    - as pranchas do vídeo de prova: `prancha-desktop.png` e `prancha-mobile.png`
      (`gravar-video.js`), mais as pranchas de animação por seção quando existirem;
-   - as preferências do dono da skill, quando o projeto as usa.
+   - as preferências do dono da skill, quando o projeto as usa;
+   - os laudos dos gates verdes (`gates/<gate>-rN.txt`), lente por lente (3.7.0, abaixo).
    Gere uma vez o que ainda não existir (prints e vídeo, `references/caminhos/criar.md` passo g) e confira:
    `node <dir-da-skill>/scripts/py.mjs pacote-auditoria.py --projeto <dir> --url <url>`.
    Ele lista o que achou, o que falta e o que está velho (capturado antes da última mudança da
@@ -36,8 +43,14 @@ Os critérios continuam todos; muda quantos agentes rodam e quantas rodadas.
 3. **Quando o ambiente permite subagentes (o padrão):** UM subagente auditor independente (o
    tipo `auditor`, ou um subagente comum com mandato de refutar), que recebe o pacote e as
    preferências, sem o histórico da construção. Ele percorre as 9 lentes numa passada, lê o
-   pacote, só abre a página para o que as capturas não mostram (interação, foco, hover) e
-   devolve o schema abaixo: um bloco por lente. O registro continua um por lente (as 9 notas e
+   pacote e julga. Não capture nada: não abre a página, não tira print, não grava vídeo (3.7.0). O que só a
+   interação mostra (foco, hover) volta como "não verificado" no achado. Devolve o schema abaixo: um bloco por lente.
+
+   **Lente coberta por gate verde não se reaudita do zero (3.7.0).** O briefing traz, lente por lente, o gate verde que a cobre e o
+   laudo dele (o `responsivo` e o `oclusao` na `responsive-auditor`, o `movimento` e o `animacao` na `motion-auditor`, o `verdade` na
+   `content-auditor`, o `imagens` na `assets-auditor` e assim por diante). O auditor não refaz a medida: lê o laudo só se precisar do
+   número e procura só o que o gate não mede: hierarquia, gosto, coerência com o briefing e cara de IA. Gate vermelho ou sem
+   registro não cobre nada, e a parte dele é auditada inteira. O registro continua um por lente (as 9 notas e
    vereditos), com `--origem subagente`.
 
    **Cole o BRIEFING PRONTO no prompt do auditor.** O `pacote-auditoria.py` o gera já preenchido, em `auditoria/briefing-do-auditor.md`: a pasta do projeto (caminho absoluto), todos os
@@ -46,15 +59,16 @@ Os critérios continuam todos; muda quantos agentes rodam e quantas rodadas.
    de referências) e o orçamento. Colar o arquivo basta. O texto (a versão gerada traz os caminhos e o número da rodada):
 
    > Você é o auditor independente. Refute, não revise: ache o que está errado e diga onde, com a medida.
-   > **Orçamento desta rodada:** rodada 1, 15 minutos e no máximo 30 chamadas de ferramenta; rodada 2, 8 minutos e 15 chamadas.
-   > **Proibido recapturar o que já está no pacote** (telas, pranchas, vídeo). Só abra a página para o que print não mostra:
-   > interação, foco, hover, script bloqueado, e no máximo 6 capturas próprias.
+   > **Orçamento desta rodada, teto rígido:** rodada 1, 8 minutos e no máximo 12 chamadas de ferramenta; rodada 2 (a conferência), 3 minutos e 4 chamadas.
+   > **Não capture nada novo.** O pacote já traz os prints, as pranchas do vídeo, os laudos dos gates, o briefing, o PLANO e o HTML: leia e julgue.
    > O que não deu tempo de olhar volta como **"não verificado"**, por lente, em vez de estourar o tempo.
    > A resposta é o schema, sem relatório longo. No fim, diga a duração em minutos e o número de chamadas.
 
-   Registre o gasto: `wave.py registrar <lente> ... --duracao-min <minutos> --chamadas <n>` (em qualquer lente, a maior vale).
+   Registre o gasto: `wave.py registrar-lote ... --duracao-min <minutos> --chamadas <n>` na rodada 1 e
+   `wave.py --projeto <dir> conferencia --arquivo auditoria/resposta-rodada-2.json` na rodada 2.
    O `wave.py rodada` AVISA (não reprova) quando a rodada passou do orçamento. Motivo: o auditor único da auditoria real levou
-   51 minutos, 113 chamadas e mais de 200 arquivos de evidência recapturando telas por conta própria.
+   51 minutos, 113 chamadas e mais de 200 arquivos de evidência recapturando telas por conta própria; no teste de aluno da 3.6.2,
+   com o teto antigo, a rodada 1 ainda levou 12,6 minutos e 21 chamadas.
    **Modo opcional, auditoria profunda:** uma lente por subagente (com a tool `Workflow`, uma
    chamada `parallel`; com `Agent`/`Task`, um por lente) só quando a pessoa pedir auditoria
    profunda, com essas palavras ou equivalentes. Nunca por padrão.
@@ -70,9 +84,10 @@ Os critérios continuam todos; muda quantos agentes rodam e quantas rodadas.
 6. Master: `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> checar` (todas as lentes e
    todos os gates registrados).
 7. Ciclo: `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> rodada --criticos <N> --altos <N> --pendencias-do-usuario <N> --regressoes <N>`.
-   Saiu CONTINUA (rodada 1): corrija, refaça os gates que a correção toca, junte o pacote de novo
-   (a página mudou, os prints antigos ficam velhos), salve os achados da rodada 1 em
-   `auditoria/achados-rodada-1.json` e feche a rodada de conferência (a seção sobre a segunda rodada, abaixo).
+   Saiu CONTINUA (rodada 1, com crítico ou alto): salve os achados da rodada 1 em `auditoria/achados-rodada-1.json`, corrija,
+   refaça os gates que a correção toca e tire o print novo de cada crítico e alto; junte o pacote da conferência e feche a
+   rodada 2 (a seção sobre a segunda rodada, abaixo). Saiu ENTREGA ou ENTREGA COM RESSALVAS sem crítico nem alto: não há rodada 2;
+   corrija os médios que couberem, rode os gates de novo (a rodada completa) e entregue.
 
 ## Schema de retorno (toda lente)
 
@@ -99,13 +114,14 @@ Os critérios continuam todos; muda quantos agentes rodam e quantas rodadas.
 
 1. Zero crítico confirmado. Inegociável.
 2. Nenhuma regressão (achado causado pela correção da rodada anterior).
-3. A lente `comparacao-referencias` reprovada na rodada 1 mantém o ciclo aberto (CONTINUA); na última rodada ela vira
-   ressalva listada na entrega, depois de crítico e regressão. Reprovar essa lente NÃO manda reconstruir sozinha (o teto é 2 rodadas e a segunda é só conferência): o
+3. A lente `comparacao-referencias` reprovada na rodada 1 mantém o ciclo aberto (CONTINUA) quando a rodada tem crítico ou alto;
+   sem crítico nem alto (3.7.0) e na última rodada ela vira ressalva listada na entrega, depois de crítico e regressão. Reprovar essa lente NÃO manda reconstruir sozinha (o teto é 2 rodadas e a segunda é só conferência): o
    `wave.py rodada` lista os eixos abaixo das referências e manda corrigir esses eixos na página, entre as rodadas.
    Refazer o plano visual e reconstruir é um ciclo novo, só se a pessoa pedir.
 4. Auditoria independente: nota de autoavaliação não libera (AUDITORIA INDEPENDENTE PENDENTE).
 5. Depois disso, fecha quando a gravidade secou (zero crítico e zero alto), ou a média chegou a
-   8,0 com nenhuma lente abaixo de 7, ou **bateu o teto de 2 rodadas**.
+   8,0 com nenhuma lente abaixo de 7, ou **bateu o teto de 2 rodadas**. Gravidade seca já na rodada 1 fecha sem rodada 2: o
+   `wave.py rodada` grava `sem_rodada_2` e a etapa 5 cobra todos os gates verdes registrados depois dela.
 
 **Teto de 2 rodadas, e depois dele o ciclo fecha SEMPRE.** A segunda rodada termina em uma de
 três saídas: aprovado; **ENTREGA COM RESSALVAS**, que lista os achados que sobraram e a nota
@@ -135,47 +151,57 @@ escrito (`rodada --rodada-extra-pedida` quando a pessoa disser sim).
 Compare ACHADOS entre rodadas, nunca notas: cada rodada é um olhar novo e a nota não é medida
 calibrada. Nota que cai pode ser régua mais fina, não página pior.
 
-## Rodada 2: conferência, não auditoria nova
+## Rodada 2: conferência dirigida, não auditoria nova (3.7.0)
 
-A rodada 2 existe para confirmar a correção, e o auditor é o mesmo da rodada 1 (a mesma
-instância, quando o ambiente deixa continuar a conversa com ele, ou um novo recebendo a lista).
-Ele recebe o pacote refeito (prints e pranchas capturados DEPOIS da correção; o
-`pacote-auditoria.py --rodada 2` confere) e a lista de achados da rodada 1, e confere três
-coisas, e mais nada:
+A rodada 2 só existe quando a rodada 1 teve crítico ou alto, e ela confirma a correção desses achados, mais nada. O auditor é o
+mesmo da rodada 1 (a mesma instância, quando o ambiente deixa continuar a conversa com ele, ou um novo recebendo a lista). Ele
+NÃO recebe o pacote inteiro de novo. Recebe só:
 
-1. cada achado foi corrigido, com evidência;
-2. a correção não quebrou outra coisa (regressão), olhando só o que a correção tocou;
-3. mais nada. Ele não reabre as 9 lentes do zero, não procura achado novo fora do que a
-   correção tocou e não troca a régua. Defeito grave que apareça no caminho entra como
-   `regressão` ou `não corrigido`, nunca como lista nova.
+1. a lista numerada dos achados críticos e altos da rodada 1 (`auditoria/abertos-rodada-1.json`); médio e baixo ficam fora, porque
+   não seguram o ciclo e os gates provam o conserto deles;
+2. o print novo de cada um, que a sessão tira DEPOIS do conserto (no viewport que mostrou o defeito) e declara em
+   `auditoria/correcoes-rodada-1.json` (`n`, `print`, `recorte` opcional em px e `o_que_mudou`; o modelo numerado sai pronto
+   na primeira chamada do pacote), juntos numa prancha só (`auditoria/conferencia/prancha.jpg`);
+3. o diff da dist entre a versão que a rodada 1 auditou (a foto em `auditoria/dist-rodada-1/`, que o pacote da rodada 1 guarda) e a
+   de agora (`auditoria/diff-dist.txt`).
 
-Schema de retorno (um item por achado da rodada 1):
+O pacote: `node <dir-da-skill>/scripts/py.mjs pacote-auditoria.py --projeto <dir> --url <url> --rodada 2`. Ele recusa print velho
+(tirado antes da última mudança da dist) e achado sem print, e diz quando não há rodada 2. Orçamento: 3 minutos e 4 chamadas
+(a prancha, o diff e no máximo um print). O auditor confere três coisas, e mais nada:
+
+1. cada achado foi corrigido, com evidência (o recorte da prancha, a linha do diff ou a medida);
+2. a correção não quebrou outra coisa (regressão), olhando só o que o diff tocou;
+3. mais nada. Ele não abre a página, não reabre as 9 lentes e não procura achado novo.
+
+Schema de retorno (um item por número):
 
 ```json
 {
   "rodada": 2,
   "achados": [
-    { "achado": "string (o item da rodada 1, com a lente)", "estado": "corrigido|não corrigido|regressão", "evidencia": "string" }
-  ]
+    { "n": 1, "estado": "corrigido|não corrigido|regressão", "gravidade": "só na regressão", "evidencia": "string" }
+  ],
+  "duracao_min": 0,
+  "chamadas": 0
 }
 ```
 
-- **corrigido:** a evidência mostra o que mudou (print do mesmo recorte, medida, trecho com linha).
-- **não corrigido:** a evidência mostra que o defeito segue lá. Segue como achado aberto com a
-  mesma severidade.
-- **regressão:** a evidência mostra o que a correção quebrou. Conta em `--regressoes` e, se for
-  crítico, em `--criticos`. **Regressão trivial (3.6.1)** não fecha o ciclo: um gate do catálogo a pega, o conserto leva cerca
+- **corrigido:** a evidência mostra o que mudou.
+- **não corrigido:** o defeito segue lá. Segue como achado aberto com a mesma severidade.
+- **regressão:** a evidência mostra o que a correção quebrou, com a gravidade. Conta em `--regressoes` e, se for
+  crítica ou alta, em `--criticos` ou `--altos`. **Regressão trivial (3.6.1)** não fecha o ciclo: um gate do catálogo a pega, o conserto leva cerca
   de 1 minuto (crédito de foto que saiu da página, folga de 2 px), o gate passa depois do conserto e ela não é crítica nem alta.
-  O auditor marca a gravidade da regressão; a sessão conserta, roda só aquele gate (`rodar-gates.mjs --so <gate> --registrar-conserto`)
+  A sessão conserta, roda só aquele gate (`rodar-gates.mjs --so <gate> --registrar-conserto`)
   e declara `--regressao-trivial <gate>:<medio|baixo>`. Regressão crítica ou alta fecha o ciclo como sempre.
+- Número que o auditor não conferiu conta como aberto, com a severidade da rodada 1.
 
-**Nota nova só onde houve achado corrigido ou regressão (A31).** O auditor da rodada 2 devolve nota nova SÓ das lentes que tiveram achado
-corrigido ou regressão; as outras ficam com a nota da rodada 1 (o `wave.py rodada` mostra "nota da rodada 1 mantida" e que a média da
-rodada 2 mistura notas novas e mantidas, nunca como se tudo tivesse sido medido de novo).
+**Sem nota nova (3.7.0).** A conferência não dá nota: as notas da rodada 1 ficam e vão escritas na entrega (o `wave.py rodada`
+mostra "nota da rodada 1 mantida"). Nota que venha na resposta é ignorada, com aviso.
 
-A sessão registra de novo só as lentes cujos achados mudaram de estado (`registrar`, mesma
-`--origem subagente`), conta `--criticos`, `--altos` e `--regressoes` do que ficou aberto e fecha:
-`wave.py rodada ...`. O ciclo para aí (ENTREGA COM RESSALVAS ou NÃO ENTREGAR).
+A sessão grava a resposta em `auditoria/resposta-rodada-2.json` e roda
+`node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> conferencia --arquivo auditoria/resposta-rodada-2.json`: ele conta
+crítico, alto e regressão que ficaram abertos, guarda a duração e as chamadas e imprime o `wave.py rodada` do fechamento. Confira
+cada achado aberto e feche. O ciclo para aí (ENTREGA COM RESSALVAS ou NÃO ENTREGAR).
 
 ## As 9 lentes
 
@@ -286,9 +312,10 @@ pronto e o resto ainda não existe.
 2. Monte a prancha e o briefing:
    `node <dir-da-skill>/scripts/py.mjs gosto-heroi.py --projeto <dir> --heroi <dobra-1440.png> --celular <dobra-390.png> --refs <ref1-dobra.png>,<ref2-dobra.png>`
    As 2 referências são as mais fortes de `referencias/sintese.md`. Sem `--refs`, o script pega as 2 primeiras dobras.
-3. Lance 1 subagente que não construiu a página com o conteúdo de `auditoria/gosto-heroi/briefing.md`. O briefing traz o teto
-   escrito: TETO DE 5 MINUTOS, DURO, rodada única, até 6 chamadas, 1 imagem; no minuto 4 o auditor para de olhar e devolve o
-   JSON. Ele não captura nada. Grave a resposta em `auditoria/gosto-heroi/resultado.json` e rode
+3. Lance 1 subagente que não construiu a página com o conteúdo de `auditoria/gosto-heroi/briefing.md`, em segundo plano. O briefing traz o teto
+   escrito: TETO DE 5 MINUTOS, DURO, rodada única, até 4 chamadas (3.7.0; a 3.6.2 gastou 6 chamadas e 6,4 min), 1 imagem; no minuto 4 o auditor
+   para de olhar e devolve o JSON. Ele não captura nada. **A construção não espera por ela (3.7.0):** siga com as outras seções e,
+   quando a lente voltar, aplique a mudança no herói. No teste de aluno da 3.6.2 o herói só foi aprovado 512 s depois da primeira dobra. Grave a resposta em `auditoria/gosto-heroi/resultado.json` e rode
    `gosto-heroi.py --projeto <dir> --registrar`.
 4. **Uma rodada só (3.6.1).** `gosto` "correto" ou "generico": aplique no HERÓI a `uma_mudanca` (só o que o construtor resolve
    com o material que já existe) e os tells, e siga para as outras seções. NÃO rode a lente de novo. O que o auditor lista em
