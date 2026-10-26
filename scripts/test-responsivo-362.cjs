@@ -101,7 +101,8 @@ servidor.listen(0, '127.0.0.1', async () => {
   // Item 2: o print da dobra é o da janela medida (largura, altura e dpr 2), uma por janela da primeira tela.
   const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'dobra-362-'));
   const { status, out } = await rodar(`${base}/ok`, ['--so-primeira-tela', '--salvar-dobra', pasta]);
-  const esperados = [['dobra-390x664.png', 780, 1328], ['dobra-360x616.png', 720, 1232], ['dobra-375x553.png', 750, 1106]];
+  // 3.7.0: a dobra de 1440x900 também (a lente do herói pedia o print de 1440 e ele saía de outro comando)
+  const esperados = [['dobra-390x664.png', 780, 1328], ['dobra-360x616.png', 720, 1232], ['dobra-375x553.png', 750, 1106], ['dobra-1440x900.png', 1440, 900]];
   const erros = [];
   if (status !== 0) erros.push(`o gate saiu com ${status}`);
   for (const [nome, w, h] of esperados) {

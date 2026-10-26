@@ -730,6 +730,27 @@ for (const [nome, w, hv, ht, barra] of PRIMEIRA_TELA) {
   if (printDaJanela) console.log(`    print desta janela (${w}x${hv}, dpr 2): ${printDaJanela}`);
   for (const p of problemas) (barra ? falhas : avisos).push(`${onde}: ${p}`);
 }
+// 3.7.0: --salvar-dobra grava também a dobra do desktop, 1440x900 (dpr 1), em scrollY 0 e com as animações de entrada assentadas.
+// É o print que a lente curta do herói pede em 1440; antes ele saía de outro comando. Não é medida: não muda o veredito do gate.
+if (SALVAR_DOBRA) {
+  const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+  try { await page.goto(URL_ALVO, { waitUntil: 'networkidle', timeout: 45000 }); }
+  catch { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
+  await page.evaluate(() => document.fonts && document.fonts.ready);
+  await page.waitForTimeout(1200);
+  await page.evaluate(() => Promise.race([
+    Promise.all(document.getAnimations().filter((a) => a.effect && Number.isFinite(a.effect.getComputedTiming().endTime)).map((a) => a.finished.catch(() => null))),
+    new Promise((ok) => setTimeout(ok, 4000)),
+  ]));
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await page.waitForTimeout(300);
+  fs.mkdirSync(SALVAR_DOBRA, { recursive: true });
+  const alvo = path.join(SALVAR_DOBRA, 'dobra-1440x900.png');
+  await page.screenshot({ path: alvo, fullPage: false });
+  await ctx.close();
+  console.log(`  print da dobra do desktop (1440x900, dpr 1): ${alvo}`);
+}
 await navegador.close();
 
 console.log('='.repeat(88));
