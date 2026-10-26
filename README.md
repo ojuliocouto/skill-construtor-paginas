@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.6.2)
+SKILL.md                       router (v3.6.3)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,10 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.6.3
+
+`scripts/servidor-gzip.py <dir> 0` (free port) now prints the real port chosen by the system instead of `http://127.0.0.1:0/`.
 
 ## What is new in 3.6.2
 

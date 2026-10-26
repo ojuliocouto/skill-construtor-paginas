@@ -84,7 +84,9 @@ def abrir(handler, porta):
     try:
         if porta != 0 and alguem_responde(porta):
             raise OSError(f"porta {porta} ocupada")
-        return socketserver.TCPServer(("", porta), handler), porta, None
+        httpd = socketserver.TCPServer(("", porta), handler)
+        # Porta 0 = o sistema escolhe (3.6.3): a URL tem que dizer a porta real, nunca ":0".
+        return httpd, httpd.server_address[1], None
     except OSError:
         if porta == 0:
             raise

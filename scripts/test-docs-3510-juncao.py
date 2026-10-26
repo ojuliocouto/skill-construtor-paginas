@@ -135,7 +135,7 @@ class Readme(unittest.TestCase):
 
     def test_readme_versao_e_novidades(self):
         t = ler(README)
-        self.assertIn("router (v3.6.2)", t)
+        self.assertIn("router (v3.6.3)", t)
         self.assertNotIn("router (v3.5.11)", t)
         self.assertNotIn("router (v3.5.10)", t)
         self.assertIn("## What is new in 3.5.10", t)
@@ -148,11 +148,11 @@ class Readme(unittest.TestCase):
 
 class Versao(unittest.TestCase):
     def test_skill_na_3_5_14_a_3_5_10_virou_historia(self):
-        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.6\.2$")
+        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.6\.3$")
 
     def test_changelog_3_5_10_junta_as_frentes_e_diz_o_que_nao_foi_provado(self):
         t = ler(CHANGELOG)
-        self.assertTrue(t.startswith("# Changelog\n\n## 3.6.2"), t[:80])
+        self.assertTrue(t.startswith("# Changelog\n\n## 3.6.3"), t[:80])
         self.assertIn("\n## 3.5.10 (09/10/2026)", t)
         sec = trecho(t, "## 3.5.10", "## 3.5.9")
         for item in ("P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10", "P11", "P12", "P13", "P14", "P15", "P16", "P17",

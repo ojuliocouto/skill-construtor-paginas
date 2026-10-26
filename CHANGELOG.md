@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.6.3 (26/10/2026): porta livre imprime a porta real
+
+- `scripts/servidor-gzip.py <dir> 0`, o comando que o `criar.md` manda desde a 3.6.2, imprimia `http://127.0.0.1:0/`: o servidor devolvia a porta pedida (0) em vez da que o sistema escolheu. No teste de aluno da 3.6.2 isso custou 60 s. Teste novo em `test-servidor-gzip.py`.
+- Teste de aluno da 3.6.2 (Studio Equilíbrio): 74 min, ciclo ENTREGOU com ressalvas e 0 s de pós-ciclo (eram 295 s e a etapa 5 travada na 3.6.1).
+
 ## 3.6.2 (26/10/2026): a entrega não trava mais sem saída
 
 Achados do teste de aluno da 3.6.1 (73 min; 92 na 3.6.0; 195 na 3.5.8).

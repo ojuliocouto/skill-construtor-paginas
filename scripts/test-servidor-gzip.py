@@ -104,6 +104,18 @@ class Servidor(unittest.TestCase):
         self.assertEqual(st, 200)
         self.assertIn(b"pagina um", corpo)
 
+    def test_porta_zero_imprime_a_porta_real_que_o_sistema_escolheu(self):
+        # 3.6.3: o criar.md manda "servidor-gzip.py <dir> 0" (porta livre); a 3.6.2 imprimia
+        # "http://127.0.0.1:0/" e o aluno perdia 60 s.
+        d = pasta_com_pagina("pagina zero")
+        p = subir(d, 0)
+        url, texto = ler_url(p)
+        self.assertIsNotNone(url, f"o servidor não imprimiu a URL: {texto!r}")
+        self.assertNotIn(":0/", url, texto)
+        st, _, corpo = get(url)
+        self.assertEqual(st, 200)
+        self.assertIn(b"pagina zero", corpo)
+
     def test_porta_ocupada_escolhe_outra_diz_e_imprime_a_url(self):
         d = pasta_com_pagina("pagina dois")
         dono = socket.socket()
