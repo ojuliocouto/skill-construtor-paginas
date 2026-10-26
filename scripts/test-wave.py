@@ -847,6 +847,44 @@ class RegressaoSemGateNaoFechaOCiclo(unittest.TestCase):
         self.assertIn("--rodada-extra-pedida", msg)
 
 
+class BloqueioDizOProximoComando(unittest.TestCase):
+    """3.6.2, item 1: nenhum estado bloqueado fica sem o comando que destrava. O auditor master (`checar`) barrava com "A ENTREGA ESTA
+    BLOQUEADA" e nenhuma linha dizia o que rodar."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.projeto = self.temp.name
+
+    def checar(self):
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            code = wave.cmd_checar(argparse.Namespace(projeto=self.projeto, caminho="criar"))
+        return code, saida.getvalue()
+
+    def test_gate_vermelho_diz_o_comando_que_refaz_so_aquele_gate(self):
+        lentes = {n: {"nota": 8, "veredito": "aprovado", "origem": "subagente", "achados": "x" * 20} for n in wave.LENTES}
+        gates = {n: {"exit": 0, "detalhe": "ok"} for n in wave.GATES}
+        gates["imagens"] = {"exit": 1, "detalhe": "reprova"}
+        wave.salvar(self.projeto, {"lentes": lentes, "gates": gates})
+        code, texto = self.checar()
+        self.assertEqual(code, 1)
+        self.assertIn("rodar-gates.mjs --projeto <dir> --so imagens --registrar-conserto", texto)
+
+    def test_lente_faltando_diz_o_comando_que_registra(self):
+        wave.salvar(self.projeto, {"lentes": {}, "gates": {n: {"exit": 0, "detalhe": "ok"} for n in wave.GATES}})
+        code, texto = self.checar()
+        self.assertEqual(code, 1)
+        self.assertIn("wave.py --projeto <dir> registrar-lote", texto)
+
+    def test_gate_sem_registro_diz_o_comando(self):
+        lentes = {n: {"nota": 8, "veredito": "aprovado", "origem": "subagente", "achados": "x" * 20} for n in wave.LENTES}
+        wave.salvar(self.projeto, {"lentes": lentes, "gates": {}})
+        code, texto = self.checar()
+        self.assertEqual(code, 1)
+        self.assertIn("rodar-gates.mjs --projeto <dir> (a rodada completa registra", texto)
+
+
 class CincoEixosEReabrir(unittest.TestCase):
     """3.5.9: N23 (acabamento é o quinto eixo) e N27 (mudança grande do dono entre as rodadas reabre a rodada 1, uma vez)."""
 

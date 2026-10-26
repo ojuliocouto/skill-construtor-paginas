@@ -511,6 +511,15 @@ def cmd_checar(args):
     if problemas:
         for p in problemas:
             print("  BLOQUEIA: " + p)
+        # 3.6.2: nenhum bloqueio fica sem o comando que destrava.
+        print("\n  PRÓXIMO COMANDO:")
+        if faltando:
+            print("    - lente que nunca rodou: registre a resposta do auditor com `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> registrar-lote "
+                  "--arquivo auditoria/resposta-rodada-1.json --origem subagente` (ou uma lente: `wave.py --projeto <dir> registrar <lente> ...`)")
+        if gates_faltando:
+            print("    - gate sem registro: `node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir> (a rodada completa registra sozinha na wave)`")
+        for g in gates_vermelhos:
+            print(f"    - gate {g} vermelho: conserte e rode `node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir> --so {g} --registrar-conserto`")
         print("\n  A ENTREGA ESTA BLOQUEADA. O master não julga se a página está bonita: ele")
         print("  julga se o PROCESSO aconteceu. Lente que não rodou não vira 'passou por")
         print("  omissao', e foi assim que uma página saiu testada em uma única resolucao.\n")
@@ -871,7 +880,8 @@ def cmd_rodada(args):
         print(f"  das referências printadas no passo b (veredito: {ref.get('veredito')}, resposta: {ref.get('gosto')}).")
         print(f"  EIXOS a corrigir: {', '.join(eixos_ref)} ({quais}).")
         print("  CONTINUA: corrija esses eixos na página (cabe na correção entre as rodadas), refaça os gates que a correção toca")
-        print("  e feche a rodada de conferência. Nota alta nas outras lentes não compensa, e correta não basta.")
+        print("  (`rodar-gates.mjs --projeto <dir> --so <gate> --registrar-conserto`) e feche a rodada de conferência (`wave.py --projeto <dir> rodada --criticos <N> ...`).")
+        print("  Nota alta nas outras lentes não compensa, e correta não basta.")
         print("  Refazer o plano visual e reconstruir é um ciclo novo: só se você pedir (custa mais que a rodada 2).\n")
         return fechar(1, "CONTINUA")
     # Na última rodada do ciclo a ordem é: 1) crítico ou regressão aberta = NÃO ENTREGAR; 2) senão, ENTREGA COM RESSALVAS
