@@ -117,6 +117,15 @@ class SemRodada2(Base):
         self.assertEqual(code, 1, out)
         self.assertEqual(wave.carregar(self.projeto)["rodadas"][-1]["desfecho"], "CONTINUA")
 
+    def test_continua_da_rodada_1_diz_os_comandos_da_conferencia(self):
+        for kw in (dict(criticos=1), dict(altos=1)):
+            self.montar(nota=7)
+            code, out = self.rodada(**kw)
+            self.assertEqual(code, 1, out)
+            self.assertIn("pacote-auditoria.py", out)
+            self.assertIn("--rodada 2", out)
+            self.assertIn("conferencia --arquivo auditoria/resposta-rodada-2.json", out)
+
     def test_critico_na_rodada_1_continua(self):
         self.montar()
         code, _ = self.rodada(criticos=1)

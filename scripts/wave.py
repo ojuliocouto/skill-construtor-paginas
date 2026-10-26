@@ -815,6 +815,12 @@ def cmd_rodada(args):
 
     def fechar(code, desfecho, ressalvas=None):
         """Grava o desfecho da rodada (o gate-etapas.py registrar 5 lê daqui: NÃO ENTREGAR não vira entrega pronta)."""
+        if desfecho == "CONTINUA" and atual["n"] < TETO_RODADAS and (ref.get("gosto") in GOSTOS):
+            proj = Path(args.projeto).as_posix()
+            print("  RODADA 2 = CONFERÊNCIA DIRIGIDA (3 min, 4 chamadas, sem nota nova). Salve os achados em auditoria/achados-rodada-1.json, corrija,")
+            print("  tire o print novo de cada crítico e alto e junte o pacote:")
+            print(f"    {comando('pacote-auditoria.py')} --projeto {proj} --url <url> --rodada 2")
+            print(f"  Depois da resposta: {comando('wave.py')} --projeto {proj} conferencia --arquivo auditoria/resposta-rodada-2.json\n")
         atual["desfecho"] = desfecho
         if ressalvas:
             atual["ressalvas"] = ressalvas
