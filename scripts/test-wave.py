@@ -869,20 +869,20 @@ class BloqueioDizOProximoComando(unittest.TestCase):
         wave.salvar(self.projeto, {"lentes": lentes, "gates": gates})
         code, texto = self.checar()
         self.assertEqual(code, 1)
-        self.assertIn("rodar-gates.mjs --projeto <dir> --so imagens --registrar-conserto", texto)
+        self.assertRegex(texto, r"rodar-gates\.mjs\"? --projeto \S+ --so imagens --registrar-conserto")
 
     def test_lente_faltando_diz_o_comando_que_registra(self):
         wave.salvar(self.projeto, {"lentes": {}, "gates": {n: {"exit": 0, "detalhe": "ok"} for n in wave.GATES}})
         code, texto = self.checar()
         self.assertEqual(code, 1)
-        self.assertIn("wave.py --projeto <dir> registrar-lote", texto)
+        self.assertRegex(texto, r"wave\.py --projeto \S+ registrar-lote")
 
     def test_gate_sem_registro_diz_o_comando(self):
         lentes = {n: {"nota": 8, "veredito": "aprovado", "origem": "subagente", "achados": "x" * 20} for n in wave.LENTES}
         wave.salvar(self.projeto, {"lentes": lentes, "gates": {}})
         code, texto = self.checar()
         self.assertEqual(code, 1)
-        self.assertIn("rodar-gates.mjs --projeto <dir> (a rodada completa registra", texto)
+        self.assertRegex(texto, r"rodar-gates\.mjs\"? --projeto \S+` \(a rodada completa registra")
 
 
 class CincoEixosEReabrir(unittest.TestCase):

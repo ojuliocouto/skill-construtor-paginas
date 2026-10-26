@@ -60,6 +60,9 @@ import os
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lancador import comando  # noqa: E402
+
 REGISTRO = ".wave-auditoria.json"
 
 # As NOVE lentes. Nenhuma e opcional: a que nao se aplica se registra com veredito
@@ -513,13 +516,14 @@ def cmd_checar(args):
             print("  BLOQUEIA: " + p)
         # 3.6.2: nenhum bloqueio fica sem o comando que destrava.
         print("\n  PRÓXIMO COMANDO:")
+        proj = Path(args.projeto).as_posix()
         if faltando:
-            print("    - lente que nunca rodou: registre a resposta do auditor com `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> registrar-lote "
+            print(f"    - lente que nunca rodou: registre a resposta do auditor com `{comando('wave.py')} --projeto {proj} registrar-lote "
                   "--arquivo auditoria/resposta-rodada-1.json --origem subagente` (ou uma lente: `wave.py --projeto <dir> registrar <lente> ...`)")
         if gates_faltando:
-            print("    - gate sem registro: `node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir> (a rodada completa registra sozinha na wave)`")
+            print(f"    - gate sem registro: `{comando('rodar-gates.mjs')} --projeto {proj}` (a rodada completa registra sozinha na wave)")
         for g in gates_vermelhos:
-            print(f"    - gate {g} vermelho: conserte e rode `node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir> --so {g} --registrar-conserto`")
+            print(f"    - gate {g} vermelho: conserte e rode `{comando('rodar-gates.mjs')} --projeto {proj} --so {g} --registrar-conserto`")
         print("\n  A ENTREGA ESTA BLOQUEADA. O master não julga se a página está bonita: ele")
         print("  julga se o PROCESSO aconteceu. Lente que não rodou não vira 'passou por")
         print("  omissao', e foi assim que uma página saiu testada em uma única resolucao.\n")
