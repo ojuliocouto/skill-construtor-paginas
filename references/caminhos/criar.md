@@ -570,6 +570,17 @@ registro na wave posterior à auditoria; (3) ela não é achado crítico nem alt
 regressão consertada vai escrita na entrega. Crítico ou alto do auditor continua fechando o ciclo como antes, e uma regressão que não cumpre as três
 continua aberta. Sem o `--registrar-conserto` o `rodar-gates` parcial não grava nada na wave.
 
+**Regressão sem gate também não fecha o ciclo (3.6.2).** No teste de aluno da 3.6.1 duas regressões da rodada 2 nenhum gate pega (coluna sozinha
+no celular com 340 px vazios; link "pular para o conteúdo" sem `tabindex`), o `--regressao-trivial` exigia gate e a etapa 5 ficou sem saída. Regressão média
+ou baixa SEM gate do catálogo não fecha o ciclo quando as três valem: (1) foi consertada; (2) foi conferida num print NOVO, com caminho declarado,
+que existe, é imagem e tem data posterior à da última lente; (3) foi declarada com o motivo. Tire o print pelo `screenshot-prova.js` no viewport que mostrou o
+defeito, leia com os próprios olhos e feche a rodada com `--regressoes <N> --regressao-trivial-sem-gate "<descrição>:<medio|baixo>:<caminho-do-print>"`
+(uma vez por regressão; conta dentro de `--regressoes` e soma com as `--regressao-trivial`). Exemplo:
+`--regressao-trivial-sem-gate "coluna sozinha no celular:medio:prints/celular-depois.png"`. Crítico e alto continuam fechando o ciclo.
+**Ciclo já fechado em NÃO ENTREGAR só por regressão?** Conserte e refaça o MESMO `wave.py rodada` com a declaração (com gate ou sem gate): o fechamento
+substitui a rodada, não abre uma terceira. Crítico aberto não se refecha assim e pede a `--rodada-extra-pedida` da pessoa. Toda mensagem de bloqueio da wave e da etapa 5
+diz o próximo comando.
+
 **Teto de 2 rodadas.** Saiu CONTINUA na rodada 1: corrige, refaz os gates do passo f que a
 correção toca, junta o pacote de novo (`pacote-auditoria.py --rodada 2`, depois de salvar os achados
 em `auditoria/achados-rodada-1.json`) e fecha a rodada 2, que é de CONFERÊNCIA (`references/auditores.md`,

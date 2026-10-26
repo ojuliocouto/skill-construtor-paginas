@@ -1,8 +1,10 @@
 """Controles do ciclo com entradas reais do registro, sem serviços externos."""
 import argparse
 import contextlib
+import datetime
 import importlib.util
 import io
+import os
 import pathlib
 import tempfile
 import unittest
@@ -647,6 +649,202 @@ class RegressaoTrivialNaoFechaOCiclo(unittest.TestCase):
         code, texto = self.rodar(altos=0)
         self.assertEqual(code, 0, texto)
         self.assertNotIn("CONTINUA: houve REGRESSAO", texto)
+
+
+class RegressaoSemGateNaoFechaOCiclo(unittest.TestCase):
+    """3.6.2, item 1. No teste de aluno da 3.6.1 duas regressões da rodada 2 (coluna sozinha no celular com 340 px vazios e o link
+    "pular para o conteúdo" sem tabindex) não tinham gate do catálogo. O `--regressao-trivial` exige gate, então o ciclo fechou em
+    NÃO ENTREGAR e a etapa 5 ficou sem saída. Regressão SEM gate, de gravidade média ou baixa, também não fecha o ciclo quando
+    foi consertada, conferida num print novo (caminho declarado, arquivo mais novo que a última lente) e declarada com o motivo."""
+
+    LENTES_QUANDO = "2026-10-25T20:00:00"
+    PRINT_DEPOIS = datetime.datetime(2026, 10, 25, 20, 10, 0).timestamp()
+    PRINT_ANTES = datetime.datetime(2026, 10, 25, 19, 30, 0).timestamp()
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.projeto = self.temp.name
+
+    def preparar(self, rodadas_antes=1, desfecho_anterior="CONTINUA"):
+        wave.salvar(self.projeto, {
+            "lentes": {n: {"nota": 8, "veredito": "aprovado", "origem": "subagente", "gosto": "bonito", "quando": self.LENTES_QUANDO,
+                           "achados": "Inspeção da página com evidência de teste"} for n in wave.LENTES},
+            "gates": {n: {"exit": 0, "detalhe": "ok", "quando": "2026-10-25T20:10:00"} for n in wave.GATES},
+            "rodadas": [{"n": i + 1, "media": 8.0, "criticos": 0, "altos": 0, "notas": {}, "desfecho": desfecho_anterior}
+                        for i in range(rodadas_antes)],
+        })
+
+    def print_novo(self, nome="prints/celular-depois.png", quando=None):
+        caminho = pathlib.Path(self.projeto) / nome
+        caminho.parent.mkdir(parents=True, exist_ok=True)
+        caminho.write_bytes(b"\x89PNG\r\n\x1a\n")
+        t = self.PRINT_DEPOIS if quando is None else quando
+        os.utime(caminho, (t, t))
+        return nome
+
+    def rodar(self, declaradas, regressoes=1, triviais=(), criticos=0, altos=0, extra=False):
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida), contextlib.redirect_stderr(saida):
+            code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, criticos=criticos, altos=altos, regressoes=regressoes,
+                                                      pendencias_do_usuario=0, rodada_extra_pedida=extra,
+                                                      regressao_trivial=list(triviais),
+                                                      regressao_trivial_sem_gate=list(declaradas)))
+        return code, saida.getvalue()
+
+    def test_sem_gate_com_print_novo_e_motivo_entrega(self):
+        self.preparar()
+        nome = self.print_novo()
+        code, texto = self.rodar([f"coluna sozinha no celular com 340 px vazios:medio:{nome}"])
+        self.assertEqual(code, 0, texto)
+        self.assertIn("SEM GATE", texto)
+        self.assertNotIn("NÃO ENTREGAR", texto)
+        self.assertNotEqual(wave.carregar(self.projeto)["rodadas"][-1]["desfecho"], "NAO_ENTREGAR")
+
+    def test_o_historico_guarda_o_motivo_o_print_e_a_gravidade(self):
+        self.preparar()
+        nome = self.print_novo()
+        self.rodar([f"link pular para o conteudo sem tabindex:baixo:{nome}"])
+        item = wave.carregar(self.projeto)["rodadas"][-1]["regressoes_sem_gate"][0]
+        self.assertEqual(item["descricao"], "link pular para o conteudo sem tabindex")
+        self.assertEqual(item["gravidade"], "baixo")
+        self.assertEqual(item["print"], nome)
+
+    def test_aceita_caminho_absoluto_e_descricao_com_dois_pontos(self):
+        self.preparar()
+        nome = self.print_novo()
+        absoluto = str(pathlib.Path(self.projeto, nome).resolve())
+        code, texto = self.rodar([f"rodapé: coluna sozinha:medio:{absoluto}"])
+        self.assertEqual(code, 0, texto)
+
+    def test_print_mais_velho_que_a_ultima_lente_nao_prova_o_conserto(self):
+        self.preparar()
+        nome = self.print_novo(quando=self.PRINT_ANTES)
+        code, texto = self.rodar([f"coluna sozinha:medio:{nome}"])
+        self.assertEqual(code, 1, texto)
+        self.assertIn("NÃO ENTREGAR", texto)
+        self.assertIn("antes da última lente", texto)
+        self.assertIn("screenshot-prova.js", texto)
+
+    def test_print_que_nao_existe_nao_prova_o_conserto(self):
+        self.preparar()
+        code, texto = self.rodar(["coluna sozinha:medio:prints/nao-existe.png"])
+        self.assertEqual(code, 1, texto)
+        self.assertIn("não existe", texto)
+
+    def test_caminho_que_nao_e_imagem_nao_prova_o_conserto(self):
+        self.preparar()
+        nome = self.print_novo("prints/depois.txt")
+        code, texto = self.rodar([f"coluna sozinha:medio:{nome}"])
+        self.assertEqual(code, 1, texto)
+        self.assertIn("imagem", texto)
+
+    def test_gravidade_alta_continua_fechando_o_ciclo(self):
+        self.preparar()
+        nome = self.print_novo()
+        for grav in ("alto", "critico", "crítico"):
+            code, texto = self.rodar([f"coluna sozinha:{grav}:{nome}"])
+            self.assertEqual(code, 1, texto)
+            self.assertIn("crítico ou alto", texto)
+            self.preparar()
+            self.print_novo()
+
+    def test_formato_malformado_e_erro_com_o_exemplo(self):
+        self.preparar()
+        for ruim in ("so uma coisa", "sem caminho:medio", ":medio:x.png", "descricao:gravissimo:x.png", "descricao:medio:"):
+            code, texto = self.rodar([ruim])
+            self.assertEqual(code, 2, (ruim, texto))
+            self.assertIn("--regressao-trivial-sem-gate", texto)
+            self.assertIn(":medio:prints/", texto)
+
+    def test_mais_declaradas_do_que_regressoes_e_erro(self):
+        self.preparar()
+        nome = self.print_novo()
+        code, texto = self.rodar([f"a:medio:{nome}", f"b:medio:{nome}"], regressoes=1)
+        self.assertEqual(code, 2, texto)
+
+    def test_uma_com_gate_e_uma_sem_gate_cobrem_duas_regressoes(self):
+        self.preparar()
+        nome = self.print_novo()
+        code, texto = self.rodar([f"coluna sozinha:medio:{nome}"], regressoes=2, triviais=("imagens:medio",))
+        self.assertEqual(code, 0, texto)
+        rodada = wave.carregar(self.projeto)["rodadas"][-1]
+        self.assertEqual(len(rodada["regressoes_triviais"]), 1)
+        self.assertEqual(len(rodada["regressoes_sem_gate"]), 1)
+
+    def test_a_declaracao_nao_cobre_a_regressao_seguinte(self):
+        self.preparar()
+        nome = self.print_novo()
+        code, texto = self.rodar([f"coluna sozinha:medio:{nome}"], regressoes=2)
+        self.assertEqual(code, 1, texto)
+        self.assertIn("1 achado(s)", texto)
+
+    def test_critico_do_auditor_continua_fechando_o_ciclo(self):
+        self.preparar()
+        nome = self.print_novo()
+        code, texto = self.rodar([f"coluna sozinha:medio:{nome}"], criticos=1)
+        self.assertEqual(code, 1, texto)
+        self.assertIn("NÃO ENTREGAR: crítico aberto", texto)
+
+    # --- nunca existe estado bloqueado sem o comando que destrava ---
+
+    def test_nao_entregar_por_regressao_aberta_diz_os_dois_comandos(self):
+        self.preparar()
+        code, texto = self.rodar([], regressoes=1)
+        self.assertEqual(code, 1, texto)
+        self.assertIn("--regressao-trivial-sem-gate", texto)
+        self.assertIn("--regressao-trivial <gate>", texto)
+
+    def test_ciclo_fechado_por_regressao_reabre_o_fechamento_com_a_declaracao(self):
+        # o aluno fechou a rodada 2 em NÃO ENTREGAR, consertou e não havia comando: agora o mesmo fechamento se refaz
+        self.preparar()
+        code, _ = self.rodar([], regressoes=1)
+        self.assertEqual(code, 1)
+        rodadas = wave.carregar(self.projeto)["rodadas"]
+        self.assertEqual((len(rodadas), rodadas[-1]["desfecho"], rodadas[-1].get("bloqueio")), (2, "NAO_ENTREGAR", "regressao"))
+        nome = self.print_novo()
+        code, texto = self.rodar([f"coluna sozinha:medio:{nome}"], regressoes=1)
+        self.assertEqual(code, 0, texto)
+        rodadas = wave.carregar(self.projeto)["rodadas"]
+        self.assertEqual(len(rodadas), 2, "refechar substitui a rodada 2, não abre a terceira")
+        self.assertNotEqual(rodadas[-1]["desfecho"], "NAO_ENTREGAR")
+
+    def test_refechar_sem_declaracao_continua_recusando_o_teto_e_diz_o_comando(self):
+        self.preparar()
+        self.rodar([], regressoes=1)
+        code, texto = self.rodar([], regressoes=1)
+        self.assertEqual(code, 2, texto)
+        self.assertIn("--regressao-trivial-sem-gate", texto)
+        self.assertIn("--rodada-extra-pedida", texto)
+
+    def test_nao_entregar_por_critico_nao_reabre_com_declaracao(self):
+        self.preparar()
+        code, _ = self.rodar([], regressoes=0, criticos=1)
+        self.assertEqual(code, 1)
+        nome = self.print_novo()
+        code, texto = self.rodar([f"coluna sozinha:medio:{nome}"], regressoes=1)
+        self.assertEqual(code, 2, texto)
+        self.assertEqual(len(wave.carregar(self.projeto)["rodadas"]), 2)
+
+    def test_etapa_5_bloqueada_por_nao_entregar_diz_o_comando(self):
+        spec = importlib.util.spec_from_file_location("gate_etapas", pathlib.Path(__file__).with_name("gate-etapas.py"))
+        gate = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gate)
+        self.preparar()
+        self.rodar([], regressoes=1)
+        evidencia = pathlib.Path(self.projeto) / "evidencias" / "etapa-5.json"
+        evidencia.parent.mkdir()
+        evidencia.write_text("{}", encoding="utf-8")
+        campos = {n: "x" for n in gate.PAGINAS["5"]}
+        campos["arquivos"] = ["evidencias/etapa-5.json"]
+        campos["passe_de_gosto"] = {"antes": 1, "depois": 0, "inspecao": "página inteira em 3 larguras"}
+        evidencia.write_text(__import__("json").dumps(campos), encoding="utf-8")
+        with self.assertRaises(ValueError) as erro:
+            gate.validar(pathlib.Path(self.projeto).resolve(), evidencia, "5", gate.PAGINAS["5"], "paginas")
+        msg = str(erro.exception)
+        self.assertIn("NÃO ENTREGAR", msg)
+        self.assertIn("--regressao-trivial-sem-gate", msg)
+        self.assertIn("--rodada-extra-pedida", msg)
 
 
 class CincoEixosEReabrir(unittest.TestCase):

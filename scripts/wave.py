@@ -611,6 +611,61 @@ def _classificar_triviais(d, triviais):
     return consertadas, abertas
 
 
+# REGRESSÃO SEM GATE (3.6.2, teste de aluno da 3.6.1). Duas regressões da rodada 2 (coluna sozinha no celular com 340 px vazios e o
+# link "pular para o conteúdo" sem tabindex) nenhum gate do catálogo pega. O `--regressao-trivial` exige gate, então o ciclo fechou em
+# NÃO ENTREGAR e a etapa 5 ficou sem saída. Regressão sem gate, de gravidade média ou baixa, também não fecha o ciclo quando as TRÊS valem:
+#   1. foi consertada (a declaração diz que sim, com o motivo escrito);
+#   2. foi conferida num print novo: o caminho está declarado, o arquivo existe, é imagem e a data dele é POSTERIOR à da última lente;
+#   3. não é achado crítico nem alto do auditor.
+# Declara-se com `--regressao-trivial-sem-gate "<descrição>:<medio|baixo>:<caminho-do-print>"`, uma vez por regressão, e conta dentro de --regressoes.
+EXTENSOES_DE_PRINT = (".png", ".jpg", ".jpeg", ".webp")
+EXEMPLO_SEM_GATE = '--regressao-trivial-sem-gate "coluna sozinha no celular:medio:prints/celular-depois.png"'
+
+
+def _ler_sem_gate(brutos):
+    """['coluna sozinha:medio:prints/x.png'] -> ([(descricao, gravidade, caminho)], erro). A descrição pode ter dois pontos: separa-se pelo fim."""
+    lidos = []
+    for bruto in brutos or []:
+        partes = str(bruto).rsplit(":", 2)
+        formato = f"--regressao-trivial-sem-gate '{bruto}': o formato é <descrição>:<medio|baixo>:<caminho-do-print>. Exemplo: {EXEMPLO_SEM_GATE}."
+        if len(partes) != 3:
+            return None, formato
+        desc, grav, caminho = partes[0].strip(), _sem_acento(partes[1]), partes[2].strip()
+        if not desc or not caminho:
+            return None, formato
+        if grav not in GRAVIDADES_QUE_FECHAM + GRAVIDADES_TRIVIAIS:
+            return None, (f"--regressao-trivial-sem-gate '{bruto}': gravidade '{grav}' desconhecida. Use médio ou baixo "
+                          f"(crítico e alto não são triviais). Exemplo: {EXEMPLO_SEM_GATE}.")
+        lidos.append((desc, grav, caminho))
+    return lidos, None
+
+
+def _classificar_sem_gate(projeto, d, declaradas):
+    """Separa as declaradas sem gate em (consertadas, abertas). Aberta traz o motivo e o próximo comando."""
+    corte = max((v.get("quando") or "" for v in d.get("lentes", {}).values()), default="")
+    base = Path(projeto)
+    consertadas, abertas = [], []
+    for desc, grav, caminho in declaradas:
+        refaz = ("Tire o print de novo (`node <dir-da-skill>/scripts/screenshot-prova.js ... --com-360 --com-320`, ou o viewport que "
+                 f"mostrou o defeito), confira com os olhos e feche a rodada de novo com {EXEMPLO_SEM_GATE}.")
+        if grav in GRAVIDADES_QUE_FECHAM:
+            abertas.append(f"{desc} ({grav}): achado crítico ou alto do auditor não é regressão trivial e fecha o ciclo")
+            continue
+        arq = Path(caminho)
+        arq = arq if arq.is_absolute() else base / arq
+        if not arq.is_file():
+            abertas.append(f"{desc} ({grav}): o print '{caminho}' não existe. {refaz}")
+        elif arq.suffix.lower() not in EXTENSOES_DE_PRINT:
+            abertas.append(f"{desc} ({grav}): '{caminho}' não é uma imagem de print ({', '.join(EXTENSOES_DE_PRINT)}). {refaz}")
+        else:
+            feito = datetime.datetime.fromtimestamp(arq.stat().st_mtime).isoformat(timespec="seconds")
+            if feito <= corte:
+                abertas.append(f"{desc} ({grav}): o print '{caminho}' é de {feito}, antes da última lente ({corte}), então não prova o conserto. {refaz}")
+            else:
+                consertadas.append({"descricao": desc, "gravidade": grav, "print": caminho, "print_em": feito})
+    return consertadas, abertas
+
+
 TETO_RODADAS = 2
 RODADAS_EXTRAS_MAX = 1
 GANHO_MINIMO = 0.3
@@ -644,9 +699,15 @@ def cmd_rodada(args):
     if erro_trivial:
         print("ERRO: " + erro_trivial, file=sys.stderr)
         return 2
-    if len(triviais) > (getattr(args, "regressoes", 0) or 0):
-        print(f"ERRO: {len(triviais)} --regressao-trivial para {getattr(args, 'regressoes', 0) or 0} --regressoes: cada trivial conta "
-              "dentro de --regressoes, então ele não pode ser menor.", file=sys.stderr)
+    sem_gate, erro_sem_gate = _ler_sem_gate(getattr(args, "regressao_trivial_sem_gate", None))
+    if erro_sem_gate:
+        print("ERRO: " + erro_sem_gate, file=sys.stderr)
+        return 2
+    declaradas = len(triviais) + len(sem_gate)
+    if declaradas > (getattr(args, "regressoes", 0) or 0):
+        print(f"ERRO: {declaradas} regressão(ões) triviais declaradas (--regressao-trivial e --regressao-trivial-sem-gate) para "
+              f"{getattr(args, 'regressoes', 0) or 0} --regressoes: cada uma conta dentro de --regressoes, então ele não pode ser menor.",
+              file=sys.stderr)
         return 2
     # Fechar o ciclo sem os gates permitia imprimir ENTREGA para um processo incompleto.
     if cmd_checar(args) != 0:
@@ -654,11 +715,24 @@ def cmd_rodada(args):
     hist = d.setdefault("rodadas", [])
     lentes = d.get("lentes", {})
     extra_pedida = bool(getattr(args, "rodada_extra_pedida", False))
+    # REFECHAR (3.6.2): a última rodada fechou em NÃO ENTREGAR só por regressão aberta e a regressão foi consertada depois. O mesmo
+    # fechamento se refaz com a declaração (a rodada é substituída, não nasce outra): sem isto o ciclo ficava sem comando que destrave.
+    # Crítico aberto não entra aqui: ele pede a rodada extra da pessoa.
+    if len(hist) >= TETO_RODADAS and hist[-1].get("bloqueio") == "regressao" and (triviais or sem_gate):
+        extra_pedida = extra_pedida or bool(hist[-1].get("rodada_extra_pedida"))
+        hist.pop()
+        refechando = True
+    else:
+        refechando = False
     if len(hist) >= TETO_RODADAS:
         if not extra_pedida:
             print(f"ERRO: o ciclo já fechou em {len(hist)} rodada(s), o teto é {TETO_RODADAS}. Terceira rodada só "
                   "se a pessoa pedir, com --rodada-extra-pedida. Entregue com a nota real e as ressalvas.",
                   file=sys.stderr)
+            if hist[-1].get("bloqueio") == "regressao":
+                print("  A última rodada fechou em NÃO ENTREGAR por regressão aberta. Se você já a consertou, refaça o MESMO fechamento "
+                      "declarando-a: com gate no catálogo, `--regressao-trivial <gate>:<medio|baixo>` (depois de "
+                      "`rodar-gates.mjs --so <gate> --registrar-conserto`); sem gate, " + EXEMPLO_SEM_GATE + ".", file=sys.stderr)
             return 2
         if len(hist) >= TETO_RODADAS + RODADAS_EXTRAS_MAX:
             print(f"ERRO: não existe rodada além de {TETO_RODADAS + RODADAS_EXTRAS_MAX}, nem a pedido. "
@@ -681,6 +755,8 @@ def cmd_rodada(args):
         "rodada_extra_pedida": extra_pedida,
         "notas": {k: v.get("nota") for k, v in lentes.items()},
     }
+    if refechando:
+        atual["refechada"] = True
     # A31 (a): lentes que NÃO foram medidas de novo desde a rodada anterior mantêm a nota dela; a média não é medida nova.
     if hist:
         corte = hist[-1].get("quando", "")
@@ -734,7 +810,9 @@ def cmd_rodada(args):
     # trava.
     regrediu = []
     consertadas, abertas = _classificar_triviais(d, triviais)
-    restantes = (getattr(args, "regressoes", 0) or 0) - len(consertadas)
+    sg_consertadas, sg_abertas = _classificar_sem_gate(args.projeto, d, sem_gate)
+    abertas = abertas + sg_abertas
+    restantes = (getattr(args, "regressoes", 0) or 0) - len(consertadas) - len(sg_consertadas)
     if restantes > 0:
         regrediu = [f"{restantes} achado(s) confirmado(s) causado(s) por correção da rodada anterior"] + abertas
     if consertadas:
@@ -744,6 +822,14 @@ def cmd_rodada(args):
         print(f"  REGRESSÃO TRIVIAL CONSERTADA (não fecha o ciclo): {len(consertadas)}")
         for c in consertadas:
             print(f"    - gate {c['gate']} ({c['gravidade']}): verde depois da auditoria; sem crítico nem alto. Vai na entrega como regressão consertada.")
+    if sg_consertadas:
+        atual["regressoes_sem_gate"] = sg_consertadas
+        salvar(args.projeto, d)
+        print("-" * 74)
+        print(f"  REGRESSÃO SEM GATE CONSERTADA (não fecha o ciclo): {len(sg_consertadas)}")
+        for c in sg_consertadas:
+            print(f"    - {c['descricao']} ({c['gravidade']}): print novo {c['print']} ({c['print_em']}), depois da última lente; sem crítico nem alto. "
+                  "Vai na entrega como regressão consertada, sem gate do catálogo, com o print que a prova.")
     caiu = []
     if len(hist) >= 2:
         ant = hist[-2]["notas"]
@@ -802,9 +888,13 @@ def cmd_rodada(args):
         print("  NÃO ENTREGAR: regressão aberta. A correção quebrou outra coisa e o ciclo não tem mais rodada:")
         for r in regrediu:
             print(f"    - {r}")
-        print("  Conserte a regressão antes de entregar.")
-        print("  Regressão que um gate pega e que se conserta em 1 minuto (crédito de foto, folga de 2 px) não fecha o ciclo: conserte, rode só aquele")
-        print("  gate (`rodar-gates.mjs --so <gate> --registrar-conserto`) e declare `--regressao-trivial <gate>:<gravidade>` (médio ou baixo).\n")
+        print("  Conserte a regressão antes de entregar. O próximo comando depende de quem pega a regressão (médio ou baixo; crítico ou alto fecha o ciclo):")
+        print("  - um gate do catálogo a pega (crédito de foto, folga de 2 px): conserte, rode só aquele gate")
+        print("    (`rodar-gates.mjs --so <gate> --registrar-conserto`) e feche a MESMA rodada de novo com `--regressao-trivial <gate>:<gravidade>`.")
+        print("  - nenhum gate a pega (coluna sozinha no celular, link sem tabindex): conserte, tire um print novo que mostre o conserto e feche a")
+        print(f"    MESMA rodada de novo com {EXEMPLO_SEM_GATE}.")
+        print("  Refechar substitui esta rodada, não abre a terceira. Crítico aberto não se refecha assim: pede a rodada extra da pessoa.\n")
+        atual["bloqueio"] = "regressao"
         return fechar(1, "NAO_ENTREGAR")
     if args.criticos > 0:
         print(f"  CONTINUA: {args.criticos} crítico(s) confirmado(s). Crítico não negocia com média.")
@@ -814,7 +904,8 @@ def cmd_rodada(args):
         print("  CONTINUA: houve REGRESSAO, a correção quebrou outra coisa:")
         for r in regrediu:
             print(f"    - {r}")
-        print("  Conserte a regressão antes de seguir.\n")
+        print("  Conserte a regressão antes de seguir e rode a wave de novo. Se for média ou baixa e ela já estiver consertada, declare-a no")
+        print("  fechamento: com gate no catálogo, `--regressao-trivial <gate>:<gravidade>`; sem gate, " + EXEMPLO_SEM_GATE + ".\n")
         return fechar(1, "CONTINUA")
     vai_entregar = ((media >= PISO_MEDIA and all(n >= PISO_NOTA for n in notas)) or secou or convergiu
                     or no_teto)
@@ -944,6 +1035,11 @@ def main():
                     help="regressão TRIVIAL já consertada, uma por uso, e conta dentro de --regressoes. Só vale se um gate do catálogo "
                          "a pega, o gate está verde na wave com registro posterior à auditoria e a gravidade é medio ou baixo "
                          "(crítico ou alto fecha o ciclo). Exemplo: --regressao-trivial imagens:medio")
+    ro.add_argument("--regressao-trivial-sem-gate", dest="regressao_trivial_sem_gate", action="append", default=None,
+                    metavar="DESCRICAO:GRAVIDADE:PRINT",
+                    help="regressão média ou baixa que NENHUM gate do catálogo pega, já consertada, uma por uso, e conta dentro de "
+                         "--regressoes. Vale se o print do conserto existe (caminho no projeto ou absoluto), é imagem e é mais novo que a "
+                         "última lente. Fica na entrega com o motivo e o print. Exemplo: " + EXEMPLO_SEM_GATE.replace("--regressao-trivial-sem-gate ", ""))
     ro.add_argument("--rodada-extra-pedida", dest="rodada_extra_pedida", action="store_true",
                     help="a PESSOA pediu uma terceira rodada. Fica registrada no historico; a terceira "
                          "também fecha sempre e nunca existe quarta")

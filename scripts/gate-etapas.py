@@ -191,8 +191,17 @@ def validar(projeto, arquivo, etapa, campos, perfil):
         if desfecho in ("NAO_ENTREGAR", "CONTINUA", "AUDITORIA_PENDENTE"):
             nome = {"NAO_ENTREGAR": "NÃO ENTREGAR (crítico ou regressão aberta)", "CONTINUA": "CONTINUA (o ciclo ainda não fechou)",
                     "AUDITORIA_PENDENTE": "AUDITORIA INDEPENDENTE PENDENTE"}[desfecho]
-            raise ValueError(f"Etapa 5: o ciclo de auditoria terminou em {nome}: não se registra a entrega como pronta. "
-                             f"Corrija e rode de novo o `wave.py rodada` (ou peça a rodada extra), depois registre a etapa 5.")
+            proximo = {
+                "NAO_ENTREGAR": ("Se foi regressão média ou baixa já consertada, refaça o mesmo fechamento declarando-a: "
+                                 f"{comando('wave.py')} --projeto {projeto.as_posix()} rodada ... --regressoes <N> "
+                                 "--regressao-trivial <gate>:<medio|baixo> (um gate do catálogo a pega) ou "
+                                 "--regressao-trivial-sem-gate \"<descrição>:<medio|baixo>:<print-novo>\" (nenhum gate a pega). "
+                                 "Se foi crítico, corrija e peça a rodada extra à pessoa (`--rodada-extra-pedida`)."),
+                "CONTINUA": f"Corrija e rode de novo {comando('wave.py')} --projeto {projeto.as_posix()} rodada ...",
+                "AUDITORIA_PENDENTE": "Registre as lentes com `--origem subagente` (ou `sessao-independente`) e feche a rodada de novo.",
+            }[desfecho]
+            raise ValueError(f"Etapa 5: o ciclo de auditoria terminou em {nome}: não se registra a entrega como pronta. {proximo} "
+                             "Depois registre a etapa 5.")
         hashes.update(videos_da_prova(projeto, doc))
     for nome in arquivos:
         p = (projeto / nome).resolve()
