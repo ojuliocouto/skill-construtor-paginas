@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.6.2 (26/10/2026): a entrega não trava mais sem saída
+
+Achados do teste de aluno da 3.6.1 (73 min; 92 na 3.6.0; 195 na 3.5.8).
+
+- **Regressão sem gate** (`wave.py rodada --regressao-trivial-sem-gate "<descrição>:<medio|baixo>:<print>"`): média ou baixa, consertada e conferida num print posterior à última lente, não fecha o ciclo. Uma rodada que já fechou em NÃO ENTREGAR por regressão se refecha com a declaração, sem passar do teto. Crítico e alto continuam fechando. Toda mensagem de bloqueio diz o próximo comando, com o caminho completo.
+- **Dobra do celular** (`gate-responsivo.mjs --salvar-dobra <pasta>`): o gate grava o print da MESMA janela que mediu (390x664, dpr 2). O recorte da página inteira tirada em 844 dava falso "botão cortado". Aviso quando o layout de 844 põe o botão abaixo da área visível.
+- **Botão em 320**: tolerância de 12 px, só em 320x568. Em 390 e 430 nada muda.
+- **Porta livre** (`servidor-gzip.py <dir> 0`) no lugar da 8765 fixa, que capturou a página de outro projeto; a lente do herói recebe também `--celular`; `provar.mjs --so animacao` refaz só a prova de animação.
+- **`gate-verdade.py`**: o padrão casa no começo da palavra ("cura" não pega mais "procura").
+- Testes: `rodar-testes.mjs` 79 de 79 (novos `test-responsivo-362.cjs` e `test-docs-362.py`).
+
 ## 3.6.1 (25/10/2026): menos voltas, a partir do teste de aluno da 3.6.0
 
 O teste de aluno da 3.6.0 (briefing Studio Equilíbrio) levou 92 min, contra 195 min na 3.5.8. Os três custos maiores viraram cortes:

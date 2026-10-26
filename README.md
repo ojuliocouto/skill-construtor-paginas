@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.6.1)
+SKILL.md                       router (v3.6.2)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,10 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.6.2
+
+The delivery no longer gets stuck. A regression with no gate, of medium or low severity, fixed and checked in a print newer than the last lens, no longer closes the cycle, and a round already closed by a regression can be closed again with that declaration; critical and high still close it. Every blocking message prints the next command. The responsive gate can save the fold print of the exact window it measured (`--salvar-dobra`), since a crop of a full-page shot gave a false "cut button". At 320 px the hero button gets a 12 px tolerance. Examples use a free port instead of 8765, the hero lens also gets the phone print, `provar.mjs --so animacao` redoes only the animation proof, and `gate-verdade.py` matches at the start of a word ("cura" no longer hits "procura").
 
 ## What is new in 3.6.1
 
