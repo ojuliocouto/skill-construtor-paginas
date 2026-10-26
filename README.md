@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.6.0)
+SKILL.md                       router (v3.6.1)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,10 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.6.1
+
+Fewer correction loops, from a student run of 3.6.0 (92 min, against 195 min on 3.5.8). The hero taste lens runs once with a hard 5-minute cap, and a reason that depends on client material becomes a pending item instead of another round. A trivial regression caught by a catalog gate, fixed and green after the audit, with medium or low severity, no longer closes the cycle; critical and high still do. At 320 px the hero follows the same "text wins, photo down to 20%" rule as 390 and 360, with a 0.5-point tolerance on the 35% limit. The claims table takes one line per fact.
 
 ## What is new in 3.6.0
 

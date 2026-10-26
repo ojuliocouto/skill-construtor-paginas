@@ -15,9 +15,9 @@ def ler(p):
 
 class Versao360(unittest.TestCase):
     def test_versao_nos_tres_lugares(self):
-        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.6\.0$")
-        self.assertIn("router (v3.6.0)", ler(README))
-        self.assertTrue(ler(CHANGELOG).startswith("# Changelog\n\n## 3.6.0"))
+        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.6\.1$")
+        self.assertIn("router (v3.6.1)", ler(README))
+        self.assertIn("\n## 3.6.0", ler(CHANGELOG))  # a atual é a 3.6.1
         self.assertIn("## What is new in 3.6.0", ler(README))
 
     def test_criar_manda_a_lente_do_heroi_como_conselho(self):

@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.6.1 (25/10/2026): menos voltas, a partir do teste de aluno da 3.6.0
+
+O teste de aluno da 3.6.0 (briefing Studio Equilíbrio) levou 92 min, contra 195 min na 3.5.8. Os três custos maiores viraram cortes:
+
+- **Lente de gosto no herói, 1 rodada só** (`scripts/gosto-heroi.py`, `criar.md` e.1, `auditores.md`): teto de 5 minutos escrito no prompt; motivo que depende de material da cliente (foto real, logo, depoimento) vira pendência em `evidencias/pendencias-do-heroi.md` e não roda de novo; montar a lente de novo depois do `resultado.json` sai com código 3. No teste, a lente custou 17,2 min em 2 rodadas pelo mesmo motivo (foto de banco).
+- **Regressão trivial não fecha o ciclo** (`wave.py rodada --regressao-trivial <gate>:<medio|baixo>`, `rodar-gates.mjs --registrar-conserto`): regressão que um gate do catálogo pega, com o gate verde DEPOIS da auditoria e gravidade média ou baixa, não leva a NÃO ENTREGAR. Crítico e alto continuam fechando o ciclo.
+- **Primeira tela em 320** (`gate-responsivo.mjs`): a regra "o texto ganha, a foto cai até 20%" passa a valer em 320 como em 390 e 360, e o limite de 35% ganha tolerância de 0,5 ponto (34,9% reprovava).
+- **Tabela de sustentação por fato** (`criar.md`): a coluna 1 traz o trecho que promete, uma linha por fato; o gate de verdade não mudou.
+- Testes: `rodar-testes.mjs` 77 de 77 (novos `test-responsivo-320.cjs` e `test-docs-361.py`).
+- Fica para depois: a metade de baixo da página do teste saiu com cara de modelo de landing (cartões brancos, depoimentos 2x2 com iniciais, FAQ em sanfona), que nenhum gate mede; o `gate-verdade.py` aceita frase longa que contém o trecho com promessa extra.
+
 ## 3.6.0 (25/10/2026): velocidade e brechas de cara de IA
 
 Auditoria de 25/10/2026: o CRIAR levou de 3h12 a 3h15 nos testes e 7h26 numa página real, e a página da Justa Pena passou nos gates com 15 "+" repetidos, enfeite sob 9 de 10 títulos e ninguém no herói.
