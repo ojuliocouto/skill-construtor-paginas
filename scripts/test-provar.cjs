@@ -253,6 +253,41 @@ teste('prova que estoura o tempo é interrompida e reprova (saída 124)', async 
   assert.match(r.saida, /tempo máximo/i);
 });
 
+teste('3.6.2: --so animacao refaz só a prova de animação (anim.mjs e prancha.py), sem prints nem vídeo', async () => {
+  const marcas = pasta('marcas');
+  const dir = falsos(marcas);
+  const proj = projeto();
+  const r = provar(BASE(proj, dir).concat(['--so', 'animacao']));
+  assert.equal(r.codigo, 0, r.saida);
+  assert.ok(existe(marcas, 'anim') && existe(marcas, 'prancha'), 'a animação não rodou');
+  assert.ok(!existe(marcas, 'screenshot-prova') && !existe(marcas, 'gravar-video'), 'o --so animacao rodou prints ou vídeo');
+  assert.match(r.saida, /PASSA\s+animacao/);
+  assert.match(r.saida, /PULADA\s+prints[^\n]*--so/);
+  assert.match(r.saida, /PULADA\s+video[^\n]*--so/);
+});
+
+teste('3.6.2: --so aceita mais de uma prova, separadas por vírgula', async () => {
+  const marcas = pasta('marcas');
+  const dir = falsos(marcas);
+  const r = provar(BASE(projeto(), dir).concat(['--so', 'prints,video']));
+  assert.equal(r.codigo, 0, r.saida);
+  assert.ok(existe(marcas, 'screenshot-prova') && existe(marcas, 'gravar-video'));
+  assert.ok(!existe(marcas, 'anim'), 'a animação rodou fora do --so');
+});
+
+teste('3.6.2: --so com prova que não existe sai 2 e lista as válidas', async () => {
+  const r = provar(BASE(projeto(), falsos(pasta('marcas'))).concat(['--so', 'animaçao']));
+  assert.equal(r.codigo, 2, r.saida);
+  assert.match(r.saida, /prints, video, animacao/);
+});
+
+teste('3.6.2: --so animacao sem secoes.json diz como gerar, em vez de passar calado', async () => {
+  const marcas = pasta('marcas');
+  const r = provar(BASE(projeto({ secoes: false }), falsos(marcas)).concat(['--so', 'animacao']));
+  assert.match(r.saida, /PULADA\s+animacao[^\n]*plano-para-secoes/);
+  assert.ok(!existe(marcas, 'anim'));
+});
+
 teste('pedido errado: sem --projeto, pasta que não existe e opção desconhecida saem 2', async () => {
   assert.equal(provar([]).codigo, 2);
   assert.equal(provar(['--projeto', path.join(os.tmpdir(), 'nao-existe-pv-çá')]).codigo, 2);

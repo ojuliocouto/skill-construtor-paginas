@@ -27,6 +27,10 @@
  *   --click <seletor>    repassado ao screenshot-prova.js (a prova do botão principal).
  *   --secoes <arquivo>   secoes.json da animação (padrão: <dir>/prova/anim/secoes.json).
  *   --sem-anim           não roda a animação.
+ *   --so <provas>        roda só estas provas (prints, video, animacao; várias separadas por vírgula). 3.6.2: depois de mudar a dist,
+ *                        `--so animacao` refaz só os quadros e a prancha, no mesmo servidor de porta livre que este comando sobe, sem
+ *                        digitar porta e sem refazer prints e vídeo (no teste de aluno da 3.6.1 a prova de animação foi refeita à
+ *                        mão numa porta fixa e 49 s se perderam). As outras saem como PULADA, dizendo que foi o --so.
  *   --paralelo <n>       provas ao mesmo tempo (padrão 2; nunca passa de 2).
  *   --sem-montar         não monta a dist antes (use se ela já está montada).
  *   --sem-registrar      não grava a "identidade" na wave.
@@ -48,6 +52,7 @@ import { executar, fmt, pool, subirServidor } from './rodar-gates.mjs';
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const posix = (p) => String(p).split(path.sep).join('/');
 const TETO_DE_NAVEGADORES = 2;
+const NOMES_DAS_PROVAS = ['prints', 'video', 'animacao'];
 
 function lerArgs(argv) {
   const o = { paralelo: TETO_DE_NAVEGADORES, tempoMax: 900 };
@@ -58,6 +63,7 @@ function lerArgs(argv) {
     else if (a === '--url') o.url = pega(i++);
     else if (a === '--click') o.click = pega(i++);
     else if (a === '--secoes') o.secoes = pega(i++);
+    else if (a === '--so') o.so = pega(i++).split(',').map((x) => x.trim()).filter(Boolean);
     else if (a === '--paralelo') o.paralelo = Number(pega(i++));
     else if (a === '--tempo-max') o.tempoMax = Number(pega(i++));
     else if (a === '--scripts-dir') o.scriptsDir = pega(i++);
@@ -93,6 +99,11 @@ async function principal() {
   try { o = lerArgs(process.argv.slice(2)); } catch (e) { console.error(e.message); process.exit(2); }
   if (o.ajuda) { console.log('Uso: node provar.mjs --projeto <dir> [--url <url>] [--click <sel>] [--sem-anim] [--paralelo 2] (veja o cabeçalho do arquivo)'); process.exit(0); }
   if (!o.projeto) { console.error('faltou --projeto <pasta da página>'); process.exit(2); }
+  const invalidas = (o.so || []).filter((n) => !NOMES_DAS_PROVAS.includes(n));
+  if (invalidas.length || (o.so && !o.so.length)) {
+    console.error(`--so: prova desconhecida (${invalidas.join(', ') || 'nenhuma informada'}). As provas são: ${NOMES_DAS_PROVAS.join(', ')}.`);
+    process.exit(2);
+  }
   const projeto = path.resolve(o.projeto);
   if (!existsSync(projeto)) { console.error(`pasta não encontrada: ${projeto}`); process.exit(2); }
   const scriptsDir = path.resolve(o.scriptsDir || AQUI);
@@ -146,7 +157,9 @@ async function principal() {
     { id: 'video', peso: p.video.peso, rodar: async () => { resultados.set('video', await rodarSimples(p.video, path.join(gatesDir, 'prova-video.txt'))); } },
     { id: 'prints', peso: p.prints.peso, rodar: async () => { resultados.set('prints', await rodarSimples(p.prints, path.join(gatesDir, 'prova-prints.txt'))); } },
   ];
-  if (o.semAnim) pulados.push(['animacao', 'foi pedido --sem-anim']);
+  for (const n of NOMES_DAS_PROVAS) if (o.so && !o.so.includes(n)) pulados.push([n, `fora do --so (só rodam: ${o.so.join(', ')})`]);
+  if (pulados.some(([n]) => n === 'animacao')) { /* já pulada pelo --so */ }
+  else if (o.semAnim) pulados.push(['animacao', 'foi pedido --sem-anim']);
   else if (!existsSync(p.secoes)) pulados.push(['animacao', `não achei ${path.relative(projeto, p.secoes).split(path.sep).join('/')}: gere com plano-para-secoes.py (veja o criar.md, etapa f) e rode de novo`]);
   const puladas = new Set(pulados.map(([id]) => id));
   for (const e of entradas.sort((a, b) => b.peso - a.peso)) if (!puladas.has(e.id)) tarefas.push(e.rodar);
