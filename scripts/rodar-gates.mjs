@@ -42,6 +42,10 @@
  *   --sem-registrar      não grava o resultado da rodada completa na wave.
  *   --registrar-conserto numa rodada parcial (--so ou --reprovados), grava na wave SÓ os gates que rodaram. É o conserto de uma regressão
  *                        trivial depois da auditoria (3.6.1): o gate refeito prova que a regressão sumiu sem pagar a rodada completa.
+ *   --sem-movimento      (3.7.0) rodada completa do MEIO: pula o gate de movimento quando a animação não mudou desde a última vez em que
+ *                        ele PASSOU (o HTML da dist sem o texto, o CSS e o JS iguais). Mudou a animação, ele roda mesmo com a flag. O pulo
+ *                        fica marcado na wave e a etapa 5 recusa a entrega com a marca: a rodada final (passo h) roda SEM a flag.
+ *                        No teste de aluno da 3.6.2 o movimento rodou em 5 rodadas completas, cerca de 150 s cada.
  *
  * Cache por conteúdo (3.6, corte 4 da auditoria de velocidade). Gate que PASSOU e cujo insumo não mudou
  * (dist, projeto, argumentos, scripts e ambiente, tudo por hash do conteúdo) devolve o laudo de então, sem
@@ -59,7 +63,8 @@
  * Saída: 0 se todos passam, 1 se algum reprova, 2 se o pedido está errado (nome de gate, pasta).
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, createWriteStream } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync, createWriteStream } from 'node:fs';
+import { createHash } from 'node:crypto';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -260,6 +265,41 @@ export async function pool(tarefas, limite) {
   await Promise.all(trabalhadores);
 }
 
+// ------------------------------------------------------------------------ assinatura da animação (3.7.0, --sem-movimento)
+/** O HTML sem o texto: tags e atributos ficam, o texto entre as tags sai; `<style>` e `<script>` ficam inteiros. Copy corrigida não muda a animação. */
+export function esqueletoDoHtml(html) {
+  const semTexto = (t) => t.replace(/<!--[\s\S]*?-->/g, '').replace(/>[^<]*</g, '><');
+  const re = /<(script|style)\b[\s\S]*?<\/\1\s*>/gi;
+  let out = ''; let ultimo = 0; let m;
+  while ((m = re.exec(html))) { out += semTexto(html.slice(ultimo, m.index)) + m[0]; ultimo = re.lastIndex; }
+  return out + semTexto(html.slice(ultimo));
+}
+
+/** Hash do que a animação lê na dist: o esqueleto de cada HTML, cada CSS e cada JS. Imagem, fonte e texto da copy ficam fora. */
+export function assinaturaDaAnimacao(dist) {
+  const h = createHash('sha256');
+  const andar = (pasta, rel = '') => {
+    let nomes = [];
+    try { nomes = readdirSync(pasta, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name)); } catch (_) { return; }
+    for (const e of nomes) {
+      const r = rel ? `${rel}/${e.name}` : e.name;
+      const abs = path.join(pasta, e.name);
+      if (e.isDirectory()) { andar(abs, r); continue; }
+      const ext = path.extname(e.name).toLowerCase();
+      if (ext === '.html' || ext === '.htm') h.update(`${r}\0${esqueletoDoHtml(readFileSync(abs, 'utf8'))}\n`);
+      else if (['.css', '.js', '.mjs'].includes(ext)) h.update(`${r}\0`).update(readFileSync(abs)).update('\n');
+    }
+  };
+  andar(dist);
+  return h.digest('hex');
+}
+
+const ARQ_ANIMACAO = (gatesDir) => path.join(gatesDir, '_cache', 'movimento-animacao.json');
+function lerAnimacao(gatesDir) { try { return JSON.parse(readFileSync(ARQ_ANIMACAO(gatesDir), 'utf8')); } catch (_) { return null; } }
+function gravarAnimacao(gatesDir, dados) {
+  try { mkdirSync(path.dirname(ARQ_ANIMACAO(gatesDir)), { recursive: true }); writeFileSync(ARQ_ANIMACAO(gatesDir), JSON.stringify(dados, null, 2), 'utf8'); } catch (_) { /* sem registro: a próxima rodada roda o gate */ }
+}
+
 // ------------------------------------------------------------------------ histórico das rodadas
 export function lerExecucoes(arquivo) {
   if (!existsSync(arquivo)) return [];
@@ -300,6 +340,7 @@ function lerArgs(argv) {
     else if (a === '--explicar-cache') o.explicarCache = true;
     else if (a === '--sem-registrar') o.semRegistrar = true;
     else if (a === '--registrar-conserto') o.registrarConserto = true;
+    else if (a === '--sem-movimento') o.semMovimento = true;
     else if (a === '--produto-fisico') o.produtoFisico = true;
     else if (a === '--trafego-real') o.trafegoReal = true;
     else if (a === '--lista') o.lista = true;
@@ -335,7 +376,10 @@ function registrarNaWave({ o, escolhidos, resultados, projeto, gatesDir, rodada 
   if (o.semRegistrar) return 'Wave: --sem-registrar, não registrei nada. Registre à mão: wave.py gate <nome> --exit <0|1>.';
   const parcial = Boolean(o.so || o.reprovados);
   if (parcial && !o.registrarConserto) return 'Wave: rodada parcial, não registrei nada. Faça a rodada completa (sem --so nem --reprovados) e ela registra o exit real de cada gate. Para provar só o conserto de uma regressão trivial achada na auditoria, repita com --registrar-conserto: ele grava na wave apenas os gates desta rodada parcial.';
-  const itens = escolhidos.filter((g) => NOMES_NA_WAVE.has(g.nome)).map((g) => {
+  const pulados = escolhidos.filter((g) => resultados.get(g.nome)?.pulado).map((g) => ({
+    nome: g.nome, motivo: `--sem-movimento na rodada ${rodada}: animação igual à da rodada ${resultados.get(g.nome).pulado.rodada}, quando ele passou`,
+  }));
+  const itens = escolhidos.filter((g) => NOMES_NA_WAVE.has(g.nome) && !resultados.get(g.nome)?.pulado).map((g) => {
     const r = resultados.get(g.nome);
     const onde = `gates/${g.nome}-r${rodada}.txt`;
     const detalhe = parcial
@@ -347,7 +391,7 @@ function registrarNaWave({ o, escolhidos, resultados, projeto, gatesDir, rodada 
   });
   if (!itens.length) return 'Wave: nenhum gate desta rodada tem nome na wave; nada a registrar.';
   const arquivo = path.join(gatesDir, `_wave-r${rodada}.json`);
-  writeFileSync(arquivo, JSON.stringify({ gates: itens }, null, 2), 'utf8');
+  writeFileSync(arquivo, JSON.stringify(pulados.length ? { gates: itens, pulados } : { gates: itens }, null, 2), 'utf8');
   const r = spawnSync(process.execPath, [path.join(AQUI, 'py.mjs'), path.join(AQUI, 'wave.py'), '--projeto', projeto, 'gates-lote', '--arquivo', arquivo], {
     encoding: 'utf8', windowsHide: true, timeout: 60000, env: { ...process.env, PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8' },
   });
@@ -379,6 +423,10 @@ async function principal() {
     process.exit(0);
   }
   if (!o.projeto) { console.error('faltou --projeto <pasta da página>'); process.exit(2); }
+  if (o.semMovimento && (o.so || o.reprovados)) {
+    console.error('--sem-movimento é para a rodada COMPLETA do meio (sem --so nem --reprovados): ela registra os outros gates na wave e marca o movimento pulado.');
+    process.exit(2);
+  }
   const projeto = path.resolve(o.projeto);
   if (!existsSync(projeto)) { console.error(`pasta não encontrada: ${projeto}`); process.exit(2); }
   const scriptsDir = path.resolve(o.scriptsDir || AQUI);
@@ -468,15 +516,28 @@ async function principal() {
 
   // 3. rodar: gates de navegador no pool com teto; os demais, numa pista à parte
   const resultados = new Map();
+  const assinatura = escolhidos.some((g) => g.nome === 'movimento') && existsSync(dist) ? assinaturaDaAnimacao(dist) : null;
   const rodarUm = (g) => async () => {
     let servidor = null;
     const ctx = { ...ctxBase, url: o.url };
+    if (g.nome === 'movimento' && o.semMovimento) {
+      const ultima = lerAnimacao(gatesDir);
+      if (ultima && ultima.codigo === 0 && ultima.assinatura === assinatura) {
+        writeFileSync(path.join(gatesDir, `${g.nome}-r${rodada}.txt`),
+          `[PULADO por --sem-movimento: o HTML sem o texto, o CSS e o JS da dist são os mesmos da rodada ${ultima.rodada}, quando o gate passou. A rodada final roda o gate de verdade.]\n`, 'utf8');
+        resultados.set(g.nome, { codigo: 0, segundos: 0, pulado: { rodada: ultima.rodada } });
+        process.stdout.write(`  pulado  ${g.nome} (--sem-movimento: animação igual à da rodada ${ultima.rodada})\n`);
+        return;
+      }
+      ctx.motivoMovimento = ultima ? (ultima.codigo === 0 ? 'a animação mudou (HTML sem o texto, CSS ou JS da dist)' : 'da última vez ele reprovou') : 'nenhum PASSA guardado do movimento';
+    }
     const alvoDeCache = planoDeCache.get(g.nome);
     const guardado = alvoDeCache && !o.semCache ? acerto(gatesDir, g.nome, alvoDeCache.chave) : null;
     if (guardado) {
       writeFileSync(path.join(gatesDir, `${g.nome}-r${rodada}.txt`),
         `[laudo reaproveitado da rodada ${guardado.rodada} (${guardado.quando}): nada que este gate lê mudou, chave ${alvoDeCache.chave.slice(0, 12)}. Saída de então:]\n${guardado.laudo}`, 'utf8');
       resultados.set(g.nome, { codigo: 0, segundos: 0, cache: { rodada: guardado.rodada, segundos: guardado.segundos } });
+      if (g.nome === 'movimento' && assinatura) gravarAnimacao(gatesDir, { assinatura, rodada: guardado.rodada, codigo: 0 });
       process.stdout.write(`  passa   ${g.nome} (cache da rodada ${guardado.rodada}, 0,0 s)\n`);
       return;
     }
@@ -490,7 +551,7 @@ async function principal() {
     const arquivo = path.join(gatesDir, `${g.nome}-r${rodada}.txt`);
     const porQueRodou = alvoDeCache ? (o.semCache ? 'forçado por --sem-cache' : motivoDoErro(lerCache(gatesDir, g.nome), alvoDeCache.partes)) : null;
     let r = await executar(g, ctx, arquivo, o.tempoMax);
-    r.porQueRodou = porQueRodou;
+    r.porQueRodou = ctx.motivoMovimento ? `--sem-movimento, mas ${ctx.motivoMovimento}` : porQueRodou;
     // Servidor que caiu no meio do gate (P11, 3.5.10): o gate não opinou sobre a página. Sobe outro servidor para este gate
     // e repete UMA vez. Reprovação sem a marca de "servidor fora do ar" nunca é repetida; com `--url` o servidor é do usuário
     // e a mensagem do gate (como subir de novo) fica no relatório.
@@ -506,6 +567,7 @@ async function principal() {
     }
     if (servidor) servidor.parar();
     resultados.set(g.nome, r);
+    if (g.nome === 'movimento' && assinatura) gravarAnimacao(gatesDir, { assinatura, rodada, codigo: r.codigo });
     process.stdout.write(`  ${r.codigo === 0 ? 'passa  ' : 'REPROVA'} ${g.nome} (${fmt(r.segundos)} s)\n`);
     if (alvoDeCache && r.codigo === 0) {      // só PASSA vira cache; reprovação, queda e estouro de tempo rodam de novo na próxima
       try { gravarCache(gatesDir, g.nome, { chave: alvoDeCache.chave, partes: alvoDeCache.partes, segundos: r.segundos, rodada, laudo: readFileSync(arquivo, 'utf8') }); }
@@ -533,6 +595,7 @@ async function principal() {
   // 4. gravar o histórico (na ordem do catálogo, como o fluxo antigo)
   for (const g of escolhidos) {
     const r = resultados.get(g.nome);
+    if (r.pulado) continue;   // gate pulado não rodou: o histórico fica com a última execução de verdade
     appendFileSync(execArquivo, `${rodada} ${g.nome} ${r.codigo}\n`);
   }
 
@@ -541,6 +604,10 @@ async function principal() {
   linhas.push('', `===== RELATÓRIO DA RODADA ${rodada} =====`);
   for (const g of escolhidos) {
     const r = resultados.get(g.nome);
+    if (r.pulado) {
+      linhas.push(`PULADO   ${g.nome.padEnd(15)} ${fmt(0).padStart(5)} s   (--sem-movimento: animação igual à da rodada ${r.pulado.rodada}, quando passou; a rodada final roda ele)`);
+      continue;
+    }
     const nota = r.cache ? `   (cache: laudo da rodada ${r.cache.rodada}, entrada idêntica)` : (r.codigo === 0 ? '' : `   (saída ${r.codigo})`) + (r.porQueRodou ? `   (rodou: ${r.porQueRodou})` : '');
     linhas.push(`${r.codigo === 0 ? 'PASSA   ' : 'REPROVA '} ${g.nome.padEnd(15)} ${fmt(r.segundos).padStart(5)} s   gates/${g.nome}-r${rodada}.txt${nota}`);
   }
@@ -584,6 +651,7 @@ async function principal() {
   } else {
     linhas.push(`RESULTADO: PASSA em ${escolhidos.length} de ${escolhidos.length}.`);
     if (o.so || o.reprovados) linhas.push('Foi uma rodada parcial: falta a rodada completa no fim, antes de registrar na wave.');
+    if (escolhidos.some((g) => resultados.get(g.nome).pulado)) linhas.push(`O movimento foi pulado (--sem-movimento): vale para rodada do meio. A rodada final roda sem a flag: ${linhaDeRepeticao(o, [])}`);
   }
   linhas.push(registrarNaWave({ o, escolhidos, resultados, projeto, gatesDir, rodada }));
   linhas.push('Este comando não aprova nada: grava o exit real que cada gate devolveu, e a decisão de entregar continua sendo do wave.py checar e rodada.');
