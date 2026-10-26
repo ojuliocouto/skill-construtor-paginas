@@ -55,7 +55,7 @@ class GostoHeroi(unittest.TestCase):
         r = rodar("--projeto", self.tmp, "--heroi", self.heroi, "--saida", self.tmp / "fora")
         self.assertEqual(r.returncode, 0, r.stderr)
         b = (self.tmp / "fora" / "briefing.md").read_text(encoding="utf-8")
-        self.assertIn("Orçamento: 5 minutos e até 6", b)
+        self.assertIn("Orçamento: 5 minutos e até 4 chamadas", b)   # 3.7.0: 4 chamadas (a 3.6.2 gastou 6 e 6,4 min)
         self.assertIn(str((self.tmp / "fora" / "prancha.jpg").resolve()), b)
         self.assertIn("advogados criminalistas", b)
         self.assertIn("bonito, só correto ou genérico", b)
@@ -102,6 +102,18 @@ class GostoHeroi(unittest.TestCase):
         self.assertIn("No minuto 4", b)
         self.assertNotIn("rodar esta lente uma vez mais", b)
         self.assertIn("depende_do_cliente", b)
+
+    # --- 3.7.0, item 3: a lente cabe no teto (no teste de aluno da 3.6.2: 6,4 min e 6 chamadas contra 5 min) e a construção não espera
+    def test_teto_de_4_chamadas_com_o_roteiro_e_a_construcao_nao_espera(self):
+        r = rodar("--projeto", self.tmp, "--heroi", self.heroi)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        b = (self.tmp / "auditoria" / "gosto-heroi" / "briefing.md").read_text(encoding="utf-8")
+        self.assertIn("até 4 chamadas", b)
+        self.assertIn("1 chamada para a prancha", b)
+        self.assertNotIn("antes de\nconstruir as outras seções", b)
+        self.assertIn("a construção das outras seções NÃO espera", b)
+        self.assertIn("até 4 chamadas", r.stdout)
+        self.assertIn("não espere", r.stdout)
 
     def resultado(self, **campos):
         base = {"gosto": "generico", "tells": ["V15: marca pequena"], "eixos_abaixo": ["imagem"], "gente_no_topo": True,

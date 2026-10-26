@@ -45,7 +45,7 @@ LARGURA = 720            # cada quadro de desktop: 1440 em meia escala
 ALTURA = 450             # a dobra de 1440x900 em meia escala
 FAIXA = 40
 ORCAMENTO_MIN = 5
-ORCAMENTO_CHAMADAS = 6
+ORCAMENTO_CHAMADAS = 4   # 3.7.0: no teste de aluno da 3.6.2 a lente gastou 6 chamadas e 6,4 min contra o teto de 5
 
 
 def _fonte():
@@ -98,6 +98,7 @@ Você NÃO construiu esta página. Olhe uma imagem só e responda.
 TETO DE {minutos} MINUTOS, DURO. Esta é a ÚNICA rodada da lente: não existe segunda.
 No minuto {aviso}, pare de olhar e devolva o JSON com o que já viu. Passar de {minutos} minutos é falha da lente, não zelo.
 Orçamento: {minutos} minutos e até {chamadas} chamadas de ferramenta. Não capture nada, não abra a página, não leia o código.
+Roteiro das chamadas: 1 chamada para a prancha (a imagem abaixo) e, se precisar, 1 para o critério; responda sem usar o resto.
 
 Imagem: `{prancha}`
 Em cima, as 2 referências mais fortes do projeto. Embaixo, o herói da nossa página em 1440 e em 390.
@@ -122,8 +123,8 @@ Devolva só este JSON:
   "gente_no_topo": true, "mesma_pasta": false, "uma_mudanca": "...", "depende_do_cliente": ["foto real da ..."],
   "duracao_min": 0, "chamadas": 0}}
 
-Regra de uso (para quem lançou): a lente roda UMA vez. "correto" ou "generico" = aplicar `uma_mudanca` no HERÓI agora, antes de
-construir as outras seções, SEM rodar a lente de novo. O que está em `depende_do_cliente` vira pendência registrada para a entrega
+Regra de uso (para quem lançou): a lente roda UMA vez, em segundo plano, e a construção das outras seções NÃO espera por ela.
+Quando ela voltar com "correto" ou "generico", aplique `uma_mudanca` no HERÓI, SEM rodar a lente de novo. O que está em `depende_do_cliente` vira pendência registrada para a entrega
 (`gosto-heroi.py --registrar` faz isso). A lente não manda reconstruir a página: o resto ainda não existe.
 """
 
@@ -247,8 +248,9 @@ def main():
     print(f"prancha: {prancha} ({tamanho[0]}x{tamanho[1]})")
     print(f"briefing: {briefing}")
     print(f"orçamento: {ORCAMENTO_MIN} min e até {ORCAMENTO_CHAMADAS} chamadas, 1 imagem")
-    print("próximo passo: lance 1 subagente que não construiu a página com o conteúdo do briefing (rodada única, teto de "
-          f"{ORCAMENTO_MIN} min); grave a resposta em " + str(saida / "resultado.json") + " e rode gosto-heroi.py --projeto <dir> --registrar")
+    print("próximo passo: lance 1 subagente que não construiu a página com o conteúdo do briefing, EM SEGUNDO PLANO (rodada única, teto de "
+          f"{ORCAMENTO_MIN} min e até {ORCAMENTO_CHAMADAS} chamadas), e não espere: siga construindo as outras seções. Quando ele voltar, grave a "
+          "resposta em " + str(saida / "resultado.json") + ", rode gosto-heroi.py --projeto <dir> --registrar e aplique a uma_mudanca no herói")
 
 
 if __name__ == "__main__":
