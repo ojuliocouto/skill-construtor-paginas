@@ -1048,7 +1048,7 @@ def cmd_rodada(args):
 # nova de 9 lentes que ninguém mediu de novo. Agora ela é dirigida: o pacote numera os achados críticos e altos abertos
 # (`auditoria/abertos-rodada-1.json`, do `pacote-auditoria.py --rodada 2`), com o print novo de cada um e o diff da dist; o
 # auditor devolve um estado por número, SEM nota; e este comando conta o que ficou aberto e imprime o fechamento.
-ESTADOS_CONFERENCIA = {"corrigido": "corrigido", "nao corrigido": "não corrigido", "regressao": "regressão"}
+ESTADOS_CONFERENCIA = {"corrigido": "corrigido", "naocorrigido": "não corrigido", "regressao": "regressão"}   # chave sem acento e sem espaço
 SEVERIDADES = ("critico", "alto", "medio", "baixo")
 
 
@@ -1098,14 +1098,14 @@ def cmd_conferencia(args):
         return 2
     doc = _doc_da_conferencia(texto)
     if doc is None:
-        print('ERRO: a resposta da conferência é {"rodada": 2, "achados": [{"n": 1, "estado": "corrigido", "evidencia": "..."}]}.', file=sys.stderr)
+        print("ERRO: a resposta da conferência é o JSON do schema do briefing: `rodada` 2 e `achados`, um item por número, com `n`, `estado` e `evidencia`.", file=sys.stderr)
         return 2
     problemas, estados, regressoes = [], {}, []
     for i, it in enumerate(doc["achados"], 1):
         if not isinstance(it, dict):
             problemas.append(f"item {i}: precisa ser um objeto")
             continue
-        estado = ESTADOS_CONFERENCIA.get(_sem_acento(it.get("estado") or ""))
+        estado = ESTADOS_CONFERENCIA.get(_sem_acento(it.get("estado") or "").replace(" ", ""))
         n = it.get("n")
         evid = str(it.get("evidencia") or "").strip()
         if estado is None:
@@ -1203,7 +1203,7 @@ def main():
     rl.set_defaults(func=cmd_registrar_lote)
 
     cf = sub.add_parser("conferencia", help="rodada 2: lê a resposta da conferência dirigida (sem nota nova) e conta o que ficou aberto")
-    cf.add_argument("--arquivo", required=True, help='a resposta do auditor: {"rodada": 2, "achados": [{"n": 1, "estado": "corrigido|não corrigido|regressão", "evidencia": "..."}]}')
+    cf.add_argument("--arquivo", required=True, help="a resposta do auditor no schema do briefing da rodada 2: um item por número, com `n`, `estado` e `evidencia`")
     cf.add_argument("--duracao-min", dest="duracao_min", type=float, default=None, help="minutos da conferência (manda sobre o arquivo)")
     cf.add_argument("--chamadas", type=int, default=None, help="chamadas de ferramenta da conferência (manda sobre o arquivo)")
     cf.set_defaults(func=cmd_conferencia)
