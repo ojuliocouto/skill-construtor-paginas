@@ -15,9 +15,9 @@ Itens (caminho CRIAR; os outros caminhos dispensam o que não existe neles):
   PLANO                PLANO.md                        (só CRIAR)
   sustentacao          evidencias/sustentacao.md       (só CRIAR)
   sintese              referencias/sintese.md          (só CRIAR)
-  referencias          pelo menos 1 referencias/*-dobra.png
+  referencias          pelo menos 1 referencias/*-dobra.png      (no CLONAR: original/prova-desktop.png e prova-mobile.png)
   prints               prova-desktop.png e prova-mobile.png (screenshot-prova.js)
-  pranchas do vídeo    prancha-desktop.png e prancha-mobile.png (gravar-video.js)
+  pranchas do vídeo    prancha-desktop.png e prancha-mobile.png (gravar-video.js; opcionais no CLONAR)
   achados da rodada 1  auditoria/achados-rodada-1.(json|md)   (só com --rodada 2)
 Opcionais, listados se existirem: plano-visual.md e comparativos.
 
@@ -66,10 +66,21 @@ def itens_obrigatorios(raiz, caminho, rodada):
         for rot in ("PLANO.md", "evidencias/sustentacao.md", "referencias/sintese.md"):
             f = raiz / rot
             it.append((rot, f if f.is_file() else None))
-    dobras = achar_todos(raiz / "referencias", "*-dobra.png") if (raiz / "referencias").is_dir() else []
-    it.append(("referencias/*-dobra.png", dobras[0] if dobras else None))
-    for nome in ("prova-desktop.png", "prova-mobile.png", "prancha-desktop.png", "prancha-mobile.png"):
-        it.append((nome, achar(raiz, nome)))
+    if caminho == "clonar":
+        # 3.7.0 (teste de aluno do CLONAR na 3.6.3): no clone a referência é a ORIGINAL, printada no passo 1 do clonar.md
+        # (screenshot-prova.js ... <dir>/original). Sem referencias/*-dobra.png e sem as pranchas do vídeo, que viram opcionais.
+        # Os prints do clone vêm de provas/ (o provar.mjs), nunca de original/: os nomes são iguais.
+        for nome in ("prova-desktop.png", "prova-mobile.png"):
+            f = raiz / "original" / nome
+            it.append((f"original/{nome}", f if f.is_file() else None))
+        for nome in ("prova-desktop.png", "prova-mobile.png"):
+            f = next((raiz / d / nome for d in ("provas", "prova") if (raiz / d / nome).is_file()), None)
+            it.append((nome, f))
+    else:
+        dobras = achar_todos(raiz / "referencias", "*-dobra.png") if (raiz / "referencias").is_dir() else []
+        it.append(("referencias/*-dobra.png", dobras[0] if dobras else None))
+        for nome in ("prova-desktop.png", "prova-mobile.png", "prancha-desktop.png", "prancha-mobile.png"):
+            it.append((nome, achar(raiz, nome)))
     if rodada == 2:
         f = next((raiz / "auditoria" / n for n in ("achados-rodada-1.json", "achados-rodada-1.md")
                   if (raiz / "auditoria" / n).is_file()), None)
@@ -78,9 +89,16 @@ def itens_obrigatorios(raiz, caminho, rodada):
 
 
 def opcionais(raiz):
-    """Listadas se existirem. 3.5.8 (N19): TODAS as referências (dobra e meio), as telas de 360 e 320 e as pranchas de animação por seção."""
+    """Listadas se existirem. 3.5.8 (N19): TODAS as referências (dobra e meio), as telas de 360 e 320 e as pranchas de animação por seção.
+    3.7.0: as pranchas do vídeo (obrigatórias fora do clone) e o laudo do gate de fidelidade (diff e retângulos, só no clone)."""
     cand = [raiz / "plano-visual.md"]
     achados = [p for p in cand if p.is_file()]
+    for nome in ("prancha-desktop.png", "prancha-mobile.png"):
+        f = achar(raiz, nome)
+        if f:
+            achados.append(f)
+    if (raiz / "gates" / "fidelidade").is_dir():
+        achados += achar_todos(raiz / "gates" / "fidelidade", "*.png") + achar_todos(raiz / "gates" / "fidelidade", "*.json")
     achados += achar_todos(raiz, "comparativo-*.jpg")[:3]
     if (raiz / "referencias").is_dir():
         achados += achar_todos(raiz / "referencias", "*-dobra.png") + achar_todos(raiz / "referencias", "*-meio.png")

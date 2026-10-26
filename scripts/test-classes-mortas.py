@@ -5,6 +5,41 @@ import sys
 import tempfile
 import unittest
 
+class ColisaoNoClone(unittest.TestCase):
+    """3.7.0 (teste de aluno do CLONAR na 3.6.3): a classe "list-item" da original virou utilitário do Tailwind
+    (display:list-item) e pôs bolinhas ao lado dos 5 logos. No clone, a CSS da original vence o utilitário."""
+
+    def montar(self, pasta, entrada):
+        raiz = pathlib.Path(pasta)
+        (raiz / 'index.html').write_text('<ul class="logos-list"><li class="list-item">Flutter</li></ul>', encoding='utf-8')
+        (raiz / '_input.css').write_text(entrada, encoding='utf-8')
+        autor = entrada.replace('@tailwind base;', '').replace('@tailwind components;', '').replace('@tailwind utilities;', '')
+        gerado = ('.list-item{display:list-item}' if '@tailwind utilities' in entrada else '') + autor
+        (raiz / 'tailwind-compiled.css').write_text(gerado, encoding='utf-8')
+        return raiz
+
+    def rodar(self, pasta, *extra):
+        script = pathlib.Path(__file__).with_name('gate-classes-mortas.py')
+        r = subprocess.run([sys.executable, str(script), '--projeto', pasta, *extra], capture_output=True, text=True, encoding='utf-8')
+        return r.returncode, r.stdout + r.stderr
+
+    def test_utilitario_do_tailwind_com_classe_da_original_reprova_no_clone(self):
+        with tempfile.TemporaryDirectory() as pasta:
+            self.montar(pasta, '@tailwind utilities;\n.logos-list .list-item{width:20%;background:url(fonts/x.woff2)}')
+            code, out = self.rodar(pasta, '--clone')
+            self.assertEqual(code, 1, out)
+            self.assertIn('list-item', out)
+            self.assertIn('display:list-item', out)
+            code, out = self.rodar(pasta)
+            self.assertEqual(code, 0, out)   # fora do clone o gate não muda
+
+    def test_sem_tailwind_utilities_passa_no_clone(self):
+        with tempfile.TemporaryDirectory() as pasta:
+            self.montar(pasta, '.logos-list .list-item{width:20%}')
+            code, out = self.rodar(pasta, '--clone')
+            self.assertEqual(code, 0, out)
+
+
 class Classes(unittest.TestCase):
     def test_css_presente_ausente_e_classe_morta(self):
         with tempfile.TemporaryDirectory() as pasta:

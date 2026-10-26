@@ -151,6 +151,30 @@ class Servidor(unittest.TestCase):
         self.assertEqual((st, enc), (200, "gzip"))
         self.assertIn(b"comprimida", gzip.decompress(corpo))
 
+    def test_pedido_parado_nao_trava_o_segundo_pedido(self):
+        # 3.7: o provar.mjs roda prints e vídeo em paralelo na mesma porta. Com um servidor de uma thread só,
+        # uma conexão aberta que não manda nada segura todos os outros pedidos (22% dos pixels diferentes,
+        # imagens e fontes quebradas). Cada pedido precisa da sua thread.
+        d = pasta_com_pagina("pagina rapida")
+        p = subir(d, porta_livre())
+        url, texto = ler_url(p)
+        self.assertIsNotNone(url, texto)
+        porta = int(re.search(r":(\d+)/", url).group(1))
+        parada = socket.create_connection(("127.0.0.1", porta), timeout=5)   # abre e não manda nada
+        try:
+            time.sleep(0.3)
+            t0 = time.time()
+            c = http.client.HTTPConnection("127.0.0.1", porta, timeout=2)
+            c.request("GET", "/")
+            r = c.getresponse()
+            corpo = r.read()
+            c.close()
+            self.assertEqual(r.status, 200)
+            self.assertIn(b"pagina rapida", corpo)
+            self.assertLess(time.time() - t0, 2.0, "o segundo pedido esperou o primeiro (servidor de uma thread só)")
+        finally:
+            parada.close()
+
     def test_porta_invalida_continua_dando_erro_claro(self):
         r = subprocess.run([sys.executable, str(SERVIDOR), ".", "abc"], capture_output=True, text=True, encoding="utf-8")
         self.assertNotEqual(r.returncode, 0)

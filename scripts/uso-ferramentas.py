@@ -76,13 +76,15 @@ OPCIONAIS = {
 # video no hero"), ela volta a ser cobrada, e voce registra o uso normalmente.
 CAMINHOS = {
     "criar": "completo",
-    "clonar": "completo",
+    "clonar": "clone",   # 3.7.0: o clone fiel não escreve plano visual (a identidade é a da original); cobra o Playwright
     "clonar-elevar": "completo",
     "variante": "completo",
     "melhorar": "completo",
     "editar": "edicao",
 }
 COBRADAS_EDICAO = {"Playwright"}
+# Clone fiel (3.7.0): o Playwright mede e printa a original e o clone (o gate-fidelidade.mjs registra o uso sozinho).
+COBRADAS_CLONE = {"Playwright"}
 
 # Motivo que nao e motivo. "teste: nao usei" passou no teste com aluno (02/10/2026) porque o
 # script so contava caracteres. Recusar a frase, em qualquer caixa e com ou sem acento.
@@ -292,7 +294,7 @@ def cmd_checar(args):
 
     modo = CAMINHOS.get(getattr(args, "caminho", "criar"), "completo")
     cobraveis = COBRADAS if modo == "completo" else {
-        f: p for f, p in COBRADAS.items() if f in COBRADAS_EDICAO}
+        f: p for f, p in COBRADAS.items() if f in (COBRADAS_CLONE if modo == "clone" else COBRADAS_EDICAO)}
     vivas = {f: papel for f, papel in cobraveis.items() if estados.get(f)}
     faltando, ok_list, dispensadas = [], [], []
     sem_dispensa = criticas()
@@ -323,7 +325,7 @@ def cmd_checar(args):
 
     print("\nGATE DE USO DAS FERRAMENTAS\n" + "=" * 74)
     print(f"  caminho: {getattr(args, 'caminho', 'criar')} "
-          f"({'cobra tudo que estiver vivo' if modo == 'completo' else 'edição pontual: cobra só a prova'})")
+          f"({'cobra tudo que estiver vivo' if modo == 'completo' else ('clone fiel: cobra o Playwright, que mediu a original e o clone' if modo == 'clone' else 'edição pontual: cobra só a prova')})")
     for f, motivo, detalhe in ok_list:
         print(f"  [USADA] {f}")
         print(f"          {detalhe or '(sem detalhe)'}  |  {motivo}")

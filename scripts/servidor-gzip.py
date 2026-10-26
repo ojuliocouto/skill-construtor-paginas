@@ -74,6 +74,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+class ServidorPorPedido(socketserver.ThreadingTCPServer):
+    """Uma thread por pedido (3.7). O provar.mjs tira prints e grava vídeo em paralelo na mesma porta: com uma
+    thread só, um pedido lento (ou uma conexão aberta sem dados) segurava os outros e as páginas saíam com imagens e
+    fontes quebradas. As threads são daemon: Ctrl+C e o fim do processo não esperam conexão pendurada."""
+    daemon_threads = True
+    request_queue_size = 128
+
+
 def abrir(handler, porta):
     """Abre o servidor na porta pedida; se ela estiver ocupada, deixa o sistema escolher uma livre.
 
@@ -84,13 +92,13 @@ def abrir(handler, porta):
     try:
         if porta != 0 and alguem_responde(porta):
             raise OSError(f"porta {porta} ocupada")
-        httpd = socketserver.TCPServer(("", porta), handler)
+        httpd = ServidorPorPedido(("", porta), handler)
         # Porta 0 = o sistema escolhe (3.6.3): a URL tem que dizer a porta real, nunca ":0".
         return httpd, httpd.server_address[1], None
     except OSError:
         if porta == 0:
             raise
-        httpd = socketserver.TCPServer(("", 0), handler)
+        httpd = ServidorPorPedido(("", 0), handler)
         return httpd, httpd.server_address[1], porta
 
 
@@ -112,7 +120,7 @@ if __name__ == "__main__":
     # Sem SO_REUSEADDR de proposito: com ele dois processos conseguem abrir a mesma porta (no Windows sempre; no macOS e no
     # Linux quando um ouve em 127.0.0.1 e o outro em 0.0.0.0) e o segundo roubaria o trafego do primeiro. Porta que ainda
     # nao foi liberada pelo sistema (TIME_WAIT) cai no mesmo caminho da ocupada: outra porta, e a URL impressa.
-    socketserver.TCPServer.allow_reuse_address = False
+    ServidorPorPedido.allow_reuse_address = False
     handler = functools.partial(Handler, directory=RAIZ)
     httpd, porta_em_uso, ocupada = abrir(handler, PORTA)
     with httpd:

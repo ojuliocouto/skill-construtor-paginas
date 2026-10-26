@@ -20,8 +20,12 @@ a lado e OLHAR**. Quem julga e o olho, com a pergunta honesta: "o dono veria a d
 apontar?". O gate de elevacao (SKILL.md, secao CLONAR + ELEVAR) cobra os EIXOS que mudaram,
 nomeados um a um. Este script so entrega a imagem que torna a pergunta respondivel.
 
+No CLONAR (clone fiel) a pergunta é a oposta: o clone NÃO pode ter diferença fora do delta declarado. Com `--modo fiel`
+(3.7.0, teste de aluno da 3.6.3) a imagem sai em tamanho real, sem redução, e a pergunta é a da fidelidade. A medida de
+verdade do clone é o `gate-fidelidade.mjs` (elementos-chave, altura e diff de pixels); este lado a lado é para o olho.
+
 Uso:
-    node scripts/py.mjs lado-a-lado.py <png-original> <png-sua-versao> <saida.jpg> [--rotulos "Original,V2"]
+    node scripts/py.mjs lado-a-lado.py <png-original> <png-sua-versao> <saida.jpg> [--rotulos "Original,V2"] [--modo elevar|fiel]
 """
 import argparse
 import sys
@@ -59,7 +63,11 @@ def main():
     ap.add_argument("saida")
     ap.add_argument("--largura", type=int, default=760, help="largura de cada coluna")
     ap.add_argument("--rotulos", default="ORIGINAL,SUA VERSÃO")
+    ap.add_argument("--modo", choices=("elevar", "fiel"), default="elevar",
+                    help="fiel = clone fiel: tamanho real (sem redução) e a pergunta da fidelidade; elevar = CLONAR + ELEVAR (padrão)")
     args = ap.parse_args()
+    if args.modo == "fiel":
+        args.largura = Image.open(args.original).width
 
     rot_a, _, rot_b = args.rotulos.partition(",")
     a = prepara(args.original, args.largura)
@@ -79,6 +87,11 @@ def main():
 
     folha.save(args.saida, quality=86)
     print(f"lado a lado: {args.saida}  ({folha.width}x{folha.height})")
+    if args.modo == "fiel":
+        print("\nAgora OLHE em tamanho real (clone fiel), e responda:")
+        print("  1. há alguma diferença que NÃO está no delta declarado? Cada uma é defeito: volta ao passo 3.")
+        print("  2. as linhas DIFERE e PIXELS do gate-fidelidade.mjs dizem onde olhar (gates/fidelidade/diff-<largura>.png).\n")
+        return 0
     print("\nAgora OLHE, e responda com honestidade:")
     print("  1. o dono veria a diferenca sem você apontar?")
     print("  2. quantos EIXOS de elevacao você consegue nomear olhando? (composição, escala,")

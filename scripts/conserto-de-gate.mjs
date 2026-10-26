@@ -86,6 +86,8 @@ const PADRAO = {
   referencias: 'faltam referências lidas: abra cada print, escreva faz_bem, princípio e lido: true no manifesto, ou capture mais endereços',
   animacao: 'a seção citada muda menos de 2% dos pixels: dê a ela uma animação visível, ou ajuste o tipo da animação no PLANO.md',
   video: 'confira o vídeo da página no gate-video (formato, tamanho, duração) e regrave o que o laudo cita',
+  fidelidade: 'abra gates/fidelidade/lado-<largura>.png e diff-<largura>.png: cada linha DIFERE diz o elemento e o que mudou (caixa, texto, fonte, cor); copie o valor da original, sem arredondar, e rode só este gate',
+  'uso-ferramentas': 'rode o gate de fidelidade (ele registra o uso do Playwright) ou registre: uso-ferramentas.py --projeto <dir> registrar Playwright --arquivo <print do clone>',
   sobreposicao: 'o elemento fixo cobre o bloco largo citado: mude o z-index, a posição ou a largura de um dos dois',
 };
 
@@ -102,7 +104,9 @@ function limpar(s) { return String(s).replace(/\s+/g, ' ').trim(); }
 export function consertoDoGate(nome, laudo, codigo) {
   const texto = String(laudo || '');
   let frase = null;
-  if (codigo === 3 || /servidor fora do ar em|net::ERR_CONNECTION_REFUSED/.test(texto)) {
+  if (/ERRO DE FERRAMENTA/.test(texto)) {
+    frase = 'erro de ferramenta, não da página: o navegador não abriu a página; rode só este gate de novo e, se repetir, rode checar-ferramentas.py';
+  } else if (codigo === 3 || /servidor fora do ar em|net::ERR_CONNECTION_REFUSED/.test(texto)) {
     frase = 'o servidor da página caiu e o gate não opinou: suba o servidor de novo (servidor-gzip.py imprime a URL) e repita só este gate';
   } else if (codigo === 124 || /Estourou o tempo máximo/.test(texto)) {
     frase = `o gate estourou o tempo: rode --so ${nome} --paralelo 1 para ver se a página trava ou se foi carga da máquina, e só então suba --tempo-max`;

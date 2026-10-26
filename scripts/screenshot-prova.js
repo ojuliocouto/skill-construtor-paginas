@@ -125,6 +125,70 @@ async function conferirIdentidade(page) {
   return falhas;
 }
 
+// IMAGEM QUEBRADA E FONTE QUE NÃO CARREGOU (3.7). O print saía "PASSA" com o ícone de imagem quebrada ou com a
+// fonte de reserva no lugar da fonte da página: o PNG mostrava o defeito e o script só media a identidade do <head>.
+// Roda depois da rolagem que acorda `loading="lazy"` e ANTES do print. Reprova com o src da imagem e o nome da fonte.
+//   imagem: `complete` com `naturalWidth === 0` E erro de carga confirmado por uma segunda carga (SVG sem tamanho
+//           próprio também tem naturalWidth 0 e carrega bem: só o `onerror` conta), ou imagem desenhada na página que
+//           ainda não terminou de carregar depois de 10 s;
+//   fonte:  `FontFace` com status `error`, ou família declarada em `@font-face` e usada em texto visível cujo
+//           `document.fonts.check` dá falso (a face existe e ficou sem carregar).
+async function conferirRecursos(page) {
+  return page.evaluate(async () => {
+    const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
+    const limite = Date.now() + 10000;
+    const imgs = () => [...document.images].filter((i) => (i.currentSrc || i.getAttribute('src') || '').trim());
+    const desenhada = (i) => i.getClientRects().length > 0 && getComputedStyle(i).visibility !== 'hidden';
+    // espera as imagens que ainda estão a caminho (as que nem são desenhadas, como lazy escondida, não contam)
+    while (Date.now() < limite && imgs().some((i) => !i.complete && desenhada(i))) await dorme(150);
+    await Promise.race([document.fonts.ready.catch(() => {}), dorme(8000)]);
+
+    const rotulo = (i) => (i.currentSrc || i.getAttribute('src') || '').slice(0, 200);
+    const problemas = [];
+    for (const i of imgs()) {
+      if (!i.complete) {
+        if (desenhada(i)) problemas.push(`imagem que nao terminou de carregar: ${rotulo(i)}`);
+        continue;
+      }
+      if (i.naturalWidth > 0) continue;
+      const src = i.currentSrc || i.src;
+      const quebrou = await new Promise((res) => {
+        const t = new Image();
+        t.onload = () => res(false);
+        t.onerror = () => res(true);
+        t.src = src;
+        setTimeout(() => res(false), 8000);
+      });
+      if (quebrou) problemas.push(`imagem quebrada (nao carregou): ${rotulo(i)}`);
+    }
+
+    const faces = [...document.fonts];
+    const emErro = new Set();
+    for (const f of faces) {
+      if (f.status === 'error') {
+        emErro.add(f.family.replace(/^["']|["']$/g, ''));
+        problemas.push(`fonte que nao carregou (erro no @font-face): ${f.family.replace(/^["']|["']$/g, '')}`);
+      }
+    }
+    const familias = new Set(faces.map((f) => f.family.replace(/^["']|["']$/g, '')));
+    const jaDito = new Set();
+    for (const el of document.querySelectorAll('body *')) {
+      const texto = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim();
+      if (!texto || !el.getClientRects().length) continue;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+      const lista = cs.fontFamily.split(',').map((x) => x.trim().replace(/^["']|["']$/g, ''));
+      for (const fam of lista) {
+        if (!familias.has(fam) || emErro.has(fam) || jaDito.has(fam)) continue;
+        let ok = true;
+        try { ok = document.fonts.check(`${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} "${fam}"`, texto.slice(0, 40)); } catch { ok = true; }
+        if (!ok) { jaDito.add(fam); problemas.push(`fonte declarada e usada que nao carregou: ${fam}`); }
+      }
+    }
+    return problemas;
+  });
+}
+
 // Estado observável da página, pra o clique ter prova além do pixel.
 /** Passa a rolagem pela pagina INTEIRA antes de fotografar, e devolve quantos passos deu.
  *
@@ -331,6 +395,7 @@ async function main() {
   const cliquesInertes = [];
   const avisosLead = [];
   let falhasIdentidade = [];
+  const falhasRecursos = [];
   let browser;
 
   try {
@@ -373,6 +438,14 @@ async function main() {
 
       if (vp.name === 'desktop' && !semIdentidade) {
         falhasIdentidade = await conferirIdentidade(page);
+      }
+
+      // --sem-identidade (baseline de página de terceiro) também dispensa esta checagem: a página ainda não é sua.
+      if (!semIdentidade) {
+        for (const m of await conferirRecursos(page)) {
+          const linha = `[${vp.name}] ${m}`;
+          if (!falhasRecursos.some((x) => x.slice(x.indexOf(']') + 2) === m)) falhasRecursos.push(linha);
+        }
       }
 
       const file = path.join(outdir, `prova-${vp.name}.png`);
@@ -513,6 +586,18 @@ async function main() {
     console.error(
       'ENTREGA BLOQUEADA: identidade da pagina e GATE (4.2b), nao checklist. ' +
         'Corrija o <head> e rode de novo. Os prints ficaram salvos em ' + outdir + '.'
+    );
+    process.exit(1);
+  }
+
+  if (falhasRecursos.length) {
+    console.error(
+      `\nREPROVA nas IMAGENS E FONTES DA PAGINA (${falhasRecursos.length} item(ns)):\n  - ` +
+        falhasRecursos.join('\n  - ')
+    );
+    console.error(
+      'ENTREGA BLOQUEADA: o print mostraria imagem quebrada ou a fonte de reserva. ' +
+        'Conserte o caminho do arquivo (src ou url() do @font-face) e rode de novo. Os prints ficaram salvos em ' + outdir + '.'
     );
     process.exit(1);
   }

@@ -153,7 +153,8 @@ class Ciclo(unittest.TestCase):
             self.assertIn(g, wave.GATES, g)
         self.assertIn("plano", wave.gates_exigidos("criar"))
         self.assertNotIn("plano", wave.gates_exigidos("clonar"))
-        self.assertIn("rastreamento", wave.gates_exigidos("clonar"))
+        self.assertIn("rastreamento", wave.gates_exigidos("melhorar"))
+        self.assertNotIn("rastreamento", wave.gates_exigidos("clonar"))   # 3.7.0: o clone não tem PLANO nem pixel pedido
 
     # v3.5 (04/10/2026): ritmo e animação viraram gates exigidos; o clone fiel copia a composição
     # da original e não responde por eles.

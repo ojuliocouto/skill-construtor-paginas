@@ -42,6 +42,13 @@
  *   --sem-registrar      não grava o resultado da rodada completa na wave.
  *   --registrar-conserto numa rodada parcial (--so ou --reprovados), grava na wave SÓ os gates que rodaram. É o conserto de uma regressão
  *                        trivial depois da auditoria (3.6.1): o gate refeito prova que a regressão sumiu sem pagar a rodada completa.
+ *   --caminho clonar     (3.7.0) o conjunto do clone fiel (teste de aluno da 3.6.3: clone com 0,054% de pixels diferentes e 8 de 15
+ *                        gates vermelhos sem rota de saída). Reprovam: fidelidade (contra a original), oclusão, classes mortas, publicação e
+ *                        uso de ferramentas. Não rodam: verdade, rastreamento, plano e referências (pedem briefing, PLANO, pixel e 6
+ *                        referências que o clone não tem). Viram AVISO "ressalva por fidelidade" (rodam, a saída fica 0 e a wave recebe o
+ *                        exit real): movimento, responsivo, texto, imagens, simetria, composição e sem-kicker, que medem regra da skill
+ *                        que a original pode não seguir. Sem a flag, o conjunto é o do CRIAR, igual a antes.
+ *   --original <url>     (com --caminho clonar) a página original para o gate de fidelidade; sem ela, ele lê `original/identidade.json`.
  *   --sem-movimento      (3.7.0) rodada completa do MEIO: pula o gate de movimento quando a animação não mudou desde a última vez em que
  *                        ele PASSOU (o HTML da dist sem o texto, o CSS e o JS iguais). Mudou a animação, ele roda mesmo com a flag. O pulo
  *                        fica marcado na wave e a etapa 5 recusa a entrega com a marca: a rodada final (passo h) roda SEM a flag.
@@ -105,7 +112,7 @@ export const CATALOGO = [
   { nome: 'sem-kicker', arquivo: 'gate-sem-kicker.py', peso: 7,
     args: (c) => [path.join(c.projeto, 'index.html')] },
   { nome: 'classes-mortas', arquivo: 'gate-classes-mortas.py', peso: 1,
-    args: (c) => ['--projeto', c.projeto] },
+    args: (c) => ['--projeto', c.projeto, ...(c.caminho === 'clonar' ? ['--clone'] : [])] },   // 3.7.0: no clone, utilitário do Tailwind com classe da original
   { nome: 'verdade', arquivo: 'gate-verdade.py', peso: 1,
     args: (c) => ['--projeto', c.projeto] },
   { nome: 'publicacao', arquivo: 'gate-publicacao.py', dist: true, peso: 1,
@@ -127,9 +134,32 @@ export const CATALOGO = [
     args: (c) => ['--url', c.url, '--fixo', c.opcoes.fixo, '--contra', c.opcoes.contra] },
 ];
 
+/**
+ * O conjunto do clone fiel (3.7.0). Os grupos são os mesmos do `wave.py` (FORA_DO_CLONE e RESSALVA_POR_FIDELIDADE): o teste
+ * `test-rodar-gates-clonar.cjs` compara os dois. Os gates só do clone ficam FORA do CATALOGO, que é a lista do CRIAR.
+ *   depois = roda depois dos outros (o de uso confere o registro que o gate de fidelidade grava ao usar o Playwright).
+ */
+export const FORA_DO_CLONE = ['referencias', 'verdade', 'rastreamento', 'plano', 'ritmo', 'animacao'];
+export const RESSALVA_POR_FIDELIDADE = ['movimento', 'responsivo', 'texto', 'imagens', 'simetria', 'composicao', 'sem-kicker'];
+export const CATALOGO_CLONAR = [
+  { nome: 'fidelidade', arquivo: 'gate-fidelidade.mjs', navegador: true, url: true, peso: 300, semCache: true,   // lê a original ao vivo
+    args: (c) => ['--url', c.url, '--projeto', c.projeto, ...(c.opcoes.original ? ['--original', c.opcoes.original] : [])] },
+  { nome: 'uso-ferramentas', arquivo: 'uso-ferramentas.py', peso: 1, depois: true,
+    args: (c) => ['--projeto', c.projeto, 'checar', '--caminho', 'clonar'] },
+];
+
+/** O conjunto de gates do caminho: o do CRIAR (o catálogo) ou o do clone fiel. */
+export function catalogoDoCaminho(caminho) {
+  if (caminho !== 'clonar') return CATALOGO;
+  return [...CATALOGO_CLONAR.filter((g) => !g.depois), ...CATALOGO.filter((g) => !FORA_DO_CLONE.includes(g.nome)), ...CATALOGO_CLONAR.filter((g) => g.depois)];
+}
+
+/** Gate de AVISO no caminho: reprovou, mas a saída da rodada não conta (ressalva por fidelidade). */
+export const ehAviso = (caminho, nome) => caminho === 'clonar' && RESSALVA_POR_FIDELIDADE.includes(nome);
+
 /** Gates do catálogo que têm nome na wave (`wave.py gate <nome>`): os outros (vídeo, sobreposição) não se registram. */
 export const NOMES_NA_WAVE = new Set(['movimento', 'responsivo', 'oclusao', 'simetria', 'composicao', 'imagens', 'texto', 'ritmo',
-  'sem-kicker', 'classes-mortas', 'verdade', 'publicacao', 'rastreamento', 'plano', 'referencias', 'animacao']);
+  'sem-kicker', 'classes-mortas', 'verdade', 'publicacao', 'rastreamento', 'plano', 'referencias', 'animacao', 'fidelidade', 'uso-ferramentas']);
 
 /** Teto de gates de navegador ao mesmo tempo. Cada Chromium pesa uns 300 a 500 MB e disputa CPU
  *  com os outros: o padrão é metade dos núcleos, entre 1 e 4 (medido em `RELATORIO-PAGINA-358-D.md`). */
@@ -333,6 +363,8 @@ function lerArgs(argv) {
     else if (a === '--contra') o.contra = pega(i++);
     else if (a === '--tempo-max') o.tempoMax = Number(pega(i++));
     else if (a === '--scripts-dir') o.scriptsDir = pega(i++);
+    else if (a === '--caminho') o.caminho = pega(i++);
+    else if (a === '--original') o.original = pega(i++);
     else if (a === '--reprovados') o.reprovados = true;
     else if (a === '--sem-montar') o.semMontar = true;
     else if (a === '--confirmar-sozinho') o.confirmarSozinho = true;
@@ -382,12 +414,13 @@ function registrarNaWave({ o, escolhidos, resultados, projeto, gatesDir, rodada 
   const itens = escolhidos.filter((g) => NOMES_NA_WAVE.has(g.nome) && !resultados.get(g.nome)?.pulado).map((g) => {
     const r = resultados.get(g.nome);
     const onde = `gates/${g.nome}-r${rodada}.txt`;
+    const aviso = r.codigo !== 0 && ehAviso(o.caminho, g.nome) ? 'AVISO, ressalva por fidelidade: ' : '';
     const detalhe = parcial
       ? `rodar-gates r${rodada}: conserto parcial, ${r.codigo === 0 ? 'PASSA' : `REPROVA (saída ${r.codigo})`}${r.cache ? ', laudo reaproveitado do cache' : ''} em ${fmt(r.segundos)} s (${onde})`
       : r.cache
       ? `rodar-gates r${rodada}: PASSA, laudo da rodada ${r.cache.rodada} reaproveitado do cache, entrada idêntica (${onde})`
       : `rodar-gates r${rodada}: ${r.codigo === 0 ? 'PASSA' : `REPROVA (saída ${r.codigo})`} em ${fmt(r.segundos)} s (${onde})`;
-    return { nome: g.nome, exit: r.codigo, detalhe };
+    return { nome: g.nome, exit: r.codigo, detalhe: aviso + detalhe };
   });
   if (!itens.length) return 'Wave: nenhum gate desta rodada tem nome na wave; nada a registrar.';
   const arquivo = path.join(gatesDir, `_wave-r${rodada}.json`);
@@ -406,6 +439,8 @@ function linhaDeRepeticao(o, extra) {
   if (o.com.length) partes.push('--com', o.com.join(','));
   if (o.produtoFisico) partes.push('--produto-fisico');
   if (o.trafegoReal) partes.push('--trafego-real');
+  if (o.caminho) partes.push('--caminho', o.caminho);
+  if (o.original) partes.push('--original', aspas(o.original));
   if (o.semMontar) partes.push('--sem-montar');
   partes.push(...extra);
   return partes.join(' ');
@@ -417,9 +452,10 @@ async function principal() {
   let o;
   try { o = lerArgs(process.argv.slice(2)); } catch (e) { console.error(e.message); process.exit(2); }
   if (o.ajuda) { console.log('Uso: node rodar-gates.mjs --projeto <dir> [--so a,b | --reprovados] [--paralelo N] ... (veja o cabeçalho do arquivo)'); process.exit(0); }
+  if (o.caminho && o.caminho !== 'clonar' && o.caminho !== 'criar') { console.error(`--caminho aceita criar ou clonar (os outros caminhos usam o conjunto do criar): ${o.caminho}`); process.exit(2); }
   if (o.lista) {
-    console.log('Gates do comando (os marcados [opcional] só rodam com --com):');
-    for (const g of CATALOGO) console.log(`  ${g.nome.padEnd(15)} ${g.arquivo}${g.navegador ? '  [navegador]' : ''}${g.opcional ? '  [opcional]' : ''}`);
+    console.log(o.caminho === 'clonar' ? 'Gates do clone fiel (AVISO = ressalva por fidelidade; não rodam: ' + FORA_DO_CLONE.join(', ') + '):' : 'Gates do comando (os marcados [opcional] só rodam com --com):');
+    for (const g of catalogoDoCaminho(o.caminho)) console.log(`  ${g.nome.padEnd(15)} ${g.arquivo}${g.navegador ? '  [navegador]' : ''}${g.opcional ? '  [opcional]' : ''}${ehAviso(o.caminho, g.nome) ? '  [AVISO]' : ''}`);
     process.exit(0);
   }
   if (!o.projeto) { console.error('faltou --projeto <pasta da página>'); process.exit(2); }
@@ -437,22 +473,24 @@ async function principal() {
   const rodada = historico.reduce((m, e) => Math.max(m, e.rodada), 0) + 1;
 
   // 1. quais gates
-  const nomesValidos = new Set(CATALOGO.map((g) => g.nome));
+  const CAT = catalogoDoCaminho(o.caminho);
+  const nomesValidos = new Set(CAT.map((g) => g.nome));
   for (const n of [...(o.so || []), ...o.com]) {
-    if (!nomesValidos.has(n)) { console.error(`gate desconhecido: "${n}". Os nomes são: ${CATALOGO.map((g) => g.nome).join(', ')}`); process.exit(2); }
+    if (!nomesValidos.has(n)) { console.error(`gate desconhecido: "${n}"${o.caminho === 'clonar' && FORA_DO_CLONE.includes(n) ? ' (não se aplica ao clone fiel)' : ''}. Os nomes são: ${CAT.map((g) => g.nome).join(', ')}`); process.exit(2); }
   }
   const comOpcionais = new Set(o.com);
-  let escolhidos = CATALOGO.filter((g) => !g.opcional || comOpcionais.has(g.nome) || (o.so && o.so.includes(g.nome)));
-  if (o.so) escolhidos = CATALOGO.filter((g) => o.so.includes(g.nome));
+  let escolhidos = CAT.filter((g) => !g.opcional || comOpcionais.has(g.nome) || (o.so && o.so.includes(g.nome)));
+  if (o.so) escolhidos = CAT.filter((g) => o.so.includes(g.nome));
   if (o.reprovados) {
     const ult = ultimoDeCada(historico);
-    escolhidos = escolhidos.filter((g) => { const e = ult.get(g.nome); return !e || e.codigo !== 0; });
+    // No clone, o aviso por fidelidade não volta no --reprovados: ele não reprova a rodada, e repetir não muda a original.
+    escolhidos = escolhidos.filter((g) => { const e = ult.get(g.nome); return (!e || e.codigo !== 0) && !(e && ehAviso(o.caminho, g.nome)); });
     if (!escolhidos.length) {
       console.log('Nenhum gate reprovado na última execução de cada um: nada para rodar de novo. Faça uma rodada completa antes de seguir.');
       process.exit(0);
     }
   }
-  const ctxBase = { projeto, dist, scriptsDir, opcoes: { produtoFisico: o.produtoFisico, trafegoReal: o.trafegoReal, publico: o.publico, fixo: o.fixo, contra: o.contra } };
+  const ctxBase = { projeto, dist, scriptsDir, caminho: o.caminho || 'criar', opcoes: { produtoFisico: o.produtoFisico, trafegoReal: o.trafegoReal, publico: o.publico, fixo: o.fixo, contra: o.contra, original: o.original } };
   for (const g of escolhidos) {
     const motivo = g.exige && g.exige(ctxBase);
     if (motivo) { console.error(motivo); process.exit(2); }
@@ -568,7 +606,7 @@ async function principal() {
     if (servidor) servidor.parar();
     resultados.set(g.nome, r);
     if (g.nome === 'movimento' && assinatura) gravarAnimacao(gatesDir, { assinatura, rodada, codigo: r.codigo });
-    process.stdout.write(`  ${r.codigo === 0 ? 'passa  ' : 'REPROVA'} ${g.nome} (${fmt(r.segundos)} s)\n`);
+    process.stdout.write(`  ${r.codigo === 0 ? 'passa  ' : (ehAviso(o.caminho, g.nome) ? 'AVISO  ' : 'REPROVA')} ${g.nome} (${fmt(r.segundos)} s)\n`);
     if (alvoDeCache && r.codigo === 0) {      // só PASSA vira cache; reprovação, queda e estouro de tempo rodam de novo na próxima
       try { gravarCache(gatesDir, g.nome, { chave: alvoDeCache.chave, partes: alvoDeCache.partes, segundos: r.segundos, rodada, laudo: readFileSync(arquivo, 'utf8') }); }
       catch (_) { /* sem cache: o gate roda de novo na próxima rodada */ }
@@ -576,8 +614,9 @@ async function principal() {
   };
   const porPeso = (a, b) => b.peso - a.peso;
   const pesados = escolhidos.filter((g) => g.navegador).sort(porPeso);
-  const leves = escolhidos.filter((g) => !g.navegador).sort(porPeso);
+  const leves = escolhidos.filter((g) => !g.navegador && !g.depois).sort(porPeso);
   await Promise.all([pool(pesados.map(rodarUm), teto), pool(leves.map(rodarUm), 2)]);
+  await pool(escolhidos.filter((g) => g.depois && !g.navegador).map(rodarUm), 1);
   // Confirmação isolada (opcional): a medida de tempo de um gate pode mudar com a máquina cheia. O modo em série é a referência.
   const instaveis = [];
   if (o.confirmarSozinho) {
@@ -608,10 +647,12 @@ async function principal() {
       linhas.push(`PULADO   ${g.nome.padEnd(15)} ${fmt(0).padStart(5)} s   (--sem-movimento: animação igual à da rodada ${r.pulado.rodada}, quando passou; a rodada final roda ele)`);
       continue;
     }
-    const nota = r.cache ? `   (cache: laudo da rodada ${r.cache.rodada}, entrada idêntica)` : (r.codigo === 0 ? '' : `   (saída ${r.codigo})`) + (r.porQueRodou ? `   (rodou: ${r.porQueRodou})` : '');
-    linhas.push(`${r.codigo === 0 ? 'PASSA   ' : 'REPROVA '} ${g.nome.padEnd(15)} ${fmt(r.segundos).padStart(5)} s   gates/${g.nome}-r${rodada}.txt${nota}`);
+    const aviso = r.codigo !== 0 && ehAviso(o.caminho, g.nome);
+    const nota = r.cache ? `   (cache: laudo da rodada ${r.cache.rodada}, entrada idêntica)` : (r.codigo === 0 ? '' : `   (${aviso ? 'ressalva por fidelidade, ' : ''}saída ${r.codigo})`) + (r.porQueRodou ? `   (rodou: ${r.porQueRodou})` : '');
+    linhas.push(`${r.codigo === 0 ? 'PASSA   ' : (aviso ? 'AVISO   ' : 'REPROVA ')} ${g.nome.padEnd(15)} ${fmt(r.segundos).padStart(5)} s   gates/${g.nome}-r${rodada}.txt${nota}`);
   }
-  const reprovados = escolhidos.filter((g) => resultados.get(g.nome).codigo !== 0);
+  const reprovados = escolhidos.filter((g) => resultados.get(g.nome).codigo !== 0 && !ehAviso(o.caminho, g.nome));
+  const avisosPorFidelidade = escolhidos.filter((g) => resultados.get(g.nome).codigo !== 0 && ehAviso(o.caminho, g.nome));
   const somaS = [...resultados.values()].reduce((s, r) => s + r.segundos, 0);
   const avisos = [];
   for (const g of escolhidos) {
@@ -624,6 +665,17 @@ async function principal() {
     const mostrar = avisos.slice(0, 30);
     linhas.push('', '----- AVISOS dos gates que passaram (não reprovam, mas leia) -----', ...mostrar);
     if (avisos.length > mostrar.length) linhas.push(`  (mais ${avisos.length - mostrar.length} aviso(s): estão nos arquivos gates/<nome>-r${rodada}.txt)`);
+  }
+  if (avisosPorFidelidade.length) {
+    linhas.push('', '----- AVISOS POR FIDELIDADE (clone fiel: não reprovam a rodada; viram ressalva escrita na entrega) -----');
+    linhas.push('Estes gates medem regra da skill que a ORIGINAL pode não seguir. Confira no texto de cada um se o defeito também está na original:');
+    linhas.push('se está, não conserte (consertar trai a fidelidade) e declare na entrega; se só o clone tem, é defeito de fidelidade: conserte.');
+    for (const g of avisosPorFidelidade) {
+      const txt = readFileSync(path.join(gatesDir, `${g.nome}-r${rodada}.txt`), 'utf8').trimEnd().split(/\r?\n/);
+      const diretas = txt.filter((l) => /^\s*(FALHA:|REPROVA)/.test(l));   // a frase da falha, não a linha da tabela de telas
+      const falhas = (diretas.length ? diretas : txt.filter((l) => /FALHA|REPROVA|falha/.test(l))).slice(0, 8);
+      linhas.push('', `### ${g.nome} (AVISO, saída ${resultados.get(g.nome).codigo}; texto inteiro em gates/${g.nome}-r${rodada}.txt)`, ...(falhas.length ? falhas : txt.slice(-8)));
+    }
   }
   if (instaveis.length) {
     linhas.push('', '----- INSTÁVEIS POR CARGA (reprovaram com outros gates rodando e PASSARAM sozinhos) -----');
@@ -649,7 +701,9 @@ async function principal() {
     linhas.push(`  ${linhaDeRepeticao(o, ['--reprovados'])}`);
     linhas.push('Quando tudo passar, faça uma rodada completa (sem --so e sem --reprovados): ela registra sozinha o exit real de cada gate na wave.');
   } else {
-    linhas.push(`RESULTADO: PASSA em ${escolhidos.length} de ${escolhidos.length}.`);
+    linhas.push(avisosPorFidelidade.length
+      ? `RESULTADO: PASSA em ${escolhidos.length - avisosPorFidelidade.length} de ${escolhidos.length}, com ${avisosPorFidelidade.length} AVISO(s) por fidelidade: ${avisosPorFidelidade.map((g) => g.nome).join(', ')}.`
+      : `RESULTADO: PASSA em ${escolhidos.length} de ${escolhidos.length}.`);
     if (o.so || o.reprovados) linhas.push('Foi uma rodada parcial: falta a rodada completa no fim, antes de registrar na wave.');
     if (escolhidos.some((g) => resultados.get(g.nome).pulado)) linhas.push(`O movimento foi pulado (--sem-movimento): vale para rodada do meio. A rodada final roda sem a flag: ${linhaDeRepeticao(o, [])}`);
   }

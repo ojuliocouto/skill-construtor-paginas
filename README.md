@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.7.0)
+SKILL.md                       router (v3.7.1)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,10 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.7.1
+
+The CLONE path delivers. It gets its own gate set (`rodar-gates.mjs --caminho clonar`): fidelity, occlusion, dead classes, publishing and tool use fail; claims, tracking, plan and references do not run; motion, responsive, text, images, symmetry, composition and no-kicker become a "fidelity caveat" warning. A new fidelity gate compares the original and the clone at 1440 and 390 (height, key elements, pixel diff with the regions that differ). On every path, the proof server answers requests in parallel, and a screenshot with a broken image or a font that did not load fails.
 
 ## What is new in 3.7.0
 

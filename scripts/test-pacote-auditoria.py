@@ -192,10 +192,32 @@ class Pacote(unittest.TestCase):
         montar_completo(self.raiz)
         for f in ("PLANO.md", "evidencias/sustentacao.md", "evidencias/briefing.md", "referencias/sintese.md"):
             (self.raiz / f).unlink()
+        tocar(self.raiz / "original/prova-desktop.png", b"\x89PNG", 1_000_000)   # 3.7.0: a referência do clone é a original
+        tocar(self.raiz / "original/prova-mobile.png", b"\x89PNG", 1_000_000)
         code, saida = rodar(self.raiz, "--caminho", "clonar")
         self.assertEqual(code, 0, saida)
         code, _ = rodar(self.raiz)
         self.assertEqual(code, 1)
+
+    def test_clonar_pede_os_prints_da_original_no_lugar_das_referencias_e_das_pranchas(self):
+        # 3.7.0 (teste de aluno do CLONAR na 3.6.3): o clonar.md diz que o pacote não exige PLANO nem briefing, mas ele exigia
+        # referencias/*-dobra.png e as pranchas do vídeo. No clone a referência é a original: os prints dela, lado a lado.
+        montar_completo(self.raiz)
+        for f in ("PLANO.md", "evidencias/sustentacao.md", "evidencias/briefing.md", "referencias/sintese.md",
+                  "referencias/a-dobra.png", "referencias/b-dobra.png", "videos/prancha-desktop.png", "videos/prancha-mobile.png"):
+            (self.raiz / f).unlink()
+        code, saida = rodar(self.raiz, "--caminho", "clonar")
+        self.assertEqual(code, 1, saida)
+        self.assertIn("original/prova-desktop.png", saida)
+        # o print da original é o mais novo: o pacote não o confunde com o print do clone
+        tocar(self.raiz / "original/prova-desktop.png", b"\x89PNG", 1_000_020)
+        tocar(self.raiz / "original/prova-mobile.png", b"\x89PNG", 1_000_020)
+        code, saida = rodar(self.raiz, "--caminho", "clonar")
+        self.assertEqual(code, 0, saida)
+        pacote = json.loads((self.raiz / "auditoria/pacote.json").read_text(encoding="utf-8"))
+        self.assertIn("provas/prova-desktop.png", json.dumps(pacote, ensure_ascii=False))
+        self.assertIn("original/prova-desktop.png", json.dumps(pacote, ensure_ascii=False))
+        self.assertRegex(saida, r"prova-desktop\.png\s+provas/prova-desktop\.png")
 
     def test_nao_olha_dentro_da_dist_nem_de_node_modules(self):
         montar_completo(self.raiz)

@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.7.1 (26/10/2026): o caminho CLONAR entrega
+
+Teste de aluno do CLONAR na 3.6.3 (pocketbase.io): clone com 0,054% de pixels diferentes em 31 min, e a entrega BLOQUEADA por 8 gates que não se aplicam a clone.
+
+- **Gates do clone** (`rodar-gates.mjs --caminho clonar --original <url>`): fidelidade, oclusão, classes mortas (`--clone`), publicação e uso de ferramentas reprovam; verdade, rastreamento, plano e referências não rodam; movimento, responsivo, texto, imagens, simetria, composição e sem-kicker viram aviso "ressalva por fidelidade". `wave.py` e `pacote-auditoria.py` coerentes: gate fora do caminho não bloqueia e o pacote usa os prints da original.
+- **Gate de fidelidade** (`scripts/gate-fidelidade.mjs`, `fidelidade-lib.mjs`): abre a original e o clone em 1440 e 390, compara altura, elementos-chave (caixa e estilo) e pixels, e lista os retângulos que diferem com o elemento da original. Substitui o "olhar cor a cor". `lado-a-lado.py --modo fiel` em tamanho real.
+- **Prova que não passa quebrada**, em todos os caminhos: `servidor-gzip.py` com uma thread por pedido (prints e vídeo em paralelo travavam imagens e fontes) e `screenshot-prova.js` reprova print com imagem quebrada ou fonte que não carregou.
+- `gate-movimento.mjs`: navegação interrompida é ERRO DE FERRAMENTA (saída 3), com uma nova tentativa, sem culpar a página. `gate-classes-mortas.py --clone`: reprova classe da original que o Tailwind virou utilitário.
+- `clonar.md` reescrito: o que do passo e vale num clone (sem lente do herói; foto da original não pede licença nova), uma pasta de prova só (`provas/`) e a rota de saída.
+- Testes: `rodar-testes.mjs` 92 de 92.
+
 ## 3.7.0 (26/10/2026): auditor curto e gate de movimento só onde importa
 
 Página do zero levava 74 min no teste de aluno da 3.6.2; o auditor era 47% disso (35 min).

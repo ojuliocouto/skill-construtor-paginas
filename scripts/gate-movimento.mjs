@@ -193,6 +193,32 @@ const falhas = [];
 // `--em-serie` volta a tudo em fila, como era na 3.5.14.
 const EM_SERIE = args.includes('--em-serie');
 const ROBUSTAS_JUNTAS = EM_SERIE ? 1 : Math.max(2, Math.min(4, Math.floor(os.cpus().length / 3)));
+
+// ERRO DE FERRAMENTA (3.7). `page.goto` interrompido (`net::ERR_ABORTED`, "interrupted by another navigation", `chrome-error://`,
+// conexão recusada ou derrubada, tempo esgotado) não diz nada sobre a página: o gate nem chegou a vê-la. Antes ele caía com
+// exceção e stack trace, e o "Conserto:" do relatório mandava mexer na animação. Agora abre de novo UMA vez; se falhar outra
+// vez, sai com 3 e uma linha que diz que o defeito não é da página.
+class ErroDeFerramenta extends Error {}
+const SAIDA_ERRO_DE_FERRAMENTA = 3;
+/** Uma tentativa: `load` e, se ele não chegar, `domcontentloaded` (o que o gate sempre fez). Com `soDcl` vai direto ao segundo. */
+async function tentarAbrir(page, soDcl) {
+  if (!soDcl) {
+    try { await page.goto(URL_ALVO, { waitUntil: 'load', timeout: 45000 }); return; } catch { /* cai no domcontentloaded */ }
+  }
+  await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 });
+}
+/** Abre a página da prova. `tolerante`: um tempo esgotado com a página já na tela segue e mede o que carregou (como era no script bloqueado ou atrasado). */
+async function abrirPagina(page, { soDcl = false, tolerante = false } = {}) {
+  let erro;
+  for (let tentativa = 0; tentativa < 2; tentativa++) {
+    try { await tentarAbrir(page, soDcl); return; } catch (e) { erro = e; }
+    const url = page.url();
+    if (tolerante && url && !url.startsWith('chrome-error:') && url !== 'about:blank') return;
+    if (tentativa === 0) await new Promise((ok) => setTimeout(ok, 500));
+  }
+  const msg = String((erro && erro.message) || erro).split('\n')[0].replace(/\s+/g, ' ').trim().slice(0, 200);
+  throw new ErroDeFerramenta(msg);
+}
 const tarefas = [];
 const nova = (rodar, robusta = false) => { const t = { rodar, robusta, feito: false, saida: { linhas: [], falhas: [] } }; tarefas.push(t); return t; };
 const texto = (linha) => { const t = nova(null); t.feito = true; t.saida.linhas.push(linha); };
@@ -326,7 +352,7 @@ async function provaScript(nome, w, h, mob, modo, saida) {
     return rota.continue();
   });
   const page = await ctx.newPage();
-  try { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); } catch { /* segue: medimos o que carregou */ }
+  await abrirPagina(page, { soDcl: true, tolerante: true });   // segue se a página já está na tela: medimos o que carregou
   await page.waitForTimeout(6000);   // a rede de segurança dispara aos 5 s; o script atrasado só chega aos 7 s
   const lista = await invisiveis(page);
   const rotulo = modo === 'bloqueado' ? 'script bloqueado' : 'script que demora 7 s';
@@ -351,8 +377,7 @@ async function visita(nome, w, h, mob, saida) {
   if (ENGASGO > 0) await ctx.addInitScript(`setInterval(function(){var f=performance.now()+${ENGASGO};while(performance.now()<f){}},120)`);
   const page = await ctx.newPage();
   if (CPU > 1) await (await ctx.newCDPSession(page)).send('Emulation.setCPUThrottlingRate', { rate: CPU });
-  try { await page.goto(URL_ALVO, { waitUntil: 'load', timeout: 45000 }); }
-  catch { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
+  await abrirPagina(page);
   const secoes = await page.evaluate(() => [...document.querySelectorAll('section, footer')].map((s, i) => {
     const r = s.getBoundingClientRect();
     const t = s.querySelector('h1, h2, h3');
@@ -409,8 +434,7 @@ async function paradaOuSalto(nome, w, h, mob, prova, saida) {
   {
     const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
     const page = await ctx.newPage();
-    try { await page.goto(URL_ALVO, { waitUntil: 'load', timeout: 45000 }); }
-    catch { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
+    await abrirPagina(page);
     if (prova === 'parada') {
       await page.waitForTimeout(PARADA_MS);
       const lista = await page.evaluate(ocultosAgora, 'primeira');
@@ -436,8 +460,7 @@ async function porItem(nome, w, h, mob, saida) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob });
   await ctx.addInitScript(escutaItens);
   const page = await ctx.newPage();
-  try { await page.goto(URL_ALVO, { waitUntil: 'load', timeout: 45000 }); }
-  catch { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
+  await abrirPagina(page);
   await page.waitForTimeout(1000);
   await page.evaluate((v) => new Promise((ok) => {
     const passo = v / 20;
@@ -512,8 +535,7 @@ async function reduzido(nome, w, h, mob, saida) {
   const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob, reducedMotion: 'reduce' });
   await ctx.addInitScript(`(${escutaReduzido.toString()})(${LIMIAR_REDUZIDO_MS})`);
   const page = await ctx.newPage();
-  try { await page.goto(URL_ALVO, { waitUntil: 'load', timeout: 45000 }); }
-  catch { await page.goto(URL_ALVO, { waitUntil: 'domcontentloaded', timeout: 45000 }); }
+  await abrirPagina(page);
   if (mob) {
     const suave = await page.evaluate(() => [document.documentElement, document.body].filter((el) => getComputedStyle(el).scrollBehavior === 'smooth').map((el) => el.tagName.toLowerCase()));
     saida.linhas.push(`movimento reduzido: scroll-behavior ${suave.length ? 'smooth em ' + suave.join(', ') : 'auto'}`);
@@ -556,8 +578,16 @@ for (const [nome, w, h, mob] of [['iphone padrao', 390, 844, true], ['desktop co
   const executar = async (t) => { await t.rodar(); t.feito = true; descarregar(); };
   const juntas = (fila, n) => Promise.all(Array.from({ length: Math.min(n, fila.length) }, async () => { while (fila.length) await executar(fila.shift()); }));
   descarregar();
-  await juntas(tarefas.filter((t) => t.rodar && t.robusta), ROBUSTAS_JUNTAS);
-  await juntas(tarefas.filter((t) => t.rodar && !t.robusta), 1);
+  try {
+    await juntas(tarefas.filter((t) => t.rodar && t.robusta), ROBUSTAS_JUNTAS);
+    await juntas(tarefas.filter((t) => t.rodar && !t.robusta), 1);
+  } catch (e) {
+    if (!(e instanceof ErroDeFerramenta)) throw e;
+    await navegador.close().catch(() => {});
+    console.log('='.repeat(88));
+    console.log(`ERRO DE FERRAMENTA: a página não abriu no navegador (${e.message}): não é defeito da página; rode o gate de novo`);
+    process.exit(SAIDA_ERRO_DE_FERRAMENTA);
+  }
   descarregar();
 }
 await navegador.close();

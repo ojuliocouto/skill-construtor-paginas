@@ -85,11 +85,96 @@ def escapar(classe: str) -> str:
     return classe.replace('/', r'\/').replace('.', r'\.')
 
 
+def regras_simples(css: str) -> dict:
+    """Quantas regras de classe única (seletor exatamente `.x`) o CSS tem, por classe. Vale dentro de @media também."""
+    import re as _re
+    contagem = {}
+    for sel in _re.findall(r'([^{}]+)\{', limpar_comentarios(css)):
+        for parte in sel.split(','):
+            m = _re.fullmatch(r'\s*\.((?:\\.|[A-Za-z0-9_-])+)\s*', parte)
+            if m:
+                c = m.group(1).replace('\\', '')
+                contagem[c] = contagem.get(c, 0) + 1
+    return contagem
+
+
+def classes_nos_seletores(css: str) -> set:
+    """As classes que a CSS do autor usa em algum seletor (fora de @media, @font-face e das declarações)."""
+    import re as _re
+    achadas = set()
+    for sel in _re.findall(r'([^{}]+)\{', limpar_comentarios(css)):
+        if sel.strip().startswith('@'):
+            continue
+        achadas |= set(_re.findall(r'\.(-?[A-Za-z_][A-Za-z0-9_-]*)', sel))
+    return achadas
+
+
+def _decls(bloco: str) -> set:
+    return {d.strip().replace(' ', '').lower() for d in bloco.split(';') if ':' in d}
+
+
+def _familias(decls) -> set:
+    """A família de cada propriedade (`background-image` e `background` são a mesma; `margin-top` e `margin` também), sem os
+    prefixos de navegador que o autoprefixer acrescenta: o minificador reescreve atalho e valor, mas não inventa propriedade."""
+    out = set()
+    for d in decls:
+        prop = d.split(':', 1)[0]
+        if prop.startswith('-') and not prop.startswith('--'):
+            continue
+        out.add(prop if prop.startswith('--') else prop.split('-')[0])
+    return out
+
+
+def regras(css: str):
+    """(seletor, declarações) de cada regra com declarações, inclusive dentro de @media."""
+    import re as _re
+    return [(sel.strip(), corpo) for sel, corpo in _re.findall(r'([^{}]+)\{([^{}]*)\}', limpar_comentarios(css)) if not sel.strip().startswith('@')]
+
+
+def colisoes_do_clone(raiz: pathlib.Path, css_gerado: str):
+    """3.7.0, CLONAR: classe da ORIGINAL que o Tailwind também transformou em utilitário. No teste de aluno da 3.6.3 a classe
+    `list-item` da original virou `.list-item{display:list-item}` e pôs bolinhas ao lado dos logos. O autor é o `_input.css`
+    sem as diretivas @tailwind (a CSS da original). Colisão: no CSS gerado, uma regra de classe única `.x{...}` traz uma
+    propriedade que NENHUMA regra do autor que cita `.x` define (por família: `background-image` conta como `background`).
+    Comparar propriedades (e não contar regras nem valores) aguenta o minificador, que junta regras e reescreve atalhos. Devolve (lista de (classe, declarações a mais), aviso ou None)."""
+    import re as _re
+    entrada = raiz / '_input.css'
+    if not entrada.is_file():
+        return [], 'sem _input.css: não há CSS do autor para comparar com o utilitário do Tailwind'
+    autor = _re.sub(r'@tailwind\s+[a-z]+\s*;', '', entrada.read_text(encoding='utf-8', errors='replace'))
+    if '@tailwind' not in entrada.read_text(encoding='utf-8', errors='replace'):
+        return [], None
+    html = '\n'.join(h.read_text(encoding='utf-8', errors='replace') for h in sorted(raiz.glob('*.html')))
+    no_html = set()
+    for attr in _re.findall(r'class\s*=\s*"([^"]*)"', html) + _re.findall(r"class\s*=\s*'([^']*)'", html):
+        no_html |= set(attr.split())
+    do_autor = {}
+    for sel, corpo in regras(autor):
+        for c in set(_re.findall(r'\.(-?[A-Za-z_][A-Za-z0-9_-]*)', sel)):
+            do_autor.setdefault(c, set()).update(_decls(corpo))
+    achadas = {}
+    for sel, corpo in regras(css_gerado):
+        for parte in sel.split(','):
+            m = _re.fullmatch(r'\s*\.((?:\\.|[A-Za-z0-9_-])+)\s*', parte)
+            if not m:
+                continue
+            c = m.group(1).replace('\\', '')
+            if c not in do_autor or c not in no_html:
+                continue
+            do_c = _familias(do_autor[c])
+            a_mais = sorted(d for d in _decls(corpo) if _familias([d]) and not (_familias([d]) & do_c))
+            if a_mais:
+                achadas.setdefault(c, set()).update(a_mais)
+    return [(c, ';'.join(sorted(d))[:60]) for c, d in sorted(achadas.items())], None
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--projeto', default='.')
     ap.add_argument('--css', default=None)
     ap.add_argument('--fonte', default=None)
+    ap.add_argument('--clone', action='store_true',
+                    help='caminho CLONAR (3.7.0): reprova também a classe da original que o Tailwind virou utilitário')
     args = ap.parse_args()
 
     raiz = pathlib.Path(args.projeto).resolve()
@@ -146,7 +231,23 @@ def main() -> int:
     print(f'  CSS lido:    {", ".join(p.name for p in css_arquivos)}')
     print(f'  arquivos:    {len(fontes)}')
 
+    colisoes = []
+    if args.clone:
+        gerado = css if em_linha else '\n'.join(p.read_text(encoding='utf-8', errors='replace') for p in css_arquivos if p.name != '_input.css')
+        colisoes, aviso = colisoes_do_clone(raiz, gerado)
+        if aviso:
+            print(f'  AVISO (clone): {aviso}')
+        if colisoes:
+            print()
+            print(f'  REPROVA (clone): {len(colisoes)} classe(s) da ORIGINAL viraram utilitário do Tailwind, com estilo que a original não tem:')
+            for c, decl in colisoes:
+                print(f'    .{c}{{{decl}}}')
+            print('  No clone a CSS da original vence. Se a original não usa Tailwind, tire `@tailwind utilities;` (e base e components)')
+            print('  do _input.css; se você precisa dele, ponha `prefix: "tw-"` no tailwind.config.js. Recompile e meça o pixel.')
+
     if not mortas:
+        if colisoes:
+            return 1
         print('  PASSA: nenhuma classe do código está ausente do CSS gerado.')
         return 0
 

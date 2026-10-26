@@ -57,6 +57,7 @@ import datetime
 import json
 import math
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -114,6 +115,8 @@ GATES = {
     # Padrao da v7 (04/10/2026): o que separou a v7 da v6, a "correta e generica", virou medida.
     "ritmo": "gate-ritmo.mjs (nenhuma seção vizinha com o mesmo esqueleto, no máximo 1 título centralizado com cartões)",
     "animacao": "gate-animacao.py (cada seção muda 2% ou mais dos pixels em 1440 e 390, no máximo 2 com o mesmo tipo de animação)",
+    # 3.7.0 (teste de aluno do CLONAR na 3.6.3): o clone se mede contra a original, nas duas larguras.
+    "fidelidade": "gate-fidelidade.mjs (só CLONAR: elementos-chave em 1440 e 390, altura e diff de pixels contra a original)",
 }
 
 # Quem auditou. Nota de autoavaliacao (quem construiu olhando o proprio trabalho) NAO libera
@@ -128,13 +131,48 @@ ORIGENS = ORIGENS_INDEPENDENTES + ("autoavaliacao",)
 CAMINHOS = ("criar", "clonar", "clonar-elevar", "melhorar", "variante")
 
 
+# 3.7.0 (teste de aluno do CLONAR na 3.6.3: clone com 0,054% de pixels diferentes e ENTREGA BLOQUEADA por 8 gates).
+# No clone fiel a régua é a original. Três grupos:
+#   FORA_DO_CLONE: perguntam pelo briefing, pelo PLANO, pelo pixel ou pelas 6 referências, que o clone não tem. Não rodam.
+#   RESSALVA_POR_FIDELIDADE: medem gosto ou regra da skill que a ORIGINAL pode não seguir (animação, alvo de toque, viúva,
+#     licença e "imagem ilustrativa" da foto da própria página, esqueleto e simetria). Rodam e, vermelhos, viram RESSALVA na
+#     entrega: consertar seria trair a fidelidade.
+#   o resto (fidelidade, oclusão, classes mortas, publicação, identidade, uso de ferramentas) bloqueia como sempre.
+FORA_DO_CLONE = ("referencias", "verdade", "rastreamento", "plano", "ritmo", "animacao")
+RESSALVA_POR_FIDELIDADE = ("movimento", "responsivo", "texto", "imagens", "simetria", "composicao", "sem-kicker")
+SO_NO_CLONE = ("fidelidade",)
+
+
 def gates_exigidos(caminho):
     # Clone fiel copia o texto da original: a fonte da verdade e a propria pagina, nao um briefing.
     # A etapa PLANO e do CRIAR: os outros caminhos partem de uma pagina que ja existe. Ritmo e animacao
     # tambem nao valem para o clone fiel: a composicao e a da original.
     return {g: d for g, d in GATES.items()
-            if not (caminho == "clonar" and g in ("referencias", "verdade", "ritmo", "animacao"))
+            if not (caminho == "clonar" and g in FORA_DO_CLONE)
+            and not (caminho != "clonar" and g in SO_NO_CLONE)
             and not (caminho != "criar" and g == "plano")}
+
+
+def gates_de_ressalva(caminho):
+    """Gates que, vermelhos, viram ressalva declarada em vez de bloqueio (só no clone fiel)."""
+    return set(RESSALVA_POR_FIDELIDADE) if caminho == "clonar" else set()
+
+
+def _caminho_no_comando(args):
+    """O conjunto de gates do clone fiel é outro: todo comando de rodar-gates que a wave sugere num clone leva --caminho clonar."""
+    return " --caminho clonar" if getattr(args, "caminho", "criar") == "clonar" else ""
+
+
+def _onde(detalhe):
+    m = re.search(r"\((gates/[^)]+)\)", str(detalhe or ""))
+    return m.group(1) if m else str(detalhe or "")[:60]
+
+
+def ressalvas_de_fidelidade(gates, caminho):
+    """As linhas de ressalva da entrega: cada gate de ressalva que ficou vermelho no clone."""
+    return [f"gate {g} vermelho, ressalva por fidelidade: a original faz igual e o clone não corrige a original "
+            f"({_onde((gates.get(g) or {}).get('detalhe'))})"
+            for g in sorted(gates_de_ressalva(caminho)) if isinstance(gates.get(g), dict) and gates[g].get("exit") not in (0, None)]
 
 PISO_NOTA = 7.0
 PISO_MEDIA = 8.0
@@ -495,8 +533,12 @@ def cmd_checar(args):
     notas = [v["nota"] for v in lentes.values() if v.get("nota") is not None]
     media = sum(notas) / len(notas) if notas else 0.0
 
+    caminho_ = getattr(args, "caminho", "criar")
+    ressalva = gates_de_ressalva(caminho_)
     gates_faltando = [g for g in exigidos if g not in gates]
-    gates_vermelhos = [g for g, v in gates.items() if v.get("exit") != 0]
+    # Gate que não se aplica ao caminho (o de referências de uma rodada antiga num clone) não bloqueia: só os exigidos contam.
+    gates_vermelhos = [g for g, v in gates.items() if g in exigidos and g not in ressalva and v.get("exit") != 0]
+    gates_ressalva = [g for g, v in gates.items() if g in exigidos and g in ressalva and v.get("exit") != 0]
 
     print("\nAUDITOR MASTER: o processo aconteceu inteiro?\n" + "=" * 76)
     print(f"  LENTES ({len(lentes)}/{len(LENTES)} registradas)")
@@ -515,8 +557,13 @@ def cmd_checar(args):
         v = gates.get(nome)
         if not v:
             print(f"    [FALTA ] {nome:<18} {exigidos[nome]}")
+        elif v["exit"] != 0 and nome in ressalva:
+            print(f"    [RESSALVA] {nome:<17} ressalva por fidelidade (confira que a original faz igual): {v['detalhe'][:30]}")
         else:
             print(f"    [{'verde ' if v['exit'] == 0 else 'VERMELHO'}] {nome:<18} {v['detalhe'][:50]}")
+    fora = sorted(g for g in gates if g not in exigidos)
+    if fora:
+        print(f"    (registrados que não se aplicam ao caminho {caminho_}, ignorados: {', '.join(fora)})")
 
     print("=" * 76)
     problemas = []
@@ -542,10 +589,13 @@ def cmd_checar(args):
     if notas and media < PISO_MEDIA:
         print(f"  SINAL: média {media:.2f} abaixo do piso {PISO_MEDIA}. Quem decide se isso entrega")
         print("         e `wave.py rodada`, e a nota vai DECLARADA na entrega.")
+    if gates_ressalva:
+        print(f"  RESSALVA POR FIDELIDADE: {', '.join(gates_ressalva)} vermelho(s) no clone. Não bloqueia: se a original faz igual,")
+        print("         corrigir seria trair a fidelidade (se só o clone tem, é defeito: conserte). A entrega declara cada um (o `rodada` grava nas ressalvas).")
     pulados = sorted(g for g, v in gates.items() if isinstance(v, dict) and v.get("pulado_em"))
     if pulados:
         print(f"  SINAL: {', '.join(pulados)} pulado(s) na última rodada completa (--sem-movimento). Vale para rodada intermediária;")
-        print(f"         a rodada final (passo h) roda `{comando('rodar-gates.mjs')} --projeto {Path(args.projeto).as_posix()}` SEM a flag, e a etapa 5 cobra isso.")
+        print(f"         a rodada final (passo h) roda `{comando('rodar-gates.mjs')} --projeto {Path(args.projeto).as_posix()}{_caminho_no_comando(args)}` SEM a flag, e a etapa 5 cobra isso.")
 
     if problemas:
         for p in problemas:
@@ -557,15 +607,16 @@ def cmd_checar(args):
             print(f"    - lente que nunca rodou: registre a resposta do auditor com `{comando('wave.py')} --projeto {proj} registrar-lote "
                   "--arquivo auditoria/resposta-rodada-1.json --origem subagente` (ou uma lente: `wave.py --projeto <dir> registrar <lente> ...`)")
         if gates_faltando:
-            print(f"    - gate sem registro: `{comando('rodar-gates.mjs')} --projeto {proj}` (a rodada completa registra sozinha na wave)")
+            print(f"    - gate sem registro: `{comando('rodar-gates.mjs')} --projeto {proj}{_caminho_no_comando(args)}` (a rodada completa registra sozinha na wave)")
         for g in gates_vermelhos:
-            print(f"    - gate {g} vermelho: conserte e rode `{comando('rodar-gates.mjs')} --projeto {proj} --so {g} --registrar-conserto`")
+            print(f"    - gate {g} vermelho: conserte e rode `{comando('rodar-gates.mjs')} --projeto {proj}{_caminho_no_comando(args)} --so {g} --registrar-conserto`")
         print("\n  A ENTREGA ESTA BLOQUEADA. O master não julga se a página está bonita: ele")
         print("  julga se o PROCESSO aconteceu. Lente que não rodou não vira 'passou por")
         print("  omissao', e foi assim que uma página saiu testada em uma única resolucao.\n")
         return 1
 
-    print(f"  Todas as {len(LENTES)} lentes rodaram. Media {media:.2f}. Todos os gates verdes.")
+    print(f"  Todas as {len(LENTES)} lentes rodaram. Media {media:.2f}. "
+          + (f"Todos os gates que bloqueiam verdes; {len(gates_ressalva)} ressalva(s) por fidelidade." if gates_ressalva else "Todos os gates verdes."))
     if na:
         print(f"  {len(na)} marcada(s) como não aplicável (o motivo está no registro): {', '.join(na)}")
     print("  Processo completo. A decisão de entregar volta a ser sua.\n")
@@ -822,6 +873,13 @@ def cmd_rodada(args):
             print(f"    {comando('pacote-auditoria.py')} --projeto {proj} --url <url> --rodada 2")
             print(f"  Depois da resposta: {comando('wave.py')} --projeto {proj} conferencia --arquivo auditoria/resposta-rodada-2.json\n")
         atual["desfecho"] = desfecho
+        if desfecho.startswith("ENTREGA"):
+            fidel = ressalvas_de_fidelidade(d.get("gates", {}), getattr(args, "caminho", "criar"))
+            if fidel:
+                ressalvas = list(ressalvas or []) + fidel
+                print("  Ressalvas por fidelidade (vão escritas na entrega):")
+                for r_ in fidel:
+                    print(f"    - {r_}")
         if ressalvas:
             atual["ressalvas"] = ressalvas
         salvar(args.projeto, d)
@@ -984,7 +1042,7 @@ def cmd_rodada(args):
     def avisar_sem_rodada_2():
         atual["sem_rodada_2"] = True
         print(f"  SEM RODADA 2 DE AUDITOR: a rodada {len(hist)} não achou crítico nem alto (o que sobra é médio e baixo).")
-        print(f"  Corrija os médios e baixos que couberem, rode os gates de novo com a rodada completa (`{comando('rodar-gates.mjs')} --projeto {Path(args.projeto).as_posix()}`)")
+        print(f"  Corrija os médios e baixos que couberem, rode os gates de novo com a rodada completa (`{comando('rodar-gates.mjs')} --projeto {Path(args.projeto).as_posix()}{_caminho_no_comando(args)}`)")
         print("  e entregue com as ressalvas. A etapa 5 cobra todos os gates verdes registrados DEPOIS desta rodada.")
     if ref_ruim and (no_teto or sem_conferencia):
         if sem_conferencia:

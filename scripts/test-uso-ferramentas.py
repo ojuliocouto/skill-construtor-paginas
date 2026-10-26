@@ -33,6 +33,18 @@ class GateUso(unittest.TestCase):
     def criticas_ok(self):
         return {"Playwright": self.registro(), "skill frontend-design": self.registro()}
 
+    def test_clone_fiel_cobra_so_o_playwright(self):
+        # 3.7.0 (teste de aluno do CLONAR na 3.6.3): o clone não escreve plano visual (a identidade é a da original), e o gate
+        # ficava FALTA no checar do clone. Lá ele cobra o Playwright, que mede e printa a original e o clone.
+        uso.salvar(self.projeto, {"Playwright": self.registro()})
+        estados = {"Playwright": True, "skill frontend-design": True}
+        with patch.object(uso, "estado_das_ferramentas", return_value=(estados, None)), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(uso.cmd_checar(argparse.Namespace(projeto=self.projeto, caminho="clonar")), 0)
+            self.assertEqual(uso.cmd_checar(argparse.Namespace(projeto=self.projeto, caminho="criar")), 1)
+        uso.salvar(self.projeto, {})
+        with patch.object(uso, "estado_das_ferramentas", return_value=(estados, None)), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(uso.cmd_checar(argparse.Namespace(projeto=self.projeto, caminho="clonar")), 1)
+
     def test_positivo_com_artefatos(self):
         self.assertEqual(self.checar({"Playwright": True, "skill frontend-design": True}, self.criticas_ok()), 0)
 

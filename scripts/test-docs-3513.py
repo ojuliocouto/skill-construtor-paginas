@@ -22,8 +22,8 @@ def plano(t):
 
 class Versao3513(unittest.TestCase):
     def test_versao_nos_tres_lugares(self):
-        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.7\.0$")
-        self.assertIn("router (v3.7.0)", ler(README))
+        self.assertRegex(ler(SKILL)[:600], r"(?m)^version: 3\.7\.1$")
+        self.assertIn("router (v3.7.1)", ler(README))
         self.assertNotIn("router (v3.5.13)", ler(README))
         self.assertIn("\n## 3.5.13 (09/10/2026)", ler(CHANGELOG))
         self.assertIn("## What is new in 3.5.13", ler(README))
