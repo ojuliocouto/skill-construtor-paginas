@@ -162,6 +162,15 @@ def correcoes(raiz, abertos, fresca):
     return itens, problemas, False
 
 
+def fonte_do_rotulo(tam):
+    """A fonte com acento do `lado-a-lado.py` (a padrão do Pillow escreve "Rodap? sem Termos"). Sem ela, a padrão."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("lado_a_lado_conf", Path(__file__).resolve().parent / "lado-a-lado.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.fonte(tam)
+
+
 def montar_prancha(raiz, itens):
     """Uma imagem só com o print novo de cada achado (2 por linha, com o número). Sem Pillow devolve None e o briefing lista os prints."""
     try:
@@ -169,7 +178,8 @@ def montar_prancha(raiz, itens):
     except ImportError:
         return None
     raiz = Path(raiz)
-    larg, alt, faixa = 640, 520, 34
+    larg, alt, faixa = 640, 420, 34
+    fonte = fonte_do_rotulo(17)
     quadros = []
     for n in sorted(itens):
         it = itens[n]
@@ -194,7 +204,7 @@ def montar_prancha(raiz, itens):
     for i, (n, it, img) in enumerate(quadros):
         x = (i % colunas) * (larg + 20)
         y = (i // colunas) * (alt + faixa + 20)
-        d.text((x + 6, y + 8), f"{n}. [{it['severidade']}] {it['lente']}: {it['item']}"[:95], fill=(0, 0, 0))
+        d.text((x + 6, y + 8), f"{n}. [{it['severidade']}] {it['lente']}: {it['item']}"[:72], fill=(0, 0, 0), font=fonte)
         prancha.paste(img, (x, y + faixa))
     alvo = raiz / PRANCHA
     alvo.parent.mkdir(parents=True, exist_ok=True)

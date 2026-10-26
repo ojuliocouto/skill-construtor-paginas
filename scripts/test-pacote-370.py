@@ -208,6 +208,24 @@ class Rodada2(unittest.TestCase):
         self.assertIn("auditoria/conferencia/prancha.jpg", self.briefing())
 
 
+class RotuloDaPrancha(unittest.TestCase):
+    @unittest.skipUnless(TEM_PIL, "sem Pillow não há prancha")
+    def test_rotulo_usa_fonte_com_acento_quando_a_maquina_tem(self):
+        # Na prova de 26/10 o rótulo saiu "Rodap? sem Termos": a fonte padrão do Pillow não tem acento.
+        import importlib.util
+        from PIL import ImageFont
+        spec = importlib.util.spec_from_file_location("conf370", pathlib.Path(__file__).with_name("conferencia.py"))
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        lado = importlib.util.spec_from_file_location("lado370", pathlib.Path(__file__).with_name("lado-a-lado.py"))
+        ll = importlib.util.module_from_spec(lado)
+        lado.loader.exec_module(ll)
+        esperado = ll.fonte(18)
+        self.assertEqual(type(m.fonte_do_rotulo(18)), type(esperado))
+        if isinstance(esperado, ImageFont.FreeTypeFont):
+            self.assertIsInstance(m.fonte_do_rotulo(18), ImageFont.FreeTypeFont)
+
+
 class SemRodada2(unittest.TestCase):
     def test_rodada_1_sem_critico_nem_alto_nao_tem_rodada_2(self):
         with tempfile.TemporaryDirectory() as d:
