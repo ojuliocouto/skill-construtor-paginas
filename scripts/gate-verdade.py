@@ -216,6 +216,39 @@ def ler_padroes(texto):
     return re.findall(r"`([^`]+)`", bloco)
 
 
+def _alternativas(padrao):
+    """Divide o padrão nos `|` do nível de cima (fora de grupo, de classe [..] e de escape)."""
+    partes, atual, nivel, classe, i = [], [], 0, False, 0
+    while i < len(padrao):
+        c = padrao[i]
+        if c == "\\" and i + 1 < len(padrao):
+            atual.append(padrao[i:i + 2]); i += 2; continue
+        if classe:
+            classe = c != "]"
+        elif c == "[":
+            classe = True
+        elif c == "(":
+            nivel += 1
+        elif c == ")":
+            nivel = max(0, nivel - 1)
+        elif c == "|" and nivel == 0:
+            partes.append("".join(atual)); atual = []; i += 1; continue
+        atual.append(c); i += 1
+    partes.append("".join(atual))
+    return partes
+
+
+def compilar_padrao(padrao):
+    """Compila um padrão de "Não afirmar" com fronteira de palavra à esquerda (3.6.2).
+
+    No teste de aluno da 3.6.1 o padrão `cura` barrou "Você procura treino intenso e rápido.", porque casava dentro de "procura". Agora cada
+    alternativa que começa por letra ou número só casa no começo da palavra: `cura` pega "cura" e "curar", não "procura" nem "secura".
+    Alternativa que começa por outra coisa (`\\(\\d{2}\\)`, `R\\$`, `\\bRua`, um grupo) fica como o autor escreveu; quem quer a palavra inteira
+    escreve `\\bcura\\b`. Levanta re.error se o padrão for inválido, como antes."""
+    alts = [("(?<!\\w)" + a) if a[:1].isalnum() else a for a in _alternativas(padrao)]
+    return re.compile("|".join(alts), re.I)
+
+
 def sentencas_do_briefing(texto):
     out = []
     for linha in texto.splitlines():
@@ -382,7 +415,7 @@ def checar(projeto, html_nome="index.html", relatorio=None):
         conferir_tabela(tabela, corrido, intervalos, problemas)
         for p in padroes:
             try:
-                rx = re.compile(p, re.I)
+                rx = compilar_padrao(p)
             except re.error as e:
                 problemas.append(f"padrão inválido em Não afirmar: `{p}` ({e})")
                 continue
@@ -465,7 +498,7 @@ def checar(projeto, html_nome="index.html", relatorio=None):
 
     for p in padroes:
         try:
-            rx = re.compile(p, re.I)
+            rx = compilar_padrao(p)
         except re.error as e:
             problemas.append(f"padrão inválido em Não afirmar: `{p}` ({e})")
             continue

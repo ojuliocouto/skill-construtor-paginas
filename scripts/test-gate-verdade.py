@@ -462,5 +462,58 @@ class V358(unittest.TestCase):
         self.assertEqual(code, 1, out)
 
 
+class PadraoDeNaoAfirmarComFronteiraDePalavra(unittest.TestCase):
+    """3.6.2, item 5. No teste de aluno da 3.6.1 o padrão `cura` de "Não afirmar" barrou a frase "Você procura treino intenso e rápido."
+    porque casava DENTRO de "procura". O padrão passa a casar só no começo da palavra (`cura` pega "cura" e "curar", não "procura" nem
+    "secura"); quem quer a palavra inteira escreve `\\bcura\\b`."""
+
+    NAO_AFIRMAR_CURA = NAO_AFIRMAR + "- Promessa de cura: `cura`\n"
+
+    def rodar(self, frase, nao_afirmar=None):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        r = pathlib.Path(tmp.name)
+        (r / "evidencias").mkdir()
+        (r / "evidencias" / "briefing.md").write_text(BRIEFING, encoding="utf-8")
+        (r / "evidencias" / "sustentacao.md").write_text(TABELA_OK + (nao_afirmar or self.NAO_AFIRMAR_CURA), encoding="utf-8")
+        (r / "index.html").write_text(html(CORPO_OK + f"<p>{frase}</p>"), encoding="utf-8")
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            code = gate.main(["--projeto", str(r)])
+        return code, saida.getvalue()
+
+    def test_procura_nao_casa_o_padrao_cura(self):
+        code, out = self.rodar("Você procura treino intenso e rápido.")
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("afirma o que está pendente", out)
+
+    def test_palavras_que_so_contem_cura_no_meio_nao_casam(self):
+        for frase in ("A secura da pele some com o tempo.", "Ela procura uma turma pequena.", "Fica em Icaraí, na Rua da Procuradoria."):
+            code, out = self.rodar(frase)
+            self.assertNotIn("afirma o que está pendente (`cura`)", out, frase)
+
+    def test_cura_e_o_radical_continuam_barrados(self):
+        for frase in ("O Pilates cura a dor nas costas.", "Cura de verdade para a coluna.", "Para curar a dor, venha para o Studio."):
+            code, out = self.rodar(frase)
+            self.assertEqual(code, 1, (frase, out))
+            self.assertIn("afirma o que está pendente (`cura`)", out, frase)
+
+    def test_padrao_com_fronteira_propria_continua_valendo(self):
+        code, out = self.rodar("Para curar a dor, venha para o Studio.", self.NAO_AFIRMAR_CURA.replace("`cura`", "`\\bcura\\b`"))
+        self.assertEqual(code, 0, out)
+
+    def test_padrao_que_comeca_fora_de_palavra_nao_ganha_fronteira(self):
+        # `R\$` e `\(\d{2}\)` não começam por letra: o telefone colado numa palavra segue pego
+        code, out = self.rodar("Fale no zap(21) 98888-7777 agora.")
+        self.assertIn("afirma o que está pendente (`\\(\\d{2}\\)`)", out)
+
+    def test_alternativas_ganham_fronteira_cada_uma(self):
+        # o padrão do caso real da v3 tem 4 alternativas; "mesmo dia" casa no começo da palavra, "submesmo dia" não
+        code, out = self.rodar("Você começa no mesmo dia.")
+        self.assertEqual(code, 1, out)
+        code, out = self.rodar("Você faz isso no gesmesmo dia.")
+        self.assertNotIn("afirma o que está pendente (`gratuit", out)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
