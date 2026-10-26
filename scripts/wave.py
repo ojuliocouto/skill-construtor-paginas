@@ -82,7 +82,10 @@ LENTES = {
 LENTE_REFERENCIAS = "comparacao-referencias"
 EIXOS = ("composicao", "tipografia", "imagem", "ritmo", "acabamento")   # os 5 de references/auditores.md (3.5.9, N23)
 # Orçamento do auditor independente (A27, auditoria real: 51 min, 113 chamadas, mais de 200 arquivos na rodada 1).
-ORCAMENTO = {1: (15, 30), 2: (8, 15)}
+# 3.7.0 (teste de aluno da 3.6.2: rodada 1 com 758 s e 21 chamadas, rodada 2 com 662 s e 10 chamadas, 35 min no passo g):
+# a rodada 1 lê o pacote e julga, sem capturar nada (8 min, 12 chamadas); a rodada 2 é conferência dirigida dos achados
+# críticos e altos, com o print novo de cada um e o diff da dist (3 min, 4 chamadas), sem nota nova.
+ORCAMENTO = {1: (8, 12), 2: (3, 4)}
 GOSTOS = ("bonito", "correto")
 
 # Gates EXECUTAVEIS que precisam estar verdes. Nao dependem de julgamento: rodam e saem 0 ou 1.
@@ -268,16 +271,33 @@ def cmd_gate(args):
     return 0
 
 
-def _ler_json_do_arquivo(caminho):
+def _resolver_arquivo(projeto, caminho):
+    """3.7.0: `--arquivo auditoria/x.json` é relativo à pasta do PROJETO (o que a skill escreve nos comandos). Absoluto fica como está;
+    relativo que não existe no projeto mas existe na pasta de onde se chamou também vale (o jeito antigo)."""
+    p = Path(caminho)
+    if p.is_absolute():
+        return p
+    no_projeto = Path(projeto) / p
+    if no_projeto.exists() or not p.exists():
+        return no_projeto
+    return p
+
+
+def _ler_json_do_arquivo(caminho, projeto=None):
+    alvo = _resolver_arquivo(projeto, caminho) if projeto is not None else Path(caminho)
     try:
-        return Path(caminho).read_text(encoding="utf-8-sig"), None
+        return alvo.read_text(encoding="utf-8-sig"), None
     except OSError as e:
-        return None, f"não consegui ler {caminho}: {e.strerror or e}"
+        return None, f"não consegui ler {alvo}: {e.strerror or e}"
 
 
 def cmd_gates_lote(args):
-    """Grava vários gates de uma vez. Entrada: {"gates": [{"nome", "exit", "detalhe"}]}. Tudo ou nada."""
-    texto, erro = _ler_json_do_arquivo(args.arquivo)
+    """Grava vários gates de uma vez. Entrada: {"gates": [{"nome", "exit", "detalhe"}], "pulados": [{"nome", "motivo"}]}. Tudo ou nada.
+
+    `pulados` (3.7.0): gate que a rodada completa NÃO rodou de propósito (o de movimento numa rodada intermediária, com
+    `rodar-gates.mjs --sem-movimento`). O registro anterior dele fica, marcado com `pulado_em`; a próxima rodada que o roda limpa a
+    marca. A etapa 5 recusa a entrega com a marca: a rodada final sempre roda o gate de movimento."""
+    texto, erro = _ler_json_do_arquivo(args.arquivo, args.projeto)
     if erro:
         print(f"ERRO: {erro}", file=sys.stderr)
         return 2
@@ -291,6 +311,12 @@ def cmd_gates_lote(args):
         print('ERRO: o arquivo precisa trazer {"gates": [{"nome": ..., "exit": 0, "detalhe": ...}]} com pelo menos um gate.', file=sys.stderr)
         return 2
     problemas = []
+    pulados = (doc.get("pulados") if isinstance(doc, dict) else None) or []
+    if not isinstance(pulados, list):
+        pulados = [pulados]
+    for i, it in enumerate(pulados, 1):
+        if not isinstance(it, dict) or it.get("nome") not in GATES:
+            problemas.append(f"pulado {i}: gate desconhecido '{it.get('nome') if isinstance(it, dict) else it}'. Validos: {', '.join(sorted(GATES))}")
     for i, it in enumerate(itens, 1):
         if not isinstance(it, dict) or it.get("nome") not in GATES:
             problemas.append(f"item {i}: gate desconhecido '{it.get('nome') if isinstance(it, dict) else it}'. Validos: {', '.join(sorted(GATES))}")
@@ -305,10 +331,16 @@ def cmd_gates_lote(args):
     agora = datetime.datetime.now().isoformat(timespec="seconds")
     for it in itens:
         d["gates"][it["nome"]] = {"quando": agora, "exit": it["exit"], "detalhe": str(it.get("detalhe") or "").strip()}
+    for it in pulados:
+        reg = d["gates"].setdefault(it["nome"], {"exit": None, "detalhe": "nunca rodou"})
+        reg["pulado_em"] = agora
+        reg["pulado_motivo"] = str(it.get("motivo") or "pulado nesta rodada").strip()
     salvar(args.projeto, d)
     vermelhos = [it["nome"] for it in itens if it["exit"] != 0]
     print(f"{len(itens)} gate(s) registrado(s) na wave: {len(itens) - len(vermelhos)} verde(s)"
           + (f", {len(vermelhos)} VERMELHO(s): {', '.join(vermelhos)}" if vermelhos else ""))
+    for it in pulados:
+        print(f"  {it['nome']}: PULADO nesta rodada ({d['gates'][it['nome']]['pulado_motivo']}); o registro anterior fica e a rodada final roda ele.")
     return 0
 
 
@@ -401,7 +433,7 @@ def _preparar_lente(b, dur, cham):
 
 def cmd_registrar_lote(args):
     """Registra as lentes da resposta do auditor. Tudo ou nada: valida todos os blocos antes de gravar o primeiro."""
-    texto, erro = _ler_json_do_arquivo(args.arquivo)
+    texto, erro = _ler_json_do_arquivo(args.arquivo, args.projeto)
     if erro:
         print(f"ERRO: {erro}", file=sys.stderr)
         return 2
@@ -510,6 +542,10 @@ def cmd_checar(args):
     if notas and media < PISO_MEDIA:
         print(f"  SINAL: média {media:.2f} abaixo do piso {PISO_MEDIA}. Quem decide se isso entrega")
         print("         e `wave.py rodada`, e a nota vai DECLARADA na entrega.")
+    pulados = sorted(g for g, v in gates.items() if isinstance(v, dict) and v.get("pulado_em"))
+    if pulados:
+        print(f"  SINAL: {', '.join(pulados)} pulado(s) na última rodada completa (--sem-movimento). Vale para rodada intermediária;")
+        print(f"         a rodada final (passo h) roda `{comando('rodar-gates.mjs')} --projeto {Path(args.projeto).as_posix()}` SEM a flag, e a etapa 5 cobra isso.")
 
     if problemas:
         for p in problemas:
@@ -795,7 +831,13 @@ def cmd_rodada(args):
     for r in hist:
         print(f"  rodada {r['n']}: média {r['media']:.2f}, {r['criticos']} crítico(s)")
     # A27: aviso (não reprovação) quando o auditor passou do orçamento da rodada.
-    gastos = [v for v in lentes.values() if v.get("duracao_min") is not None or v.get("chamadas") is not None]
+    # 3.7.0: na rodada 2 as lentes de nota mantida guardam o gasto da rodada 1 e não entram na conta; vale o da conferência.
+    mantidas_agora = set(atual.get("mantidas") or [])
+    gastos = [v for k, v in lentes.items() if k not in mantidas_agora
+              and (v.get("duracao_min") is not None or v.get("chamadas") is not None)]
+    if atual["n"] >= 2:
+        corte_conf = hist[-2].get("quando", "") if len(hist) >= 2 else ""
+        gastos += [c for c in d.get("conferencias", []) if isinstance(c, dict) and (c.get("quando") or "") > corte_conf]
     if gastos:
         dur = max((v.get("duracao_min") or 0) for v in gastos)
         cham = max((v.get("chamadas") or 0) for v in gastos)
@@ -877,7 +919,7 @@ def cmd_rodada(args):
         print("  SEM RESPOSTA DE GOSTO: a comparacao-referencias não respondeu se a página é bonita no nível das referências")
         print("  (--gosto bonito|correto). Sem isso a rodada não fecha.\n")
         return fechar(1, "CONTINUA")
-    if ref_ruim and not no_teto:
+    if ref_ruim and not no_teto and not secou:
         # A26: o teto é 2 rodadas e a segunda é só conferência, então reprovar esta lente NÃO manda reconstruir sozinha.
         quais = "os eixos abaixo das referências" if ref.get("eixos_abaixo") else "os 5 eixos (o auditor não disse quais ficaram abaixo; releia os achados da lente)"
         print("  ABAIXO DAS REFERÊNCIAS: a comparacao-referencias não respondeu que a página é bonita no nível")
@@ -925,14 +967,25 @@ def cmd_rodada(args):
                     or no_teto)
     auto = sorted(l for l, v in lentes.items()
                   if v.get("veredito") != "nao_aplicavel" and v.get("origem") not in ORIGENS_INDEPENDENTES)
+    # 3.7.0 (item 1d): rodada 1 sem crítico nem alto confirmados não abre rodada 2 de auditor. Os gates de novo bastam.
+    sem_conferencia = secou and not no_teto
     if vai_entregar and auto:
         print(f"  AUDITORIA INDEPENDENTE PENDENTE: {len(auto)} lente(s) registradas como autoavaliação")
         print(f"  ({', '.join(auto[:4])}{'...' if len(auto) > 4 else ''}). Nota de quem construiu não libera entrega.")
         print("  Rode a rodada com um subagente auditor independente (ou em outra sessão, sem o historico")
         print("  da construcao) e registre cada lente com --origem subagente ou sessao-independente.\n")
         return fechar(1, "AUDITORIA_PENDENTE")
-    if ref_ruim and no_teto:
-        print(f"  ENTREGA COM RESSALVAS: rodada {len(hist)}, a última do ciclo (teto {teto_efetivo}), sem crítico e sem regressão.")
+    def avisar_sem_rodada_2():
+        atual["sem_rodada_2"] = True
+        print(f"  SEM RODADA 2 DE AUDITOR: a rodada {len(hist)} não achou crítico nem alto (o que sobra é médio e baixo).")
+        print(f"  Corrija os médios e baixos que couberem, rode os gates de novo com a rodada completa (`{comando('rodar-gates.mjs')} --projeto {Path(args.projeto).as_posix()}`)")
+        print("  e entregue com as ressalvas. A etapa 5 cobra todos os gates verdes registrados DEPOIS desta rodada.")
+    if ref_ruim and (no_teto or sem_conferencia):
+        if sem_conferencia:
+            avisar_sem_rodada_2()
+            print(f"  ENTREGA COM RESSALVAS: rodada {len(hist)}, sem crítico, sem alto e sem regressão.")
+        else:
+            print(f"  ENTREGA COM RESSALVAS: rodada {len(hist)}, a última do ciclo (teto {teto_efetivo}), sem crítico e sem regressão.")
         print(f"  Nota real: média {media:.2f}. Ela vai escrita na entrega, com o que sobrou:")
         ressalvas = [f"lente comparacao-referencias reprovada (resposta: {ref.get('gosto')}): eixos abaixo das referências: {', '.join(eixos_ref)}",
                      f"altos abertos: {altos_informados if altos_informados is not None else 'não informado'}" + (f" ({pend} dependem de dado do cliente)" if pend else "")]
@@ -946,9 +999,13 @@ def cmd_rodada(args):
         print("    - refazer o plano visual e reconstruir é um ciclo novo: só se a pessoa pedir.\n")
         return fechar(0, "ENTREGA_COM_RESSALVAS", ressalvas)
     if media >= PISO_MEDIA and all(n >= PISO_NOTA for n in notas):
+        if sem_conferencia:
+            avisar_sem_rodada_2()
         print(f"  ENTREGA: média {media:.2f} no piso e nenhuma lente abaixo de {PISO_NOTA}.\n")
         return fechar(0, "ENTREGA")
     if secou:
+        if sem_conferencia:
+            avisar_sem_rodada_2()
         print("  ENTREGA COM NOTA DECLARADA: zero crítico e zero ALTO confirmados. O que sobrou")
         print(f"  é acabamento, e acabamento não segura entrega. A média {media:.2f} vai escrita na")
         print("  entrega, com a lista do que ficou aberto.")
@@ -984,6 +1041,123 @@ def cmd_rodada(args):
     ganho_texto = f"{ganho:+.2f}" if ganho is not None else "primeira rodada, sem comparação"
     print(f"  Ganho da última rodada: {ganho_texto}. Restam {faltam} rodada(s) até o teto.\n")
     return fechar(1, "CONTINUA")
+
+
+# ============================ A CONFERÊNCIA (rodada 2) ============================
+# 3.7.0, item 1c. No teste de aluno da 3.6.2 a rodada 2 levou 662 s e 10 chamadas e só devolveu "corrigido ou não", com nota
+# nova de 9 lentes que ninguém mediu de novo. Agora ela é dirigida: o pacote numera os achados críticos e altos abertos
+# (`auditoria/abertos-rodada-1.json`, do `pacote-auditoria.py --rodada 2`), com o print novo de cada um e o diff da dist; o
+# auditor devolve um estado por número, SEM nota; e este comando conta o que ficou aberto e imprime o fechamento.
+ESTADOS_CONFERENCIA = {"corrigido": "corrigido", "nao corrigido": "não corrigido", "regressao": "regressão"}
+SEVERIDADES = ("critico", "alto", "medio", "baixo")
+
+
+def _doc_da_conferencia(texto):
+    try:
+        doc = json.loads(texto)
+    except ValueError:
+        doc = None
+        dec, i = json.JSONDecoder(), 0
+        while i < len(texto):
+            if texto[i] == "{":
+                try:
+                    obj, fim = dec.raw_decode(texto, i)
+                    if isinstance(obj, dict) and isinstance(obj.get("achados"), list):
+                        doc = obj
+                        break
+                    i = fim
+                    continue
+                except ValueError:
+                    pass
+            i += 1
+    if isinstance(doc, list):
+        doc = {"achados": doc}
+    return doc if isinstance(doc, dict) and isinstance(doc.get("achados"), list) else None
+
+
+def cmd_conferencia(args):
+    """Lê a resposta da conferência (rodada 2), conta crítico, alto e regressão que ficaram abertos e diz o comando do fechamento."""
+    d = carregar(args.projeto)
+    hist = d.get("rodadas") or []
+    proj = Path(args.projeto).as_posix()
+    if not hist or hist[-1].get("desfecho") != "CONTINUA":
+        print("ERRO: a conferência é a rodada 2 e só existe depois que a rodada 1 fechou em CONTINUA (crítico ou alto). "
+              f"Feche a rodada 1 antes: `{comando('wave.py')} --projeto {proj} rodada --criticos <N> --altos <N> ...`.", file=sys.stderr)
+        return 2
+    lista_arq = Path(args.projeto) / "auditoria" / "abertos-rodada-1.json"
+    try:
+        abertos = json.loads(lista_arq.read_text(encoding="utf-8-sig")).get("abertos") or []
+    except (OSError, ValueError, AttributeError):
+        print(f"ERRO: não achei a lista numerada dos achados abertos ({lista_arq.as_posix()}). Ela sai do "
+              f"`{comando('pacote-auditoria.py')} --projeto {proj} --url <url> --rodada 2`.", file=sys.stderr)
+        return 2
+    por_n = {a.get("n"): a for a in abertos if isinstance(a, dict) and type(a.get("n")) is int}
+    texto, erro = _ler_json_do_arquivo(args.arquivo, args.projeto)
+    if erro:
+        print(f"ERRO: {erro}", file=sys.stderr)
+        return 2
+    doc = _doc_da_conferencia(texto)
+    if doc is None:
+        print('ERRO: a resposta da conferência é {"rodada": 2, "achados": [{"n": 1, "estado": "corrigido", "evidencia": "..."}]}.', file=sys.stderr)
+        return 2
+    problemas, estados, regressoes = [], {}, []
+    for i, it in enumerate(doc["achados"], 1):
+        if not isinstance(it, dict):
+            problemas.append(f"item {i}: precisa ser um objeto")
+            continue
+        estado = ESTADOS_CONFERENCIA.get(_sem_acento(it.get("estado") or ""))
+        n = it.get("n")
+        evid = str(it.get("evidencia") or "").strip()
+        if estado is None:
+            problemas.append(f"item {i}: estado '{it.get('estado')}' desconhecido. Use corrigido, não corrigido ou regressão")
+        elif len(evid) < 10:
+            problemas.append(f"item {i}: a evidência é obrigatória (o print novo, a medida ou a linha do diff)")
+        elif estado == "regressão":
+            grav = _sem_acento(it.get("gravidade") or it.get("severidade") or "")
+            if grav not in SEVERIDADES:
+                problemas.append(f"item {i}: regressão precisa de \"gravidade\" (crítico, alto, médio ou baixo)")
+            else:
+                regressoes.append({"n": n, "gravidade": grav, "evidencia": evid})
+                if n in por_n:
+                    estados[n] = estado
+        elif n not in por_n:
+            problemas.append(f"item {i}: n={n!r} não está na lista numerada dos achados abertos ({', '.join(str(k) for k in sorted(por_n))})")
+        else:
+            estados[n] = estado
+    if problemas:
+        for p_ in problemas:
+            print("ERRO: " + p_, file=sys.stderr)
+        print("Nada foi gravado.", file=sys.stderr)
+        return 2
+    nao_conferidos = sorted(n for n in por_n if n not in estados)
+    abertos_sev = [_sem_acento(por_n[n].get("severidade")) for n in por_n if estados.get(n) != "corrigido" and estados.get(n) != "regressão"]
+    criticos = abertos_sev.count("critico") + sum(1 for r in regressoes if r["gravidade"] == "critico")
+    altos = abertos_sev.count("alto") + sum(1 for r in regressoes if r["gravidade"] == "alto")
+    dur = args.duracao_min if args.duracao_min is not None else _numero_ou_none(doc.get("duracao_min"))
+    cham = args.chamadas if args.chamadas is not None else (doc.get("chamadas") if type(doc.get("chamadas")) is int else None)
+    registro = {"rodada": len(hist) + 1, "quando": datetime.datetime.now().isoformat(timespec="seconds"),
+                "estados": {str(k): v for k, v in sorted(estados.items())}, "nao_conferidos": nao_conferidos,
+                "regressoes": regressoes, "abertos": {"criticos": criticos, "altos": altos, "regressoes": len(regressoes)}}
+    if dur is not None:
+        registro["duracao_min"] = dur
+    if cham is not None:
+        registro["chamadas"] = cham
+    d.setdefault("conferencias", []).append(registro)
+    salvar(args.projeto, d)
+    tem_nota = any(k in doc for k in ("score", "nota", "notas")) or any(isinstance(it, dict) and ("score" in it or "nota" in it) for it in doc["achados"])
+    print(f"CONFERÊNCIA (rodada {registro['rodada']}): {len(por_n)} achado(s) crítico(s) e alto(s) na lista; "
+          f"{sum(1 for v in estados.values() if v == 'corrigido')} corrigido(s), {sum(1 for v in estados.values() if v == 'não corrigido')} não corrigido(s), "
+          f"{len(regressoes)} regressão(ões).")
+    if nao_conferidos:
+        print(f"  não conferido(s) pelo auditor: {', '.join(str(n) for n in nao_conferidos)}. Contam como abertos, com a severidade da rodada 1.")
+    if tem_nota:
+        print("  A conferência é sem nota nova: ignorei a nota da resposta. As notas da rodada 1 ficam e vão escritas na entrega.")
+    max_min, max_cham = ORCAMENTO[2]
+    if (dur or 0) > max_min or (cham or 0) > max_cham:
+        print(f"  AVISO: a conferência gastou {dur if dur is not None else '?'} min e {cham if cham is not None else '?'} chamadas, contra {max_min} min e {max_cham} chamadas.")
+    print("  Feche a rodada (confira cada achado aberto antes; regressão média ou baixa já consertada entra com --regressao-trivial ou --regressao-trivial-sem-gate):")
+    print(f"    {comando('wave.py')} --projeto {proj} rodada --criticos {criticos} --altos {altos} --regressoes {len(regressoes)} --pendencias-do-usuario <N>")
+    return 0
 
 
 def main():
@@ -1027,6 +1201,12 @@ def main():
     rl.add_argument("--duracao-min", dest="duracao_min", type=float, default=None, help="minutos do auditor (manda sobre o arquivo)")
     rl.add_argument("--chamadas", type=int, default=None, help="chamadas de ferramenta do auditor (manda sobre o arquivo)")
     rl.set_defaults(func=cmd_registrar_lote)
+
+    cf = sub.add_parser("conferencia", help="rodada 2: lê a resposta da conferência dirigida (sem nota nova) e conta o que ficou aberto")
+    cf.add_argument("--arquivo", required=True, help='a resposta do auditor: {"rodada": 2, "achados": [{"n": 1, "estado": "corrigido|não corrigido|regressão", "evidencia": "..."}]}')
+    cf.add_argument("--duracao-min", dest="duracao_min", type=float, default=None, help="minutos da conferência (manda sobre o arquivo)")
+    cf.add_argument("--chamadas", type=int, default=None, help="chamadas de ferramenta da conferência (manda sobre o arquivo)")
+    cf.set_defaults(func=cmd_conferencia)
 
     c = sub.add_parser("checar", help="AUDITOR MASTER: o processo aconteceu inteiro?")
     c.set_defaults(func=cmd_checar)

@@ -88,7 +88,8 @@ class Ciclo(unittest.TestCase):
         wave.salvar(self.projeto, d)
         saida = io.StringIO()
         with contextlib.redirect_stdout(saida):
-            code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, criticos=0, altos=0,
+            # 3.7.0: com um alto aberto (sem alto nem crítico a rodada 1 fecha sem rodada 2, test-wave-370.py)
+            code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, criticos=0, altos=1,
                                                       regressoes=0, pendencias_do_usuario=0))
         self.assertEqual(code, 1)
         self.assertIn("plano visual", saida.getvalue().lower())
@@ -185,9 +186,9 @@ class Ciclo(unittest.TestCase):
 
     def test_pagina_so_correta_volta_ao_plano(self):
         saida = io.StringIO()
-        self.executar(nota=9, altos=0, gosto="correto")
+        self.executar(nota=9, altos=1, gosto="correto")
         with contextlib.redirect_stdout(saida):
-            code = self.executar(nota=9, altos=0, gosto="correto")
+            code = self.executar(nota=9, altos=1, gosto="correto")
         self.assertEqual(code, 1)
 
     def test_rodada_sem_a_pergunta_de_gosto_nao_entrega(self):
@@ -337,8 +338,10 @@ class TerceiraLeva(unittest.TestCase):
     def rodar(self):
         saida = io.StringIO()
         with contextlib.redirect_stdout(saida):
-            code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, criticos=0, altos=0, regressoes=0, pendencias_do_usuario=0))
+            code = wave.cmd_rodada(argparse.Namespace(projeto=self.projeto, criticos=0, altos=self.altos, regressoes=0, pendencias_do_usuario=0))
         return code, saida.getvalue()
+
+    altos = 1   # 3.7.0: sem crítico nem alto a rodada 1 fecha sem rodada 2 (test-wave-370.py); aqui o ciclo continua
 
     # --- A26
     def test_lente_de_referencias_reprovada_lista_os_eixos_e_manda_corrigir_a_pagina(self):
@@ -397,21 +400,25 @@ class TerceiraLeva(unittest.TestCase):
         self.assertIn("AVISO", out)
         self.assertIn("51", out)
         self.assertIn("113", out)
-        self.assertRegex(out, r"15 min")
-        self.assertRegex(out, r"30 chamadas")
+        self.assertRegex(out, r"8 min")        # 3.7.0: rodada 1 com 8 min e 12 chamadas
+        self.assertRegex(out, r"12 chamadas")
         self.assertNotIn("ERRO", out)
 
     def test_dentro_do_orcamento_nao_avisa(self):
-        self.montar(duracao=14, chamadas=30)
+        self.montar(duracao=8, chamadas=12)
         _, out = self.rodar()
         self.assertNotIn("orçamento", out)
 
     def test_rodada_2_tem_orcamento_menor(self):
-        self.montar(duracao=10, chamadas=20, rodadas_antes=1)
+        # 3.7.0: a rodada 2 é a conferência (3 min e 4 chamadas), registrada pelo `wave.py conferencia`
+        self.montar(rodadas_antes=1)
+        d = wave.carregar(self.projeto)
+        d["conferencias"] = [{"rodada": 2, "quando": "2999-01-01T00:00:00", "duracao_min": 10, "chamadas": 20}]
+        wave.salvar(self.projeto, d)
         _, out = self.rodar()
         self.assertIn("orçamento", out)
-        self.assertRegex(out, r"8 min")
-        self.assertRegex(out, r"15 chamadas")
+        self.assertRegex(out, r"3 min")
+        self.assertRegex(out, r"4 chamadas")
 
     def test_sem_informar_nada_nao_avisa_nem_quebra(self):
         self.montar()
