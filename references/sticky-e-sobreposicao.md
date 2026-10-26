@@ -23,7 +23,7 @@ dentro da área do grid inteira, e essa área inclui a linha da frase.
 
 Varredura de rolagem em 1024, 1280, 1440 e 1920, medindo a interseção entre o fixo e o bloco:
 
-`node <dir-da-skill>/scripts/sobreposicao.mjs --url http://localhost:8765/ --fixo "#titulo-dor" --contra ".dor-fecho"`
+`node <dir-da-skill>/scripts/sobreposicao.mjs --url <url> --fixo "#titulo-dor" --contra ".dor-fecho"`
 
 Sai com 1 se alguma tela passar de 0 px². `--contra` aceita vários seletores separados por vírgula
 e `--telas 1024x768,1440x900` troca as telas. Rode para cada elemento fixo da página.

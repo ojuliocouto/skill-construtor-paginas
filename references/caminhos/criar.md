@@ -203,7 +203,8 @@ linha do briefing entre aspas; "interpretação" só serve para frase que não p
 a seção `## Não afirmar (pendências)`: para cada frase PENDENTE do briefing, um padrão entre
 crases com o que a página não pode insinuar. Caso real: com "se a avaliação é gratuita e se é no
 mesmo dia" pendente, "Você chega, faz a avaliação postural e começa" e "aula grátis com avaliação
-postural" afirmam as duas coisas. A forma honesta: "Antes da primeira aula, você passa por uma
+postural" afirmam as duas coisas. O padrão casa só no começo da palavra (3.6.2): `cura` pega "cura" e "curar" e não pega "procura" nem "secura"; para a
+palavra inteira escreva `\bcura\b`. A forma honesta: "Antes da primeira aula, você passa por uma
 avaliação postural", em frase própria, sem "grátis" e sem "no mesmo dia".
 
 A `evidencias/sustentacao.md` é a tabela VIVA: nasce com a copy do PLANO e cresce até a página
@@ -246,7 +247,8 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    Abra o PNG. Ele corresponde ao plano visual? Fica de pé ao lado da referência mais forte?
    Se não, corrija o hero agora: é o único ponto em que corrigir é barato.
    **Lente curta de gosto no herói (3.6.0, conselho, não trava; 3.6.1: UMA rodada, teto de 5 minutos):** monte a prancha com
-   `node <dir-da-skill>/scripts/py.mjs gosto-heroi.py --projeto <dir> --heroi <dir>/prova-hero/prova-desktop.png`
+   `node <dir-da-skill>/scripts/py.mjs gosto-heroi.py --projeto <dir> --heroi <dir>/prova-hero/prova-desktop.png --celular <dir>/prova-hero/prova-mobile.png`
+   (sem o `--celular` a lente julga só o 1440 e deixa o celular sem olhar; no teste de aluno da 3.6.1 foi assim)
    e mande UM subagente `auditor` com o `auditoria/gosto-heroi/briefing.md` que o script escreveu. O teto de 5 minutos e a
    rodada única estão no prompt dele; em segundo plano, enquanto você segue para as imagens. Quando ele devolver, grave a resposta em
    `auditoria/gosto-heroi/resultado.json` e rode `gosto-heroi.py --projeto <dir> --registrar`.
@@ -326,7 +328,12 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    menos as barras do Safari; 360x616 no Android): manchete inteira, texto de apoio inteiro e o botão principal a 8 px ou mais do pé, e a
    foto com 35% dessa área (3.6.1: tolerância de 0,5 ponto no limite, 34,9% passa). Quando não cabem os três e a foto, o texto ganha: a foto pode cair até 20%; abaixo disso, encurte a manchete
    (`gate-responsivo.mjs --so-primeira-tela` mede só isso). A mesma regra vale em 320x568 (3.6.1), que não tem área visível medida e mede
-   contra a tela cheia: foto de 21% com o texto ocupando o resto passa. Na v7 a foto quadrada pôs o botão 146 px abaixo da dobra no iPhone, e na Torra
+   contra a tela cheia: foto de 21% com o texto ocupando o resto passa. **Botão do herói em 320x568 (3.6.2):** até 12 px abaixo da dobra passa com
+   aviso (no teste de aluno da 3.6.1 reprovou duas vezes, a 10 px e a 1 px); em 390 (844 e 664), 360, 430 e no desktop o botão cortado reprova como sempre.
+   **A dobra do celular é uma janela só (3.6.2):** o gate mede 390x664 e `gate-responsivo.mjs --url <url> --so-primeira-tela --salvar-dobra <dir>/prints`
+   grava o print dessa MESMA janela (`dobra-390x664.png`, `dobra-360x616.png`, `dobra-375x553.png`, dpr 2). Esse é o print da dobra. Nunca recorte as primeiras
+   linhas do print de página inteira em 390x844: o layout muda com a altura da janela e o botão aparece cortado onde o aparelho não corta (no teste de aluno da 3.6.1
+   o recorte de 663 linhas mostrava o botão cortado e a janela medida o tinha 34 px acima do pé). Quando o layout de 844 passa da área visível o gate avisa. Na v7 a foto quadrada pôs o botão 146 px abaixo da dobra no iPhone, e na Torra
    Clara o apoio ficou depois do botão, fora da primeira tela; os dois passaram no gate antigo, que media contra a janela cheia (na v4:
    134 px de foto em 390 e nenhum em 320, com o rosto cortado na dobra). A barra escondida leva
    `visibility: hidden` além do `translate`: só deslocada, ela aparece no print de página
@@ -385,10 +392,12 @@ Grave `evidencias/etapa-4.json` e registre: `node <dir-da-skill>/scripts/py.mjs 
 ## f. Gates mecânicos
 
 Sirva com compressão (medir sem gzip inverte o resultado) e mate o servidor no fim:
-`node <dir-da-skill>/scripts/py.mjs servidor-gzip.py <dir> 8765`
-A porta é uma preferência, e 8765 é só o exemplo: se estiver ocupada (outra sessão na máquina), o servidor escolhe outra, avisa
-(porta ocupada) e imprime a linha `URL: http://127.0.0.1:<porta>/`. Use ESSA URL no lugar de `http://localhost:8765/` em todos os
-comandos abaixo. O `rodar-gates.mjs` já faz isso sozinho (um servidor em porta livre por gate) e, se o servidor de um gate cair no meio,
+`node <dir-da-skill>/scripts/py.mjs servidor-gzip.py <dir> 0`
+A porta `0` pede ao sistema uma porta livre, então o servidor nunca cai na página de outro projeto (no teste de aluno da 3.6.1 uma porta
+fixa no exemplo capturou a página de outra sessão e a prova saiu do projeto errado). Ele imprime a linha `URL: http://127.0.0.1:<porta>/`:
+essa é a ÚNICA URL certa e entra onde os comandos abaixo dizem `<url>`; nunca digite uma porta de cabeça. Se você pedir uma porta e ela estiver ocupada
+(outra sessão na máquina), ele escolhe outra, avisa (porta ocupada) e imprime a URL do mesmo jeito. Antes do primeiro gate, abra a `<url>` e confira
+o título da página: é a do seu projeto? O `rodar-gates.mjs` já faz isso sozinho (um servidor em porta livre por gate) e, se o servidor de um gate cair no meio,
 sobe outro e repete esse gate uma vez, dizendo isso. Gate de navegador que diz `servidor fora do ar em <url>` (saída 3) não opinou sobre a
 página: o servidor caiu. Suba de novo, com a URL que ele imprimir, e repita o gate; a saída 3 não é reprovação da página. O `montar-dist.py`
 mantém a pasta `dist/` (sem apagá-la), grava só o arquivo cujo conteúdo mudou e avisa "dist refeita": um servidor que serve essa pasta segue no ar e
@@ -429,9 +438,9 @@ Os comandos individuais ficam como referência (e para rodar um gate sozinho). R
 
 `node <dir-da-skill>/scripts/py.mjs gate-sem-kicker.py <dir>/index.html` (kicker, 01/02/03, número gigante)
 `node <dir-da-skill>/scripts/py.mjs gate-classes-mortas.py --projeto <dir>` (classe que não existe no CSS)
-`node <dir-da-skill>/scripts/gate-responsivo.mjs --url http://localhost:8765/` (12 telas e 3 primeiras telas visíveis; `--so-primeira-tela` mede só o topo do celular, para consertar rápido)
-`node <dir-da-skill>/scripts/gate-oclusao.mjs --url http://localhost:8765/` (texto coberto, cortado ou com uma linha recortada por clip-path)
-`node <dir-da-skill>/scripts/gate-simetria.mjs --url http://localhost:8765/` (itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos com 4 px de folga, conteúdo interno sem buraco, texto das caixas na mesma faixa de linhas e passos em caixas)
+`node <dir-da-skill>/scripts/gate-responsivo.mjs --url <url>` (12 telas e 3 primeiras telas visíveis; `--so-primeira-tela` mede só o topo do celular, para consertar rápido)
+`node <dir-da-skill>/scripts/gate-oclusao.mjs --url <url>` (texto coberto, cortado ou com uma linha recortada por clip-path)
+`node <dir-da-skill>/scripts/gate-simetria.mjs --url <url>` (itens paralelos em caixas iguais, passos fora da coluna ao lado do título, colunas que terminam juntas, título com título nos cards vizinhos com 4 px de folga, conteúdo interno sem buraco, texto das caixas na mesma faixa de linhas e passos em caixas)
 
 **Limite de colunas desbalanceadas (`gate-simetria.mjs`): 80 px.** Para cada filho de um grid ou flex em linha, a base
 é a base da caixa (se ele tem fundo, borda ou sombra) ou o fim do último texto ou ilustração visível dentro dele. Dois
@@ -439,13 +448,13 @@ filhos lado a lado não podem terminar com mais de 80 px de diferença entre as 
 cada coluna e onde terminou (`último texto p.fatos, termina em y 812` contra `base da caixa figure.foto, termina em y
 893`). Se a coluna de texto termina antes, prenda o último bloco ao rodapé (`margin-top: auto` com o grid esticado) ou
 estique a foto até a mesma altura; se a assimetria é pedida no plano, declare `data-assimetrico="motivo"`.
-`node <dir-da-skill>/scripts/gate-texto.mjs --url http://localhost:8765/` (viúva em título e subtítulo, de h1 a h4, dt e summary, e em parágrafo na fonte do título ou dentro de caixa, em 7 telas de 320 a 1440; item em minúscula; itálico colorido repetido)
-`node <dir-da-skill>/scripts/gate-composicao.mjs --url http://localhost:8765/ --projeto <dir>` (mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, desenho que lê como wireframe, linha do tempo que passa do último marco, nenhuma pessoa na primeira tela para público de pessoas, destaque abaixo de 3:1)
+`node <dir-da-skill>/scripts/gate-texto.mjs --url <url>` (viúva em título e subtítulo, de h1 a h4, dt e summary, e em parágrafo na fonte do título ou dentro de caixa, em 7 telas de 320 a 1440; item em minúscula; itálico colorido repetido)
+`node <dir-da-skill>/scripts/gate-composicao.mjs --url <url> --projeto <dir>` (mais de 2 seções seguidas com o mesmo esqueleto, desenho sem `data-desenho`, ícone de biblioteca ou repetido, desenho que lê como wireframe, linha do tempo que passa do último marco, nenhuma pessoa na primeira tela para público de pessoas, destaque abaixo de 3:1)
 Negócio de produto físico (móveis, comida, imóvel, moda, obra, carro): acrescente `--produto-fisico` ao comando acima. Se o momento assinatura estiver só em desenho, o gate AVISA (não reprova) que ele deve ser foto real do produto, receita `foto-que-se-monta`.
-`node <dir-da-skill>/scripts/gate-movimento.mjs --url http://localhost:8765/` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, pelo menos 2 seções animam ao chegar, nenhum item chega parado numa rolagem de 300 px/s em 1440, 390 e 320, e, com movimento reduzido, nenhuma animação em curso acima de 0,2 s nem rolagem suave; texto invisível parado no topo por 4 s, na tela durante a visita ou acima da tela depois de um salto até o fim reprova: receita-base `observar`, com `primeiraTela` e `jaPassou`; `--so-visibilidade` roda só essas provas)
+`node <dir-da-skill>/scripts/gate-movimento.mjs --url <url>` (visita de 8 s parada no topo e depois rolagem: animação que roda fora da tela reprova, pelo menos 2 seções animam ao chegar, nenhum item chega parado numa rolagem de 300 px/s em 1440, 390 e 320, e, com movimento reduzido, nenhuma animação em curso acima de 0,2 s nem rolagem suave; texto invisível parado no topo por 4 s, na tela durante a visita ou acima da tela depois de um salto até o fim reprova: receita-base `observar`, com `primeiraTela` e `jaPassou`; `--so-visibilidade` roda só essas provas)
 `node <dir-da-skill>/scripts/py.mjs gate-verdade.py --projeto <dir>` (promessa com linha do briefing, metas incluídas, e o dono nomeado no briefing no corpo da página)
-`node <dir-da-skill>/scripts/py.mjs gate-imagens.py --projeto <dir> --url http://localhost:8765/` (licença com versão e link, crédito no HTML com o título real da fonte, aviso no og-image; foto repetida entre seções por pHash e origem (a sequência do momento assinatura com `data-assinatura-estado="1"`, `"2"`, `"3"` é a exceção para fotos diferentes), nitidez abaixo de 100, "imagem ilustrativa" e 60% de foto na primeira tela medidos no navegador; pessoa identificável de banco é aviso de tráfego real, e `--trafego-real` a reprova)
-`node <dir-da-skill>/scripts/gate-ritmo.mjs --url http://localhost:8765/` (duas seções vizinhas com o mesmo esqueleto e mais de 1 "título centralizado + cartões")
+`node <dir-da-skill>/scripts/py.mjs gate-imagens.py --projeto <dir> --url <url>` (licença com versão e link, crédito no HTML com o título real da fonte, aviso no og-image; foto repetida entre seções por pHash e origem (a sequência do momento assinatura com `data-assinatura-estado="1"`, `"2"`, `"3"` é a exceção para fotos diferentes), nitidez abaixo de 100, "imagem ilustrativa" e 60% de foto na primeira tela medidos no navegador; pessoa identificável de banco é aviso de tráfego real, e `--trafego-real` a reprova)
+`node <dir-da-skill>/scripts/gate-ritmo.mjs --url <url>` (duas seções vizinhas com o mesmo esqueleto e mais de 1 "título centralizado + cartões")
 O `secoes.json` sai da tabela "Composição por seção" do PLANO, sem escrever à mão:
 `node <dir-da-skill>/scripts/py.mjs plano-para-secoes.py --projeto <dir> --html index.html --saida <dir>/prova/anim/secoes.json`.
 Ele infere o nome, o título, o tipo (`assinatura-em-tres-estados` vira `assinatura`), o modo (`heroi` para
@@ -464,16 +473,16 @@ dá para inferir sai como `PREENCHER: ...` e o `anim.mjs` se recusa a rodar até
 ]
 ```
 
-`node <dir-da-skill>/scripts/anim.mjs --url http://localhost:8765/ --saida <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` e `node <dir-da-skill>/scripts/py.mjs prancha.py --pasta <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` (3 quadros por seção em 1440 e 390 e a prancha com a porcentagem de pixels que mudou; abra as pranchas; o `provar.mjs` do passo g roda os dois, junto das outras provas de tela)
+`node <dir-da-skill>/scripts/anim.mjs --url <url> --saida <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` e `node <dir-da-skill>/scripts/py.mjs prancha.py --pasta <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json` (3 quadros por seção em 1440 e 390 e a prancha com a porcentagem de pixels que mudou; abra as pranchas; o `provar.mjs` do passo g roda os dois, junto das outras provas de tela). **Mudou a `dist/` depois e a animação precisa refazer?** `node <dir-da-skill>/scripts/provar.mjs --projeto <dir> --so animacao` (3.6.2): remonta a dist, serve numa porta livre e roda o `anim.mjs` e a prancha, sem digitar porta nem refazer prints e vídeo (`--so prints,video` faz o contrário)
 `node <dir-da-skill>/scripts/py.mjs gate-animacao.py --pasta <dir>/prova/anim --plano <dir>/PLANO.md` (menos de 2% de pixels mudando entre início e fim, mais de 2 seções com o mesmo tipo, menos pranchas que linhas da tabela do plano)
-`node <dir-da-skill>/scripts/sobreposicao.mjs --url http://localhost:8765/ --fixo "<seletor do sticky>" --contra "<seletor do bloco largo>"` (um para cada elemento sticky que divide grid com bloco de largura total: 0 px² em 1024 a 1920.
+`node <dir-da-skill>/scripts/sobreposicao.mjs --url <url> --fixo "<seletor do sticky>" --contra "<seletor do bloco largo>"` (um para cada elemento sticky que divide grid com bloco de largura total: 0 px² em 1024 a 1920.
 **Página sem elemento sticky nem fixo: o gate não se aplica e não roda** (sem `--com sobreposicao` o `rodar-gates.mjs` também não o chama);
 confirme com `grep -nE "position: *(sticky|fixed)" <dir>/dist/index.html <dir>/dist/*.css` (vazio = sem elemento fixo) e escreva na wave
 "sobreposição: não se aplica, a página não tem elemento sticky nem fixo" em vez de inventar um seletor)
 `node <dir-da-skill>/scripts/py.mjs montar-dist.py --projeto <dir> --css-em-linha` e `node <dir-da-skill>/scripts/py.mjs gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar, sem comentário interno, e ícones gerados do `icones/icone.svg` do motivo do plano)
 `node <dir-da-skill>/scripts/py.mjs gate-rastreamento.py --dist <dir>/dist --plano <dir>/PLANO.md` (pixel e eventos que o plano pediu; passa direto com `Pixel pedido: nenhum`)
 `node <dir-da-skill>/scripts/py.mjs gate-plano.py --projeto <dir>` (o plano continua aprovado depois das correções)
-`node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/prova --click "<seletor do botão>"` (identidade, scrollY 0, clique; o `provar.mjs` do passo g faz isto e registra a `identidade` na wave com o exit real)
+`node <dir-da-skill>/scripts/screenshot-prova.js <url> <dir>/prova --click "<seletor do botão>"` (identidade, scrollY 0, clique; o `provar.mjs` do passo g faz isto e registra a `identidade` na wave com o exit real)
 `node <dir-da-skill>/scripts/py.mjs uso-ferramentas.py --projeto <dir> registrar Playwright --arquivo prova/prova-desktop.png --detalhe "prova de tela lida"`
 `node <dir-da-skill>/scripts/py.mjs uso-ferramentas.py --projeto <dir> checar --caminho criar`
 `node <dir-da-skill>/scripts/py.mjs gate-referencias.py --projeto <dir>`
@@ -525,9 +534,9 @@ novo). Gere o que ainda não existir e confira:
    prancha: de 1 a 2 minutos contra 3 a 4 em fila. Rode em primeiro plano, com tempo-limite de 10 minutos (`timeout: 600000`), nunca em segundo plano com laço
    de espera. Sem `prova/anim/secoes.json` a animação é PULADA, dizendo como gerar (`plano-para-secoes.py`); `--sem-anim` pula de propósito. Ele grava a
    `identidade` na wave com o exit real. Os comandos de uma prova só continuam valendo, um a um:
-   - Prints: `node <dir-da-skill>/scripts/screenshot-prova.js http://localhost:8765/ <dir>/provas --com-360 --com-320` (os gates do passo f já geram parte).
-   - Vídeo de prova: `node <dir-da-skill>/scripts/gravar-video.js http://localhost:8765/ --saida <dir>/videos` (passo h, item 3b, que reaproveita estes arquivos).
-2. `node <dir-da-skill>/scripts/py.mjs pacote-auditoria.py --projeto <dir> --url http://localhost:8765/` `--briefing-reflete-pedido sim|nao`
+   - Prints: `node <dir-da-skill>/scripts/screenshot-prova.js <url> <dir>/provas --com-360 --com-320` (os gates do passo f já geram parte).
+   - Vídeo de prova: `node <dir-da-skill>/scripts/gravar-video.js <url> --saida <dir>/videos` (passo h, item 3b, que reaproveita estes arquivos).
+2. `node <dir-da-skill>/scripts/py.mjs pacote-auditoria.py --projeto <dir> --url <url>` `--briefing-reflete-pedido sim|nao`
 
 O pacote tem: a URL, a `dist/`, o briefing (`evidencias/briefing.md`), o `PLANO.md`, a tabela de
 sustentação, a pasta `referencias/` (síntese e `*-dobra.png`), as capturas dos gates
@@ -596,13 +605,14 @@ passe de gosto: tells antes e depois, o depois é 0.
 
 1. Print final pelo `screenshot-prova.js` com `--com-360 --com-320` (desktop 1440, celular 390,
    Android 360 e o menor suportado, 320, página inteira em scrollY 0), servindo a `dist/`. Nunca por script próprio: cabeçalho fixo no meio do print é artefato de rolagem.
+   Esses prints são de página inteira em 390x844: a dobra do celular NÃO é o recorte do topo deles, é o `--salvar-dobra` do passo f (390x664).
 2. **Leia os PNGs com os próprios olhos** (Read): a página inteira para ritmo e composição, e
    recortes 1:1 para texto, rótulo e borda. Screenshot reduzido não aprova detalhe.
 3. A interação principal clicada nos dois viewports (`--click "<seletor>"`). Botão que é link de WhatsApp ou outro link externo: o clique é capturado e a navegação cancelada, então o teste não sai da página e o print de depois mostra a página; o destino aparece na saída ("o clique levaria a ..."). Confira o número dígito por dígito pelo `href`. Navegação feita por script (`location.href`) também é barrada, mas aí o print de depois não é tirado.
 3b. **Vídeo da rolagem, junto dos prints** (o `provar.mjs` do passo g já gravou para o pacote do auditor: reaproveite
    se o conteúdo da `dist/` não mudou depois, refaça se mudou; o pacote diz qual dos dois pelo hash): com a página servida, o `gravar-video.js` grava desktop e celular
    (os dois ao mesmo tempo, `--em-serie` para um por vez) do topo ao fim em ritmo de leitura:
-   `node <dir-da-skill>/scripts/gravar-video.js http://localhost:8765/ --saida <dir>/videos`
+   `node <dir-da-skill>/scripts/gravar-video.js <url> --saida <dir>/videos`
    (usa o `roteiro-pagina.json` da pasta de scripts: abre, espera a abertura, rola meia janela a cada 1,5 s e
    tira 7 quadros; leva de 30 a 70 s). **Leia as duas pranchas** (`prancha-desktop.png` e
    `prancha-mobile.png`): o vídeo prova o movimento, a prancha prova o que apareceu em cada ponto.

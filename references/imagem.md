@@ -54,7 +54,7 @@ o print e confira se o assunto está em foco: desfoque de fundo proposital pode 
 
 ## Comandos
 
-`node <dir-da-skill>/scripts/py.mjs gate-imagens.py --projeto <dir> --url http://localhost:8765/`
+`node <dir-da-skill>/scripts/py.mjs gate-imagens.py --projeto <dir> --url <url>`
 `node <dir-da-skill>/scripts/py.mjs gate-imagens.py --projeto <dir> --trafego-real` (página que vai receber anúncio)
 
 Mede com Pillow e numpy (o comando de instalar certo para a sua máquina sai do `checar-ferramentas.py`, linha "Pillow e numpy").

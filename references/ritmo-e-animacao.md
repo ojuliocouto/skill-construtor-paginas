@@ -57,7 +57,7 @@ mesma altura dele; cartões que começam logo ABAIXO de um título curto não s�
 declarada: `data-ritmo-ok="motivo"` na seção. Assimetria pedida no plano leva
 `data-assimetrico="motivo"` (o `gate-simetria.mjs` vira aviso).
 
-`node <dir-da-skill>/scripts/gate-ritmo.mjs --url http://localhost:8765/`
+`node <dir-da-skill>/scripts/gate-ritmo.mjs --url <url>`
 
 ## Composição e animação por seção (tabela do PLANO)
 
@@ -78,7 +78,7 @@ chega na tela, estado escondido só atrás de `.js`) vale também para a criaç�
 1. Escreva o `secoes.json` (nome, seletor, modo e tipo de cada seção; o formato está no cabeçalho
    do `anim.mjs`). Modos: `heroi` (a partir da carga), `entrada` (rola até a seção) e `rolagem`
    (seção com elemento fixo que muda com a rolagem).
-2. `node <dir-da-skill>/scripts/anim.mjs --url http://localhost:8765/ --saida <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json`
+2. `node <dir-da-skill>/scripts/anim.mjs --url <url> --saida <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json`
    grava início, meio e fim em 1440 e em 390.
 3. `node <dir-da-skill>/scripts/py.mjs prancha.py --pasta <dir>/prova/anim --secoes <dir>/prova/anim/secoes.json`
    monta a prancha de cada seção e mede a porcentagem de pixels que mudou.

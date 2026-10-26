@@ -74,8 +74,9 @@ class CriarMd(unittest.TestCase):
     def test_p11_passo_f_porta_e_url_impressa_e_servidor_fora(self):
         for item in ("URL: http://127.0.0.1:", "servidor fora do ar em", "saída 3", "porta ocupada"):
             self.assertIn(item, self.f, item)
-        # o servidor sobe antes da lista de comandos e diz que 8765 é só o exemplo
-        self.assertRegex(self.f, r"(?is)8765[^\n]*(exemplo|preferência)|(exemplo|preferência)[^\n]*8765")
+        # o servidor sobe antes da lista de comandos; desde a 3.6.2 pede porta livre (0) em vez de uma porta fixa de exemplo
+        self.assertRegex(self.f, r"servidor-gzip\.py <dir> 0")
+        self.assertNotIn("8765", self.f)
 
     def test_p11_passo_f_montar_dist_nao_derruba_o_servidor(self):
         self.assertRegex(self.f, r"(?is)montar-dist[^\n]*\n?[^\n]*(mant[eé]m a pasta|n[ãa]o apaga|segue no ar)")
