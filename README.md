@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.6.3)
+SKILL.md                       router (v3.7.0)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,10 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## What is new in 3.7.0
+
+Built for live classes. The auditor's first round reads the ready package and the gate reports, with a hard cap of 8 minutes and 12 tool calls, and does not re-audit what a green gate already measures. Without a critical or high finding there is no second round; with one, the second round only checks the open findings (3 minutes, 4 calls). The motion gate runs on the first and the final full round, and in the middle only when the animation changed (`--sem-movimento`). The hero taste lens runs in the background with at most 4 calls.
 
 ## What is new in 3.6.3
 

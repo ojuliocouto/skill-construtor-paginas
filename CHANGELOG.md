@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.7.0 (26/10/2026): auditor curto e gate de movimento só onde importa
+
+Página do zero levava 74 min no teste de aluno da 3.6.2; o auditor era 47% disso (35 min).
+
+- **Auditor** (`references/auditores.md`, `criar.md` passo g, `pacote-auditoria.py`, `wave.py`): a rodada 1 lê o pacote pronto e julga com os laudos dos gates, com teto de 8 minutos e 12 chamadas, sem capturar nada de novo e sem reauditar o que um gate verde já mede. Sem achado crítico nem alto, não há rodada 2. Com achado, a rodada 2 vira conferência dirigida: só os achados abertos, com o print novo e o diff, teto de 3 minutos e 4 chamadas, sem nota nova. Crítico e alto continuam fechando o ciclo.
+- **Gate de movimento** (`rodar-gates.mjs --sem-movimento`): roda na primeira rodada completa e na final; nas rodadas do meio só roda se a animação mudou. A etapa 5 cobra a rodada final com movimento.
+- **Lente do herói**: no máximo 4 chamadas, em segundo plano, sem a construção esperar.
+- `wave.py registrar-lote --arquivo` resolve caminho relativo ao projeto; `gate-responsivo.mjs --salvar-dobra` grava também a dobra de 1440.
+- Testes: `rodar-testes.mjs` 84 de 84.
+
 ## 3.6.3 (26/10/2026): porta livre imprime a porta real
 
 - `scripts/servidor-gzip.py <dir> 0`, o comando que o `criar.md` manda desde a 3.6.2, imprimia `http://127.0.0.1:0/`: o servidor devolvia a porta pedida (0) em vez da que o sistema escolheu. No teste de aluno da 3.6.2 isso custou 60 s. Teste novo em `test-servidor-gzip.py`.
