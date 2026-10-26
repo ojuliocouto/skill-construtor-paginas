@@ -74,6 +74,28 @@ def conferir_auditoria(projeto):
                          "nota de quem construiu não libera entrega. " + volta)
     if not (dados.get("rodadas") or []):
         raise ValueError("Etapa 5: as lentes estão registradas, mas o ciclo não foi fechado (nenhuma rodada). " + volta)
+    # 3.7.0: a rodada intermediária pode pular o gate de movimento (`rodar-gates.mjs --sem-movimento`); a final, nunca.
+    gates = dados.get("gates") if isinstance(dados.get("gates"), dict) else {}
+    completa = f"{comando('rodar-gates.mjs')} --projeto {projeto.as_posix()}"
+    pulados = sorted(g for g, v in gates.items() if isinstance(v, dict) and v.get("pulado_em"))
+    if pulados:
+        raise ValueError(f"Etapa 5: a última rodada completa pulou {', '.join(pulados)} (--sem-movimento, que vale só para rodada intermediária). "
+                         f"A rodada final roda o gate de movimento: rode `{completa}` sem a flag e registre a etapa 5 de novo.")
+    # 3.7.0: rodada 1 sem crítico nem alto fecha sem rodada 2 de auditor, e os gates de novo bastam: todos verdes DEPOIS dela.
+    ultima = (dados.get("rodadas") or [{}])[-1]
+    if isinstance(ultima, dict) and ultima.get("sem_rodada_2"):
+        corte = ultima.get("quando") or ""
+        # Os que a rodada completa do rodar-gates.mjs registra (identidade sai do provar.mjs; uso-ferramentas e animação, de outros passos).
+        exigidos = [g for g in w.gates_exigidos("criar") if g not in ("identidade", "uso-ferramentas", "animacao")]
+        vermelhos = sorted(g for g in exigidos if isinstance(gates.get(g), dict) and gates[g].get("exit") != 0)
+        velhos = sorted(g for g in exigidos if g not in vermelhos and (not isinstance(gates.get(g), dict) or (gates[g].get("quando") or "") < corte))
+        if vermelhos:
+            raise ValueError(f"Etapa 5: a rodada {ultima.get('n')} fechou sem rodada 2 de auditor e os gates de novo são a conferência, mas há gate vermelho: "
+                             f"{', '.join(vermelhos)}. Conserte e rode `{completa}`.")
+        if velhos:
+            raise ValueError(f"Etapa 5: a rodada {ultima.get('n')} fechou sem rodada 2 de auditor e os gates de novo são a conferência: "
+                             f"{len(velhos)} gate(s) sem registro verde depois dela ({', '.join(velhos[:6])}{'...' if len(velhos) > 6 else ''}). "
+                             f"Rode a rodada completa `{completa}` (o cache devolve na hora o que não mudou) e registre a etapa 5 de novo.")
 
 
 def videos_da_prova(projeto, doc):
