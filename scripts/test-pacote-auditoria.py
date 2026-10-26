@@ -36,6 +36,15 @@ def montar_completo(raiz, t=1_000_000):
     tocar(raiz / "videos/prancha-mobile.png", b"\x89PNG", t + 10)
 
 
+def com_alto_e_print(raiz, t=1_000_100):
+    """3.7.0: a rodada 2 é conferência dos críticos e altos da rodada 1, com o print novo de cada um."""
+    achados = [{"lente": "cro-auditor", "aprovado": False, "score": 6, "achados": [
+        {"item": "Botão sem destino", "severidade": "alto", "evidencia": "href vazio", "fix": "wa.me"}]}]
+    tocar(raiz / "auditoria/achados-rodada-1.json", json.dumps(achados, ensure_ascii=False), t)
+    tocar(raiz / "prints/botao.png", b"\x89PNG", t + 50)
+    tocar(raiz / "auditoria/correcoes-rodada-1.json", json.dumps([{"n": 1, "print": "prints/botao.png", "o_que_mudou": "href"}]), t + 50)
+
+
 def rodar(raiz, *extra, url=URL, reflete="sim"):
     args = [sys.executable, str(SCRIPT), "--projeto", str(raiz)]
     if reflete and "--briefing-reflete-pedido" not in extra:
@@ -68,7 +77,7 @@ class Pacote(unittest.TestCase):
         code, saida = rodar(self.raiz)
         self.assertEqual(code, 0, saida)
         b = (self.raiz / "auditoria/briefing-do-auditor.md").read_text(encoding="utf-8")
-        for trecho in ("15 minutos", "30 chamadas", "Proibido recapturar", "6 capturas próprias", "não verificado",
+        for trecho in ("8 minutos", "12 chamadas", "Não capture nada", "não verificado",   # 3.7.0: teto rígido e zero captura nova
                        "schema", URL, "`provas/prova-desktop.png`", "`videos/prancha-mobile.png`", "--duracao-min", "--chamadas"):
             self.assertIn(trecho, b, trecho)
         self.assertNotIn("RODADA 2", b)
@@ -76,14 +85,14 @@ class Pacote(unittest.TestCase):
 
     def test_briefing_da_rodada_2_tem_orcamento_menor_e_e_so_conferencia(self):
         montar_completo(self.raiz)
-        tocar(self.raiz / "auditoria/achados-rodada-1.json", "{}", 1_000_100)
+        com_alto_e_print(self.raiz)
         code, saida = rodar(self.raiz, "--rodada", "2")
         self.assertEqual(code, 0, saida)
         b = (self.raiz / "auditoria/briefing-do-auditor.md").read_text(encoding="utf-8")
-        self.assertIn("8 minutos", b)
-        self.assertIn("15 chamadas", b)
-        self.assertIn("RODADA 2", b)
-        self.assertIn("Não reabra as 9 lentes", b)
+        self.assertIn("3 minutos", b)          # 3.7.0: conferência dirigida
+        self.assertIn("4 chamadas", b)
+        self.assertIn("CONFERÊNCIA DIRIGIDA", b)
+        self.assertIn("não reabra as 9 lentes", b)
 
     def test_pacote_incompleto_tambem_grava_o_briefing_mas_nao_manda_chamar(self):
         code, saida = rodar(self.raiz)
@@ -173,6 +182,10 @@ class Pacote(unittest.TestCase):
         self.assertIn("achados-rodada-1", saida)
         tocar(self.raiz / "auditoria/achados-rodada-1.json", "[]", 1_000_020)
         code, saida = rodar(self.raiz, "--rodada", "2")
+        self.assertEqual(code, 1, saida)          # 3.7.0: sem crítico nem alto não há rodada 2
+        self.assertIn("não há rodada 2", saida)
+        com_alto_e_print(self.raiz)
+        code, saida = rodar(self.raiz, "--rodada", "2")
         self.assertEqual(code, 0, saida)
 
     def test_clonar_nao_exige_plano_nem_sustentacao_nem_briefing(self):
@@ -248,7 +261,7 @@ class BriefingProntoParaColar(unittest.TestCase):
         self.assertRegex(self.b, r"(?i)evidência em UMA linha")
 
     def test_rodada_2_traz_o_schema_da_conferencia(self):
-        tocar(self.raiz / "auditoria/achados-rodada-1.json", "{}", 1_000_100)
+        com_alto_e_print(self.raiz)
         code, saida = rodar(self.raiz, "--rodada", "2")
         self.assertEqual(code, 0, saida)
         b = (self.raiz / "auditoria/briefing-do-auditor.md").read_text(encoding="utf-8")
