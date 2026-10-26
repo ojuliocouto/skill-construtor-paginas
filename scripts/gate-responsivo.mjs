@@ -36,6 +36,7 @@
  * Uso: node scripts/gate-responsivo.mjs --url <url>
  */
 import { createRequire } from 'node:module';
+import fs from 'node:fs';
 import { raizGlobal as raizGlobalNpm } from './npm-global.cjs';
 import path from 'node:path';
 import { exigirServidor } from './servidor-no-ar.mjs';
@@ -58,6 +59,15 @@ if (!URL_ALVO || URL_ALVO.startsWith('--')) {
 }
 // --so-primeira-tela: roda só a medida da primeira tela visível no celular (G22), sem as 12 telas. Para teste e para conserto rápido do topo.
 const SO_PRIMEIRA_TELA = args.includes('--so-primeira-tela');
+// --salvar-dobra <pasta> (3.6.2): grava o print de cada janela da primeira tela que o gate mediu, com a mesma largura, altura e dpr da medida
+// (dobra-390x664.png etc.). É a dobra do aparelho. O recorte das primeiras linhas do print de página inteira (390x844) NÃO é: no teste de
+// aluno da 3.6.1 esse recorte mostrava o botão cortado em 663 px enquanto na janela medida (390x664) ele terminava em 630.
+const iDobra = args.indexOf('--salvar-dobra');
+const SALVAR_DOBRA = iDobra >= 0 ? args[iDobra + 1] : null;
+if (iDobra >= 0 && (!SALVAR_DOBRA || SALVAR_DOBRA.startsWith('--'))) {
+  console.error('uso: --salvar-dobra <pasta>: a pasta onde gravar o print de cada janela medida da primeira tela');
+  process.exit(2);
+}
 
 /* PRIMEIRA TELA VISÍVEL NO CELULAR (G22, 3.5.10). A tela do celular não é a área que a pessoa vê: o navegador ocupa um pedaço com
    as barras. Duas páginas passaram neste gate com o topo errado porque ele media o botão contra a janela cheia (390x844):
@@ -100,6 +110,13 @@ const TOLERANCIA_FOTO = 0.005;   // 0,5 ponto percentual: 34,9% contra 35% é ar
 // Telas SEM área visível medida em que o texto também ganha da foto (piso de 20% da tela cheia), 3.6.1.
 const TELAS_TEXTO_GANHA = new Set(['320x568']);
 const TELAS_COM_PAR_VISIVEL = new Set(PRIMEIRA_TELA.filter((t) => t[4]).map((t) => `${t[1]}x${t[3]}`));
+// tela cheia -> altura da área visível medida (390x844 -> 664, 360x740 -> 616), para avisar quando o layout da tela cheia passa dela.
+const AREA_VISIVEL_DA_TELA = Object.fromEntries(PRIMEIRA_TELA.filter((t) => t[4]).map((t) => [`${t[1]}x${t[3]}`, t[2]]));
+// Botão do herói em 320x568 (3.6.2): no teste de aluno da 3.6.1 reprovou duas vezes, a 10 px e a 1 px abaixo da dobra, enquanto a foto já
+// tinha tolerância. Mesma ideia, SÓ nessa tela: até 12 px passa com aviso. Em 390 (844 e 664), 360, 430 e nas telas de desktop o botão
+// cortado reprova como sempre.
+const TELA_320 = '320x568';
+const TOLERANCIA_BOTAO_320 = 12;
 
 // O que é o topo (herói, manchete, apoio, botão principal): definido uma vez em topo-da-pagina.mjs, usado aqui e no medir-dobra.mjs.
 
@@ -574,7 +591,9 @@ for (const [nome, w, h, mob] of (SO_PRIMEIRA_TELA ? [] : TELAS)) {
   }
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
 
-  const ctaOk = r.ctaBottom !== null && r.ctaBottom <= r.viewportH;
+  const excessoCta = r.ctaBottom === null ? null : r.ctaBottom - r.viewportH;
+  const ctaTolerado = `${w}x${h}` === TELA_320 && excessoCta !== null && excessoCta > 0 && excessoCta <= TOLERANCIA_BOTAO_320;
+  const ctaOk = r.ctaBottom !== null && (excessoCta <= 0 || ctaTolerado);
   const marca = (b) => (b ? 'ok  ' : 'FALHA');
   console.log(
     nome.padEnd(18) + `${w}x${h}`.padEnd(12) +
@@ -593,6 +612,12 @@ for (const [nome, w, h, mob] of (SO_PRIMEIRA_TELA ? [] : TELAS)) {
   if (r.overflow > 0) falhas.push(`${onde}: overflow horizontal de ${r.overflow}px`);
   if (r.ctaSemContraste?.length)
     falhas.push(`${onde}: CTA camuflado no fundo (< 3:1): ${r.ctaSemContraste.slice(0, 3).join(', ')}`);
+  if (ctaTolerado) avisos.push(`${onde}: botão do herói ${r.ctaTexto ? '"' + r.ctaTexto + '" ' : ''}termina em ${r.ctaBottom}px de ${r.viewportH}px, ${excessoCta} px abaixo da dobra, dentro da tolerância de ${TOLERANCIA_BOTAO_320} px desta tela (só em 320x568)`);
+  // 3.6.2: o layout da tela cheia (390x844) pode pôr o botão abaixo da área que o Safari mostra (664). A medida do aparelho é a da primeira
+  // tela visível, mais abaixo; este aviso existe para ninguém tomar o print de página inteira por dobra.
+  const areaDaTela = AREA_VISIVEL_DA_TELA[`${w}x${h}`];
+  if (mob && areaDaTela && r.ctaBottom !== null && r.ctaBottom > areaDaTela)
+    avisos.push(`${onde}: no layout de ${w}x${h} o botão termina em ${r.ctaBottom} px, abaixo da área visível de ${areaDaTela} px (a que o navegador mostra com as barras). A medida do aparelho é a da primeira tela visível ${w}x${areaDaTela}, mais abaixo no laudo; o print de página inteira em ${h} NÃO é a dobra do aparelho: para ver a dobra real use --salvar-dobra <pasta>`);
   if (!ctaOk) falhas.push(`${onde}: CTA do heroi ${r.ctaTexto ? '"' + r.ctaTexto + '" ' : ''}abaixo da dobra (termina em ${r.ctaBottom}px de ${r.viewportH}px)`);
   if (r.botaoQuebrado?.length) falhas.push(`${onde}: botao em mais de uma linha: ${r.botaoQuebrado.slice(0, 3).join(', ')}`);
   if (r.trechoSemBotao) falhas.push(`${onde}: ${r.trechoSemBotao.telas.toFixed(1)} telas sem nenhum botao visivel a partir de y ${r.trechoSemBotao.de} (maximo 2): barra fixa no celular ou botao repetido`);
@@ -668,6 +693,13 @@ for (const [nome, w, hv, ht, barra] of PRIMEIRA_TELA) {
       foto: foto === null ? null : Math.round(foto),
     };
   });
+  // A mesma janela da medida: viewport w x hv, dpr 2, scrollY 0, animações de entrada assentadas.
+  let printDaJanela = null;
+  if (SALVAR_DOBRA) {
+    fs.mkdirSync(SALVAR_DOBRA, { recursive: true });
+    printDaJanela = path.join(SALVAR_DOBRA, `dobra-${w}x${hv}.png`);
+    await page.screenshot({ path: printDaJanela, fullPage: false });
+  }
   await ctx.close();
   const onde = `primeira tela visível ${w}x${hv} (${nome}; tela ${w}x${ht})`;
   const problemas = [];
@@ -695,6 +727,7 @@ for (const [nome, w, hv, ht, barra] of PRIMEIRA_TELA) {
   }
   const fx = (f) => (f ? `${f[0]} a ${f[1]}` : 'nenhum');
   console.log(`  ${onde}: manchete ${fx(m.h1)}, apoio ${fx(m.apoio)}, botão ${fx(m.botao)}${m.botaoTexto ? ` "${m.botaoTexto}"` : ''}, folga ${folga === null ? '-' : folga} px, ${fotoTxt}${m.topo ? `, fixo em cima até ${m.topo}` : ''}${m.base < m.vh ? `, fixo embaixo desde ${m.base}` : ''}  ${problemas.length ? (barra ? 'FALHA' : 'AVISO') : 'ok'}`);
+  if (printDaJanela) console.log(`    print desta janela (${w}x${hv}, dpr 2): ${printDaJanela}`);
   for (const p of problemas) (barra ? falhas : avisos).push(`${onde}: ${p}`);
 }
 await navegador.close();

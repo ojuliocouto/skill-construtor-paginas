@@ -37,6 +37,7 @@ const TETO_POR_TESTE_MS = 20 * 60 * 1000;
 // arquivo -> o que ele exige além de Node e Python.
 const PRECISAM = {
   'test-capturar-referencias.cjs': 'navegador (captura páginas reais com o Playwright)',
+  'test-responsivo-362.cjs': 'navegador (gate-responsivo: tolerância do botão em 320, print da dobra do celular e aviso do layout de 844)',
   'test-medir-dobra.cjs': 'navegador (mede o aviso "imagem ilustrativa" na primeira tela)',
   'test-gerar-icones.cjs': 'navegador (gera os PNG dos ícones e confere as linhas de link impressas)',
   'test-og-image.cjs': 'navegador (gera e mede a og:image 1200x630)',
