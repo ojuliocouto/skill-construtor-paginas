@@ -174,6 +174,12 @@ class PaginaBoa(Base):
         self.assertIn("palavras no HTML cru 386", resumo[0])  # 360 do corpo + títulos, pergunta, resposta e rodapé
         self.assertIn("pendências: nenhuma", resumo[0])
 
+    def test_a_linha_de_contagem_nao_usa_a_frase_da_reprovacao(self):
+        # a linha "Conserto:" do rodar-gates procura "palavras visíveis" no laudo: a contagem de uma página BOA não pode disparar o conserto de pré-render
+        out = self.passa()
+        self.assertIn("index.html: 386 palavras no HTML cru", out)
+        self.assertNotIn("palavras visíveis", out)
+
     def test_pagina_boa_passa_no_modo_previa_sem_url_final(self):
         out = self.passa(url=None)
         self.assertIn("passa no modo prévia", out)

@@ -67,7 +67,7 @@ const POR_GATE = {
   ],
   // 3.8.0 (auditoria de SEO de 27/10/2026): cada tipo de falha do gate-seo.py aponta o que mudar.
   seo: [
-    [/palavras visíveis|SPA com #root/, 'pré-renderize a página para o HTML cru trazer o texto (buscador de IA não roda JavaScript) e confira com um curl no endereço'],
+    [/HTML cru com \d+ palavras|SPA com #root/, 'pré-renderize a página para o HTML cru trazer o texto (buscador de IA não roda JavaScript) e confira com um curl no endereço'],
     [/(robots\.txt|sitemap\.xml|404\.html) ausente|robots\.txt é HTML|sitemap\.xml não é XML/, 'rode gerar-seo.py --dist <dir> --url-final <https://...> para criar robots.txt, sitemap.xml e 404.html (ele nunca sobrescreve)'],
     [/meta robots/, 'tire o noindex e o nofollow do meta robots (o endereço final é indexável); na prévia o noindex é pendência'],
     [/meta description/, 'escreva a meta description com 70 a 160 caracteres'],

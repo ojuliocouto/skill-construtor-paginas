@@ -101,6 +101,15 @@ for (const [gate, laudo, esperado] of CASOS) {
   });
 }
 
+teste('seo: a linha de contagem de palavras (que aparece em todo laudo) não dispara o conserto de pré-render, só a reprovação dela', async () => {
+  const { consertoDoGate } = await modulo();
+  const so404 = consertoDoGate('seo', '  index.html: 386 palavras no HTML cru\nREPROVA: robots.txt ausente [arquivo: dist/robots.txt]\n', 1);
+  assert.doesNotMatch(so404, /pré-render/i, so404);
+  assert.match(so404, /gerar-seo/);
+  const spa = consertoDoGate('seo', '  index.html: 0 palavras no HTML cru\nREPROVA: HTML cru com 0 palavras visíveis, mínimo 300. SPA com #root vazio [arquivo: dist/index.html]\n', 1);
+  assert.match(spa, /pré-render/i, spa);
+});
+
 teste('duas falhas de tipos diferentes no mesmo laudo: uma linha só, com os dois consertos', async () => {
   const { consertoDoGate } = await modulo();
   const linha = consertoDoGate('responsivo', 'FALHA: x (390x844): overflow horizontal de 40px\nFALHA: x (390x844): 3 alvo(s) de toque < 44px: a\n', 1);

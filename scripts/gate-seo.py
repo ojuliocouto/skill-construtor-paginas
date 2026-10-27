@@ -492,7 +492,7 @@ def checar_pagina(caminho, dist, raiz, url_final, res, eh_index):
 
     # 1. HTML cru
     palavras = contar_palavras(p.texto)
-    res.info.append(f"  {nome.name}: {palavras} palavras visíveis no HTML cru")
+    res.info.append(f"  {nome.name}: {palavras} palavras no HTML cru")
     if palavras < MIN_PALAVRAS:
         spa = (" SPA com #root vazio: buscador de IA não roda JavaScript, e o HTML cru é o que ele lê; pré-renderize a página "
                "(SobrAI 27/10/2026: 0 palavras antes, 1.710 depois do pré-render)") if RAIZ_VAZIA.search(html_cru) else ""
