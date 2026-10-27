@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.8.0 (27/10/2026): gate de SEO
+
+Auditoria de SEO em duas páginas reais da IAutomate, com as skills seo-audit (Corey Haines) e seo (Addy Osmani) mais Lighthouse. As páginas passavam em todos os gates da skill e reprovavam em SEO.
+
+- **sales.juliocouto.com.br**: Lighthouse SEO 83. O `robots.txt`, o `sitemap.xml` e qualquer URL inexistente devolviam a home com 200 (soft 404). Sem meta description, sem canonical, zero JSON-LD. O logo PNG em base64 repetido 3 vezes pesava 281 KB de um HTML de 364 KB. A foto PNG tinha 1,4 MB. O vídeo de 3,6 MB era o LCP no celular (3,8 s). Havia h4 logo depois de h2. Depois da correção: SEO 100 e 231 KB no celular.
+- **SobrAI** (juliocouto.com.br/sobrai/): SEO 66 por `noindex, nofollow` esquecido. SPA (Vite/React) com HTML cru de 1,8 KB e 0 palavras (`<div id="root">` vazio): buscador de IA não roda JavaScript. Depois do pré-render: 1.710 palavras no HTML cru e SEO 100.
+- **Gate de SEO** (`scripts/gate-seo.py`, só biblioteca padrão, sem navegador): 16 regras. Em cada `*.html` da pasta: 300 palavras visíveis no HTML cru (a mensagem cita "SPA com #root vazio"), `lang`, `title` de 15 a 65 caracteres, description de 70 a 160, meta robots sem `noindex` nem `nofollow`, canonical absoluto igual à URL final (e `og:url` igual a ele), `og:image` absoluta, um só `h1` e títulos que descem um nível por vez, JSON-LD válido com `@type` cujas perguntas de FAQ e preços de `Offer` aparecem no texto visível (9997 casa com 9.997), `alt`, `width` e `height` em toda imagem, data URI de até 20 KB e nunca repetido, `index.html` de até 300 KB, imagem de até 500 KB, vídeo com autoplay acima de 1 MB com `preload="none"`, link de privacidade em página com formulário. Aviso (não reprova): PNG ou JPG acima de 200 KB e Google Fonts bloqueando a renderização. Na raiz do domínio (`--raiz`): `robots.txt` que não é HTML, não bloqueia tudo e traz `Sitemap:` absoluto; `sitemap.xml` válido com a URL final; `404.html` com `noindex`.
+- **Dois modos pela URL final** (`--url-final` ou a linha `Domínio final: https://...` da seção f do `PLANO.md`): modo prévia (a página de teste) deixa o que só existe no domínio como `PENDÊNCIA:` e aceita `noindex`; modo domínio reprova tudo. Saída 0 passa, 1 reprova, 2 erro de uso.
+- **`scripts/gerar-seo.py`**: cria `robots.txt` (Allow e Sitemap absoluto), `sitemap.xml` (a URL final com lastmod de hoje) e `404.html` (com `noindex`, `lang` e o título da marca) só quando não existem, e diz o que pulou. Roda na pasta do projeto: o `montar-dist.py` copia os três para a `dist/`.
+- `montar-dist.py`: o `404.html` entra nos arquivos da hospedagem (EXTRAS), e o `gate-publicacao.py` o aceita. Antes o gate o chamava de arquivo que a página não usa.
+- `rodar-gates.mjs` e `wave.py`: gate `seo` no catálogo (16 gates). No caminho CLONAR ele vira aviso "ressalva por fidelidade", porque o clone fiel copia o SEO da original. `conserto-de-gate.mjs` ganhou a linha `Conserto:` de cada tipo de falha do SEO.
+- Documentação: `SKILL.md` (tabela de scripts e a linha `SEO:` no bloco da entrega, com canonical e JSON-LD na linha de identidade), `criar.md` (item 9 do passo e; comandos do passo f), `plano.md` (a linha `Domínio final:` e o que o gate cobra), `clonar.md` e `README.md` (seção "SEO gate").
+- Testes: `rodar-testes.mjs` 95 de 95 (novos `test-gate-seo.py`, `test-gerar-seo.py` e `test-docs-380.py`).
+
 ## 3.7.1 (26/10/2026): o caminho CLONAR entrega
 
 Teste de aluno do CLONAR na 3.6.3 (pocketbase.io): clone com 0,054% de pixels diferentes em 31 min, e a entrega BLOQUEADA por 8 gates que não se aplicam a clone.

@@ -377,7 +377,8 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
    na ordem que a mensagem do gate mostra.
 5. **Fora do domínio final, a página nasce `noindex`:** `<meta name="robots" content="noindex,
    nofollow">`, `robots.txt` com `Disallow: /`, sem sitemap, `canonical` apontando para o site
-   do cliente quando existir.
+   do cliente quando existir. Com a URL final do domínio isso se inverte (passo f, `gerar-seo.py` e `gate-seo.py`): sai o `noindex`, o `robots.txt`
+   libera o site e aponta o `sitemap.xml`, e o `canonical` é a URL final.
 6. **Rodapé com identificação** (nome, contato e o que o cliente confirmou) e todo botão com
    destino real. WhatsApp sem número é pendência declarada, e a página não recebe tráfego.
    **Quem é o dono ou a profissional aparece no corpo**, quando o briefing nomeia (com o que o
@@ -389,6 +390,12 @@ a página precisar de estado de verdade (calculadora, quiz, checkout em etapas).
 8. **Nenhum comentário interno no HTML publicado** (`<!-- -->`, `//` e `/* */` em script e
    style; só o aviso de licença `/*! */` passa): a v5 publicou o histórico da construção num
    comentário do script.
+9. **SEO no HTML cru (o `gate-seo.py` do passo f mede, 3.8.0).** O texto da página está no HTML e não nasce de JavaScript: no mínimo
+   300 palavras visíveis (SPA com `<div id="root">` vazio reprova; pré-renderize). `<html lang>`, `<title>` de 15 a 65 caracteres, meta
+   description de 70 a 160, um só `<h1>` e títulos que descem um nível por vez. `canonical` e `og:image` absolutos (`https://`) no domínio final.
+   JSON-LD válido (Organization, Product, FAQPage) que só repete o que a página mostra: a pergunta do FAQ e o preço da oferta estão escritos no texto.
+   Toda `<img>` com `alt`, `width` e `height`; logo e foto em arquivo, nunca o mesmo base64 repetido. Vídeo com autoplay acima de 1 MB leva
+   `preload="none"`. Página com formulário leva link de privacidade. Medido em 27/10/2026 em duas páginas reais (SEO 83 e SEO 66).
 
 Grave `evidencias/etapa-4.json` e registre: `node <dir-da-skill>/scripts/py.mjs gate-etapas.py --projeto <dir> registrar 4 --arquivo evidencias/etapa-4.json`
 
@@ -410,6 +417,9 @@ e sem o registro voltam à data do arquivo).
 
 **Caminho padrão: um comando só, todos os gates em paralelo.**
 `node <dir-da-skill>/scripts/rodar-gates.mjs --projeto <dir>`
+
+**Com `Domínio final: https://...` no PLANO (3.8.0), rode antes o `gerar-seo.py`** (o comando está na lista abaixo, na pasta do projeto): o comando único roda o gate
+de SEO em modo domínio e reprova a página sem `robots.txt`, `sitemap.xml` e `404.html`.
 
 **Rode em primeiro plano, com tempo-limite de 10 minutos (no Bash, `timeout: 600000`). Nunca em segundo plano com laço de espera.** A rodada completa leva de
 1 a 5 minutos (o gate de movimento sozinho leva de 3 a 4). O Bash corta qualquer comando em 120 s quando ninguém passa o tempo-limite. Foi assim que um
@@ -489,13 +499,15 @@ confirme com `grep -nE "position: *(sticky|fixed)" <dir>/dist/index.html <dir>/d
 "sobreposição: não se aplica, a página não tem elemento sticky nem fixo" em vez de inventar um seletor)
 `node <dir-da-skill>/scripts/py.mjs montar-dist.py --projeto <dir> --css-em-linha` e `node <dir-da-skill>/scripts/py.mjs gate-publicacao.py --dist <dir>/dist` (só o que é página vai para o ar, sem comentário interno, e ícones gerados do `icones/icone.svg` do motivo do plano)
 `node <dir-da-skill>/scripts/py.mjs gate-rastreamento.py --dist <dir>/dist --plano <dir>/PLANO.md` (pixel e eventos que o plano pediu; passa direto com `Pixel pedido: nenhum`)
+`node <dir-da-skill>/scripts/py.mjs gerar-seo.py --dist <dir> --url-final <https://dominio-final>` (**antes do gate de SEO, só quando o PLANO tem `Domínio final: https://...`.** Cria o `robots.txt` liberado, o `sitemap.xml` e o `404.html` que ainda não existem e nunca sobrescreve: imprime o que pulou. Rode na pasta do PROJETO (`<dir>`, onde está o `index.html`) e não em `dist/`: o `montar-dist.py` copia os três para a `dist/` e apaga da `dist/` o que o projeto não tem. Página em subcaminho, como `/sobrai/`: `--raiz <pasta do site principal>`. O `404.html` é o que faz a hospedagem responder 404 a uma URL inexistente em vez de devolver a home com 200)
+`node <dir-da-skill>/scripts/py.mjs gate-seo.py --dist <dir>/dist --plano <dir>/PLANO.md` (o que um buscador, um buscador de IA e um link compartilhado leem sem JavaScript: 300 palavras ou mais no HTML cru, `lang`, `title`, meta description, `canonical`, `og:image`, um só `h1`, JSON-LD que bate com o texto, imagem com `alt` e medidas, data URI, peso, `robots.txt`, `sitemap.xml` e `404.html`. Em modo prévia (a linha `Domínio final:` do PLANO diz `a definir`) o que só existe no domínio vira linha `PENDÊNCIA:` e o `noindex` passa. Em modo domínio (`Domínio final: https://...`) tudo reprova. O resultado entra na linha `SEO:` do bloco da entrega)
 `node <dir-da-skill>/scripts/py.mjs gate-plano.py --projeto <dir>` (o plano continua aprovado depois das correções)
 `node <dir-da-skill>/scripts/screenshot-prova.js <url> <dir>/prova --click "<seletor do botão>"` (identidade, scrollY 0, clique; o `provar.mjs` do passo g faz isto e registra a `identidade` na wave com o exit real)
 `node <dir-da-skill>/scripts/py.mjs uso-ferramentas.py --projeto <dir> registrar Playwright --arquivo prova/prova-desktop.png --detalhe "prova de tela lida"`
 `node <dir-da-skill>/scripts/py.mjs uso-ferramentas.py --projeto <dir> checar --caminho criar`
 `node <dir-da-skill>/scripts/py.mjs gate-referencias.py --projeto <dir>`
 `node <dir-da-skill>/scripts/py.mjs wave.py --projeto <dir> gate <nome> --exit <0|1> --detalhe "<o que o gate imprimiu>"`
-(nomes: `sem-kicker`, `classes-mortas`, `responsivo`, `oclusao`, `identidade`, `uso-ferramentas`, `referencias`, `simetria`, `texto`, `verdade`, `publicacao`, `movimento`, `composicao`, `imagens`, `plano`, `rastreamento`, `ritmo`, `animacao`)
+(nomes: `sem-kicker`, `classes-mortas`, `responsivo`, `oclusao`, `identidade`, `uso-ferramentas`, `referencias`, `simetria`, `texto`, `verdade`, `publicacao`, `movimento`, `composicao`, `imagens`, `plano`, `rastreamento`, `seo`, `ritmo`, `animacao`)
 
 O `gate-responsivo.mjs` também reprova botão em mais de uma linha até 768 px e trecho de mais de
 2 telas sem botão no celular. Rode os gates de tela contra a `dist/` servida (é o que vai para o ar).

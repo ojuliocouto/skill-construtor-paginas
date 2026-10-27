@@ -56,6 +56,21 @@ class Clonar(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("BLOQUEIA", out)
 
+    def test_seo_vermelho_no_clone_e_ressalva_e_nos_outros_caminhos_bloqueia(self):
+        """3.8.0: o clone fiel copia o SEO da original; nos caminhos que produzem a página, o gate de SEO bloqueia."""
+        self.assertIn("seo", wave.GATES)
+        self.assertIn("seo", wave.RESSALVA_POR_FIDELIDADE)
+        for c in ("criar", "clonar", "clonar-elevar", "melhorar", "variante"):
+            self.assertIn("seo", wave.gates_exigidos(c), c)
+        self.montar(vermelhos=VERMELHOS_DO_ALUNO + ("seo",))
+        code, out = self.checar("clonar")
+        self.assertEqual(code, 0, out)
+        self.assertIn("seo", out)
+        self.montar(vermelhos=("seo",), sem=("fidelidade",))
+        for c in ("criar", "melhorar"):
+            code, out = self.checar(c)
+            self.assertEqual(code, 1, f"{c}: {out}")
+
     def test_fora_do_clone_nao_e_exigido(self):
         exig = wave.gates_exigidos("clonar")
         for g in ("verdade", "rastreamento", "plano", "referencias"):

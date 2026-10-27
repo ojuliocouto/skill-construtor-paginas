@@ -52,7 +52,8 @@ direção aqui custa uma conversa; depois do código, custa a página.
    `references/rastreamento.md`. **Nada de ID real no plano:** o gate reprova.
 6. **Código e publicação (f):** tecnologia (HTML + Tailwind compilado, o padrão), onde publica,
    o domínio e o que muda no domínio final: sai o `noindex`, o `robots.txt` deixa de bloquear,
-   a `og:image` vira endereço absoluto e o `canonical` aponta para o domínio.
+   a `og:image` vira endereço absoluto e o `canonical` aponta para o domínio. A linha `Domínio final: https://...` (ou `a definir`) da
+   seção f liga o gate de SEO: sem URL ele roda em modo prévia, com URL ele cobra o domínio inteiro (`gate-seo.py` e `gerar-seo.py`, passo f do `criar.md`).
 7. **Aprovação (g):** uma caixa por seção. Sessão interativa: mostre o plano e o `direcoes.png`
    e espere o aluno marcar. Sessão não interativa: marque, e liste na entrega cada escolha que
    o aluno deveria ter feito.
@@ -133,6 +134,10 @@ Escolha: [ ] A  [ ] B  [ ] C  [ ] misturar: <o quê de cada>
 
 <tecnologia, onde publica, domínio; noindex, robots e og:image absoluta no domínio final>
 
+Domínio final: a definir
+
+(troque "a definir" por https://... quando o cliente passar o domínio; o gate de SEO lê esta linha)
+
 ## g. Aprovação
 
 - [ ] a. Referências
@@ -155,6 +160,14 @@ sem `noindex`, `robots` ou `og:image`; e qualquer caixa da aprovação desmarcad
 sem `Momento assinatura:` (elemento, 3 ou mais seções e os estados com `->`), sem `Ícone do site:` (3.5.6), sem a tabela
 `Composição por seção` (uma linha por seção da ordem, célula vazia, mais de 2 seções com o mesmo
 tipo de animação) e sem `Material da cliente pedido:` (`nenhum` só com o motivo).
+
+O `scripts/gate-seo.py` (3.8.0, passo f) lê a linha `Domínio final:` da seção f. Com `a definir` ele roda em **modo prévia**: `canonical` ausente, `og:image`
+relativa, `robots.txt` que bloqueia tudo, `noindex`, `sitemap.xml` e `404.html` que faltam viram `PENDÊNCIA:` e não reprovam. Com `Domínio final: https://...` roda em
+**modo domínio** e tudo reprova: sem `noindex` nem `nofollow`, `canonical` igual à URL final, `og:image` absoluta, `robots.txt` liberado com `Sitemap:` absoluto,
+`sitemap.xml` com a URL final e `404.html` com `noindex`. Nos dois modos reprova HTML cru com menos de 300 palavras, `title` fora de 15 a 65 caracteres, description fora de
+70 a 160, mais de um `h1` ou título que pula nível, JSON-LD ausente, inválido ou que cita pergunta e preço que a página não mostra, imagem sem `alt`, `width` e `height`,
+data URI acima de 20 KB ou repetido, `index.html` acima de 300 KB, imagem acima de 500 KB, vídeo de autoplay acima de 1 MB sem `preload="none"` e formulário sem link de
+privacidade. O `gerar-seo.py` cria o `robots.txt`, o `sitemap.xml` e o `404.html` que faltam.
 
 ## Depois do PLANO
 

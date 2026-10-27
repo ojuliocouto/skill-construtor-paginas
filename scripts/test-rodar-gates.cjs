@@ -121,11 +121,11 @@ teste('todo gate do comando existe na pasta scripts e tem nome da wave', async (
   assert.equal(new Set(nomes).size, nomes.length, 'nome de gate repetido no catálogo');
 });
 
-teste('os 15 gates do fluxo antigo (gates-todos) continuam todos no conjunto padrão', async () => {
+teste('os 15 gates do fluxo antigo (gates-todos) continuam todos no conjunto padrão, mais o gate de SEO da 3.8.0', async () => {
   const { CATALOGO } = await catalogo();
   const padrao = CATALOGO.filter((g) => !g.opcional).map((g) => g.nome).sort();
   const antigos = ['sem-kicker', 'classes-mortas', 'verdade', 'publicacao', 'rastreamento', 'plano', 'referencias',
-    'responsivo', 'oclusao', 'simetria', 'texto', 'composicao', 'ritmo', 'imagens', 'movimento'].sort();
+    'responsivo', 'oclusao', 'simetria', 'texto', 'composicao', 'ritmo', 'imagens', 'movimento', 'seo'].sort();
   assert.deepEqual(padrao, antigos);
 });
 
@@ -229,6 +229,7 @@ teste('cada gate recebe os MESMOS argumentos que o criar.md manda (nenhum gate m
     video: ['--url', URL, '--publico', 'pub'],
     publicacao: ['--dist', dist],
     rastreamento: ['--dist', dist, '--plano', path.join(proj, 'PLANO.md')],
+    seo: ['--dist', dist, '--plano', path.join(proj, 'PLANO.md')],
     plano: ['--projeto', proj],
     referencias: ['--projeto', proj],
   };
@@ -553,8 +554,8 @@ teste('cache: a segunda rodada sem mudança nenhuma não roda gate nenhum e diz 
   assert.equal(r2.codigo, 0, r2.saida);
   for (const g of CATALOGO.filter((x) => !x.opcional)) assert.equal(vezes(marcas, g.nome), 1, `${g.nome} rodou de novo na rodada 2, com a entrada idêntica`);
   assert.match(r2.saida, /PASSA\s+movimento\s+0,0 s.*cache/i);
-  assert.match(r2.saida, /Cache: 15 de 15 gate\(s\)/);
-  assert.match(r2.saida, /RESULTADO: PASSA em 15 de 15/);
+  assert.match(r2.saida, /Cache: 16 de 16 gate\(s\)/);
+  assert.match(r2.saida, /RESULTADO: PASSA em 16 de 16/);
 });
 
 teste('cache: o arquivo de saída da rodada guarda o laudo de antes e diz de onde ele veio', async () => {
@@ -762,14 +763,14 @@ teste('registro: a rodada completa grava o exit REAL de cada gate na wave, sem n
   assert.equal(r.codigo, 1, r.saida);
   const w = lerWave(proj);
   const esperados = ['movimento', 'responsivo', 'oclusao', 'simetria', 'composicao', 'imagens', 'texto', 'ritmo', 'sem-kicker',
-    'classes-mortas', 'verdade', 'publicacao', 'rastreamento', 'plano', 'referencias'];
+    'classes-mortas', 'verdade', 'publicacao', 'rastreamento', 'seo', 'plano', 'referencias'];
   for (const n of esperados) assert.ok(w.gates[n], `gate ${n} sem registro na wave`);
   assert.equal(w.gates.simetria.exit, 1, 'o exit real da reprovação');
   assert.equal(w.gates.texto.exit, 0);
   assert.match(w.gates.simetria.detalhe, /rodar-gates/);
   assert.match(w.gates.simetria.detalhe, /gates\/simetria-r1\.txt/);
   assert.equal(w.gates.video, undefined, 'video e sobreposicao não têm nome na wave');
-  assert.match(r.saida, /Wave: 15 gate\(s\) registrado\(s\)/);
+  assert.match(r.saida, /Wave: 16 gate\(s\) registrado\(s\)/);
 });
 
 teste('registro: o gate que veio do cache é registrado como tal, com o exit 0 da rodada de origem', async () => {

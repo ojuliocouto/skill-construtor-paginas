@@ -76,6 +76,18 @@ const CASOS = [
   ['composicao', 'FALHA: desenho x: ninguém do público lê um retângulo; desenhe a cena (pessoa, aparelho com volume, gesto)', /cena|pessoa|wireframe/i],
   ['composicao', 'FALHA: desktop: nenhuma figura humana na primeira tela para um público de pessoas ("advogados")', /pessoa|figura/i],
   ['composicao', 'FALHA: destaque #aaa a 2.10:1 contra o fundo em "d" (mínimo 3:1 para o que carrega informação)', /3:1|contraste/i],
+  // seo (3.8.0; mensagens reais do gate-seo.py)
+  ['seo', 'REPROVA: HTML cru com 0 palavras visíveis, mínimo 300. SPA com #root vazio: buscador de IA não roda JavaScript [arquivo: dist/index.html]', /pré-renderize|pré-render/i],
+  ['seo', 'REPROVA: robots.txt ausente [arquivo: dist/robots.txt]', /gerar-seo/],
+  ['seo', 'REPROVA: 404.html ausente: no Cloudflare Pages é ele que faz a URL inexistente dar 404 [arquivo: dist/404.html]', /gerar-seo/],
+  ['seo', 'REPROVA: meta robots "noindex, nofollow" bloqueia a indexação no domínio final [arquivo: dist/index.html]', /noindex/],
+  ['seo', 'REPROVA: meta description ausente [arquivo: dist/index.html]', /description/],
+  ['seo', 'REPROVA: canonical ausente [arquivo: dist/index.html]', /canonical/],
+  ['seo', 'REPROVA: o mesmo data URI repetido 3 vezes (68,4 KB cada, 205,2 KB no total) [arquivo: dist/index.html]', /arquivo|data URI/i],
+  ['seo', 'REPROVA: salto de nível h2→h4 em "Passo um" (sequência h1 h2 h4) [arquivo: dist/index.html]', /um nível por vez|nível/i],
+  ['seo', 'REPROVA: JSON-LD ausente: sem dado estruturado [arquivo: dist/index.html]', /JSON-LD/],
+  ['seo', 'REPROVA: Offer.price "9997" não aparece no texto visível [arquivo: dist/index.html]', /preço|price/i],
+  ['seo', 'REPROVA: a página coleta dados (<form> ou campo) e não tem link de privacidade [arquivo: dist/index.html]', /privacidade/i],
 ];
 
 for (const [gate, laudo, esperado] of CASOS) {
@@ -88,6 +100,15 @@ for (const [gate, laudo, esperado] of CASOS) {
     assert.notEqual(linha, padrao, 'caiu no conserto padrão em vez do específico');
   });
 }
+
+teste('seo: a linha de contagem de palavras (que aparece em todo laudo) não dispara o conserto de pré-render, só a reprovação dela', async () => {
+  const { consertoDoGate } = await modulo();
+  const so404 = consertoDoGate('seo', '  index.html: 386 palavras no HTML cru\nREPROVA: robots.txt ausente [arquivo: dist/robots.txt]\n', 1);
+  assert.doesNotMatch(so404, /pré-render/i, so404);
+  assert.match(so404, /gerar-seo/);
+  const spa = consertoDoGate('seo', '  index.html: 0 palavras no HTML cru\nREPROVA: HTML cru com 0 palavras visíveis, mínimo 300. SPA com #root vazio [arquivo: dist/index.html]\n', 1);
+  assert.match(spa, /pré-render/i, spa);
+});
 
 teste('duas falhas de tipos diferentes no mesmo laudo: uma linha só, com os dois consertos', async () => {
   const { consertoDoGate } = await modulo();

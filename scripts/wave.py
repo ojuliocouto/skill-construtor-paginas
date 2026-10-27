@@ -112,6 +112,8 @@ GATES = {
     # Etapa PLANO (03/10/2026): o aluno aprova visual, secoes, copy, pixel e codigo antes do codigo.
     "plano": "gate-plano.py (PLANO.md com as 7 seções, 3 direções com prévia e tudo aprovado)",
     "rastreamento": "gate-rastreamento.py (pixel e eventos que o plano pediu ligados na dist/)",
+    # 3.8.0 (auditoria de SEO de 27/10/2026, sales e SobrAI): o que o buscador, o buscador de IA e o link compartilhado leem sem JavaScript.
+    "seo": "gate-seo.py (HTML cru com texto, title, description, canonical, JSON-LD, imagens e peso, robots.txt, sitemap.xml e 404.html)",
     # Padrao da v7 (04/10/2026): o que separou a v7 da v6, a "correta e generica", virou medida.
     "ritmo": "gate-ritmo.mjs (nenhuma seção vizinha com o mesmo esqueleto, no máximo 1 título centralizado com cartões)",
     "animacao": "gate-animacao.py (cada seção muda 2% ou mais dos pixels em 1440 e 390, no máximo 2 com o mesmo tipo de animação)",
@@ -139,7 +141,7 @@ CAMINHOS = ("criar", "clonar", "clonar-elevar", "melhorar", "variante")
 #     entrega: consertar seria trair a fidelidade.
 #   o resto (fidelidade, oclusão, classes mortas, publicação, identidade, uso de ferramentas) bloqueia como sempre.
 FORA_DO_CLONE = ("referencias", "verdade", "rastreamento", "plano", "ritmo", "animacao")
-RESSALVA_POR_FIDELIDADE = ("movimento", "responsivo", "texto", "imagens", "simetria", "composicao", "sem-kicker")
+RESSALVA_POR_FIDELIDADE = ("movimento", "responsivo", "texto", "imagens", "simetria", "composicao", "sem-kicker", "seo")   # 3.8.0: o clone copia o SEO da original
 SO_NO_CLONE = ("fidelidade",)
 
 

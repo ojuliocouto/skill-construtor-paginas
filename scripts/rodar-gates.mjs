@@ -46,8 +46,8 @@
  *                        gates vermelhos sem rota de saída). Reprovam: fidelidade (contra a original), oclusão, classes mortas, publicação e
  *                        uso de ferramentas. Não rodam: verdade, rastreamento, plano e referências (pedem briefing, PLANO, pixel e 6
  *                        referências que o clone não tem). Viram AVISO "ressalva por fidelidade" (rodam, a saída fica 0 e a wave recebe o
- *                        exit real): movimento, responsivo, texto, imagens, simetria, composição e sem-kicker, que medem regra da skill
- *                        que a original pode não seguir. Sem a flag, o conjunto é o do CRIAR, igual a antes.
+ *                        exit real): movimento, responsivo, texto, imagens, simetria, composição, sem-kicker e seo (3.8.0: o clone fiel copia
+ *                        o SEO da original), que medem regra da skill que a original pode não seguir. Sem a flag, o conjunto é o do CRIAR, igual a antes.
  *   --original <url>     (com --caminho clonar) a página original para o gate de fidelidade; sem ela, ele lê `original/identidade.json`.
  *   --sem-movimento      (3.7.0) rodada completa do MEIO: pula o gate de movimento quando a animação não mudou desde a última vez em que
  *                        ele PASSOU (o HTML da dist sem o texto, o CSS e o JS iguais). Mudou a animação, ele roda mesmo com a flag. O pulo
@@ -119,6 +119,10 @@ export const CATALOGO = [
     args: (c) => ['--dist', c.dist] },
   { nome: 'rastreamento', arquivo: 'gate-rastreamento.py', dist: true, peso: 1,
     args: (c) => ['--dist', c.dist, '--plano', path.join(c.projeto, 'PLANO.md')] },
+  // 3.8.0 (auditoria de SEO de 27/10/2026, sales e SobrAI): lê a dist e a linha "Domínio final:" da seção f do PLANO.md. Sem URL final roda em
+  // modo prévia (pendência não reprova); com ela, tudo reprova. Sem --raiz, a raiz do domínio é a própria dist.
+  { nome: 'seo', arquivo: 'gate-seo.py', dist: true, peso: 1,
+    args: (c) => ['--dist', c.dist, '--plano', path.join(c.projeto, 'PLANO.md')] },
   { nome: 'plano', arquivo: 'gate-plano.py', peso: 1,
     args: (c) => ['--projeto', c.projeto] },
   { nome: 'referencias', arquivo: 'gate-referencias.py', peso: 1,
@@ -140,7 +144,7 @@ export const CATALOGO = [
  *   depois = roda depois dos outros (o de uso confere o registro que o gate de fidelidade grava ao usar o Playwright).
  */
 export const FORA_DO_CLONE = ['referencias', 'verdade', 'rastreamento', 'plano', 'ritmo', 'animacao'];
-export const RESSALVA_POR_FIDELIDADE = ['movimento', 'responsivo', 'texto', 'imagens', 'simetria', 'composicao', 'sem-kicker'];
+export const RESSALVA_POR_FIDELIDADE = ['movimento', 'responsivo', 'texto', 'imagens', 'simetria', 'composicao', 'sem-kicker', 'seo'];   // 3.8.0: o clone copia o SEO da original
 export const CATALOGO_CLONAR = [
   { nome: 'fidelidade', arquivo: 'gate-fidelidade.mjs', navegador: true, url: true, peso: 300, semCache: true,   // lê a original ao vivo
     args: (c) => ['--url', c.url, '--projeto', c.projeto, ...(c.opcoes.original ? ['--original', c.opcoes.original] : [])] },
@@ -159,7 +163,7 @@ export const ehAviso = (caminho, nome) => caminho === 'clonar' && RESSALVA_POR_F
 
 /** Gates do catálogo que têm nome na wave (`wave.py gate <nome>`): os outros (vídeo, sobreposição) não se registram. */
 export const NOMES_NA_WAVE = new Set(['movimento', 'responsivo', 'oclusao', 'simetria', 'composicao', 'imagens', 'texto', 'ritmo',
-  'sem-kicker', 'classes-mortas', 'verdade', 'publicacao', 'rastreamento', 'plano', 'referencias', 'animacao', 'fidelidade', 'uso-ferramentas']);
+  'sem-kicker', 'classes-mortas', 'verdade', 'publicacao', 'rastreamento', 'seo', 'plano', 'referencias', 'animacao', 'fidelidade', 'uso-ferramentas']);
 
 /** Teto de gates de navegador ao mesmo tempo. Cada Chromium pesa uns 300 a 500 MB e disputa CPU
  *  com os outros: o padrão é metade dos núcleos, entre 1 e 4 (medido em `RELATORIO-PAGINA-358-D.md`). */

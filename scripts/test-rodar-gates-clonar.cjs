@@ -96,9 +96,23 @@ teste('o CRIAR não muda: sem --caminho, os 8 vermelhos reprovam e os gates do c
   const { base, rodou } = await cenario();
   const r = rodar(base.filter((a, i) => a !== '--original' && base[i - 1] !== '--original'));
   assert.equal(r.codigo, 1, r.saida);
-  assert.match(r.saida, /RESULTADO: REPROVA em 8 de 15/);
+  assert.match(r.saida, /RESULTADO: REPROVA em 8 de 16/);
   assert.ok(!rodou('fidelidade'));
   assert.ok(!rodou('uso-ferramentas'));
+});
+
+// 3.8.0: o clone fiel copia o SEO da original (title, description, canonical e robots dela); consertar trairia a fidelidade.
+teste('no clone, o gate de SEO roda e, vermelho, vira AVISO por fidelidade; no CRIAR ele reprova a rodada', async () => {
+  const { rodou, base } = await cenario({ vermelhos: ['seo'] });
+  const r = rodar([...base, '--caminho', 'clonar']);
+  assert.equal(r.codigo, 0, r.saida);
+  assert.ok(rodou('seo'), 'o gate de SEO roda no clone');
+  assert.match(r.saida, /AVISO\s+seo[^\n]*ressalva por fidelidade/);
+  assert.doesNotMatch(r.saida, /RESULTADO: REPROVA/);
+  const criar = await cenario({ vermelhos: ['seo'] });
+  const r2 = rodar(criar.base.filter((a, i) => a !== '--original' && criar.base[i - 1] !== '--original'));
+  assert.equal(r2.codigo, 1, r2.saida);
+  assert.match(r2.saida, /REPROVA\s+seo/);
 });
 
 teste('no clone, o gate de classes mortas recebe --clone (utilitário do Tailwind com classe da original); no CRIAR, não', async () => {
