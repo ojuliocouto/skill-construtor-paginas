@@ -11,7 +11,7 @@ seo-audit (Corey Haines) e seo (Addy Osmani) mais Lighthouse.
   - SobrAI (juliocouto.com.br/sobrai/): SEO 66 por `noindex, nofollow` esquecido. SPA (Vite/React)
     com o HTML cru de 1,8 KB e 0 palavras (`<div id="root">` vazio): buscador de IA não roda
     JavaScript. Depois do pré-render: 1.710 palavras no HTML cru e SEO 100.
-  - Decisão do Júlio: página de venda precisa ranquear mesmo vivendo de anúncio e indicação.
+  - Decisão de produto: página de venda precisa ranquear mesmo vivendo de anúncio e indicação.
 
 Dois modos, pela URL final:
   - PRÉVIA (sem URL final): o que só existe no domínio vira `PENDÊNCIA:` impressa e não reprova.

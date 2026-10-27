@@ -128,7 +128,7 @@ The skill activates on the next Claude Code session whenever you ask to create, 
 ## Repository layout
 
 ```
-SKILL.md                       router (v3.7.1)
+SKILL.md                       router (v3.8.0)
 CHANGELOG.md                   v2 -> v3 migration
 references/
   caminhos/                    one file per path: criar, clonar, clonar-elevar, melhorar, editar
@@ -160,6 +160,26 @@ scripts/                       gates, capture, audit registry, tests, rodar-test
 data/                          optional design database (CSV)
 hooks/pagina-skill-inject.py   optional trigger hook
 ```
+
+## SEO gate
+
+Pages built by this skill used to pass every gate and still fail SEO. An audit on 27/10/2026 of two real pages (Lighthouse SEO 83 and 66; the second one was a Vite/React SPA whose raw HTML had 0 words, which an AI search engine reads as an empty page) turned each finding into a check. `gate-seo.py` reads the page the way a crawler that does not run JavaScript reads it.
+
+What it measures, on every `*.html` of the folder (except `404.html`): at least 300 visible words in the raw HTML, `<html lang>`, a `<title>` of 15 to 65 characters, a meta description of 70 to 160, no `noindex` or `nofollow`, an absolute `https://` canonical equal to the final URL, an absolute `og:image`, exactly one `<h1>` with headings that never skip a level going down, valid JSON-LD with `@type` whose FAQ questions and prices also appear in the visible text, every `<img>` with `alt`, `width` and `height`, no data URI above 20 KB and none repeated, an `index.html` up to 300 KB, images up to 500 KB, no autoplay video above 1 MB without `preload="none"`, and a privacy link on pages with a form. At the root of the domain it checks that `robots.txt` exists and is not HTML, that `sitemap.xml` is valid XML with the final URL, and that `404.html` exists with `noindex` (on Cloudflare Pages it is the file that makes an unknown URL answer 404 instead of the home page with 200).
+
+Two modes, chosen by the final URL. With no final URL (the `Domínio final:` line of section f in `PLANO.md` says `a definir`) it runs in **preview** mode: what only exists on the final domain becomes a `PENDÊNCIA:` line and does not fail, and `noindex` is allowed. With `Domínio final: https://...` (or `--url-final`) it runs in **domain** mode and every rule fails. Exit 0 passes, 1 fails, 2 is a usage error.
+
+```bash
+node scripts/py.mjs gerar-seo.py --dist <project> --url-final https://example.com/    # creates robots.txt, sitemap.xml and 404.html if missing, never overwrites
+node scripts/py.mjs gate-seo.py --dist <project>/dist --plano <project>/PLANO.md       # the gate (also runs inside rodar-gates.mjs as "seo")
+node scripts/py.mjs gate-seo.py --dist <dist> --raiz <site-root> --url-final https://example.com/sobrai/   # a page under a sub-path: robots and sitemap live on the main site
+```
+
+Run `gerar-seo.py` on the project folder, not on `dist/`: `montar-dist.py` copies the three files to `dist/` and removes from `dist/` whatever the project does not have. In the clone path the gate runs as a "fidelity caveat" warning, because a faithful clone copies the SEO of the original.
+
+## What is new in 3.8.0
+
+SEO gate (`scripts/gate-seo.py`, 16 rules, preview and domain modes), `scripts/gerar-seo.py` (robots.txt, sitemap.xml and 404.html without overwriting), `404.html` carried to `dist/` by `montar-dist.py`, the `seo` gate in `rodar-gates.mjs` and `wave.py` (a warning in the clone path), a `Domínio final:` line in the PLAN template, and an `SEO:` line in the delivery block. Numbers from the audit: sales page SEO 83 to 100 and 281 KB of a 364 KB HTML that was one logo repeated three times; SobrAI SEO 66 to 100 and 0 to 1,710 words in the raw HTML after pre-rendering.
 
 ## What is new in 3.7.1
 
@@ -375,6 +395,9 @@ node scripts/test-visibilidade-movimento.cjs        # invisible text: parked, du
 node scripts/test-texto-ritmo-3510.cjs              # e-mail and site at the start of an item; title alignment measured
 node scripts/py.mjs test-docs-criar-3510.py
 node scripts/py.mjs test-docs-3510-juncao.py
+node scripts/py.mjs test-gate-seo.py                # SEO gate: every rule fails on its bad case, the two audited pages in miniature
+node scripts/py.mjs test-gerar-seo.py               # robots.txt, sitemap.xml and 404.html: created, never overwritten, pass the gate
+node scripts/py.mjs test-docs-380.py                # the SEO gate in SKILL.md, criar.md, plano.md, clonar.md, README and CHANGELOG
 node --test scripts/extrai-identidade.test.mjs
 ```
 

@@ -118,8 +118,9 @@ Os gates do clone num comando só, com o conjunto do clone fiel:
 - Não rodam: `verdade`, `rastreamento`, `plano` e `referencias`. Eles perguntam pelo briefing,
   pelo PLANO, pelo pixel e pelas 6 referências, que o clone não tem.
 - Viram AVISO, ressalva por fidelidade: `movimento`, `responsivo`, `texto`, `imagens`,
-  `simetria`, `composicao` e `sem-kicker`. Eles medem regra da skill que a original pode não
-  seguir (animação, alvo de toque, viúva, licença da foto da própria página). Eles rodam, a wave
+  `simetria`, `composicao`, `sem-kicker` e `seo`. Eles medem regra da skill que a original pode não
+  seguir (animação, alvo de toque, viúva, licença da foto da própria página, e no `seo` o title, a
+  description, o canonical e o robots que o clone copia da original). Eles rodam, a wave
   recebe o exit real, e a saída da rodada fica 0.
 
 Leia cada aviso. Se o defeito também está na original, não conserte: consertar trai a
