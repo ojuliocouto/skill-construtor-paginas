@@ -65,6 +65,23 @@ const POR_GATE = {
     [/nenhuma figura humana/, 'ponha uma pessoa na primeira tela: foto real com autorização ou ilustração própria com data-figura="pessoa"'],
     [/3:1|traço fino|destaque/, 'suba o contraste do destaque ou do traço fino para pelo menos 3:1 contra o fundo'],
   ],
+  // 3.8.0 (auditoria de SEO de 27/10/2026): cada tipo de falha do gate-seo.py aponta o que mudar.
+  seo: [
+    [/palavras visíveis|SPA com #root/, 'pré-renderize a página para o HTML cru trazer o texto (buscador de IA não roda JavaScript) e confira com um curl no endereço'],
+    [/(robots\.txt|sitemap\.xml|404\.html) ausente|robots\.txt é HTML|sitemap\.xml não é XML/, 'rode gerar-seo.py --dist <dir> --url-final <https://...> para criar robots.txt, sitemap.xml e 404.html (ele nunca sobrescreve)'],
+    [/meta robots/, 'tire o noindex e o nofollow do meta robots (o endereço final é indexável); na prévia o noindex é pendência'],
+    [/meta description/, 'escreva a meta description com 70 a 160 caracteres'],
+    [/canonical|og:url/, 'ponha o canonical e o og:url absolutos (https://) e iguais à URL final'],
+    [/og:image/, 'ponha a og:image como endereço absoluto https://'],
+    [/JSON-LD/, 'ponha JSON-LD válido com @type (Organization, Product ou FAQPage) e só com o que a página mostra'],
+    [/Offer\.price|FAQPage/, 'o preço e as perguntas do JSON-LD precisam estar escritos no texto visível da página'],
+    [/salto de nível|<h1>/, 'deixe um único h1 e desça os títulos um nível por vez (h2 depois h3, nunca h2 depois h4)'],
+    [/data URI/, 'troque o data URI por um arquivo (WebP) e use o mesmo arquivo nas repetições'],
+    [/limite de \d+ KB|vídeo /, 'reduza o arquivo citado (WebP/AVIF para imagem; vídeo de autoplay com preload="none" e poster) ou o HTML'],
+    [/<html lang>|<title>/, 'ponha lang no <html> e um <title> de 15 a 65 caracteres'],
+    [/<img>/, 'ponha alt, width e height em toda <img>'],
+    [/privacidade/, 'ponha na página um link para a política de privacidade'],
+  ],
 };
 
 /** Conserto padrão: vale quando nenhum padrão casa, e para os gates fora da tabela acima. */
@@ -88,6 +105,7 @@ const PADRAO = {
   video: 'confira o vídeo da página no gate-video (formato, tamanho, duração) e regrave o que o laudo cita',
   fidelidade: 'abra gates/fidelidade/lado-<largura>.png e diff-<largura>.png: cada linha DIFERE diz o elemento e o que mudou (caixa, texto, fonte, cor); copie o valor da original, sem arredondar, e rode só este gate',
   'uso-ferramentas': 'rode o gate de fidelidade (ele registra o uso do Playwright) ou registre: uso-ferramentas.py --projeto <dir> registrar Playwright --arquivo <print do clone>',
+  seo: 'leia as linhas REPROVA acima, cada uma cita a medida e o arquivo; para robots.txt, sitemap.xml e 404.html rode gerar-seo.py, e repita só este gate com --so seo',
   sobreposicao: 'o elemento fixo cobre o bloco largo citado: mude o z-index, a posição ou a largura de um dos dois',
 };
 

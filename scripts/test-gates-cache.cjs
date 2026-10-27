@@ -107,7 +107,7 @@ teste('entradas: cada gate do catálogo real declara se lê a dist, o projeto, o
     movimento: [true, false], responsivo: [true, false], oclusao: [true, false], simetria: [true, false], texto: [true, false], ritmo: [true, false],
     composicao: [true, true], imagens: [true, true],
     'sem-kicker': [false, true], 'classes-mortas': [false, true], verdade: [false, true], plano: [false, true], referencias: [false, true], animacao: [false, true],
-    publicacao: [true, false], rastreamento: [true, true],
+    publicacao: [true, false], rastreamento: [true, true], seo: [true, true],   // 3.8.0: lê a dist e a linha Domínio final do PLANO.md
     video: [true, false], sobreposicao: [true, false],
   };
   assert.deepEqual(Object.keys(esperado).sort(), CATALOGO.map((g) => g.nome).sort(), 'a tabela do teste não cobre todos os gates');
