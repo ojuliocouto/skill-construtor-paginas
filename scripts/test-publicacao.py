@@ -81,6 +81,28 @@ class Publicacao(unittest.TestCase):
         code, out = rodar_gate(dist)
         self.assertEqual(code, 0, out)
 
+    def test_404_sitemap_e_robots_sao_da_hospedagem_entram_na_dist_e_o_gate_aceita(self):
+        """27/10/2026 (auditoria de SEO da sales): no Cloudflare Pages o 404.html é o que faz a URL inexistente dar 404.
+        Nenhuma página o referencia, então sem estar nos EXTRAS ele ficaria de fora da dist, ou o gate o chamaria de sobra."""
+        (self.proj / "404.html").write_text("<!doctype html><html lang=\"pt-BR\"><head><title>Página não encontrada</title>"
+                                            "<meta name=\"robots\" content=\"noindex\"></head><body><h1>Página não encontrada</h1></body></html>", encoding="utf-8")
+        (self.proj / "sitemap.xml").write_text("<urlset></urlset>", encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(montar.main(["--projeto", str(self.proj)]), 0)
+        dist = self.proj / "dist"
+        for nome in ("404.html", "sitemap.xml", "robots.txt"):
+            self.assertTrue((dist / nome).is_file(), f"{nome} ficou fora da dist")
+        code, out = rodar_gate(dist)
+        self.assertEqual(code, 0, out)
+        self.assertIn("404.html", montar.EXTRAS)
+
+    def test_404_html_na_dist_nao_e_arquivo_sobrando_para_o_gate(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            montar.main(["--projeto", str(self.proj)])
+        (self.proj / "dist" / "404.html").write_text("<!doctype html><title>x</title>", encoding="utf-8")
+        code, out = rodar_gate(self.proj / "dist")
+        self.assertEqual(code, 0, out)
+
     def test_gate_reprova_a_pasta_do_projeto_inteira(self):
         code, out = rodar_gate(self.proj)
         self.assertEqual(code, 1)

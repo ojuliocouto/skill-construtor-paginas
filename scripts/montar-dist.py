@@ -8,7 +8,11 @@ deploy sai SEMPRE de `dist/`, montada por este script e conferida pelo `gate-pub
 
 O que entra: `index.html` e todo arquivo local que ele referencia (src, href, srcset,
 imagesrcset, og:image relativa, url() dos CSS e dos estilos em linha), mais robots.txt,
-sitemap.xml, _headers e _redirects quando existirem. Nada mais.
+sitemap.xml, 404.html, _headers e _redirects quando existirem. Nada mais.
+
+O 404.html entra aqui porque nenhuma página o referencia, e é a existência dele que faz a hospedagem
+(Cloudflare Pages) responder 404 a uma URL inexistente em vez de devolver a home com 200 (soft 404,
+auditoria de SEO da sales.juliocouto.com.br, 27/10/2026). `gerar-seo.py` cria o arquivo.
 
 `--css-em-linha` troca cada `<link rel="stylesheet">` local por um `<style>` com o conteúdo
 (as url() reescritas para a raiz): tira o CSS do caminho crítico, que no celular custava 1,3 s
@@ -28,7 +32,7 @@ from pathlib import Path, PurePosixPath
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import dist_hash  # noqa: E402  (hash do conteúdo da dist e o registro de quando ela mudou de verdade)
 
-EXTRAS = ("robots.txt", "sitemap.xml", "_headers", "_redirects", "_routes.json", "favicon.ico")
+EXTRAS = ("robots.txt", "sitemap.xml", "404.html", "_headers", "_redirects", "_routes.json", "favicon.ico")
 URL_CSS = re.compile(r"url\(\s*(['\"]?)([^'\")]+)\1\s*\)")
 
 
